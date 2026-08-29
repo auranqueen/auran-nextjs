@@ -34,6 +34,7 @@ interface SessionRow {
   link?: string | null
   capacity?: number | null
   applied?: boolean
+  asset_url?: string | null
 }
 
 const CARD: CSSProperties = {
@@ -247,6 +248,43 @@ export default function OwnerProgramsPage() {
                     참여 링크 열기
                   </a>
                 )}
+                {s.applied && s.asset_url && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <a
+                      href={s.asset_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontSize: 12,
+                        padding: '8px 14px',
+                        borderRadius: 8,
+                        border: `1px solid ${PURPLE}`,
+                        color: PURPLE,
+                        textDecoration: 'none',
+                        background: '#fff',
+                      }}
+                    >
+                      🖨️ 자료 출력하기
+                    </a>
+                    <a
+                      href={s.asset_url}
+                      download
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontSize: 12,
+                        padding: '8px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        color: '#fff',
+                        textDecoration: 'none',
+                        background: PURPLE,
+                      }}
+                    >
+                      ⬇️ 다운로드
+                    </a>
+                  </div>
+                )}
               </div>
             ))
           )
@@ -282,14 +320,41 @@ export default function OwnerProgramsPage() {
               <div style={{ fontSize: 12, color: SUB }}>본문이 없어요.</div>
             )}
             {preview.asset_url && (
-              <a
-                href={preview.asset_url}
-                target="_blank"
-                rel="noreferrer"
-                style={{ display: 'inline-block', marginTop: 12, fontSize: 12, color: PURPLE }}
-              >
-                첨부 파일 열기
-              </a>
+              <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                <a
+                  href={preview.asset_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: 12,
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    border: `1px solid ${PURPLE}`,
+                    color: PURPLE,
+                    textDecoration: 'none',
+                    background: '#fff',
+                  }}
+                >
+                  🖨️ 출력하기
+                </a>
+                <a
+                  href={preview.asset_url}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: 12,
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    border: 'none',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    background: PURPLE,
+                  }}
+                >
+                  ⬇️ 다운로드
+                </a>
+              </div>
             )}
           </div>
         ) : filtered.length === 0 ? (

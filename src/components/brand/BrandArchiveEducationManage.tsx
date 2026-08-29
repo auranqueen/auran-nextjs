@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 
 interface Props {
   companyId: string
@@ -17,6 +19,7 @@ interface SessionRow {
   location?: string | null
   link?: string | null
   capacity?: number | null
+  asset_url?: string | null
   applied_count?: number
 }
 
@@ -51,6 +54,7 @@ const INPUT: CSSProperties = {
 }
 
 export default function BrandArchiveEducationManage({ companyId, staffId }: Props) {
+  const supabase = createClient()
   const [title, setTitle] = useState('')
   const [sessionDate, setSessionDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -59,9 +63,12 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
   const [location, setLocation] = useState('')
   const [link, setLink] = useState('')
   const [capacity, setCapacity] = useState(30)
+  const [assetUrl, setAssetUrl] = useState('')
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [attachingId, setAttachingId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [apps, setApps] = useState<ApplicationRow[]>([])
   const [appsLoading, setAppsLoading] = useState(false)
@@ -119,6 +126,67 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
     void loadApps(id)
   }
 
+  const uploadEducationAsset = async (file: File, path: string) => {
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+    let uploadFile = file
+    if (!isPdf && file.type.startsWith('image/')) {
+      try {
+        uploadFile = await compressImage(file, 'product_detail')
+      } catch {
+        uploadFile = file
+      }
+    }
+    const { data, error } = await supabase.storage.from('brand-assets').upload(path, uploadFile, { upsert: true })
+    if (error || !data) throw new Error(error?.message || 'upload_failed')
+    const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+    return urlData.publicUrl
+  }
+
+  const onFormAssetFile = async (file: File) => {
+    setUploading(true)
+    try {
+      const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+      const path = `education/${companyId}-${Date.now()}.${ext}`
+      const url = await uploadEducationAsset(file, path)
+      setAssetUrl(url)
+      showToast('파일 업로드 완료')
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : '업로드 실패')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const attachFileToSession = async (sessionId: string, file: File) => {
+    setAttachingId(sessionId)
+    try {
+      const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+      const path = `education/${companyId}-${sessionId}.${ext}`
+      const url = await uploadEducationAsset(file, path)
+      const res = await fetch('/api/brand/education/sessions/attach-file', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sessionId,
+          company_id: companyId,
+          staff_id: staffId || '',
+          asset_url: url,
+        }),
+      })
+      const json = await res.json()
+      if (!json?.ok) {
+        showToast(json?.error || '첨부 저장 실패')
+        return
+      }
+      showToast('파일 첨부 완료')
+      await load()
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : '첨부 실패')
+    } finally {
+      setAttachingId(null)
+    }
+  }
+
   const onSave = async () => {
     if (!title.trim() || !sessionDate || !startTime || !endTime) {
       showToast('필수 항목을 입력하세요')
@@ -140,6 +208,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
           location: format === 'offline' ? location : null,
           link: format === 'online' ? link : null,
           capacity,
+          asset_url: assetUrl || null,
         }),
       })
       const json = await res.json()
@@ -155,6 +224,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
       setLink('')
       setCapacity(30)
       setFormat('offline')
+      setAssetUrl('')
       showToast('세션 등록 완료')
       await load()
     } catch {
@@ -257,9 +327,37 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
             onChange={(e) => setCapacity(Math.trunc(Number(e.target.value)) || 30)}
           />
         </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: SUB }}>📎 출력용 자료 첨부 (선택)</div>
+            <span
+              title="세션 설명과는 별개예요 — 원장님이 통째로 출력하거나 다운로드할 수 있는 자료(디자인팀 완성본 등)를 올리는 자리예요"
+              style={{ fontSize: 12, color: SUB, cursor: 'help' }}
+            >
+              ❓
+            </span>
+          </div>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) void onFormAssetFile(f)
+            }}
+            style={{ fontSize: 12, color: TEXT }}
+          />
+          {assetUrl && (
+            <div style={{ fontSize: 11, color: PURPLE, marginTop: 6, wordBreak: 'break-all' }}>{assetUrl}</div>
+          )}
+          <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.45 }}>
+            세션 설명과 별개 — 원장이 출력·다운로드할 자료(디자인 완성본 등)
+          </div>
+        </div>
         <button
           type="button"
-          disabled={saving}
+          disabled={saving || uploading}
           onClick={() => void onSave()}
           style={{
             width: '100%',
@@ -270,7 +368,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
             color: '#fff',
             fontSize: 13,
             cursor: saving ? 'wait' : 'pointer',
-            opacity: saving ? 0.7 : 1,
+            opacity: saving || uploading ? 0.7 : 1,
           }}
         >
           {saving ? '저장 중…' : '세션 등록'}
@@ -309,6 +407,73 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
                 {s.format === 'online' ? '온라인' : '오프라인'}
               </div>
             </button>
+            <div
+              style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {s.asset_url ? (
+                  <>
+                    <span style={{ fontSize: 11, color: '#C9A96E' }}>📄 첨부됨</span>
+                    <label
+                      style={{
+                        fontSize: 11,
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${PURPLE}`,
+                        color: '#c4a7e7',
+                        cursor: attachingId === s.id ? 'wait' : 'pointer',
+                        opacity: attachingId === s.id ? 0.6 : 1,
+                      }}
+                    >
+                      {attachingId === s.id ? '업로드 중…' : '교체'}
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        disabled={attachingId === s.id}
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          e.target.value = ''
+                          if (f) void attachFileToSession(s.id, f)
+                        }}
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <label
+                    style={{
+                      fontSize: 11,
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      border: `1px solid ${PURPLE}`,
+                      color: '#c4a7e7',
+                      cursor: attachingId === s.id ? 'wait' : 'pointer',
+                      opacity: attachingId === s.id ? 0.6 : 1,
+                    }}
+                  >
+                    {attachingId === s.id ? '업로드 중…' : '📎 파일 첨부'}
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      disabled={attachingId === s.id}
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ''
+                        if (f) void attachFileToSession(s.id, f)
+                      }}
+                    />
+                  </label>
+                )}
+                <span
+                  title="세션 설명과는 별개예요 — 원장님이 통째로 출력하거나 다운로드할 수 있는 자료(디자인팀 완성본 등)를 올리는 자리예요"
+                  style={{ fontSize: 12, color: SUB, cursor: 'help' }}
+                >
+                  ❓
+                </span>
+              </div>
+            </div>
             {expandedId === s.id && (
               <div style={{ marginTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.08)', paddingTop: 10 }}>
                 {appsLoading ? (

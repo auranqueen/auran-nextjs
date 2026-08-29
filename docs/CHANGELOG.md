@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-29
+### feat: 자료·에듀케이션 출력용 파일 첨부 (브랜드 등록 후 + 원장 출력/다운로드)
+- BrandArchiveManage: 등록 후 리스트에서 📎첨부/📄첨부됨·교체. `PATCH /api/brand/archive/attach-file`. 원장 미리보기 🖨️출력·⬇️다운로드.
+- BrandArchiveEducationManage: 등록폼·리스트 출력용 첨부. save에 `asset_url`. `PATCH /api/brand/education/sessions/attach-file` (`education_manage`).
+- 원장 education sessions API: `asset_url`도 `applied===true`일 때만 노출. programs 신청완료 시 출력/다운로드 버튼.
+- note: `education_sessions.asset_url` 컬럼이 DB에 없으면 `alter table ... add column if not exists asset_url text` 필요.
+- 쉽게: 본문 사진과 별도로, 원장이 통째로 출력·받을 PDF/포스터를 붙일 수 있다.
 ### feat: 원장 사이드바 프로그램 메뉴 · 제품판매관리 라이트톤
 - OwnerSidebarShell: 「제품 주문」→「제품판매관리」, 「프로그램」(`/dashboard/owner/programs`) 메뉴 추가(소식·샘플 사이).
 - brand-retail-orders: BookingManagePage 팔레트 기준으로 다크 하드코딩 → 라이트톤 색상만 교체(로직 유지).

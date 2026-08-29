@@ -53,9 +53,9 @@ export async function GET() {
 
   const rows = list.map((s: Record<string, unknown>) => {
     const applied = appliedSet.has(String(s.id))
-    const { link, ...rest } = s
+    const { link, asset_url, ...rest } = s
     if (applied) {
-      return { ...rest, link, applied: true }
+      return { ...rest, link, asset_url, applied: true }
     }
     return { ...rest, applied: false }
   })

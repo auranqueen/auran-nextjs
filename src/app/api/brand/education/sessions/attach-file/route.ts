@@ -30,7 +30,7 @@ async function assertCompanyAccess(
   return { allowed: Boolean(owned?.id), brandIds }
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   const supabase = createClient()
   const {
     data: { user },
@@ -38,29 +38,14 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
+  const id = typeof body?.id === 'string' ? body.id.trim() : ''
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
   const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
-  const title = typeof body?.title === 'string' ? body.title.trim() : ''
-  const sessionDate = typeof body?.session_date === 'string' ? body.session_date.trim() : ''
-  const startTime = typeof body?.start_time === 'string' ? body.start_time.trim() : ''
-  const endTime = typeof body?.end_time === 'string' ? body.end_time.trim() : ''
-  const format = typeof body?.format === 'string' ? body.format.trim() : ''
-  const location = typeof body?.location === 'string' ? body.location.trim() : null
-  let link = typeof body?.link === 'string' ? body.link.trim() : null
-  const capacity =
-    body?.capacity != null && body.capacity !== '' ? Math.trunc(Number(body.capacity)) : null
-  const assetUrl =
-    typeof body?.asset_url === 'string' && body.asset_url.trim() ? body.asset_url.trim() : null
+  const assetUrl = typeof body?.asset_url === 'string' ? body.asset_url.trim() : ''
 
+  if (!id) return NextResponse.json({ ok: false, error: 'missing_id' }, { status: 400 })
   if (!companyId) return NextResponse.json({ ok: false, error: 'missing_company' }, { status: 400 })
-  if (!title) return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
-  if (!sessionDate) return NextResponse.json({ ok: false, error: 'session_date_required' }, { status: 400 })
-  if (!startTime || !endTime) {
-    return NextResponse.json({ ok: false, error: 'times_required' }, { status: 400 })
-  }
-  if (!['online', 'offline'].includes(format)) {
-    return NextResponse.json({ ok: false, error: 'invalid_format' }, { status: 400 })
-  }
+  if (!assetUrl) return NextResponse.json({ ok: false, error: 'missing_asset_url' }, { status: 400 })
 
   const { data: me } = await supabase.from('users').select('id, role').eq('auth_id', user.id).maybeSingle()
   if (!me?.id || me.role !== 'brand') {
@@ -80,39 +65,20 @@ export async function POST(req: NextRequest) {
   const svc = tryCreateServiceClient()
   const db = svc ?? supabase
 
-  if (format === 'online') {
-    const { data: zoomRow } = await db
-      .from('company_integrations')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('provider', 'zoom')
-      .eq('is_active', true)
-      .maybeSingle()
-    if (zoomRow?.id) {
-      // TODO: Zoom API meeting create -> replace link
-    }
-  }
-
-  const { data: session, error } = await db
+  const { data: item, error } = await db
     .from('education_sessions')
-    .insert({
-      company_id: companyId,
-      title,
-      session_date: sessionDate,
-      start_time: startTime,
-      end_time: endTime,
-      format,
-      location: location || null,
-      link: link || null,
-      capacity: capacity != null && Number.isFinite(capacity) ? capacity : null,
-      asset_url: assetUrl,
-    })
-    .select('*')
-    .single()
+    .update({ asset_url: assetUrl })
+    .eq('id', id)
+    .eq('company_id', companyId)
+    .select('id, asset_url')
+    .maybeSingle()
 
-  if (error || !session) {
-    return NextResponse.json({ ok: false, error: error?.message || 'insert_failed' }, { status: 500 })
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  }
+  if (!item) {
+    return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 })
   }
 
-  return NextResponse.json({ ok: true, session })
+  return NextResponse.json({ ok: true, item })
 }

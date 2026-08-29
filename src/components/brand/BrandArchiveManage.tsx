@@ -59,6 +59,7 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [attachingId, setAttachingId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
   const showToast = (t: string) => {
@@ -146,6 +147,47 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
       showToast(e instanceof Error ? e.message : '업로드 실패')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const attachFileToItem = async (itemId: string, file: File) => {
+    setAttachingId(itemId)
+    try {
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+      let uploadFile = file
+      if (!isPdf && file.type.startsWith('image/')) {
+        try {
+          uploadFile = await compressImage(file, 'product_detail')
+        } catch {
+          uploadFile = file
+        }
+      }
+      const ext = (uploadFile.name.split('.').pop() || (isPdf ? 'pdf' : 'jpg')).toLowerCase()
+      const path = `archive/${companyId}-${itemId}.${ext}`
+      const { data, error } = await supabase.storage.from('brand-assets').upload(path, uploadFile, { upsert: true })
+      if (error || !data) throw new Error(error?.message || 'upload_failed')
+      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+      const res = await fetch('/api/brand/archive/attach-file', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: itemId,
+          company_id: companyId,
+          staff_id: staffId || '',
+          asset_url: urlData.publicUrl,
+        }),
+      })
+      const json = await res.json()
+      if (!json?.ok) {
+        showToast(json?.error || '첨부 저장 실패')
+        return
+      }
+      showToast('파일 첨부 완료')
+      await load()
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : '첨부 실패')
+    } finally {
+      setAttachingId(null)
     }
   }
 
@@ -353,34 +395,107 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
             <div style={{ color: SUB, fontSize: 12 }}>아직 등록된 자료가 없어요.</div>
           ) : (
             items.map((it) => (
-              <button
-                key={it.id}
-                type="button"
-                onClick={() => setPreview(it)}
-                style={{
-                  ...CARD,
-                  width: '100%',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'block',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>{it.title}</div>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      background: it.source === 'arete' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.15)',
-                      color: it.source === 'arete' ? '#C9A96E' : PURPLE,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {it.source === 'arete' ? '⭐아레테전용' : '일반'}
-                  </span>
+              <div key={it.id} style={{ ...CARD, marginBottom: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setPreview(it)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'block',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>{it.title}</div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background: it.source === 'arete' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.15)',
+                        color: it.source === 'arete' ? '#C9A96E' : PURPLE,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {it.source === 'arete' ? '⭐아레테전용' : '일반'}
+                    </span>
+                  </div>
+                </button>
+                <div
+                  style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {it.asset_url ? (
+                      <>
+                        <span style={{ fontSize: 11, color: '#C9A96E' }}>📄 첨부됨</span>
+                        <label
+                          style={{
+                            fontSize: 11,
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: `1px solid ${PURPLE}`,
+                            color: '#c4a7e7',
+                            cursor: attachingId === it.id ? 'wait' : 'pointer',
+                            opacity: attachingId === it.id ? 0.6 : 1,
+                          }}
+                        >
+                          {attachingId === it.id ? '업로드 중…' : '교체'}
+                          <input
+                            type="file"
+                            accept="image/*,.pdf"
+                            disabled={attachingId === it.id}
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              e.target.value = ''
+                              if (f) void attachFileToItem(it.id, f)
+                            }}
+                          />
+                        </label>
+                      </>
+                    ) : (
+                      <label
+                        style={{
+                          fontSize: 11,
+                          padding: '5px 10px',
+                          borderRadius: 6,
+                          border: `1px solid ${PURPLE}`,
+                          color: '#c4a7e7',
+                          cursor: attachingId === it.id ? 'wait' : 'pointer',
+                          opacity: attachingId === it.id ? 0.6 : 1,
+                        }}
+                      >
+                        {attachingId === it.id ? '업로드 중…' : '📎 파일 첨부'}
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          disabled={attachingId === it.id}
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            e.target.value = ''
+                            if (f) void attachFileToItem(it.id, f)
+                          }}
+                        />
+                      </label>
+                    )}
+                    <span
+                      title="본문 에디터에 넣는 사진과 달라요 — 여기 첨부하는 파일은 원장님이 통째로 출력하거나 다운로드할 수 있는 별도 자료예요 (예: 디자인팀이 만든 완성 포스터/PDF)"
+                      style={{ fontSize: 12, color: SUB, cursor: 'help' }}
+                    >
+                      ❓
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.45 }}>
+                    본문 사진과 달라요 — 여기 파일은 원장이 출력·다운로드할 별도 자료예요 (포스터/PDF 등)
+                  </div>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </>
