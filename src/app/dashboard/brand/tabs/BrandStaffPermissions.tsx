@@ -40,6 +40,12 @@ const PERMISSION_MODULES = [
     ]
   },
   {
+    group: '교육',
+    modules: [
+      { key: 'education_manage', label: '에듀케이션 등록/관리' },
+    ]
+  },
+  {
     group: '리포트',
     modules: [
       { key: 'report_view',     label: '대조 리포트 열람' },
@@ -71,7 +77,7 @@ const PERMISSION_MODULES = [
     ]
   },
 ] as const
-type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post' | 'logi_hub_access'
+type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'education_manage' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post' | 'logi_hub_access'
 interface StaffRow {
   id: string
   name: string

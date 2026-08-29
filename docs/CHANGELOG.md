@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-08-29
+### feat: 에듀케이션 테이블·API·권한 (마이그레이션 181 레포 기록)
+- 181_education_tables.sql: `education_sessions`(세션), `education_applications`(원장 신청, unique session+owner→users.id), `company_integrations`(줌 등 연동·client_secret 서버전용) + RLS(134 패턴). Supabase에 직접 적용 완료 — 레포 기록용(실행 재적용 목적 아님).
+- BrandStaffPermissions: 교육 그룹 `education_manage`. getOwnerCompanyIds 헬퍼. brand/owner education sessions save·list·apply API.
+- note: Windows Write로 API route가 UTF-16으로 깨졌던 이슈 → UTF-8 재저장 후 build 통과.
+- 쉽게: 브랜드가 온/오프라인 교육 열고 원장이 신청하는 DB·API 뼈대. 줌 시크릿은 프론트 노출 금지.
 ## 2026-08-28
 ### fix: 오렌씬 전체 에러핸들링 보완
 - hub page: RPC 실패 시 안내+재시도+VIEW created_at fallback.
