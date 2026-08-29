@@ -1,8 +1,10 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import BrandArchiveManage from '@/components/brand/BrandArchiveManage'
 interface Props {
   companyId: string | null
+  staffId: string | null
 }
 interface MemberRow {
   owner_id: string
@@ -20,6 +22,7 @@ interface ProductOption {
   name: string
   supply_price: number
 }
+type ArchiveCat = 'treatment' | 'material'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 12 }
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -28,7 +31,7 @@ function thisMonthDate() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
-export default function BrandTabArete({ companyId }: Props) {
+export default function BrandTabArete({ companyId, staffId }: Props) {
   const supabase = createClient()
   const billingMonth = thisMonthDate()
   const [loading, setLoading] = useState(true)
@@ -36,11 +39,9 @@ export default function BrandTabArete({ companyId }: Props) {
   const [bundleItems, setBundleItems] = useState<BundleItem[]>([])
   const [products, setProducts] = useState<ProductOption[]>([])
   const [productSearch, setProductSearch] = useState('')
-  const [guideUrl, setGuideUrl] = useState('')
-  const [guideTitle, setGuideTitle] = useState('')
-  const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState('')
   const [savingBundle, setSavingBundle] = useState(false)
+  const [archiveCat, setArchiveCat] = useState<ArchiveCat>('treatment')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const load = useCallback(async () => {
     if (!companyId) return
@@ -73,14 +74,6 @@ export default function BrandTabArete({ companyId }: Props) {
       .eq('billing_month', billingMonth)
       .maybeSingle()
     setBundleItems(((bundleRow as { items?: BundleItem[] } | null)?.items) || [])
-    const { data: guideRow } = await supabase
-      .from('brand_arete_guide_images')
-      .select('image_url, title')
-      .eq('company_id', companyId)
-      .eq('billing_month', billingMonth)
-      .maybeSingle()
-    setGuideUrl((guideRow as { image_url?: string } | null)?.image_url || '')
-    setGuideTitle((guideRow as { title?: string } | null)?.title || '')
     setLoading(false)
   }, [companyId, billingMonth, supabase])
   useEffect(() => { void load() }, [load])
@@ -123,28 +116,6 @@ export default function BrandTabArete({ companyId }: Props) {
     }, { onConflict: 'company_id,billing_month' })
     setSavingBundle(false)
     showToast(error ? '저장 실패: ' + error.message : '이번달 번들 저장됐어요')
-  }
-  const uploadGuide = async (file: File) => {
-    if (!companyId) return
-    setUploading(true)
-    try {
-      const ext = file.name.split('.').pop() || 'png'
-      const path = `arete-guides/${companyId}-${billingMonth}-${Date.now()}.${ext}`
-      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
-      if (error || !data) { showToast('업로드 실패'); return }
-      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
-      const { error: dbErr } = await supabase.from('brand_arete_guide_images').upsert({
-        company_id: companyId,
-        billing_month: billingMonth,
-        image_url: urlData.publicUrl,
-        title: guideTitle || `${billingMonth.slice(0, 7)} 프로그램 가이드`,
-      }, { onConflict: 'company_id,billing_month' })
-      if (dbErr) { showToast('저장 실패: ' + dbErr.message); return }
-      setGuideUrl(urlData.publicUrl)
-      showToast('가이드 업로드 완료')
-    } finally {
-      setUploading(false)
-    }
   }
   const cancelMember = async (ownerId: string) => {
     if (!companyId) return
@@ -208,28 +179,32 @@ export default function BrandTabArete({ companyId }: Props) {
           {savingBundle ? '저장 중...' : '번들 저장'}
         </button>
       </div>
-      <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>이번달 프로그램 가이드</div>
-        {guideUrl ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: 10, marginBottom: 8 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={guideUrl} alt="" style={{ width: 44, height: 56, objectFit: 'cover', borderRadius: 6 }} />
-            <div style={{ fontSize: 12, color: TEXT }}>{guideTitle}</div>
-          </div>
-        ) : (
-          <div style={{ fontSize: 11, color: SUB, marginBottom: 8 }}>아직 업로드된 가이드가 없어요</div>
-        )}
-        <input
-          value={guideTitle}
-          onChange={(e) => setGuideTitle(e.target.value)}
-          placeholder="가이드 제목"
-          style={{ width: '100%', fontSize: 12, padding: '8px 10px', borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', color: TEXT, marginBottom: 8 }}
-        />
-        <label style={{ display: 'block', textAlign: 'center', padding: 8, fontSize: 12, borderRadius: 8, border: `1px solid ${PURPLE}`, color: '#c4a7e7', cursor: 'pointer' }}>
-          {uploading ? '업로드 중...' : '이미지/PDF 업로드'}
-          <input type="file" accept="image/*,.pdf" disabled={uploading} style={{ display: 'none' }}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadGuide(f) }} />
-        </label>
+      <div style={{ ...CARD, marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>⭐아레테전용 자료</div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+          {([
+            { key: 'treatment' as const, label: '트리트먼트 프로그램' },
+            { key: 'material' as const, label: '제품교육자료' },
+          ]).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setArchiveCat(t.key)}
+              style={{
+                fontSize: 11,
+                padding: '7px 12px',
+                borderRadius: 8,
+                border: archiveCat === t.key ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.08)',
+                background: archiveCat === t.key ? 'rgba(123,94,167,0.2)' : 'transparent',
+                color: archiveCat === t.key ? '#C9A96E' : TEXT,
+                cursor: 'pointer',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <BrandArchiveManage companyId={companyId} staffId={staffId} category={archiveCat} fixedSource="arete" />
       </div>
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>회원 · 포인트 현황</div>

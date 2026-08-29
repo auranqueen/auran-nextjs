@@ -23,11 +23,6 @@ interface ArchiveItem {
   asset_url?: string | null
 }
 
-interface Guide {
-  image_url?: string | null
-  title?: string | null
-}
-
 interface SessionRow {
   id: string
   title: string
@@ -60,7 +55,6 @@ export default function OwnerProgramsPage() {
   const [sub, setSub] = useState<SubTab>('treatment')
   const [items, setItems] = useState<ArchiveItem[]>([])
   const [areteCompanyIds, setAreteCompanyIds] = useState<string[]>([])
-  const [guide, setGuide] = useState<Guide | null>(null)
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [preview, setPreview] = useState<ArchiveItem | null>(null)
@@ -92,22 +86,6 @@ export default function OwnerProgramsPage() {
     }
   }, [])
 
-  const loadGuide = useCallback(async (companyIds: string[]) => {
-    if (companyIds.length === 0) {
-      setGuide(null)
-      return
-    }
-    const cid = companyIds[0]
-    try {
-      const res = await fetch(`/api/owner/archive/arete-guide?company_id=${encodeURIComponent(cid)}`)
-      const json = await res.json()
-      if (json?.ok && json.guide) setGuide(json.guide)
-      else setGuide(null)
-    } catch {
-      setGuide(null)
-    }
-  }, [])
-
   const loadSessions = useCallback(async () => {
     setLoading(true)
     try {
@@ -129,10 +107,6 @@ export default function OwnerProgramsPage() {
       void loadArchive()
     }
   }, [sub, loadArchive, loadSessions])
-
-  useEffect(() => {
-    if (sub === 'treatment') void loadGuide(areteCompanyIds)
-  }, [sub, areteCompanyIds, loadGuide])
 
   const filtered = useMemo(
     () =>
@@ -222,17 +196,6 @@ export default function OwnerProgramsPage() {
       </div>
 
       <div style={{ padding: '0 16px' }}>
-        {sub === 'treatment' && guide && (guide.image_url || guide.title) && (
-          <div style={{ ...CARD, marginBottom: 14 }}>
-            <div style={{ fontSize: 12, color: PURPLE, fontWeight: 500, marginBottom: 6 }}>이번달 아레테 가이드</div>
-            {guide.title && <div style={{ fontSize: 14, color: TEXT, marginBottom: 8 }}>{guide.title}</div>}
-            {guide.image_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={guide.image_url} alt={guide.title || 'arete guide'} style={{ width: '100%', borderRadius: 8 }} />
-            )}
-          </div>
-        )}
-
         {loading ? (
           <div style={{ color: SUB, fontSize: 13, padding: 20, textAlign: 'center' }}>불러오는 중…</div>
         ) : sub === 'education' ? (

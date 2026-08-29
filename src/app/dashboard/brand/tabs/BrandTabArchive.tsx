@@ -59,7 +59,7 @@ export default function BrandTabArchive({ brandId: _brandId, companyId, staffId 
         ))}
       </div>
       {(sub === 'treatment' || sub === 'material') && (
-        <BrandArchiveManage companyId={companyId} staffId={staffId} category={sub} />
+        <BrandArchiveManage companyId={companyId} staffId={staffId} category={sub} fixedSource="general" />
       )}
       {sub === 'education' && (
         <BrandArchiveEducationManage companyId={companyId} staffId={staffId} />

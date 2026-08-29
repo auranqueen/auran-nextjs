@@ -11,6 +11,8 @@ interface Props {
   companyId: string
   staffId: string | null
   category: 'treatment' | 'material'
+  /** 있으면 일반/아레테 선택 UI 숨기고 등록 source 고정 */
+  fixedSource?: 'general' | 'arete'
 }
 
 type Source = 'general' | 'arete'
@@ -46,12 +48,12 @@ const INPUT: CSSProperties = {
   boxSizing: 'border-box',
 }
 
-export default function BrandArchiveManage({ companyId, staffId, category }: Props) {
+export default function BrandArchiveManage({ companyId, staffId, category, fixedSource }: Props) {
   const supabase = createClient()
   const [title, setTitle] = useState('')
   const [bodyHtml, setBodyHtml] = useState('')
   const [assetUrl, setAssetUrl] = useState('')
-  const [source, setSource] = useState<Source>('general')
+  const [source, setSource] = useState<Source>(fixedSource || 'general')
   const [items, setItems] = useState<ArchiveItem[]>([])
   const [preview, setPreview] = useState<ArchiveItem | null>(null)
   const [loading, setLoading] = useState(true)
@@ -84,6 +86,10 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
     setPreview(null)
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (fixedSource) setSource(fixedSource)
+  }, [fixedSource])
 
   const uploadToBrandAssets = async (file: File, forceExt?: string) => {
     const ext = forceExt || (file.name.split('.').pop() || 'bin').toLowerCase()
@@ -157,7 +163,7 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
           company_id: companyId,
           staff_id: staffId || '',
           category,
-          source,
+          source: fixedSource || source,
           title: title.trim(),
           body_html: bodyHtml,
           asset_url: assetUrl || null,
@@ -171,7 +177,7 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
       setTitle('')
       setBodyHtml('')
       setAssetUrl('')
-      setSource('general')
+      setSource(fixedSource || 'general')
       showToast('등록 완료')
       await load()
     } catch {
@@ -230,38 +236,40 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
             <div style={{ fontSize: 11, color: PURPLE, marginTop: 6, wordBreak: 'break-all' }}>{assetUrl}</div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setSource('general')}
-            style={{
-              fontSize: 11,
-              padding: '6px 12px',
-              borderRadius: 8,
-              border: source === 'general' ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.1)',
-              background: source === 'general' ? 'rgba(123,94,167,0.25)' : 'transparent',
-              color: TEXT,
-              cursor: 'pointer',
-            }}
-          >
-            일반
-          </button>
-          <button
-            type="button"
-            onClick={() => setSource('arete')}
-            style={{
-              fontSize: 11,
-              padding: '6px 12px',
-              borderRadius: 8,
-              border: source === 'arete' ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.1)',
-              background: source === 'arete' ? 'rgba(123,94,167,0.25)' : 'transparent',
-              color: TEXT,
-              cursor: 'pointer',
-            }}
-          >
-            ⭐아레테전용
-          </button>
-        </div>
+        {!fixedSource && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <button
+              type="button"
+              onClick={() => setSource('general')}
+              style={{
+                fontSize: 11,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: source === 'general' ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.1)',
+                background: source === 'general' ? 'rgba(123,94,167,0.25)' : 'transparent',
+                color: TEXT,
+                cursor: 'pointer',
+              }}
+            >
+              일반
+            </button>
+            <button
+              type="button"
+              onClick={() => setSource('arete')}
+              style={{
+                fontSize: 11,
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: source === 'arete' ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.1)',
+                background: source === 'arete' ? 'rgba(123,94,167,0.25)' : 'transparent',
+                color: TEXT,
+                cursor: 'pointer',
+              }}
+            >
+              ⭐아레테전용
+            </button>
+          </div>
+        )}
         <button
           type="button"
           disabled={saving || uploading}

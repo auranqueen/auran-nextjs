@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-29
+### feat: 아레테전용 자료를 BrandArchiveManage로 통합 (가이드 이미지 업로드 대체)
+- BrandArchiveManage: `fixedSource` prop — 있으면 일반/아레테 선택 UI 숨김·등록 source 고정.
+- BrandTabArchive(마케팅 자료관리): `fixedSource="general"` — 아레테전용 선택 불가.
+- BrandTabArete: 이번달 프로그램 가이드(uploadGuide/`brand_arete_guide_images`) UI 제거 → `BrandArchiveManage` + `fixedSource="arete"`(트리트먼트/제품교육 탭). Hub에 `staffId` 전달.
+- owner/programs: 「이번달 아레테 가이드」카드·loadGuide 제거(⭐뱃지 자료 리스트로 대체). DB 테이블은 유지.
+- 쉽게: 일반 자료는 자료관리에서, 아레테전용은 아레테 탭에서만 올리고, 원장은 리스트에서 뱃지로 본다.
 ### feat: 자료관리 리스트 클릭 미리보기 추가 · 브랜드/원장 화면 방식 통일
 - BrandArchiveManage(브랜드 자료관리): 등록 자료 리스트 항목 클릭 → 같은 화면에서 리스트 자리를 title+body_html 미리보기로 교체(모달 금지), ←목록으로 복귀. source=arete면 ⭐아레테전용 뱃지.
 - owner/programs(원장 자료실): 동일 패턴으로 통일(카드 클릭 → 상세 미리보기 + 목록으로).
