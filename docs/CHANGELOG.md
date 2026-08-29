@@ -4,6 +4,9 @@
 ---
 
 ## 2026-08-29
+### feat: brand_archive_items 마이그레이션 182 레포 기록
+- 182_archive_items.sql: `brand_archive_items`(treatment/material, source general|arete, body_html, asset_url) + RLS(연결원장 읽기·아레테전용은 arete_members만). Supabase 직접 적용 완료 — 레포 기록용.
+- 쉽게: 자료실 테이블 정의를 코드저장소에 남겨 둔다.
 ### feat: 브랜드/원장 에듀케이션·자료실
 - BrandTabArchive + BrandArchiveManage/EducationManage, archive APIs, owner/programs
 - brand_archive_items 사용 (DB 전제). education applications list API
