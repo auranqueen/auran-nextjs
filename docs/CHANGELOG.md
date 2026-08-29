@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-29
+### feat: 원장 사이드바 프로그램 메뉴 · 제품판매관리 라이트톤
+- OwnerSidebarShell: 「제품 주문」→「제품판매관리」, 「프로그램」(`/dashboard/owner/programs`) 메뉴 추가(소식·샘플 사이).
+- brand-retail-orders: BookingManagePage 팔레트 기준으로 다크 하드코딩 → 라이트톤 색상만 교체(로직 유지).
+- 쉽게: 사이드바에서 자료실로 바로 가고, 제품판매관리 화면도 다른 원장 화면처럼 밝게 보인다.
 ### feat: 아레테전용 자료를 BrandArchiveManage로 통합 (가이드 이미지 업로드 대체)
 - BrandArchiveManage: `fixedSource` prop — 있으면 일반/아레테 선택 UI 숨김·등록 source 고정.
 - BrandTabArchive(마케팅 자료관리): `fixedSource="general"` — 아레테전용 선택 불가.

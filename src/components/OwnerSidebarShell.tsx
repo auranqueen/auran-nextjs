@@ -19,9 +19,10 @@ const MENU_ITEMS = [
   // TODO: 전용 매출리포트 페이지 제작 후 경로 교체
   { label: '매출 리포트', href: '/dashboard/owner' },
   { label: '발주', href: '/dashboard/owner/brand-orders' },
-  { label: '제품 주문', href: '/dashboard/owner/brand-retail-orders' },
+  { label: '제품판매관리', href: '/dashboard/owner/brand-retail-orders' },
   { label: '오렌포스팅관리', href: '/dashboard/owner/brand-store-decoration' },
   { label: '소식', href: '/dashboard/owner/brand-community' },
+  { label: '프로그램', href: '/dashboard/owner/programs' },
   { label: '샘플', href: '/dashboard/owner/brand-samples' },
   { label: '라이브', href: '/dashboard/owner/brand-live' },
   { label: '반품', href: '/dashboard/owner/brand-returns' },

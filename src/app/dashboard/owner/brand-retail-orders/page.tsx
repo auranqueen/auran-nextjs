@@ -1,14 +1,18 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-const BORDER = 'rgba(255,255,255,0.08)'
+const BG = '#ffffff'
+const SURFACE = '#f9f8fc'
+const BORDER = '#ede9f7'
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
-const TEXT_SUB = 'rgba(255,255,255,0.55)'
+const TEXT = '#1A1A2E'
+const TEXT_SUB = '#888888'
+const TEXT_MUTED = '#aaaaaa'
 const STATUS_LABEL: Record<string, { label: string; bg: string; color: string }> = {
   '결제완료': { label: '결제완료', bg: 'rgba(239,159,39,0.15)', color: '#EF9F27' },
-  '배송중': { label: '배송중', bg: 'rgba(55,138,221,0.15)', color: '#7FB2E8' },
-  '배송완료': { label: '배송완료', bg: 'rgba(123,94,167,0.15)', color: '#C9BEDD' },
-  '구매확정': { label: '구매확정', bg: 'rgba(99,153,34,0.15)', color: '#97C459' },
+  '배송중': { label: '배송중', bg: 'rgba(55,138,221,0.15)', color: '#378ADD' },
+  '배송완료': { label: '배송완료', bg: 'rgba(123,94,167,0.15)', color: '#7B5EA7' },
+  '구매확정': { label: '구매확정', bg: 'rgba(99,153,34,0.15)', color: '#639922' },
 }
 const COURIERS = ['CJ대한통운', '한진택배', '롯데택배', '우체국택배', '로젠택배']
 function getTrackingUrl(courier: string, trackingNo: string) {
@@ -132,20 +136,20 @@ export default function BrandRetailOrdersPage() {
     .reduce((s, o) => s + (o.owner_amount || 0), 0)
 
   return (
-    <div style={{ background: '#0a0c0f', minHeight: '100vh', padding: 20, color: '#fff' }}>
+    <div style={{ background: BG, minHeight: '100vh', padding: 20, color: TEXT }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 16 }}>소매 주문 관리</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
-        <div style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
+        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>발송 대기</div>
           <div style={{ fontSize: 20 }}>{pendingCount}건</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
+        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>배송중</div>
           <div style={{ fontSize: 20 }}>{shippingCount}건</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
+        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>정산액(배송완료+)</div>
           <div style={{ fontSize: 20, color: GOLD }}>{monthlyAmount.toLocaleString()}원</div>
         </div>
@@ -164,24 +168,24 @@ export default function BrandRetailOrdersPage() {
               ? `미발송 ${unshippedCount}건 전체 발송`
               : ''
           return (
-            <div key={batch.key} style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
-              <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `0.5px solid ${BORDER}` }}>
+            <div key={batch.key} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>
                 <div style={{ fontSize: 13, marginBottom: 2 }}>
                   {first.recipient_name} · {first.recipient_phone}
                 </div>
                 <div style={{ fontSize: 12, color: TEXT_SUB }}>{first.address}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
                   {new Date(first.ordered_at).toLocaleDateString('ko-KR')}
                   {batch.orders.length > 1 ? ` · ${batch.orders.length}건` : ''}
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: unshippedCount > 0 ? 12 : 0 }}>
                 {batch.orders.map(order => {
-                  const statusInfo = STATUS_LABEL[order.status] || { label: order.status, bg: 'rgba(255,255,255,0.08)', color: '#fff' }
+                  const statusInfo = STATUS_LABEL[order.status] || { label: order.status, bg: BORDER, color: TEXT }
                   const canSelect = !order.tracking_no && order.status === '결제완료'
                   const isSelected = selectedOrderIds[batch.key]?.has(order.id) || false
                   return (
-                    <div key={order.id} style={{ padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.03)' }}>
+                    <div key={order.id} style={{ padding: 10, borderRadius: 8, background: BG, border: `1px solid ${BORDER}` }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                         {canSelect && (
                           <input
@@ -194,13 +198,13 @@ export default function BrandRetailOrdersPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                             <span style={{ fontSize: 11, background: statusInfo.bg, color: statusInfo.color, padding: '3px 10px', borderRadius: 6 }}>{statusInfo.label}</span>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{order.order_no}</span>
+                            <span style={{ fontSize: 11, color: TEXT_MUTED }}>{order.order_no}</span>
                           </div>
                           <div style={{ fontSize: 13, marginBottom: 4 }}>
                             {order.items.map(i => `${i.product_name} ×${i.quantity}`).join(', ')}
                           </div>
                           {order.tracking_no ? (
-                            <div style={{ fontSize: 12, color: '#97C459', marginBottom: 8 }}>
+                            <div style={{ fontSize: 12, color: '#639922', marginBottom: 8 }}>
                               발송완료 · {order.courier} · {order.tracking_no}
                             </div>
                           ) : null}
@@ -210,7 +214,7 @@ export default function BrandRetailOrdersPage() {
                                 href={getTrackingUrl(order.courier || '', order.tracking_no || '')}
                                 target="_blank"
                                 rel="noreferrer"
-                                style={{ flex: 1, textAlign: 'center', border: `0.5px solid ${BORDER}`, color: GOLD, borderRadius: 8, padding: 9, fontSize: 12, textDecoration: 'none' }}
+                                style={{ flex: 1, textAlign: 'center', border: `1px solid ${BORDER}`, color: GOLD, borderRadius: 8, padding: 9, fontSize: 12, textDecoration: 'none' }}
                               >
                                 배송조회
                               </a>
@@ -241,7 +245,7 @@ export default function BrandRetailOrdersPage() {
                     <select
                       value={courierInputs[batch.key] || ''}
                       onChange={e => setCourierInputs(prev => ({ ...prev, [batch.key]: e.target.value }))}
-                      style={{ flex: 1, minWidth: 120, border: `0.5px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#fff', background: 'rgba(255,255,255,0.05)' }}
+                      style={{ flex: 1, minWidth: 120, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, color: TEXT, background: BG }}
                     >
                       <option value="">택배사 선택</option>
                       {COURIERS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -250,7 +254,7 @@ export default function BrandRetailOrdersPage() {
                       placeholder="송장번호 입력"
                       value={trackingInputs[batch.key] || ''}
                       onChange={e => setTrackingInputs(prev => ({ ...prev, [batch.key]: e.target.value }))}
-                      style={{ flex: 1, minWidth: 120, border: `0.5px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                      style={{ flex: 1, minWidth: 120, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: BG, color: TEXT }}
                     />
                     <button
                       onClick={() => handleShipBatch(batch.key, batch.orders)}
