@@ -20,7 +20,8 @@ const BrandInventoryStaff = dynamic(() => import('../tabs/BrandInventoryStaff'),
 const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'), { ssr: false })
 const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
 const BrandTabArete = dynamic(() => import('../tabs/BrandTabArete'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete'
+const BrandTabArchive = dynamic(() => import('../tabs/BrandTabArchive'), { ssr: false })
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete' | 'archive'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -70,6 +71,7 @@ export default function BrandHubContent({
       items: [
         { key: 'live', label: '이벤트·라이브', icon: 'ti-speakerphone' },
         { key: 'community', label: '커뮤니티', icon: 'ti-users' },
+        { key: 'archive', label: '에듀케이션/자료관리', icon: 'ti-book' },
       ],
     },
     {
@@ -176,6 +178,11 @@ export default function BrandHubContent({
               { type: 'flow', text: '공지/프로모션/신제품 소식을 작성하면 원장님 대시보드 브랜드 소식에 자동으로 공개돼요.' },
               { type: 'warn', text: '원장님이 댓글을 달 수 없어요. 중요한 내용은 오렌상담톡으로 별도 발송하세요.' },
             ]},
+            archive: { title: '에듀케이션/자료관리', items: [
+              { type: 'flow', text: '트리트먼트·제품교육 자료를 등록하면 연결 원장님이 볼 수 있어요.' },
+              { type: 'flow', text: '에듀케이션 세션을 만들면 원장님이 신청할 수 있어요.' },
+              { type: 'warn', text: '아레테전용 자료는 아레테 회원에게만 보여요.' },
+            ]},
             products: { title: '제품 관리', items: [
               { type: 'flow', text: '제품을 등록하면 승인 후 원장님들에게 공개돼요.' },
               { type: 'info', text: '대기/활성/숨김 상태로 관리할 수 있어요.' },
@@ -272,6 +279,7 @@ export default function BrandHubContent({
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
+          {mainTab === 'archive' && <BrandTabArchive brandId={brandId} companyId={companyId} staffId={staffId} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} initialSub={mainSub} />}

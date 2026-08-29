@@ -327,6 +327,7 @@ export default function OwnerDashClientV2() {
     { icon: '💬', label: '브랜드 소식', href: '/dashboard/owner/brand-community' },
     { icon: '🎁', label: '브랜드 샘플', href: '/dashboard/owner/brand-samples' },
     { icon: '🎓', label: '브랜드 라이브', href: '/dashboard/owner/brand-live' },
+    { icon: '📚', label: '자료실·에듀케이션', sub: '트리트먼트 · 교육 · 세션', href: '/dashboard/owner/programs' },
     { icon: '↩️', label: '반품 신청', href: '/dashboard/owner/brand-returns' },
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
     { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },

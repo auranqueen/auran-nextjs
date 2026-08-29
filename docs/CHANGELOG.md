@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-29
+### feat: 브랜드/원장 에듀케이션·자료실
+- BrandTabArchive + BrandArchiveManage/EducationManage, archive APIs, owner/programs
+- brand_archive_items 사용 (DB 전제). education applications list API
+- 쉽게: 브랜드가 자료·교육세션 등록, 원장이 자료실·신청
+
 ### feat: 에듀케이션 테이블·API·권한 (마이그레이션 181 레포 기록)
 - 181_education_tables.sql: `education_sessions`(세션), `education_applications`(원장 신청, unique session+owner→users.id), `company_integrations`(줌 등 연동·client_secret 서버전용) + RLS(134 패턴). Supabase에 직접 적용 완료 — 레포 기록용(실행 재적용 목적 아님).
 - BrandStaffPermissions: 교육 그룹 `education_manage`. getOwnerCompanyIds 헬퍼. brand/owner education sessions save·list·apply API.
