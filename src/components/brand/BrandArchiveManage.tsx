@@ -53,6 +53,7 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
   const [assetUrl, setAssetUrl] = useState('')
   const [source, setSource] = useState<Source>('general')
   const [items, setItems] = useState<ArchiveItem[]>([])
+  const [preview, setPreview] = useState<ArchiveItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -80,6 +81,7 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
   }, [companyId, category])
 
   useEffect(() => {
+    setPreview(null)
     void load()
   }, [load])
 
@@ -281,31 +283,99 @@ export default function BrandArchiveManage({ companyId, staffId, category }: Pro
         </button>
       </div>
 
-      <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>등록된 자료</div>
-      {loading ? (
-        <div style={{ color: SUB, fontSize: 12 }}>불러오는 중…</div>
-      ) : items.length === 0 ? (
-        <div style={{ color: SUB, fontSize: 12 }}>아직 등록된 자료가 없어요.</div>
-      ) : (
-        items.map((it) => (
-          <div key={it.id} style={CARD}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>{it.title}</div>
+      {preview ? (
+        <div style={CARD}>
+          <button
+            type="button"
+            onClick={() => setPreview(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: PURPLE,
+              fontSize: 12,
+              cursor: 'pointer',
+              padding: 0,
+              marginBottom: 12,
+            }}
+          >
+            ← 목록으로
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 15, color: '#fff', fontWeight: 600 }}>{preview.title}</div>
+            {preview.source === 'arete' && (
               <span
                 style={{
                   fontSize: 10,
                   padding: '3px 8px',
                   borderRadius: 6,
-                  background: it.source === 'arete' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.15)',
-                  color: it.source === 'arete' ? '#C9A96E' : PURPLE,
+                  background: 'rgba(201,169,110,0.15)',
+                  color: '#C9A96E',
                   whiteSpace: 'nowrap',
                 }}
               >
-                {it.source === 'arete' ? '아레테전용' : '일반'}
+                ⭐아레테전용
               </span>
-            </div>
+            )}
           </div>
-        ))
+          {preview.body_html ? (
+            <div
+              style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}
+              dangerouslySetInnerHTML={{ __html: preview.body_html }}
+            />
+          ) : (
+            <div style={{ fontSize: 12, color: SUB }}>본문이 없어요.</div>
+          )}
+          {preview.asset_url && (
+            <a
+              href={preview.asset_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-block', marginTop: 12, fontSize: 12, color: PURPLE }}
+            >
+              첨부 파일 열기
+            </a>
+          )}
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>등록된 자료</div>
+          {loading ? (
+            <div style={{ color: SUB, fontSize: 12 }}>불러오는 중…</div>
+          ) : items.length === 0 ? (
+            <div style={{ color: SUB, fontSize: 12 }}>아직 등록된 자료가 없어요.</div>
+          ) : (
+            items.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => setPreview(it)}
+                style={{
+                  ...CARD,
+                  width: '100%',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'block',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>{it.title}</div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: it.source === 'arete' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.15)',
+                      color: it.source === 'arete' ? '#C9A96E' : PURPLE,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {it.source === 'arete' ? '⭐아레테전용' : '일반'}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
+        </>
       )}
     </div>
   )

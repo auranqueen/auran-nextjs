@@ -63,7 +63,7 @@ export default function OwnerProgramsPage() {
   const [guide, setGuide] = useState<Guide | null>(null)
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [preview, setPreview] = useState<ArchiveItem | null>(null)
   const [applyingId, setApplyingId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
@@ -204,7 +204,7 @@ export default function OwnerProgramsPage() {
             type="button"
             onClick={() => {
               setSub(t.key)
-              setExpandedId(null)
+              setPreview(null)
             }}
             style={{
               fontSize: 12,
@@ -287,53 +287,71 @@ export default function OwnerProgramsPage() {
               </div>
             ))
           )
+        ) : preview ? (
+          <div style={CARD}>
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: PURPLE,
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: 0,
+                marginBottom: 12,
+              }}
+            >
+              ← 목록으로
+            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start', marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>{preview.title}</div>
+              {preview.source === 'arete' && (
+                <span style={{ fontSize: 10, color: '#C9A96E', whiteSpace: 'nowrap' }}>⭐아레테전용</span>
+              )}
+            </div>
+            {preview.body_html ? (
+              <div
+                style={{ fontSize: 13, color: TEXT, lineHeight: 1.55 }}
+                dangerouslySetInnerHTML={{ __html: preview.body_html }}
+              />
+            ) : (
+              <div style={{ fontSize: 12, color: SUB }}>본문이 없어요.</div>
+            )}
+            {preview.asset_url && (
+              <a
+                href={preview.asset_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-block', marginTop: 12, fontSize: 12, color: PURPLE }}
+              >
+                첨부 파일 열기
+              </a>
+            )}
+          </div>
         ) : filtered.length === 0 ? (
           <div style={{ color: SUB, fontSize: 13 }}>등록된 자료가 없어요.</div>
         ) : (
           filtered.map((it) => (
-            <div key={it.id} style={CARD}>
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === it.id ? null : it.id)}
-                style={{
-                  width: '100%',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{it.title}</div>
-                  {it.source === 'arete' && (
-                    <span style={{ fontSize: 10, color: '#C9A96E', whiteSpace: 'nowrap' }}>아레테</span>
-                  )}
-                </div>
-              </button>
-              {expandedId === it.id && (
-                <div style={{ marginTop: 10, borderTop: `1px solid ${BORDER}`, paddingTop: 10 }}>
-                  {it.body_html ? (
-                    <div
-                      style={{ fontSize: 13, color: TEXT, lineHeight: 1.55 }}
-                      dangerouslySetInnerHTML={{ __html: it.body_html }}
-                    />
-                  ) : (
-                    <div style={{ fontSize: 12, color: SUB }}>본문이 없어요.</div>
-                  )}
-                  {it.asset_url && (
-                    <a
-                      href={it.asset_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ display: 'inline-block', marginTop: 8, fontSize: 12, color: PURPLE }}
-                    >
-                      첨부 파일 열기
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => setPreview(it)}
+              style={{
+                ...CARD,
+                width: '100%',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'block',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{it.title}</div>
+                {it.source === 'arete' && (
+                  <span style={{ fontSize: 10, color: '#C9A96E', whiteSpace: 'nowrap' }}>⭐아레테전용</span>
+                )}
+              </div>
+            </button>
           ))
         )}
       </div>

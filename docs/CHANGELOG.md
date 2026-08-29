@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-29
+### feat: 자료실 리스트 클릭 미리보기 (브랜드·원장 통일)
+- BrandArchiveManage: 목록 클릭 시 리스트 자리를 title+body_html 미리보기로 교체, ←목록으로 복귀, arete는 ⭐아레테전용 뱃지.
+- owner/programs: 아코디언 펼침을 동일 패턴(전체 전환+목록으로)으로 통일.
+- 쉽게: 자료 카드를 누르면 본문이 바로 보이고, 목록으로 돌아갈 수 있다.
 ### feat: brand_archive_items 마이그레이션 182 레포 기록
 - 182_archive_items.sql: `brand_archive_items`(treatment/material, source general|arete, body_html, asset_url) + RLS(연결원장 읽기·아레테전용은 arete_members만). Supabase 직접 적용 완료 — 레포 기록용.
 - 쉽게: 자료실 테이블 정의를 코드저장소에 남겨 둔다.
