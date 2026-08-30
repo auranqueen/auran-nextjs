@@ -4,6 +4,13 @@
 ---
 
 ## 2026-08-30
+### feat: 오렌상담톡 브랜드↔원장 1:1 상담
+- 신규 테이블(레포 기록 **184**): `brand_chat_channels` / `brand_chat_messages` + RLS. Supabase에는 이미 적용됨 — **재실행 목적 아님**.
+- API: `/api/brand/chat/channels|messages`, `/api/owner/chat/channels|messages`. 헬퍼 `getOrCreateChatChannel`.
+- 브랜드: `BrandChatPanel` 등 — 오렌톡 서브탭 [발송이력]/[1:1 상담]. 기존 `brand_messages` 발송이력 유지.
+- 원장: `/dashboard/owner/brand-chat` + 사이드바 「브랜드 상담」(고객용 오렌상담톡과 분리).
+- 권한: orentalk 탭 `requiredModule: marketing_create` 로 기존 탭필터에 편입.
+- 쉽게: 브랜드사와 원장이 앱에서 서로 1:1 메시지를 주고 수 있게 됐다. 예전 전체 방송(오렌톡 발송)은 그대로다.
 ### feat: 브랜드 허브 탭 노출 — 권한 모듈 필터 · 자동 착지
 - BrandStaffPermissions: 신규 모듈 5개 — `dashboard_view` / `owners_view` / `invoice_view` / `settlement_view` / `tier_view` (+ ModuleKey).
 - BrandHubContent: 사이드바 항목에 `requiredModule` 매핑, `permissions`(PIN 로드)로 필터, 빈 그룹 헤더 숨김. CEO/`staffRole===ceo`/admin은 `bypassPerm`으로 전부 통과.

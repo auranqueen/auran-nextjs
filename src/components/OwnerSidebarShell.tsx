@@ -26,6 +26,7 @@ const MENU_ITEMS = [
   { label: '샘플', href: '/dashboard/owner/brand-samples' },
   { label: '라이브', href: '/dashboard/owner/brand-live' },
   { label: '반품', href: '/dashboard/owner/brand-returns' },
+  { label: '브랜드 상담', href: '/dashboard/owner/brand-chat' },
   { label: '구독 관리', href: '/dashboard/owner/subscription' },
 ]
 

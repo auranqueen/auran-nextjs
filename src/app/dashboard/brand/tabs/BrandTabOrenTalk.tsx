@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
+import BrandChatPanel from '@/components/brand/BrandChatPanel'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -36,9 +37,12 @@ interface AutoSetting {
 interface Props {
   myBrands: { id: string; name: string }[]
   brandId: string | null
+  companyId?: string | null
+  staffId?: string | null
 }
-export default function BrandTabOrenTalk({ myBrands, brandId }: Props) {
+export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId }: Props) {
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [subTab, setSubTab] = useState<'history' | 'chat'>('history')
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [msg, setMsg] = useState('')
@@ -129,6 +133,33 @@ export default function BrandTabOrenTalk({ myBrands, brandId }: Props) {
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        {([
+          { key: 'history' as const, label: '발송이력' },
+          { key: 'chat' as const, label: '1:1 상담' },
+        ]).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setSubTab(t.key)}
+            style={{
+              fontSize: 12, padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+              border: `0.5px solid ${subTab === t.key ? PURPLE : 'rgba(255,255,255,0.1)'}`,
+              background: subTab === t.key ? 'rgba(123,94,167,0.25)' : 'transparent',
+              color: subTab === t.key ? '#c4a7e7' : SUB,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {subTab === 'chat' && (
+        companyId
+          ? <BrandChatPanel companyId={companyId} staffId={staffId ?? null} />
+          : <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>회사 정보를 불러오는 중…</div>
+      )}
+      {subTab === 'history' && (
+      <>
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>💜 자동 발송 설정 <span style={{ fontSize: 10 }}>· AURAN 인앱 무료</span></div>
         {autoSettings.map((s, i) => (
@@ -230,6 +261,8 @@ export default function BrandTabOrenTalk({ myBrands, brandId }: Props) {
           카카오 채널 연동하기
         </button>
       </div>
+      </>
+      )}
     </div>
   )
 }
