@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-30
+### chore: 185 brand_staff.username · 근무시간 · brand_admin_alerts 마이그레이션 레포 기록
+- `185_brand_staff_username_work_hours_alerts.sql`: `brand_companies.work_hours_start/end`, `brand_staff.username`(+ unique), `brand_admin_alerts` + RLS.
+- Supabase에는 이미 적용됨 — **재실행 목적 아님**, 183/184와 같은 레포 기록용.
+- 쉽게: 직원 아이디 로그인·근무시간 게이트·CEO 알림함에 쓰이던 DB 정의를 저장소에 적어 둔다.
 ### feat: 오렌톡 1:1 — 새 대화 시작(원장 선택)
 - API: `GET /api/brand/chat/owners` (회사 연결 원장 + has_channel), `POST /api/brand/chat/start` (getOrCreate + marketing_create).
 - BrandChatChannelList: 「+ 새 대화 시작」→ 원장 목록 자리교체 → 선택 시 채널 생성/오픈.
