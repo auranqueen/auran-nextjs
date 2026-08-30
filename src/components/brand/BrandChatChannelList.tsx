@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 export type BrandChatChannel = {
   id: string
   owner_id: string
@@ -15,12 +17,17 @@ export type BrandChatChannel = {
   profile_id?: string | null
 }
 
+type OwnerPick = { owner_id: string; name: string; salon_name: string; has_channel: boolean }
+
 type Props = {
   channels: BrandChatChannel[]
   selectedId: string | null
   onSelect: (id: string) => void
   showAll: boolean
   onToggleShowAll: () => void
+  companyId: string
+  staffId: string | null
+  onChannelStarted: (channelId: string) => void
 }
 
 const TEXT = 'rgba(255,255,255,0.7)'
@@ -40,15 +47,99 @@ function timeAgo(iso: string | null) {
 
 export default function BrandChatChannelList({
   channels, selectedId, onSelect, showAll, onToggleShowAll,
+  companyId, staffId, onChannelStarted,
 }: Props) {
+  const [picking, setPicking] = useState(false)
+  const [owners, setOwners] = useState<OwnerPick[]>([])
+  const [loadingOwners, setLoadingOwners] = useState(false)
+  const [startingId, setStartingId] = useState<string | null>(null)
   const visible = showAll ? channels : channels.slice(0, 5)
   const hasMore = channels.length > 5
 
+  const openPicker = async () => {
+    setPicking(true)
+    setLoadingOwners(true)
+    try {
+      const res = await fetch(`/api/brand/chat/owners?company_id=${encodeURIComponent(companyId)}`)
+      const json = await res.json().catch(() => ({}))
+      setOwners(json.ok ? (json.owners || []) : [])
+    } finally {
+      setLoadingOwners(false)
+    }
+  }
+
+  const startWith = async (ownerId: string) => {
+    if (startingId) return
+    setStartingId(ownerId)
+    try {
+      const res = await fetch('/api/brand/chat/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: companyId, staff_id: staffId, owner_id: ownerId }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (json.ok && json.channel_id) {
+        setPicking(false)
+        onChannelStarted(String(json.channel_id))
+      }
+    } finally {
+      setStartingId(null)
+    }
+  }
+
+  if (picking) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+        <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button type="button" onClick={() => setPicking(false)} style={{
+            border: 'none', background: 'transparent', color: SUB, fontSize: 12, cursor: 'pointer',
+          }}>← 목록</button>
+          <span style={{ fontSize: 11, color: SUB }}>새 대화 시작</span>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {loadingOwners ? (
+            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: SUB }}>불러오는 중…</div>
+          ) : owners.length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: SUB }}>연결 원장이 없어요</div>
+          ) : owners.map((o) => (
+            <button
+              key={o.owner_id}
+              type="button"
+              disabled={startingId === o.owner_id}
+              onClick={() => void startWith(o.owner_id)}
+              style={{
+                width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', cursor: 'pointer',
+                background: 'transparent', borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+              }}
+            >
+              <div style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>{o.name}</div>
+              <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{o.salon_name}</div>
+              {o.has_channel && (
+                <div style={{ fontSize: 10, color: GOLD, marginTop: 4 }}>이미 대화중</div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <div style={{ fontSize: 11, color: SUB, padding: '8px 10px 6px', letterSpacing: '0.04em' }}>
+      <div style={{ fontSize: 11, color: SUB, padding: '8px 10px 4px', letterSpacing: '0.04em' }}>
         💬 1:1 상담 · {channels.length}명
       </div>
+      <button
+        type="button"
+        onClick={() => void openPicker()}
+        style={{
+          margin: '0 10px 8px', padding: '7px 10px', borderRadius: 8, cursor: 'pointer',
+          border: '0.5px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.15)',
+          color: '#c4a7e7', fontSize: 12,
+        }}
+      >
+        + 새 대화 시작
+      </button>
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {channels.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', fontSize: 12, color: SUB }}>대화 채널이 없어요</div>

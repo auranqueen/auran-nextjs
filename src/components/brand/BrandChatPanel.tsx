@@ -126,6 +126,12 @@ export default function BrandChatPanel({ companyId, staffId }: Props) {
           onSelect={setSelectedId}
           showAll={showAll}
           onToggleShowAll={() => setShowAll((v) => !v)}
+          companyId={companyId}
+          staffId={staffId}
+          onChannelStarted={async (channelId) => {
+            await loadChannels()
+            setSelectedId(channelId)
+          }}
         />
       </div>
       <BrandChatThread

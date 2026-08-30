@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-30
+### feat: 오렌톡 1:1 — 새 대화 시작(원장 선택)
+- API: `GET /api/brand/chat/owners` (회사 연결 원장 + has_channel), `POST /api/brand/chat/start` (getOrCreate + marketing_create).
+- BrandChatChannelList: 「+ 새 대화 시작」→ 원장 목록 자리교체 → 선택 시 채널 생성/오픈.
+- BrandChatPanel: 시작 후 채널 목록 refetch + selectedId 전환.
+- 쉽게: 브랜드가 연결된 원장님을 골라 바로 1:1 채팅방을 열 수 있다.
 ### feat: 오렌상담톡 브랜드↔원장 1:1 상담
 - 신규 테이블(레포 기록 **184**): `brand_chat_channels` / `brand_chat_messages` + RLS. Supabase에는 이미 적용됨 — **재실행 목적 아님**.
 - API: `/api/brand/chat/channels|messages`, `/api/owner/chat/channels|messages`. 헬퍼 `getOrCreateChatChannel`.
