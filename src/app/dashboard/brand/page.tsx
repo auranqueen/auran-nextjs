@@ -60,6 +60,29 @@ export default function BrandDashboardPage() {
     role: string
     permissions: string[]
   } | null>(null)
+
+  const clearPinSessionStorage = () => {
+    try {
+      sessionStorage.removeItem('brand_pin_token')
+      sessionStorage.removeItem('brand_staff_id')
+      sessionStorage.removeItem('brand_staff_name')
+      sessionStorage.removeItem('brand_staff_role')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const onSwitchStaff = () => {
+    clearPinSessionStorage()
+    setPinAuth(null)
+  }
+
+  const onFullLogout = async () => {
+    clearPinSessionStorage()
+    setPinAuth(null)
+    await supabase.auth.signOut()
+    router.push('/')
+  }
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -611,6 +634,9 @@ export default function BrandDashboardPage() {
         onTabChange={setTab}
         onEdit={(p) => setEditProduct(p as { id: string })}
         onNew={() => setFormOpen(true)}
+        pinAuth={pinAuth}
+        onSwitchStaff={onSwitchStaff}
+        onFullLogout={onFullLogout}
       />
     </div>
   )

@@ -56,6 +56,11 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     return [...digits.slice(0, 9), '', digits[9], '⌫']
   }, [shuffleNonce])
 
+  const hasAnyUsername = useMemo(
+    () => staffList.some((s) => Boolean(s.username && String(s.username).trim())),
+    [staffList],
+  )
+
   const loadStaff = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
@@ -266,7 +271,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
                   {bootstrapSaving ? '등록 중...' : '등록하고 시작하기'}
                 </button>
               </div>
-            ) : (
+            ) : hasAnyUsername ? (
               <div>
                 <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>로그인 아이디</div>
                 <div style={{ fontSize: 12, color: SUB, marginBottom: 16 }}>아이디를 입력한 뒤 PIN을 입력해주세요</div>
@@ -294,13 +299,37 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
                   아이디가 없으신 분은 대표님께 문의해주세요
                 </div>
               </div>
+            ) : (
+              <div>
+                <div style={{ background: 'rgba(201,169,110,0.1)', border: '0.5px solid rgba(201,169,110,0.35)', borderRadius: 8, padding: '10px 12px', fontSize: 11, color: '#C9A96E', marginBottom: 16, lineHeight: 1.5 }}>
+                  💡 아이디를 설정하면 더 안전해져요 — 관리자관리에서 설정 가능
+                </div>
+                <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>담당자를 선택해주세요</div>
+                <div style={{ fontSize: 12, color: SUB, marginBottom: 16 }}>본인의 이름을 선택 후 PIN을 입력해주세요</div>
+                {staffList.map(s => {
+                  const r = ROLE_MAP[s.role] || { label: s.role, color: SUB, pin: 4 }
+                  return (
+                    <button key={s.id} type="button" onClick={() => selectStaff(s)}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, border: '0.5px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', marginBottom: 8, textAlign: 'left' as const }}>
+                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${r.color}22`, border: `1.5px solid ${r.color}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: r.color, flexShrink: 0 }}>
+                        {s.name[0]}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, color: TEXT, marginBottom: 2 }}>{s.name}</div>
+                        <div style={{ fontSize: 11, color: r.color }}>{r.label} · PIN {r.pin}자리</div>
+                      </div>
+                      <div style={{ marginLeft: 'auto', fontSize: 16, color: SUB }}>→</div>
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
         ) : (
           <div style={{ background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24 }}>
             <button type="button" onClick={() => { setSelected(null); setPin(''); setError('') }}
               style={{ background: 'none', border: 'none', color: SUB, fontSize: 13, cursor: 'pointer', marginBottom: 16, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              ← 아이디 다시 입력
+              {hasAnyUsername ? '← 아이디 다시 입력' : '← 다시 선택'}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${ROLE_MAP[selected.role]?.color || SUB}22`, border: `1.5px solid ${ROLE_MAP[selected.role]?.color || SUB}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: ROLE_MAP[selected.role]?.color || SUB, flexShrink: 0 }}>

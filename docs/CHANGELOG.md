@@ -4,6 +4,18 @@
 ---
 
 ## 2026-08-30
+### feat: 관리자관리에서 직원 전환 · 전체 로그아웃
+- page.tsx: `onSwitchStaff`(pinAuth null + PIN sessionStorage 삭제), `onFullLogout`(세션 정리 + Auth signOut → `/`)를 BrandHubContent로 전달.
+- BrandHubContent → BrandTabAdminAccount → BrandInventoryStaff prop 통과.
+- 관리자관리 직원 목록 하단: 현재 접속자, 「다른 직원으로 전환」, confirm 후 「로그아웃」.
+- 같이 반영(미커밋분이면): 기존 직원 username 편집 UI, PinGate 전원 username null 시 이름목록 폴백.
+- 쉽게: PIN만 다시 고르거나, 회사 계정까지 완전히 나갈 수 있다.
+
+### chore: 183 brand_companies.auto_approve_owner_invite 마이그레이션 레포 기록
+- `183_brand_companies_auto_approve_invite.sql`: `brand_companies.auto_approve_owner_invite` 컬럼 정의. Supabase에는 이미 반영됨 — **실행 재적용 목적 아님**, 134/181/182와 같은 레포 기록용.
+- 왜 지금: 8/9 작업 때 마이그레이션 번호가 꼬이면서 레포에 안 남아 있었고, 코드는 `brand_companies`를 쓰는데 SQL 기록이 비어 있어 뒤늦게 183으로 보강.
+- 쉽게: 이미 쓰던 컬럼인데, 저장소에 SQL 파일이 빠져 있어서 지금 적어 둔다.
+
 ### feat: 브랜드 직원 로그인 아이디 · 근무시간 게이트 · 관리자 알림
 - BrandInventoryStaff: 직원 등록에 `username`(로그인 아이디) 추가, 회사 내 중복 시 「이미 사용중인 아이디예요」. 「비활성」→「퇴사처리」/「복귀」, 비활성 직원 흐리게. 관리자관리 상단 「🔔 최근 알림」5건.
 - BrandPinGate: 이름 목록 클릭 → 아이디 입력 후 PIN. username null 기존 계정은 로그인 불가 안내.

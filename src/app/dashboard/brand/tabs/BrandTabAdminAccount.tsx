@@ -17,6 +17,9 @@ type Props = {
   brandId: string | null
   companyId: string | null
   currentUserRole?: string
+  currentStaff?: { name: string; role: string } | null
+  onSwitchStaff?: () => void
+  onFullLogout?: () => void | Promise<void>
 }
 
 function CompanyWorkHours({ companyId, canEdit }: { companyId: string | null; canEdit: boolean }) {
@@ -112,7 +115,14 @@ function CompanyWorkHours({ companyId, canEdit }: { companyId: string | null; ca
   )
 }
 
-export default function BrandTabAdminAccount({ brandId, companyId, currentUserRole = 'ceo' }: Props) {
+export default function BrandTabAdminAccount({
+  brandId,
+  companyId,
+  currentUserRole = 'ceo',
+  currentStaff = null,
+  onSwitchStaff,
+  onFullLogout,
+}: Props) {
   const [sub, setSub] = useState<SubTab>('company')
   const isCeo = currentUserRole === 'ceo'
   return (
@@ -141,7 +151,14 @@ export default function BrandTabAdminAccount({ brandId, companyId, currentUserRo
         <CompanyWorkHours companyId={companyId} canEdit={isCeo} />
       )}
       {sub === 'admins' && (
-        <BrandInventoryStaff brandId={brandId} companyId={companyId} currentUserRole={currentUserRole} />
+        <BrandInventoryStaff
+          brandId={brandId}
+          companyId={companyId}
+          currentUserRole={currentUserRole}
+          currentStaff={currentStaff}
+          onSwitchStaff={onSwitchStaff}
+          onFullLogout={onFullLogout}
+        />
       )}
       {sub === 'policy' && (
         <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>

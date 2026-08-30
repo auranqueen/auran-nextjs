@@ -46,8 +46,18 @@ interface Props {
   brandId: string | null
   companyId?: string | null
   currentUserRole?: string
+  currentStaff?: { name: string; role: string } | null
+  onSwitchStaff?: () => void
+  onFullLogout?: () => void | Promise<void>
 }
-export default function BrandInventoryStaff({ brandId, companyId, currentUserRole = 'ceo' }: Props) {
+export default function BrandInventoryStaff({
+  brandId,
+  companyId,
+  currentUserRole = 'ceo',
+  currentStaff = null,
+  onSwitchStaff,
+  onFullLogout,
+}: Props) {
   const supabase = createClient()
   const [staff, setStaff] = useState<StaffRow[]>([])
   const [alerts, setAlerts] = useState<AlertRow[]>([])
@@ -61,6 +71,8 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
   const [saving, setSaving] = useState(false)
   const [editPinId, setEditPinId] = useState<string | null>(null)
   const [editPin, setEditPin] = useState('')
+  const [editUsernameId, setEditUsernameId] = useState<string | null>(null)
+  const [newUsernameEdit, setNewUsernameEdit] = useState('')
   const [permTarget, setPermTarget] = useState<StaffRow | null>(null)
   const [myPermissions, setMyPermissions] = useState<string[]>([])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -163,6 +175,24 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
       setStaff(prev => prev.map(st => st.id === id ? { ...st, pin: editPin } : st))
       setEditPinId(null); setEditPin('')
       showToast(`${name} PIN 변경 완료`)
+    }
+  }
+  const saveUsername = async (id: string, name: string) => {
+    const u = newUsernameEdit.trim()
+    if (!u) { showToast('로그인 아이디를 입력해주세요'); return }
+    const { error } = await supabase.from('brand_staff').update({ username: u }).eq('id', id)
+    if (!error) {
+      setStaff(prev => prev.map(st => st.id === id ? { ...st, username: u } : st))
+      setEditUsernameId(null); setNewUsernameEdit('')
+      showToast(`${name} 아이디 저장 완료`)
+    } else {
+      const msg = String(error.message || '')
+      const code = String((error as { code?: string }).code || '')
+      if (code === '23505' || /duplicate|unique|already exists/i.test(msg)) {
+        showToast('이미 사용중인 아이디예요')
+      } else {
+        showToast('저장 실패: ' + msg)
+      }
     }
   }
   if (loading) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>불러오는 중...</div>
@@ -273,14 +303,30 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
                   <div style={{ fontSize: 11, color: SUB }}>
                     {s.username ? `@${s.username} · ` : ''}PIN {role.pin}자리 · 권한 {s.permissions?.length || 0}개
                   </div>
+                  {!s.username && (
+                    <div style={{ fontSize: 11, color: DANGER, marginTop: 3 }}>⚠️ 아이디 없음 — 등록해주세요</div>
+                  )}
                 </div>
                 {canManage && (
-                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0, flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
                     <button type="button" onClick={() => setPermTarget(s)}
                       style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', cursor: 'pointer' }}>
                       권한
                     </button>
-                    <button type="button" onClick={() => { setEditPinId(editPinId === s.id ? null : s.id); setEditPin('') }}
+                    <button type="button" onClick={() => {
+                      setEditUsernameId(editUsernameId === s.id ? null : s.id)
+                      setNewUsernameEdit(s.username || '')
+                      setEditPinId(null); setEditPin('')
+                    }}
+                      style={{
+                        fontSize: 11, padding: '3px 8px', borderRadius: 5, cursor: 'pointer',
+                        border: `0.5px solid ${!s.username ? DANGER : 'rgba(255,255,255,0.1)'}`,
+                        background: !s.username ? 'rgba(229,57,53,0.12)' : 'transparent',
+                        color: !s.username ? DANGER : SUB,
+                      }}>
+                      아이디
+                    </button>
+                    <button type="button" onClick={() => { setEditPinId(editPinId === s.id ? null : s.id); setEditPin(''); setEditUsernameId(null) }}
                       style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, cursor: 'pointer' }}>
                       PIN
                     </button>
@@ -291,6 +337,17 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
                   </div>
                 )}
               </div>
+              {editUsernameId === s.id && (
+                <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input value={newUsernameEdit} onChange={e => setNewUsernameEdit(e.target.value)}
+                    placeholder="로그인 아이디" autoComplete="off"
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 10px', fontSize: 13, color: TEXT, outline: 'none' }} />
+                  <button type="button" onClick={() => void saveUsername(s.id, s.name)}
+                    style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer' }}>저장</button>
+                  <button type="button" onClick={() => { setEditUsernameId(null); setNewUsernameEdit('') }}
+                    style={{ padding: '6px 10px', borderRadius: 6, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, fontSize: 11, cursor: 'pointer' }}>취소</button>
+                </div>
+              )}
               {editPinId === s.id && (
                 <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
                   <input value={editPin} onChange={e => setEditPin(e.target.value.replace(/\D/g, '').slice(0, role.pin))}
@@ -315,6 +372,39 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
             </div>
           )
         })}
+        {(onSwitchStaff || onFullLogout) && (
+          <div style={{ marginTop: 4, paddingTop: 14, borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+            {currentStaff && (
+              <div style={{ fontSize: 12, color: TEXT, marginBottom: 10 }}>
+                🔴 현재 접속: {currentStaff.name}{' '}
+                {ROLE_MAP[currentStaff.role]?.label || currentStaff.role}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+              {onSwitchStaff && (
+                <button
+                  type="button"
+                  onClick={() => onSwitchStaff()}
+                  style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.12)', color: '#c4a7e7', cursor: 'pointer' }}
+                >
+                  🔄 다른 직원으로 전환
+                </button>
+              )}
+              {onFullLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm('정말 로그아웃하시겠어요?')) return
+                    void onFullLogout()
+                  }}
+                  style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, border: '0.5px solid rgba(229,57,53,0.4)', background: 'rgba(229,57,53,0.1)', color: DANGER, cursor: 'pointer' }}
+                >
+                  🚪 로그아웃
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>직책별 PIN 자리수</div>

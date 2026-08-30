@@ -40,10 +40,13 @@ interface Props {
   onTabChange: (t: 'pending' | 'active' | 'hidden') => void
   onEdit: (p: Record<string, unknown>) => void
   onNew: () => void
+  pinAuth?: { id: string; name: string; role: string; permissions: string[] } | null
+  onSwitchStaff?: () => void
+  onFullLogout?: () => void | Promise<void>
 }
 export default function BrandHubContent({
   brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole, staffId, permissions, userRole,
-  rows, tab, onTabChange, onEdit, onNew
+  rows, tab, onTabChange, onEdit, onNew, pinAuth, onSwitchStaff, onFullLogout
 }: Props) {
   const supabase = createClient()
   const [mainTab, setMainTab] = useState<MainTab>('home')
@@ -288,7 +291,14 @@ export default function BrandHubContent({
             <BrandTabSettlement brandId={brandId} />
           )}
           {mainTab === 'staff' && (
-            <BrandTabAdminAccount brandId={brandId} companyId={companyId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />
+            <BrandTabAdminAccount
+              brandId={brandId}
+              companyId={companyId}
+              currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'}
+              currentStaff={pinAuth ? { name: pinAuth.name, role: pinAuth.role } : null}
+              onSwitchStaff={onSwitchStaff}
+              onFullLogout={onFullLogout}
+            />
           )}
         </div>
       </div>
