@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-08-30
+### feat: 브랜드 직원 로그인 아이디 · 근무시간 게이트 · 관리자 알림
+- BrandInventoryStaff: 직원 등록에 `username`(로그인 아이디) 추가, 회사 내 중복 시 「이미 사용중인 아이디예요」. 「비활성」→「퇴사처리」/「복귀」, 비활성 직원 흐리게. 관리자관리 상단 「🔔 최근 알림」5건.
+- BrandPinGate: 이름 목록 클릭 → 아이디 입력 후 PIN. username null 기존 계정은 로그인 불가 안내.
+- BrandTabAdminAccount 컴퍼니정보: 근무시간(start/end) 조회·저장(대표만 저장).
+- API: `POST /api/brand/staff/pin-attempt`(KST 근무시간 검사 + `brand_admin_alerts` after_hours 기록), `GET /api/brand/admin-alerts/list`.
+- note(DB 전제, 미반영 시 런타임 실패): `brand_staff.username` + unique(company_id, username), `brand_companies.work_hours_start/end`, `brand_admin_alerts`(company_id, staff_id, type, message, created_at).
+- 쉽게: 직원은 아이디+PIN으로 들어가고, 근무시간 밖이면 막히며 대표 알림에 남는다.
+
 ## 2026-08-29
 ### chore: 자료실·에듀케이션 첨부 안내문구 — 관리권 매출 동기부여 톤
 - BrandArchiveManage / BrandArchiveEducationManage: 첨부 안내(❓·하단 문구)를 「원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료」톤으로 교체. (기능은 기존 출력용 첨부·원장 출력/다운로드와 동일)

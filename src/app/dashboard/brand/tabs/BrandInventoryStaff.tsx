@@ -28,11 +28,19 @@ const GRANT_ROLES: Record<string, string[]> = {
 interface StaffRow {
   id: string
   name: string
+  username: string | null
   role: string
   pin: string | null
   is_active: boolean
   created_at: string
   permissions?: string[]
+}
+interface AlertRow {
+  id: string
+  type: string
+  message: string
+  staff_id: string | null
+  created_at: string
 }
 interface Props {
   brandId: string | null
@@ -42,10 +50,12 @@ interface Props {
 export default function BrandInventoryStaff({ brandId, companyId, currentUserRole = 'ceo' }: Props) {
   const supabase = createClient()
   const [staff, setStaff] = useState<StaffRow[]>([])
+  const [alerts, setAlerts] = useState<AlertRow[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
+  const [newUsername, setNewUsername] = useState('')
   const [newRole, setNewRole] = useState<'director' | 'manager' | 'staff' | 'ops_manager' | 'ops_staff'>('staff')
   const [newPin, setNewPin] = useState('')
   const [saving, setSaving] = useState(false)
@@ -54,12 +64,24 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
   const [permTarget, setPermTarget] = useState<StaffRow | null>(null)
   const [myPermissions, setMyPermissions] = useState<string[]>([])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  const loadAlerts = useCallback(async () => {
+    if (!companyId) return
+    try {
+      const res = await fetch(`/api/brand/admin-alerts/list?company_id=${encodeURIComponent(companyId)}`)
+      const json = await res.json()
+      if (json?.ok && Array.isArray(json.alerts)) {
+        setAlerts(json.alerts.slice(0, 5) as AlertRow[])
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [companyId])
   const loadStaff = useCallback(async () => {
     if (!brandId || !companyId) return
     setLoading(true)
     const { data: staffData } = await supabase
       .from('brand_staff')
-      .select('id, name, role, pin, is_active, created_at')
+      .select('id, name, username, role, pin, is_active, created_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
     const { data: permData } = await supabase
@@ -83,9 +105,11 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
     setLoading(false)
   }, [brandId, companyId, currentUserRole])
   useEffect(() => { void loadStaff() }, [loadStaff])
+  useEffect(() => { void loadAlerts() }, [loadAlerts])
   const canAddRole = GRANT_ROLES[currentUserRole] || []
   const addStaff = async () => {
     if (!newName.trim()) { showToast('이름을 입력해주세요'); return }
+    if (!newUsername.trim()) { showToast('로그인 아이디를 입력해주세요'); return }
     const pinLen = ROLE_MAP[newRole]?.pin || 4
     if (newPin.length !== pinLen || !/^\d+$/.test(newPin)) {
       showToast(`PIN은 숫자 ${pinLen}자리여야 해요`)
@@ -97,17 +121,24 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
       brand_id: brandId,
       company_id: companyId,
       name: newName.trim(),
+      username: newUsername.trim(),
       role: newRole,
       pin: newPin,
       is_active: true,
     })
     if (!error) {
-      setNewName(''); setNewPin(''); setNewRole('staff')
+      setNewName(''); setNewUsername(''); setNewPin(''); setNewRole('staff')
       setShowForm(false)
       showToast(`${newName} 등록 완료!`)
       void loadStaff()
     } else {
-      showToast('등록 실패: ' + error.message)
+      const msg = String(error.message || '')
+      const code = String((error as { code?: string }).code || '')
+      if (code === '23505' || /duplicate|unique|already exists/i.test(msg)) {
+        showToast('이미 사용중인 아이디예요')
+      } else {
+        showToast('등록 실패: ' + msg)
+      }
     }
     setSaving(false)
   }
@@ -118,7 +149,7 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
       .eq('id', s.id)
     if (!error) {
       setStaff(prev => prev.map(st => st.id === s.id ? { ...st, is_active: !s.is_active } : st))
-      showToast(`${s.name} ${!s.is_active ? '활성화' : '비활성화'} 완료`)
+      showToast(`${s.name} ${!s.is_active ? '복귀' : '퇴사처리'} 완료`)
     }
   }
   const savePin = async (id: string, name: string, role: string) => {
@@ -150,6 +181,19 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
           onSaved={() => { void loadStaff(); setPermTarget(null) }}
         />
       )}
+      {alerts.length > 0 && (
+        <div style={{ ...CARD, borderColor: 'rgba(201,169,110,0.25)' }}>
+          <div style={{ fontSize: 12, color: '#C9A96E', marginBottom: 10 }}>🔔 최근 알림</div>
+          {alerts.map((a) => (
+            <div key={a.id} style={{ padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.5 }}>{a.message}</div>
+              <div style={{ fontSize: 10, color: SUB, marginTop: 3 }}>
+                {a.created_at ? new Date(a.created_at).toLocaleString('ko-KR') : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 12, color: SUB }}>직원 목록 ({staff.length}명)</span>
@@ -165,6 +209,12 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: 10, color: SUB, marginBottom: 3 }}>이름</div>
               <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="홍길동"
+                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none' }} />
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: SUB, marginBottom: 3 }}>로그인 아이디</div>
+              <input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="hong"
+                autoComplete="off"
                 style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none' }} />
             </div>
             <div style={{ marginBottom: 10 }}>
@@ -189,7 +239,7 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
                 style={{ flex: 1, padding: '7px', borderRadius: 6, border: 'none', background: saving ? 'rgba(123,94,167,0.4)' : PURPLE, color: '#fff', fontSize: 12, cursor: 'pointer' }}>
                 {saving ? '등록 중...' : '등록하기'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setNewName(''); setNewPin('') }}
+              <button type="button" onClick={() => { setShowForm(false); setNewName(''); setNewUsername(''); setNewPin('') }}
                 style={{ padding: '7px 12px', borderRadius: 6, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, fontSize: 12, cursor: 'pointer' }}>
                 취소
               </button>
@@ -202,7 +252,12 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
           const role = ROLE_MAP[s.role] || { label: s.role, color: SUB, pin: 4 }
           const canManage = GRANT_ROLES[currentUserRole]?.includes(s.role)
           return (
-            <div key={s.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: i < staff.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
+            <div key={s.id} style={{
+              paddingBottom: 12,
+              marginBottom: 12,
+              borderBottom: i < staff.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
+              opacity: s.is_active ? 1 : 0.45,
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${role.color}22`, border: `1px solid ${role.color}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 500, color: role.color, flexShrink: 0 }}>
                   {s.name[0]}
@@ -212,11 +267,11 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
                     <span style={{ fontSize: 13, color: TEXT }}>{s.name}</span>
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${role.color}18`, color: role.color }}>{role.label}</span>
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: s.is_active ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.05)', color: s.is_active ? '#4CAF50' : SUB }}>
-                      {s.is_active ? '활성' : '비활성'}
+                      {s.is_active ? '활성' : '퇴사'}
                     </span>
                   </div>
                   <div style={{ fontSize: 11, color: SUB }}>
-                    PIN {role.pin}자리 · 권한 {s.permissions?.length || 0}개
+                    {s.username ? `@${s.username} · ` : ''}PIN {role.pin}자리 · 권한 {s.permissions?.length || 0}개
                   </div>
                 </div>
                 {canManage && (
@@ -231,7 +286,7 @@ export default function BrandInventoryStaff({ brandId, companyId, currentUserRol
                     </button>
                     <button type="button" onClick={() => void toggleActive(s)}
                       style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${s.is_active ? 'rgba(229,57,53,0.3)' : 'rgba(76,175,80,0.3)'}`, background: 'transparent', color: s.is_active ? DANGER : '#4CAF50', cursor: 'pointer' }}>
-                      {s.is_active ? '비활성' : '활성화'}
+                      {s.is_active ? '퇴사처리' : '복귀'}
                     </button>
                   </div>
                 )}

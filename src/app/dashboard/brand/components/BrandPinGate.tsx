@@ -9,6 +9,7 @@ const DANGER = '#E53935'
 interface StaffRow {
   id: string
   name: string
+  username: string | null
   role: string
   pin: string | null
   is_active: boolean
@@ -37,6 +38,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
   const [staffList, setStaffList] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<StaffRow | null>(null)
+  const [usernameInput, setUsernameInput] = useState('')
   const [pin, setPin] = useState('')
   const [failCount, setFailCount] = useState(0)
   const [locked, setLocked] = useState(false)
@@ -59,7 +61,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     setLoading(true)
     const { data } = await supabase
       .from('brand_staff')
-      .select('id, name, role, pin, is_active')
+      .select('id, name, username, role, pin, is_active')
       .eq('company_id', companyIdProp)
       .eq('is_active', true)
       .order('created_at')
@@ -75,6 +77,17 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     setLocked(false)
     setOpsBlocked(false)
     setShuffleNonce((n) => n + 1)
+  }
+  const submitUsername = () => {
+    const id = usernameInput.trim()
+    if (!id) { setError('아이디를 입력해주세요'); return }
+    const found = staffList.find((s) => s.username && s.username === id)
+    if (!found) {
+      setError('아이디를 확인해주세요')
+      return
+    }
+    setError('')
+    selectStaff(found)
   }
   const handlePin = async () => {
     if (!selected || !brandId) return
@@ -107,15 +120,36 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
       }
       return
     }
+    setChecking(true)
+    try {
+      if (companyIdProp) {
+        const res = await fetch('/api/brand/staff/pin-attempt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company_id: companyIdProp, staff_id: selected.id }),
+        })
+        const json = await res.json().catch(() => null)
+        if (json && json.ok === false && json.error === 'after_hours') {
+          const start = json.work_hours_start || '--:--'
+          const end = json.work_hours_end || '--:--'
+          setError(`🌙 지금은 근무시간이 아니에요 (${start}~${end})`)
+          setPin('')
+          setChecking(false)
+          return
+        }
+      }
+    } catch {
+      /* network fail — allow existing login path */
+    }
     // Brand Hub에서는 물류 역할(ops_*) 진입시 물류 허브로 자동 이동
     if (hub === 'brand' && (selected.role === 'ops_manager' || selected.role === 'ops_staff')) {
       setOpsBlocked(true)
       setError('')
       setPin('')
+      setChecking(false)
       router.replace(logiHref)
       return
     }
-    setChecking(true)
     const { data: permData } = await supabase
       .from('brand_staff_permissions')
       .select('module')
@@ -195,10 +229,9 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
         </div>
         {!selected ? (
           <div style={{ background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24 }}>
-            <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>담당자를 선택해주세요</div>
-            <div style={{ fontSize: 12, color: SUB, marginBottom: 20 }}>본인의 이름을 선택 후 PIN을 입력해주세요</div>
             {staffList.length === 0 ? (
               <div>
+                <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>담당자를 선택해주세요</div>
                 <div style={{ fontSize: 13, color: TEXT, marginBottom: 8, lineHeight: 1.5 }}>
                   이 회사의 첫 로그인이에요. 대표(CEO)로 등록할게요
                 </div>
@@ -233,39 +266,51 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
                   {bootstrapSaving ? '등록 중...' : '등록하고 시작하기'}
                 </button>
               </div>
-            ) : staffList.map(s => {
-              const r = ROLE_MAP[s.role] || { label: s.role, color: SUB, pin: 4 }
-              return (
-                <button key={s.id} type="button" onClick={() => selectStaff(s)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, border: '0.5px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', marginBottom: 8, textAlign: 'left' as const }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${r.color}22`, border: `1.5px solid ${r.color}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: r.color, flexShrink: 0 }}>
-                    {s.name[0]}
+            ) : (
+              <div>
+                <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>로그인 아이디</div>
+                <div style={{ fontSize: 12, color: SUB, marginBottom: 16 }}>아이디를 입력한 뒤 PIN을 입력해주세요</div>
+                <input
+                  value={usernameInput}
+                  onChange={(e) => { setUsernameInput(e.target.value); setError('') }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitUsername() }}
+                  placeholder="로그인 아이디"
+                  autoComplete="username"
+                  style={{ width: '100%', boxSizing: 'border-box', marginBottom: 12, padding: '12px 14px', borderRadius: 10, border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: TEXT, fontSize: 14, outline: 'none' }}
+                />
+                {error && (
+                  <div style={{ background: 'rgba(229,57,53,0.08)', border: '0.5px solid rgba(229,57,53,0.3)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: DANGER, marginBottom: 12, textAlign: 'center' as const }}>
+                    {error}
                   </div>
-                  <div>
-                    <div style={{ fontSize: 14, color: TEXT, marginBottom: 2 }}>{s.name}</div>
-                    <div style={{ fontSize: 11, color: r.color }}>{r.label} · PIN {r.pin}자리</div>
-                  </div>
-                  <div style={{ marginLeft: 'auto', fontSize: 16, color: SUB }}>→</div>
+                )}
+                <button
+                  type="button"
+                  onClick={submitUsername}
+                  style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 14 }}
+                >
+                  다음
                 </button>
-              )
-            })}
+                <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, textAlign: 'center' as const }}>
+                  아이디가 없으신 분은 대표님께 문의해주세요
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24 }}>
             <button type="button" onClick={() => { setSelected(null); setPin(''); setError('') }}
               style={{ background: 'none', border: 'none', color: SUB, fontSize: 13, cursor: 'pointer', marginBottom: 16, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              ← 다시 선택
+              ← 아이디 다시 입력
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${ROLE_MAP[selected.role]?.color || SUB}22`, border: `1.5px solid ${ROLE_MAP[selected.role]?.color || SUB}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: ROLE_MAP[selected.role]?.color || SUB, flexShrink: 0 }}>
                 {selected.name[0]}
               </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>{selected.name}</div>
-                <div style={{ fontSize: 12, color: ROLE_MAP[selected.role]?.color || SUB }}>{ROLE_MAP[selected.role]?.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>{selected.name}님, PIN을 입력해주세요</div>
+                <div style={{ fontSize: 12, color: ROLE_MAP[selected.role]?.color || SUB }}>{ROLE_MAP[selected.role]?.label} · PIN {pinLen}자리</div>
               </div>
             </div>
-            <div style={{ fontSize: 13, color: SUB, marginBottom: 10 }}>PIN {pinLen}자리 입력</div>
             {opsBlocked ? (
               <div style={{ background: 'rgba(33,136,255,0.08)', border: '0.5px solid rgba(33,136,255,0.35)', borderRadius: 10, padding: 16, marginBottom: 12, textAlign: 'center' as const }}>
                 <div style={{ fontSize: 13, color: TEXT, marginBottom: 8, lineHeight: 1.5 }}>
