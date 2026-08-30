@@ -4,6 +4,14 @@
 ---
 
 ## 2026-08-30
+### feat: 브랜드 허브 탭 노출 — 권한 모듈 필터 · 자동 착지
+- BrandStaffPermissions: 신규 모듈 5개 — `dashboard_view` / `owners_view` / `invoice_view` / `settlement_view` / `tier_view` (+ ModuleKey).
+- BrandHubContent: 사이드바 항목에 `requiredModule` 매핑, `permissions`(PIN 로드)로 필터, 빈 그룹 헤더 숨김. CEO/`staffRole===ceo`/admin은 `bypassPerm`으로 전부 통과.
+- 로그인 후 `mainTab`은 보이는 첫 메뉴로 착지; 권한 0이면 「배정된 메뉴가 없어요, 대표에게 문의하세요」.
+- settlement 메뉴 포함·콘텐츠 가드를 `isCEO`만에서 **`bypassPerm`과 동일 기준**으로 통일(PIN role=ceo + URL login_role 없어도 정산 노출).
+- note: UI 숨김만 — report/owners/invoice 등 데이터 API assert는 아직 없음. 기존 직원은 신규 모듈 재부여 필요.
+- 쉽게: 직원마다 맡은 메뉴만 사이드바에 보이고, 들어가면 그 탭부터 열린다.
+
 ### feat: 관리자관리에서 직원 전환 · 전체 로그아웃
 - page.tsx: `onSwitchStaff`(pinAuth null + PIN sessionStorage 삭제), `onFullLogout`(세션 정리 + Auth signOut → `/`)를 BrandHubContent로 전달.
 - BrandHubContent → BrandTabAdminAccount → BrandInventoryStaff prop 통과.

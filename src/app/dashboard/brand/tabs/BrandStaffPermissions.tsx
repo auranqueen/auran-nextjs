@@ -74,10 +74,15 @@ const PERMISSION_MODULES = [
       { key: 'sample_manage',   label: '샘플 등록/발송' },
       { key: 'community_post',  label: '커뮤니티 공지 작성' },
       { key: 'logi_hub_access', label: '물류허브 접근' },
+      { key: 'dashboard_view',  label: '홈 대시보드(매출 등) 조회' },
+      { key: 'owners_view',     label: '원장님 현황 조회' },
+      { key: 'invoice_view',    label: '세금계산서 조회' },
+      { key: 'settlement_view', label: '정산 조회' },
+      { key: 'tier_view',       label: '등급·이벤트 관리 조회' },
     ]
   },
 ] as const
-type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'education_manage' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post' | 'logi_hub_access'
+type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'education_manage' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post' | 'logi_hub_access' | 'dashboard_view' | 'owners_view' | 'invoice_view' | 'settlement_view' | 'tier_view'
 interface StaffRow {
   id: string
   name: string

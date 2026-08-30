@@ -49,59 +49,87 @@ export default function BrandHubContent({
   rows, tab, onTabChange, onEdit, onNew, pinAuth, onSwitchStaff, onFullLogout
 }: Props) {
   const supabase = createClient()
-  const [mainTab, setMainTab] = useState<MainTab>('home')
-  const [mainSub, setMainSub] = useState<string | undefined>(undefined)
-  const [helpOpen, setHelpOpen] = useState(false)
-  const [companyId, setCompanyId] = useState<string | null>(null)
-  useEffect(() => {
-    if (!brandId) { setCompanyId(null); return }
-    supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      .then(({ data }) => setCompanyId(data?.company_id ?? null))
-  }, [brandId])
+  type NavItem = { key: string; label: string; icon: string; alert?: boolean; requiredModule?: string | readonly string[] | null }
+  type NavSection = { label: string; items: NavItem[] }
   const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
-  const SB_SECTIONS = [
+  const bypassPerm = isCEO || staffRole === 'ceo' || userRole === 'admin'
+  const SB_SECTIONS: NavSection[] = [
     {
       label: '실시간',
       items: [
-        { key: 'home', label: '홈 대시보드', icon: 'ti-home' },
-        { key: 'orentalk', label: '오렌상담톡', icon: 'ti-message-circle', alert: true },
-        { key: 'sales', label: '판매관리', icon: 'ti-shopping-cart', alert: true },
-        { key: 'inventory', label: '재고·물류', icon: 'ti-box', alert: true },
+        { key: 'home', label: '홈 대시보드', icon: 'ti-home', requiredModule: 'dashboard_view' },
+        { key: 'orentalk', label: '오렌상담톡', icon: 'ti-message-circle', alert: true, requiredModule: 'marketing_create' },
+        { key: 'sales', label: '판매관리', icon: 'ti-shopping-cart', alert: true, requiredModule: 'order_view' },
+        { key: 'inventory', label: '재고·물류', icon: 'ti-box', alert: true, requiredModule: 'inventory_view' },
       ],
     },
     {
       label: '마케팅',
       items: [
-        { key: 'live', label: '이벤트·라이브', icon: 'ti-speakerphone' },
-        { key: 'community', label: '커뮤니티', icon: 'ti-users' },
-        { key: 'archive', label: '에듀케이션/자료관리', icon: 'ti-book' },
+        { key: 'live', label: '이벤트·라이브', icon: 'ti-speakerphone', requiredModule: 'marketing_create' },
+        { key: 'community', label: '커뮤니티', icon: 'ti-users', requiredModule: 'community_post' },
+        { key: 'archive', label: '에듀케이션/자료관리', icon: 'ti-book', requiredModule: ['education_manage', 'marketing_create'] },
       ],
     },
     {
       label: '제품·파트너',
       items: [
-        { key: 'products', label: '제품 관리', icon: 'ti-package' },
-        { key: 'tierPackages', label: '등급·이벤트 관리', icon: 'ti-medal' },
-        { key: 'owners', label: '원장님 현황', icon: 'ti-building-store' },
-        { key: 'arete', label: '아레테클럽', icon: 'ti-crown' },
-        // { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' }, // 2026-08-10 숨김: 컴퍼니통합으로 브랜드단위 개념이 의미없어져서 임시숨김. 필요시 이 줄 주석만 해제하면 복구됨
+        { key: 'products', label: '제품 관리', icon: 'ti-package', requiredModule: 'product_manage' },
+        { key: 'tierPackages', label: '등급·이벤트 관리', icon: 'ti-medal', requiredModule: 'tier_view' },
+        { key: 'owners', label: '원장님 현황', icon: 'ti-building-store', requiredModule: 'owners_view' },
+        { key: 'arete', label: '아레테클럽', icon: 'ti-crown', requiredModule: 'product_manage' },
       ],
     },
     {
       label: '정산·운영',
       items: [
-        { key: 'report', label: '월별 리포트', icon: 'ti-report' },
-        { key: 'invoice', label: '세금계산서', icon: 'ti-receipt' },
-        ...(isCEO ? [{ key: 'settlement', label: '정산', icon: 'ti-coin' }] : []),
-        { key: 'staff', label: '관리자계정', icon: 'ti-users' },
+        { key: 'report', label: '월별 리포트', icon: 'ti-report', requiredModule: 'report_view' },
+        { key: 'invoice', label: '세금계산서', icon: 'ti-receipt', requiredModule: 'invoice_view' },
+        ...(bypassPerm ? [{ key: 'settlement', label: '정산', icon: 'ti-coin', requiredModule: 'settlement_view' as const }] : []),
+        { key: 'staff', label: '관리자계정', icon: 'ti-users', requiredModule: 'staff_manage' },
       ],
     },
-  ] as const
+  ]
+  const canSeeModule = (required: string | readonly string[] | null | undefined) => {
+    if (bypassPerm) return true
+    if (required == null) return true
+    if (typeof required === 'string') return permissions.includes(required)
+    return required.some((m) => permissions.includes(m))
+  }
+  const visibleSections = useMemo(() => {
+    return SB_SECTIONS.map((sec) => ({
+      ...sec,
+      items: sec.items.filter((item) => canSeeModule(item.requiredModule)),
+    })).filter((sec) => sec.items.length > 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissions, bypassPerm])
+
+  const firstVisibleKey = (visibleSections[0]?.items[0]?.key as MainTab | undefined) ?? null
+  const [mainTab, setMainTab] = useState<MainTab | null>(null)
+  const [mainSub, setMainSub] = useState<string | undefined>(undefined)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [companyId, setCompanyId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!firstVisibleKey) {
+      setMainTab(null)
+      return
+    }
+    setMainTab((prev) => {
+      if (prev && visibleSections.some((s) => s.items.some((i) => i.key === prev))) return prev
+      return firstVisibleKey
+    })
+  }, [firstVisibleKey, visibleSections])
+
+  useEffect(() => {
+    if (!brandId) { setCompanyId(null); return }
+    supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      .then(({ data }) => setCompanyId(data?.company_id ?? null))
+  }, [brandId])
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#0a0908', overflow: 'hidden' }}>
-      {/* 사이드바 */}
       <div style={{ width: 188, flexShrink: 0, background: '#0d0b0a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        {/* 브랜드명 */}
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
@@ -123,12 +151,11 @@ export default function BrandHubContent({
             )}
           </div>
         </div>
-        {/* 메뉴 */}
         <div style={{ flex: 1, padding: '6px 0' }}>
-          {SB_SECTIONS.map(sec => (
+          {visibleSections.map(sec => (
             <div key={sec.label}>
               <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>{sec.label.toUpperCase()}</div>
-              {sec.items.map((item: { key: string; label: string; icon: string; alert?: boolean }) => (
+              {sec.items.map((item) => (
                 <button key={item.key} type="button" onClick={() => { setMainTab(item.key as MainTab); setMainSub(undefined) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: mainTab === item.key ? 'rgba(123,94,167,0.12)' : 'transparent', color: mainTab === item.key ? '#C9A96E' : 'rgba(255,255,255,0.4)', borderLeft: mainTab === item.key ? '2px solid #7B5EA7' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
                   <i className={`ti ${item.icon}`} style={{ fontSize: 13, width: 14, flexShrink: 0 }} aria-hidden="true" />
@@ -140,9 +167,7 @@ export default function BrandHubContent({
           ))}
         </div>
       </div>
-      {/* 메인 콘텐츠 */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
-        {/* 도움말 데이터 */}
         {(() => {
           const HELP: Record<string, { title: string; items: { type: 'flow' | 'warn' | 'tip' | 'info'; text: string }[] }> = {
             home: { title: '홈 대시보드', items: [
@@ -218,7 +243,7 @@ export default function BrandHubContent({
               { type: 'info', text: '월별 정산 내역을 확인하고 처리할 수 있어요.' },
             ]},
           }
-          const activeHelp = HELP[mainTab] || HELP['home']
+          const activeHelp = HELP[mainTab || 'home'] || HELP['home']
           return (
             <>
               {helpOpen && (
@@ -254,9 +279,9 @@ export default function BrandHubContent({
           )
         })()}
         {/* 공통 헤더 — home 제외 전 탭 */}
-        {mainTab !== 'home' && (
+        {mainTab && mainTab !== 'home' && (
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button type="button" onClick={() => { setMainTab('home'); setMainSub(undefined) }}
+            <button type="button" onClick={() => { setMainTab(firstVisibleKey || 'home'); setMainSub(undefined) }}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
               <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
               홈
@@ -273,6 +298,11 @@ export default function BrandHubContent({
           </div>
         )}
         <div style={{ padding: 16 }}>
+          {!mainTab && (
+            <div style={{ padding: '48px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontSize: 13, lineHeight: 1.7 }}>
+              배정된 메뉴가 없어요, 대표에게 문의하세요
+            </div>
+          )}
           {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t, s) => { setMainTab(t as MainTab); setMainSub(s) }} />}
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
@@ -287,7 +317,7 @@ export default function BrandHubContent({
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} initialSub={mainSub} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} brandId={brandId} />}
-          {mainTab === 'settlement' && isCEO && (
+          {mainTab === 'settlement' && bypassPerm && (
             <BrandTabSettlement brandId={brandId} />
           )}
           {mainTab === 'staff' && (
