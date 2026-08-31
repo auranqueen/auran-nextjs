@@ -9,6 +9,8 @@ import BrandOrderProductCard from './BrandOrderProductCard'
 import EventPackageSection from './components/EventPackageSection'
 import AreteMembershipCard from './components/AreteMembershipCard'
 import OwnerOrderStatement from './components/OwnerOrderStatement'
+import BrandSamplesSection from '@/components/owner/BrandSamplesSection'
+import BrandReturnsSection from '@/components/owner/BrandReturnsSection'
 import { BORDER, PURPLE, SUB, TEXT } from './brandOrdersUi'
 import {
   buildOrderLineItem,
@@ -150,7 +152,7 @@ export default function BrandOrdersPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [returnSaving, setReturnSaving] = useState(false)
   const [toast, setToast] = useState('')
-  const [tab, setTab] = useState<'shop' | 'orders'>('shop')
+  const [tab, setTab] = useState<'shop' | 'orders' | 'samples' | 'returns'>('shop')
   const [ownerName, setOwnerName] = useState('')
   const [salonName, setSalonName] = useState('')
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
@@ -1114,10 +1116,10 @@ export default function BrandOrdersPage() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
-        {(['shop', 'orders'] as const).map((t) => (
+        {(['shop', 'orders', 'samples', 'returns'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
             style={{ flex: 1, padding: '10px', fontSize: 13, border: 'none', background: 'none', color: tab === t ? PURPLE : SUB, borderBottom: tab === t ? `2px solid ${PURPLE}` : '2px solid transparent', cursor: 'pointer' }}>
-            {t === 'shop' ? '브랜드 제품' : `발주 내역 (${orders.length})`}
+            {t === 'shop' ? '브랜드 제품' : t === 'orders' ? `발주 내역 (${orders.length})` : t === 'samples' ? '샘플' : '반품'}
           </button>
         ))}
       </div>
@@ -1181,6 +1183,9 @@ export default function BrandOrdersPage() {
           />
         </div>
       )}
+
+      {tab === 'samples' && <BrandSamplesSection embedded />}
+      {tab === 'returns' && <BrandReturnsSection embedded />}
 
       {showPopup && (
         <div

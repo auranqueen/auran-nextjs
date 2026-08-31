@@ -4,6 +4,13 @@
 ---
 
 ## 2026-08-31
+### ui: 원장 샘플·반품·라이브 메뉴를 발주관리·오렌포스팅관리 서브탭으로 통합
+- BrandSamplesSection / BrandReturnsSection / BrandLiveSection 3개 컴포넌트로 본문 이동. 기존 `/brand-samples`·`/brand-returns`·`/brand-live` URL은 얇은 wrapper로 유지.
+- brand-orders: 탭 `shop|orders|samples|returns`. 「샘플」「반품」 밑줄 탭 추가. shop/orders 렌더 로직 유지.
+- brand-store-decoration: 「포스팅」(기본, 기존 세로섹션) / 「라이브」(BrandLiveSection) 탭 신설.
+- OwnerSidebarShell: 「발주」→「발주관리」, 샘플·라이브·반품 메뉴 삭제.
+- 쉽게: 사이드바는 줄이고, 샘플/반품은 발주관리 안에서, 라이브는 오렌포스팅관리 안에서 본다.
+
 ### ui: 포인트 관리/내역을 잘림 없는 풀뷰포트 팝업으로
 - BrandPointsManage·OwnerPointsLedgerView: 각 파일 로컬 FullViewportModal. 오버레이 클릭 닫힘, 안쪽 stopPropagation, sticky ✕.
 - BrandTabOwners: 원장 목록을 유지한 채 「포인트 관리」를 모달로. OwnerHomeV3·AreteMembershipCard: 카드 유지한 채 「내역보기」를 모달로. 탭/잔액/폼/내역 로직 미변경.

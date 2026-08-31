@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import StoryManageSection from './StoryManageSection'
+import BrandLiveSection from '@/components/owner/BrandLiveSection'
 
 const BORDER = '#ECE7DE'
 const PURPLE = '#7B5EA7'
@@ -19,6 +20,7 @@ export default function BrandStoreDecorationPage() {
   const [subscriberCount, setSubscriberCount] = useState(0)
   const [notifying, setNotifying] = useState(false)
   const [notifyMsg, setNotifyMsg] = useState<string | null>(null)
+  const [tab, setTab] = useState<'posting' | 'live'>('posting')
 
   const load = useCallback(async () => {
     const supabase = supabaseRef.current
@@ -54,7 +56,16 @@ export default function BrandStoreDecorationPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh', padding: 20, color: TEXT }}>
       <div style={{ fontSize: 16, marginBottom: 16, fontWeight: 600 }}>오렌포스팅관리</div>
-      {salonId ? (
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
+        {(['posting', 'live'] as const).map((t) => (
+          <button key={t} type="button" onClick={() => setTab(t)}
+            style={{ flex: 1, padding: '10px', fontSize: 13, border: 'none', background: 'none', color: tab === t ? PURPLE : TEXT_SUB, borderBottom: tab === t ? `2px solid ${PURPLE}` : '2px solid transparent', cursor: 'pointer' }}>
+            {t === 'posting' ? '포스팅' : '라이브'}
+          </button>
+        ))}
+      </div>
+      {tab === 'live' && <BrandLiveSection embedded />}
+      {tab === 'posting' && salonId ? (
         <div
           style={{
             background: CARD,
@@ -92,7 +103,8 @@ export default function BrandStoreDecorationPage() {
           </button>
         </div>
       ) : null}
-      {salonId ? <StoryManageSection salonId={salonId} /> : null}
+      {tab === 'posting' && salonId ? <StoryManageSection salonId={salonId} /> : null}
+      {tab === 'posting' && (
       <div style={{ background: CARD, border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontSize: 13, color: TEXT }}>스토어알림받기 고객</span>
@@ -116,6 +128,7 @@ export default function BrandStoreDecorationPage() {
         </button>
         {notifyMsg && <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 8 }}>{notifyMsg}</div>}
       </div>
+      )}
     </div>
   )
 }
