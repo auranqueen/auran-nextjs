@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
                 type: 'personal',
                 title: '🌸 오렌에 오신 걸 환영해요!',
                 body: '샵 설정에서 기본 정보를 등록하고 첫 고객을 맞이해보세요 💜',
-                link_url: '/dashboard/owner?v=2',
+                link_url: '/dashboard/owner',
                 is_read: false,
               } as any)
             }

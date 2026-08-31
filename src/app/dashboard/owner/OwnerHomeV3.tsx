@@ -39,6 +39,14 @@ export type RecentChat = {
   unread_count: number
 }
 
+type BrandChatPreview = {
+  id: string
+  company_name: string
+  logo_url: string | null
+  last_message: string | null
+  unread_by_owner: number
+}
+
 export type RecruitedOwner = {
   id: string
   name: string
@@ -96,6 +104,9 @@ export default function OwnerHomeV3({
 }: Props) {
   const router = useRouter()
   const [chatOpen, setChatOpen] = useState(false)
+  const [brandChatOpen, setBrandChatOpen] = useState(false)
+  const [brandChatChannels, setBrandChatChannels] = useState<BrandChatPreview[]>([])
+  const [brandChatUnreadTotal, setBrandChatUnreadTotal] = useState(0)
   const [kpiMonth, setKpiMonth] = useState(0)
   const [kpiBookings, setKpiBookings] = useState(0)
   const [kpiUnanswered, setKpiUnanswered] = useState(0)
@@ -105,6 +116,43 @@ export default function OwnerHomeV3({
   const [pointBalance, setPointBalance] = useState(0)
   const [rewardBalance, setRewardBalance] = useState(0)
   const [pointsReady, setPointsReady] = useState(false)
+
+  const loadBrandChats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/owner/chat/channels')
+      const json = await res.json().catch(() => ({})) as {
+        ok?: boolean
+        channels?: Array<{
+          id?: string
+          company_name?: string | null
+          logo_url?: string | null
+          last_message?: string | null
+          unread_by_owner?: number | null
+        }>
+      }
+      if (json.ok && Array.isArray(json.channels)) {
+        const list: BrandChatPreview[] = json.channels.map((ch) => ({
+          id: String(ch.id || ''),
+          company_name: String(ch.company_name || '브랜드사'),
+          logo_url: ch.logo_url ?? null,
+          last_message: ch.last_message ?? null,
+          unread_by_owner: Number(ch.unread_by_owner || 0),
+        })).filter((ch) => ch.id)
+        setBrandChatUnreadTotal(list.reduce((s, ch) => s + ch.unread_by_owner, 0))
+        setBrandChatChannels(list.slice(0, 3))
+      } else {
+        setBrandChatChannels([])
+        setBrandChatUnreadTotal(0)
+      }
+    } catch {
+      setBrandChatChannels([])
+      setBrandChatUnreadTotal(0)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadBrandChats()
+  }, [loadBrandChats])
 
   const loadPoints = useCallback(async () => {
     const authId = profile?.auth_id ? String(profile.auth_id) : null
@@ -402,7 +450,94 @@ export default function OwnerHomeV3({
             </div>
           )}
 
-          <div style={{ marginBottom: 16, marginTop: chatOpen ? 6 : 0 }}>
+          <button
+            type="button"
+            onClick={() => setBrandChatOpen((v) => !v)}
+            className="owner-v3-card"
+            style={{
+              width: '100%',
+              padding: '16px 18px',
+              marginBottom: brandChatOpen ? 0 : 10,
+              marginTop: chatOpen ? 6 : 0,
+              background: '#F5F1FA',
+              border: '1px solid #E1D8F0',
+              borderRadius: brandChatOpen ? '14px 14px 0 0' : 14,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: '#7B5EA7',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 22 }}>🏢</span>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>브랜드 상담</span>
+              {brandChatUnreadTotal > 0 && (
+                <span style={{ fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '2px 7px' }}>{brandChatUnreadTotal}</span>
+              )}
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>{brandChatOpen ? '접기 ▲' : '펼치기 ▼'}</span>
+          </button>
+          {brandChatOpen && (
+            <div
+              style={{
+                background: '#F8F5FC',
+                border: '1px solid #E1D8F0',
+                borderTop: 'none',
+                borderRadius: '0 0 14px 14px',
+                padding: '10px 14px 14px',
+                marginBottom: 10,
+              }}
+            >
+              {brandChatChannels.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text3)', padding: '8px 0' }}>아직 대화가 없어요</div>
+              ) : (
+                brandChatChannels.map((ch) => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    onClick={() => router.push('/dashboard/owner/brand-chat')}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      marginBottom: 6,
+                      cursor: 'pointer',
+                      color: 'var(--text)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    {ch.logo_url ? (
+                      <img src={ch.logo_url} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        background: '#EDE9F7', color: '#7B5EA7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700,
+                      }}>
+                        {(ch.company_name || '?').slice(0, 1)}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{ch.company_name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ch.last_message || '메시지 없음'}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+              <Link href="/dashboard/owner/brand-chat" style={{ display: 'block', textAlign: 'center', fontSize: 12, color: '#7B5EA7', marginTop: 8, textDecoration: 'none' }}>
+                전체 브랜드상담 보기 →
+              </Link>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 16, marginTop: chatOpen || brandChatOpen ? 6 : 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
             {todayBookings.length === 0 ? (
               <div className="owner-v3-card" style={{ textAlign: 'center', padding: 20, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>

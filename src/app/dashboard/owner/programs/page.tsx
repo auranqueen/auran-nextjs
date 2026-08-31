@@ -164,7 +164,7 @@ export default function OwnerProgramsPage() {
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <button
           type="button"
-          onClick={() => router.push('/dashboard/owner?v=2')}
+          onClick={() => router.push('/dashboard/owner')}
           style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}
         >
           ←

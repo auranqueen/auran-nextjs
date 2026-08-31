@@ -470,7 +470,7 @@ export default function BookingManagePage() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 88 }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: `0.5px solid ${BORDER}` }}>
-        <button type="button" onClick={() => router.push('/dashboard/owner?v=2')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE, cursor: 'pointer' }}>
+        <button type="button" onClick={() => router.push('/dashboard/owner')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE, cursor: 'pointer' }}>
           ←
         </button>
         <div style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 500 }}>예약 관리</div>

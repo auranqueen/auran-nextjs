@@ -2,7 +2,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SalonDashClient from './client'
-import OwnerDashClientV2 from './client-v2'
 import OwnerHomeV3 from './OwnerHomeV3'
 import type { SelfTierBrand } from './OwnerBrandSelfTierSection'
 import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
@@ -11,10 +10,6 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?role=owner')
-
-  if (searchParams?.v === '2') {
-    return <OwnerDashClientV2 />
-  }
 
   const { data: profile } = await supabase.from('users').select('*').eq('auth_id', user.id).single()
   if (!profile) redirect('/login?role=owner')

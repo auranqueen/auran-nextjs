@@ -8,12 +8,20 @@
 - BrandTabHome: `chat_channels`(channel_type=owner, 고객↔오렌) 직접 조회를 제거하고 `/api/brand/chat/channels`로 **브랜드↔원장** 1:1 대화 미리보기로 교체.
 - 미읽음 합계·최근 메시지는 `brand_chat_channels` 기준으로만 표시.
 - 쉽게: 홈 카드에 다른 사람(고객) 상담이 섞여 보이던 문제를 고치고, 우리 브랜드와 원장님 대화만 보여준다.
-### ux: 오렌상담톡 「원장님 상담」 라벨·기본 탭·딥링크
+### ux: 오렌상담톡 「원장님 상담」 서브탭 순서·기본값·라벨
 - BrandTabOrenTalk: 서브탭 순서 [원장님 상담] → [발송이력], 기본 탭 `chat`, `initialSub` prop 지원. state 키 `chat`/`history`는 유지.
 - BrandChatChannelList: 헤더 「1:1 상담」→「원장님 상담」.
 - BrandHubContent: `mainSub`를 BrandTabOrenTalk에 `initialSub`로 전달.
 - BrandTabHome: 오렌상담톡 카드 「전체 ›」클릭 시 `orentalk` + `chat` 서브탭으로 바로 이동.
-- 쉽게: 1:1 상담이라는 말 대신 「원장님 상담」으로 통일하고, 들어가면 채팅 목록이 먼저 보인다.
+- 쉽게: 「원장님 상담」으로 통일하고, 들어가면 채팅 목록이 먼저 보인다.
+### feat: 원장 홈(v3) 브랜드 상담 아코디언 위젯
+- OwnerHomeV3: 고객 상담톡 아코디언 바로 아래 「🏢 브랜드 상담」 추가. `/api/owner/chat/channels`로 최근 3건(회사명·로고·미리보기), `unread_by_owner` 합계 뱃지, 「전체 브랜드상담 보기 →」→ `/dashboard/owner/brand-chat`.
+- 쉽게: 원장 홈에서도 브랜드사와 1:1 대화를 바로 확인할 수 있다.
+### chore: 레거시 원장 홈 v2 완전 제거
+- `page.tsx` `?v=2` 분기 삭제. 진입 링크 5곳(services/reviews/programs/BookingManagePage/웰컴 알림)을 `/dashboard/owner`(v3)로 통일.
+- 삭제: `client-v2.tsx`, `OwnerV2LowerStack.tsx`, `client-v2-helpers.ts`. v1(`?v=1`) 레거시는 유지.
+- 빌드 기준 `/dashboard/owner` 번들 21.7kB → 11.6kB.
+- 쉽게: 안 쓰던 옛날 원장 홈 화면을 걷어내고, 모두 v3 기본 홈으로 모았다.
 
 ## 2026-08-30
 ### chore: 185 brand_staff.username · 근무시간 · brand_admin_alerts 마이그레이션 레포 기록

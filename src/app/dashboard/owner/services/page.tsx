@@ -120,7 +120,7 @@ export default function OwnerServicesPage() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 32 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `0.5px solid ${BORDER}` }}>
-        <button type="button" onClick={() => router.push('/dashboard/owner?v=2')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE_DARK, cursor: 'pointer' }}>
+        <button type="button" onClick={() => router.push('/dashboard/owner')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE_DARK, cursor: 'pointer' }}>
           ←
         </button>
         <div style={{ fontSize: 16, fontWeight: 500 }}>관리 프로그램 관리</div>
