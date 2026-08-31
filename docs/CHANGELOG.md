@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-31
+### fix: 고객관리·매출리포트 준비중 페이지 분리 + 사이드바 하이라이트 중복 수정
+- 신규: `/dashboard/owner/customers`, `/dashboard/owner/sales-report` 라이트 테마 준비중 안내 페이지.
+- OwnerSidebarShell: 고객 관리→`/customers`, 매출 리포트→`/sales-report`. 활성탭에서 `/dashboard/owner` 접두 매칭 제외해 홈이 하위 메뉴와 동시 하이라이트되던 버그 수정. href 고유화로 key 충돌 해소.
+- OwnerQuickMenu: 고객 관리도 `/customers`로 맞춤.
+- 쉽게: 깨진/겹치던 메뉴를 각자 자리로 나누고, 사이드바에서 메뉴가 여러 개 동시에 켜지던 문제를 고쳤다.
 ### fix: 원장 「고객 관리」 깨진 링크 임시조치 → charts-v2
 - OwnerSidebarShell: `/dashboard/owner/customers`(존재하지 않는 path → `[id]` 신고 프로필로 잘못 매칭)를 `/dashboard/owner/charts-v2`로 변경.
 - OwnerQuickMenu: 동일하게 `/dashboard/owner/charts-v2`로 임시조치.

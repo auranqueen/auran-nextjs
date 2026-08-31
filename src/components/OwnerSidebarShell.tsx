@@ -13,10 +13,9 @@ const BORDER = '#ECE7DE'
 const MENU_ITEMS = [
   { label: '홈', href: '/dashboard/owner' },
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
-  { label: '고객 관리', href: '/dashboard/owner/charts-v2' },
+  { label: '고객 관리', href: '/dashboard/owner/customers' },
   { label: '시술차트', href: '/dashboard/owner/charts-v2' },
-  // TODO: 전용 매출리포트 페이지 제작 후 경로 교체
-  { label: '매출 리포트', href: '/dashboard/owner' },
+  { label: '매출 리포트', href: '/dashboard/owner/sales-report' },
   { label: '발주', href: '/dashboard/owner/brand-orders' },
   { label: '제품판매관리', href: '/dashboard/owner/brand-retail-orders' },
   { label: '오렌포스팅관리', href: '/dashboard/owner/brand-store-decoration' },
@@ -113,7 +112,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
           AURAN PRO
         </div>
         {menuItems.map((item) => {
-          const active = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
+          const active = pathname === item.href || (item.href !== '/' && item.href !== '/dashboard/owner' && pathname?.startsWith(item.href + '/'))
           const isSubMenu = item.href === '/dashboard/owner/subscription'
           const badge = isSubMenu && periodReady ? periodBadge(phase, daysLeft) : null
           return (
