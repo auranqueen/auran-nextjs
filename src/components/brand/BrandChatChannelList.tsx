@@ -127,7 +127,7 @@ export default function BrandChatChannelList({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ fontSize: 11, color: SUB, padding: '8px 10px 4px', letterSpacing: '0.04em' }}>
-        💬 1:1 상담 · {channels.length}명
+        💬 원장님 상담 · {channels.length}명
       </div>
       <button
         type="button"

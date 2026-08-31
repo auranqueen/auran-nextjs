@@ -30,7 +30,8 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [productCount, setProductCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [expiringLots, setExpiringLots] = useState<Array<{ product_name: string; lot_number: string; days: number; remaining_qty: number }>>([])
-  const [recentTalks, setRecentTalks] = useState<Array<{ owner_name: string; preview: string; unread: boolean; updated_at: string }>>([])
+  const [brandChatSummary, setBrandChatSummary] = useState<Array<{ owner_name: string; shop_name: string; preview: string; unread: number }>>([])
+  const [brandChatUnreadTotal, setBrandChatUnreadTotal] = useState(0)
   const [recentOrders, setRecentOrders] = useState<Array<{ order_no: string; product_name: string; amount: number; status: string }>>([])
   const [sampleRequests, setSampleRequests] = useState<Array<{ owner_name: string; product_name: string; status: string }>>([])
   const [monthSales, setMonthSales] = useState<number>(0)
@@ -89,20 +90,47 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           }))
           .filter(l => l.days <= 330))
       }
-      const { data: talks } = await supabase
-        .from('chat_channels')
-        .select('id, last_message, last_message_at, unread_count, owner_id, users!owner_id(name)')
-        .eq('channel_type', 'owner')
-        .not('last_message', 'is', null)
-        .order('last_message_at', { ascending: false })
-        .limit(3)
-      if (talks) {
-        setRecentTalks(talks.map((t: any) => ({
-          owner_name: t.users?.name || '원장님',
-          preview: t.last_message || '',
-          unread: (t.unread_count || 0) > 0,
-          updated_at: t.last_message_at || '',
-        })))
+      const { data: brandRow } = await supabase
+        .from('brands')
+        .select('company_id')
+        .eq('id', brandId)
+        .maybeSingle()
+      const chatCompanyId = brandRow?.company_id ? String(brandRow.company_id) : ''
+      if (chatCompanyId) {
+        try {
+          const res = await window.fetch(`/api/brand/chat/channels?company_id=${encodeURIComponent(chatCompanyId)}`)
+          const json = await res.json() as {
+            ok?: boolean
+            channels?: Array<{
+              owner_name?: string | null
+              salon_name?: string | null
+              last_message?: string | null
+              unread_by_brand?: number | null
+            }>
+          }
+          if (json.ok && Array.isArray(json.channels)) {
+            setBrandChatUnreadTotal(
+              json.channels.reduce((sum, ch) => sum + Number(ch.unread_by_brand || 0), 0),
+            )
+            setBrandChatSummary(
+              json.channels.slice(0, 3).map((ch) => ({
+                owner_name: String(ch.owner_name || '원장님'),
+                shop_name: String(ch.salon_name || '-'),
+                preview: String(ch.last_message || ''),
+                unread: Number(ch.unread_by_brand || 0),
+              })),
+            )
+          } else {
+            setBrandChatSummary([])
+            setBrandChatUnreadTotal(0)
+          }
+        } catch {
+          setBrandChatSummary([])
+          setBrandChatUnreadTotal(0)
+        }
+      } else {
+        setBrandChatSummary([])
+        setBrandChatUnreadTotal(0)
       }
       const [{ data: orders }, { count: pendingA }, { count: pendingB }] = await Promise.all([
         supabase
@@ -333,14 +361,14 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div style={CARD}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-            <span>💬 오렌상담톡</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('orentalk')}>전체 ›</span>
+            <span>💬 오렌상담톡{brandChatUnreadTotal > 0 ? ` (${brandChatUnreadTotal})` : ''}</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('orentalk', 'chat')}>전체 ›</span>
           </div>
-          {recentTalks.length === 0 ? (
+          {brandChatSummary.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>대화 없음</div>
-          ) : recentTalks.map((t, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < recentTalks.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.unread ? '#e85555' : 'transparent', flexShrink: 0 }} />
+          ) : brandChatSummary.map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < brandChatSummary.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.unread > 0 ? '#e85555' : 'transparent', flexShrink: 0 }} />
               <div style={{ fontSize: 10, color: GOLD, width: 52, flexShrink: 0 }}>{t.owner_name}</div>
               <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.preview}</div>
             </div>

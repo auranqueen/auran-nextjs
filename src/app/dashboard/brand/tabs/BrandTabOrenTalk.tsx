@@ -39,10 +39,11 @@ interface Props {
   brandId: string | null
   companyId?: string | null
   staffId?: string | null
+  initialSub?: 'history' | 'chat'
 }
-export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId }: Props) {
+export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId, initialSub }: Props) {
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
-  const [subTab, setSubTab] = useState<'history' | 'chat'>('history')
+  const [subTab, setSubTab] = useState<'history' | 'chat'>(initialSub === 'history' ? 'history' : 'chat')
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [msg, setMsg] = useState('')
@@ -135,8 +136,8 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
       )}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         {([
+          { key: 'chat' as const, label: '원장님 상담' },
           { key: 'history' as const, label: '발송이력' },
-          { key: 'chat' as const, label: '1:1 상담' },
         ]).map((t) => (
           <button
             key={t.key}
