@@ -18,16 +18,17 @@ export async function getOwnerLinkedBrandIds(
   const id = authId.trim()
   if (!id) return []
 
-  const { data: userRow } = await supabase
-    .from('users')
-    .select('id')
-    .eq('auth_id', id)
-    .maybeSingle()
+  const [{ data: userRow }, { data: profileRow }] = await Promise.all([
+    supabase.from('users').select('id').eq('auth_id', id).maybeSingle(),
+    supabase.from('profiles').select('id').eq('auth_id', id).maybeSingle(),
+  ])
 
   const userId = userRow?.id ? String(userRow.id) : ''
+  const profileId = profileRow?.id ? String(profileRow.id) : ''
   const idSet = new Set<string>()
 
-  if (userId) {
+  const loadLinkBrandIds = async () => {
+    if (!userId) return
     let query = supabase
       .from('brand_owner_links')
       .select('brand_id')
@@ -46,14 +47,8 @@ export async function getOwnerLinkedBrandIds(
     }
   }
 
-  const { data: profileRow } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_id', id)
-    .maybeSingle()
-
-  const profileId = profileRow?.id ? String(profileRow.id) : ''
-  if (profileId) {
+  const loadGradeBrandIds = async () => {
+    if (!profileId) return
     const { data: gradeRows } = await supabase
       .from('brand_owner_grades')
       .select('company_id')
@@ -64,20 +59,20 @@ export async function getOwnerLinkedBrandIds(
     const companyIds = Array.from(
       new Set((gradeRows || []).map((r: { company_id: string }) => String(r.company_id)).filter(Boolean)),
     )
+    if (companyIds.length === 0) return
 
-    if (companyIds.length) {
-      const { data: companyBrands } = await supabase
-        .from('brands')
-        .select('id')
-        .in('company_id', companyIds)
+    const { data: companyBrands } = await supabase
+      .from('brands')
+      .select('id')
+      .in('company_id', companyIds)
 
-      for (const b of companyBrands || []) {
-        const bid = String((b as { id: string }).id || '')
-        if (bid) idSet.add(bid)
-      }
+    for (const b of companyBrands || []) {
+      const bid = String((b as { id: string }).id || '')
+      if (bid) idSet.add(bid)
     }
   }
 
+  await Promise.all([loadLinkBrandIds(), loadGradeBrandIds()])
   return Array.from(idSet)
 }
 

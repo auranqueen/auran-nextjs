@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-31
+### perf: 에듀케이션 신청 즉시반영 + 세션 카운트 집계 + 연결브랜드 조회 병렬화
+- programs `onApply`: 클릭 즉시 applied/applied_count 낙관적 업데이트, `setLoading`·`loadSessions` 없음. API 실패 시 -1/applied:false 롤백 + 「신청 실패, 다시 시도해주세요」. 탭 재진입 useEffect는 유지.
+- `/api/owner/education/sessions`: applications를 session_id IN 한 번으로 읽어 count·내 신청여부를 같은 결과에서 집계.
+- `getOwnerLinkedBrandIds`: users∥profiles, links∥grades(브랜드 조회는 grades 이후 순차). `getOwnerCompanyIds`는 brandIds 이후 company_id라 병렬 불가 — 헬퍼 병렬화만 타서 반환 Set은 동일.
+- 쉽게: 신청 버튼을 누르면 바로 신청완료로 보이고, 실패하면 원상태로 돌아온다.
+
 ### ui: 원장 에듀케이션 세션 카드 클릭 시 상세보기
 - programs 에듀케이션: `selectedSession` 상세(목록 전환, 모달 아님). 카드 클릭=상세, 신청 버튼은 stopPropagation 후 기존 `onApply`.
 - 상세: 제목·온/오프라인 뱃지·일시·장소 또는 참여링크(미신청 시 안내)·정원 진행바·신청 후 출력/다운로드·신청하기/신청완료. 「← 목록으로」로 복귀.

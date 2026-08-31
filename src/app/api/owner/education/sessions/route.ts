@@ -36,8 +36,8 @@ export async function GET() {
 
   const list = sessions || []
   const sessionIds = list.map((s: { id: string }) => s.id)
+  const countBySession: Record<string, number> = {}
   const appliedSet = new Set<string>()
-  const countMap: Record<string, number> = {}
 
   if (sessionIds.length > 0) {
     const { data: apps } = await db
@@ -48,7 +48,7 @@ export async function GET() {
 
     for (const a of apps || []) {
       const sid = String((a as { session_id: string }).session_id)
-      countMap[sid] = (countMap[sid] || 0) + 1
+      countBySession[sid] = (countBySession[sid] || 0) + 1
       if (String((a as { owner_id: string }).owner_id) === me.id) {
         appliedSet.add(sid)
       }
@@ -56,8 +56,9 @@ export async function GET() {
   }
 
   const rows = list.map((s: Record<string, unknown>) => {
-    const applied = appliedSet.has(String(s.id))
-    const applied_count = countMap[String(s.id)] || 0
+    const sid = String(s.id)
+    const applied = appliedSet.has(sid)
+    const applied_count = countBySession[sid] || 0
     const { link, asset_url, ...rest } = s
     if (applied) {
       return { ...rest, link, asset_url, applied: true, applied_count }

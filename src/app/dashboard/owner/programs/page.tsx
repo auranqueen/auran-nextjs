@@ -131,8 +131,18 @@ export default function OwnerProgramsPage() {
     [items, sub, areteCompanyIds],
   )
 
+  const patchApply = (s: SessionRow, applied: boolean, countDelta: number): SessionRow => ({
+    ...s,
+    applied,
+    applied_count: Math.max(0, (s.applied_count ?? 0) + countDelta),
+  })
+
   const onApply = async (sessionId: string) => {
+    const current = sessions.find((s) => s.id === sessionId)
+    if (!current || current.applied) return
     setApplyingId(sessionId)
+    setSessions((list) => list.map((s) => (s.id === sessionId ? patchApply(s, true, 1) : s)))
+    setSelectedSession((cur) => (cur?.id === sessionId ? patchApply(cur, true, 1) : cur))
     try {
       const res = await fetch('/api/owner/education/apply', {
         method: 'POST',
@@ -141,13 +151,16 @@ export default function OwnerProgramsPage() {
       })
       const json = await res.json()
       if (!json?.ok) {
-        showToast(json?.error || '신청 실패')
+        setSessions((list) => list.map((s) => (s.id === sessionId ? patchApply(s, false, -1) : s)))
+        setSelectedSession((cur) => (cur?.id === sessionId ? patchApply(cur, false, -1) : cur))
+        showToast('신청 실패, 다시 시도해주세요')
         return
       }
       showToast(json.already_applied ? '이미 신청했어요' : '신청 완료')
-      await loadSessions()
     } catch {
-      showToast('신청 실패')
+      setSessions((list) => list.map((s) => (s.id === sessionId ? patchApply(s, false, -1) : s)))
+      setSelectedSession((cur) => (cur?.id === sessionId ? patchApply(cur, false, -1) : cur))
+      showToast('신청 실패, 다시 시도해주세요')
     } finally {
       setApplyingId(null)
     }
