@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-31
+### ui: 트랙B 원장 사이드바에 샘플/라이브/반품 메뉴 복원
+- OwnerSidebarShell MENU_ITEMS에 샘플·라이브·반품 재추가. 필터: 발주관리/제품판매관리/오렌포스팅관리는 `ready && isTrackA` 유지, 샘플/라이브/반품은 `ready && !isTrackA`만 통과.
+- 트랙A는 사이드바 중복 없이 발주관리·포스팅관리 서브탭만. 트랙B는 독립 메뉴. 페이지 URL·서브탭 로직 미변경.
+- 쉽게: 트랙A는 발주/포스팅 안에서, 트랙B는 사이드바에서 샘플·라이브·반품을 연다.
+
 ### ui: 원장 샘플·반품·라이브 메뉴를 발주관리·오렌포스팅관리 서브탭으로 통합
 - BrandSamplesSection / BrandReturnsSection / BrandLiveSection 3개 컴포넌트로 본문 이동. 기존 `/brand-samples`·`/brand-returns`·`/brand-live` URL은 얇은 wrapper로 유지.
 - brand-orders: 탭 `shop|orders|samples|returns`. 「샘플」「반품」 밑줄 탭 추가. shop/orders 렌더 로직 유지.

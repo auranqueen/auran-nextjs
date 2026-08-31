@@ -21,6 +21,9 @@ const MENU_ITEMS = [
   { label: '오렌포스팅관리', href: '/dashboard/owner/brand-store-decoration' },
   { label: '소식', href: '/dashboard/owner/brand-community' },
   { label: '프로그램', href: '/dashboard/owner/programs' },
+  { label: '샘플', href: '/dashboard/owner/brand-samples' },
+  { label: '라이브', href: '/dashboard/owner/brand-live' },
+  { label: '반품', href: '/dashboard/owner/brand-returns' },
   { label: '브랜드 상담', href: '/dashboard/owner/brand-chat' },
   { label: '구독 관리', href: '/dashboard/owner/subscription' },
 ]
@@ -63,6 +66,9 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
       MENU_ITEMS.filter((item) => {
         if (item.href === '/dashboard/owner/brand-orders' || item.href === '/dashboard/owner/brand-retail-orders' || item.href === '/dashboard/owner/brand-store-decoration') {
           return ready && isTrackA
+        }
+        if (item.href === '/dashboard/owner/brand-samples' || item.href === '/dashboard/owner/brand-live' || item.href === '/dashboard/owner/brand-returns') {
+          return ready && !isTrackA
         }
         return true
       }),
