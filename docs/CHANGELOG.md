@@ -4,6 +4,13 @@
 ---
 
 ## 2026-08-31
+### perf: 원장 발주(brand-orders) 로딩 병렬화 + 발주확인 후 타겟 갱신
+- `load()`: `profiles`를 `users`·`resolveOwnerIds`와 같은 Promise.all로 동시 실행. `brand_orders`는 brands 체인 시작 시 별도 promise로 미리 띄우고 inventory 완료 후 await(⑤~⑪ 로직·순서 유지).
+- `loadOrders` / `loadMonthlySummary` / `loadRewardBalances` 추출. 발주 성공 시 `void load()`(전체 재조회+전체 스피너) 제거 → 위 3개만 `Promise.all`로 갱신.
+- 쉽게: 발주 화면이 처음 뜰 때 서로 안 기다리는 조회를 한꺼번에 하고, 발주 확인 후에도 화면 전체가 다시 안 돌고 발주내역·월현황·적립금만 빠르게 갱신한다.
+### chore: 원장 사이드바 「오렌상담톡」 메뉴 제거
+- OwnerSidebarShell `MENU_ITEMS`에서 오렌상담톡 항목 1줄 삭제. 홈(v3) 상담톡 아코디언·`/dashboard/owner/chat/*` 경로는 유지.
+- 쉽게: 사이드바에서는 빼고, 홈 위젯으로만 고객 상담톡에 들어가게 정리했다.
 ### ux: 브랜드 홈 오렌상담톡 카드 — KPI 아래 확대 배치 + 등급·적립 표시
 - BrandTabHome: 오렌상담톡 카드를 3열 grid에서 빼 KPI 5열 바로 아래 full-width로 이동. 최근 주문·재고 현황은 2열 grid로 유지.
 - 미리보기에 `grade`·`is_arete`·`reward_points`·`arete_points` 표시(API `/api/brand/chat/channels` enriched 필드 매핑).

@@ -12,7 +12,6 @@ const BORDER = '#ECE7DE'
 
 const MENU_ITEMS = [
   { label: '홈', href: '/dashboard/owner' },
-  { label: '오렌상담톡', href: '/dashboard/owner/chat/redirect' },
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
   { label: '고객 관리', href: '/dashboard/owner/customers' },
   { label: '시술차트', href: '/dashboard/owner/charts-v2' },

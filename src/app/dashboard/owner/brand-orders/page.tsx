@@ -164,21 +164,60 @@ export default function BrandOrdersPage() {
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
 
+  const loadOrders = useCallback(async (profileIdArg?: string | null) => {
+    const profileId = profileIdArg ?? ownerProfileId
+    if (!profileId) return
+
+    const { data: orderRows } = await supabase
+      .from('brand_orders')
+      .select('id, brand_id, status, items, promo_applied, points_earned, total_amount, created_at, courier, tracking_no, shipped_at, brands(name)')
+      .eq('profile_id', profileId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    setOrders((orderRows || []).map((o: {
+      id: string
+      brand_id: string | null
+      status: string
+      items: OrderItem[]
+      promo_applied: string | null
+      points_earned: number | null
+      total_amount: number | null
+      created_at: string
+      courier: string | null
+      tracking_no: string | null
+      shipped_at: string | null
+      brands: { name: string } | { name: string }[] | null
+    }) => {
+      const brandRef = o.brands
+      const brandName = Array.isArray(brandRef) ? brandRef[0]?.name : brandRef?.name
+      return {
+        id: o.id,
+        brand_name: brandName || '',
+        brand_id: o.brand_id || null,
+        status: o.status,
+        items: Array.isArray(o.items) ? o.items : [],
+        promo_applied: o.promo_applied,
+        points_earned: o.points_earned || 0,
+        total_amount: o.total_amount || 0,
+        created_at: o.created_at,
+        courier: o.courier || null,
+        tracking_no: o.tracking_no || null,
+        shipped_at: o.shipped_at || null,
+      }
+    }))
+  }, [ownerProfileId, supabase])
+
   const load = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
 
-    const [{ data: userRow }, ownerIds] = await Promise.all([
+    const [{ data: userRow }, ownerIds, { data: ownerProf }] = await Promise.all([
       supabase.from('users').select('id, name, salon_name, origin_track, role').eq('auth_id', user.id).maybeSingle(),
       resolveOwnerIds(supabase, user.id),
+      supabase.from('profiles').select('id, owner_store_name, full_name').eq('auth_id', user.id).maybeSingle(),
     ])
-
-    const { data: ownerProf } = await supabase
-      .from('profiles')
-      .select('id, owner_store_name, full_name')
-      .eq('auth_id', user.id)
-      .maybeSingle()
 
     setOwnerName((ownerProf as { full_name?: string } | null)?.full_name || (userRow as { name?: string } | null)?.name || '')
     setSalonName(
@@ -225,6 +264,8 @@ export default function BrandOrdersPage() {
       new Set((linkRows || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
     )
     setLinkedBrandIds(brandIds)
+
+    const ordersPromise = loadOrders(profileId)
 
     let brandNameMap: Record<string, string> = {}
     const brandCompanyMap: Record<string, string> = {}
@@ -415,48 +456,11 @@ export default function BrandOrdersPage() {
       setSupplyPromos([])
     }
 
-    const { data: orderRows } = await supabase
-      .from('brand_orders')
-      .select('id, brand_id, status, items, promo_applied, points_earned, total_amount, created_at, courier, tracking_no, shipped_at, brands(name)')
-      .eq('profile_id', profileId)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    setOrders((orderRows || []).map((o: {
-      id: string
-      brand_id: string | null
-      status: string
-      items: OrderItem[]
-      promo_applied: string | null
-      points_earned: number | null
-      total_amount: number | null
-      created_at: string
-      courier: string | null
-      tracking_no: string | null
-      shipped_at: string | null
-      brands: { name: string } | { name: string }[] | null
-    }) => {
-      const brandRef = o.brands
-      const brandName = Array.isArray(brandRef) ? brandRef[0]?.name : brandRef?.name
-      return {
-        id: o.id,
-        brand_name: brandName || '',
-        brand_id: o.brand_id || null,
-        status: o.status,
-        items: Array.isArray(o.items) ? o.items : [],
-        promo_applied: o.promo_applied,
-        points_earned: o.points_earned || 0,
-        total_amount: o.total_amount || 0,
-        created_at: o.created_at,
-        courier: o.courier || null,
-        tracking_no: o.tracking_no || null,
-        shipped_at: o.shipped_at || null,
-      }
-    }))
+    await ordersPromise
 
     setBrandFilter((prev) => (prev !== 'all' && !brandIds.includes(prev) ? 'all' : prev))
     setLoading(false)
-  }, [router, supabase])
+  }, [loadOrders, router, supabase])
 
   useEffect(() => { void load() }, [load])
 
@@ -628,7 +632,7 @@ export default function BrandOrdersPage() {
     })
   }
 
-  useEffect(() => {
+  const loadRewardBalances = useCallback(async (isCancelled?: () => boolean) => {
     const companyIds = Array.from(
       new Set(cart.map((c) => brandCompanyMap[c.product.brand_id]).filter(Boolean)),
     ) as string[]
@@ -636,27 +640,29 @@ export default function BrandOrdersPage() {
       setRewardBalances({})
       return
     }
-    let cancelled = false
-    ;(async () => {
-      const { data } = await supabase
-        .from('brand_points')
-        .select('company_id, balance')
-        .in('company_id', companyIds)
-        .eq('owner_id', ownerProfileId)
-        .eq('track', 'REWARD')
-      if (cancelled) return
-      const map: Record<string, number> = {}
-      for (const row of data || []) {
-        const cid = String((row as { company_id?: string }).company_id || '')
-        if (!cid) continue
-        map[cid] = Math.trunc(Number((row as { balance?: number }).balance) || 0)
-      }
-      setRewardBalances(map)
-    })()
-    return () => { cancelled = true }
-  }, [cart, brandCompanyMap, ownerProfileId])
+    const { data } = await supabase
+      .from('brand_points')
+      .select('company_id, balance')
+      .in('company_id', companyIds)
+      .eq('owner_id', ownerProfileId)
+      .eq('track', 'REWARD')
+    if (isCancelled?.()) return
+    const map: Record<string, number> = {}
+    for (const row of data || []) {
+      const cid = String((row as { company_id?: string }).company_id || '')
+      if (!cid) continue
+      map[cid] = Math.trunc(Number((row as { balance?: number }).balance) || 0)
+    }
+    setRewardBalances(map)
+  }, [cart, brandCompanyMap, ownerProfileId, supabase])
 
   useEffect(() => {
+    let cancelled = false
+    void loadRewardBalances(() => cancelled)
+    return () => { cancelled = true }
+  }, [loadRewardBalances])
+
+  const loadMonthlySummary = useCallback(async (isCancelled?: () => boolean) => {
     if (!headerCompanyId || !ownerProfileId) {
       setMonthlyOrderCount(0)
       setMonthlyOrderAmount(0)
@@ -675,63 +681,64 @@ export default function BrandOrdersPage() {
       return
     }
 
-    let cancelled = false
     setMonthlySummaryLoading(true)
     const { startIso, endIso } = billingCycleRange(new Date())
 
-    void (async () => {
-      try {
-        const [{ data: orderRows, error: orderErr }, { data: invoiceRows, error: invoiceErr }] = await Promise.all([
-          supabase
-            .from('brand_orders')
-            .select('total_amount, points_used, points_used_reward')
-            .eq('profile_id', ownerProfileId)
-            .in('brand_id', brandIds)
-            .gte('created_at', startIso)
-            .lt('created_at', endIso),
-          supabase
-            .from('brand_billing_invoices')
-            .select('total_amount')
-            .eq('owner_id', ownerProfileId)
-            .eq('company_id', headerCompanyId)
-            .eq('status', 'unpaid'),
-        ])
-        if (cancelled) return
-        if (orderErr) console.error('[monthly-summary] brand_orders', orderErr)
-        if (invoiceErr) console.error('[monthly-summary] brand_billing_invoices', invoiceErr)
+    try {
+      const [{ data: orderRows, error: orderErr }, { data: invoiceRows, error: invoiceErr }] = await Promise.all([
+        supabase
+          .from('brand_orders')
+          .select('total_amount, points_used, points_used_reward')
+          .eq('profile_id', ownerProfileId)
+          .in('brand_id', brandIds)
+          .gte('created_at', startIso)
+          .lt('created_at', endIso),
+        supabase
+          .from('brand_billing_invoices')
+          .select('total_amount')
+          .eq('owner_id', ownerProfileId)
+          .eq('company_id', headerCompanyId)
+          .eq('status', 'unpaid'),
+      ])
+      if (isCancelled?.()) return
+      if (orderErr) console.error('[monthly-summary] brand_orders', orderErr)
+      if (invoiceErr) console.error('[monthly-summary] brand_billing_invoices', invoiceErr)
 
-        const rows = orderErr ? [] : (orderRows || [])
-        const count = rows.length
-        const amount = rows.reduce((s, o) => {
-          const total = Math.trunc(Number((o as { total_amount?: number }).total_amount) || 0)
-          const used = Math.trunc(Number((o as { points_used?: number }).points_used) || 0)
-          const usedReward = Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0)
-          return s + Math.max(0, total - used - usedReward)
-        }, 0)
-        const unpaid = invoiceErr
-          ? 0
-          : (invoiceRows || []).reduce(
-            (s, inv) => s + Math.trunc(Number((inv as { total_amount?: number }).total_amount) || 0),
-            0,
-          )
+      const rows = orderErr ? [] : (orderRows || [])
+      const count = rows.length
+      const amount = rows.reduce((s, o) => {
+        const total = Math.trunc(Number((o as { total_amount?: number }).total_amount) || 0)
+        const used = Math.trunc(Number((o as { points_used?: number }).points_used) || 0)
+        const usedReward = Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0)
+        return s + Math.max(0, total - used - usedReward)
+      }, 0)
+      const unpaid = invoiceErr
+        ? 0
+        : (invoiceRows || []).reduce(
+          (s, inv) => s + Math.trunc(Number((inv as { total_amount?: number }).total_amount) || 0),
+          0,
+        )
 
-        setMonthlyOrderCount(count)
-        setMonthlyOrderAmount(amount)
-        setUnpaidAmount(unpaid)
-      } catch (e) {
-        console.error('[monthly-summary]', e)
-        if (!cancelled) {
-          setMonthlyOrderCount(0)
-          setMonthlyOrderAmount(0)
-          setUnpaidAmount(0)
-        }
-      } finally {
-        if (!cancelled) setMonthlySummaryLoading(false)
+      setMonthlyOrderCount(count)
+      setMonthlyOrderAmount(amount)
+      setUnpaidAmount(unpaid)
+    } catch (e) {
+      console.error('[monthly-summary]', e)
+      if (!isCancelled?.()) {
+        setMonthlyOrderCount(0)
+        setMonthlyOrderAmount(0)
+        setUnpaidAmount(0)
       }
-    })()
-
-    return () => { cancelled = true }
+    } finally {
+      if (!isCancelled?.()) setMonthlySummaryLoading(false)
+    }
   }, [headerCompanyId, brandCompanyMap, ownerProfileId, supabase])
+
+  useEffect(() => {
+    let cancelled = false
+    void loadMonthlySummary(() => cancelled)
+    return () => { cancelled = true }
+  }, [loadMonthlySummary])
 
   const submitOrder = async () => {
     if (cart.length === 0) { showToast('제품을 선택해주세요'); return }
@@ -883,7 +890,7 @@ export default function BrandOrdersPage() {
       setOwnerNote('')
       setShowPopup(false)
       showToast(`발주 요청 완료! 주문번호 ${result.order_no}`)
-      void load()
+      void Promise.all([loadOrders(), loadMonthlySummary(), loadRewardBalances()])
       setTab('orders')
     }
     setSending(false)
