@@ -14,7 +14,6 @@ const MENU_ITEMS = [
   { label: '홈', href: '/dashboard/owner' },
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
   { label: '고객 관리', href: '/dashboard/owner/customers' },
-  { label: '시술차트', href: '/dashboard/owner/charts-v2' },
   { label: '매출 리포트', href: '/dashboard/owner/sales-report' },
   { label: '발주관리', href: '/dashboard/owner/brand-orders' },
   { label: '제품판매관리', href: '/dashboard/owner/brand-retail-orders' },
