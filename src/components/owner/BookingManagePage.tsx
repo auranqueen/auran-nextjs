@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useOwnerBookingRealtime } from '@/hooks/useOwnerBookingRealtime'
 import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
 import { notifySceneConfirmedReward } from '@/lib/orenScene/scenePaymentNotifications'
+import ChartsSection from '@/app/dashboard/owner/charts-v2/ChartsSection'
+import ChartPopup from '@/app/dashboard/owner/charts-v2/ChartPopup'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -15,7 +17,7 @@ const TEXT = '#1A1A2E'
 const TEXT_SUB = '#888888'
 const BORDER = '#ede9f7'
 
-type TabKey = 'today' | 'upcoming' | 'past'
+type TabKey = 'today' | 'upcoming' | 'past' | 'charts'
 
 type BookingRow = {
   id: string
@@ -100,6 +102,10 @@ export default function BookingManagePage() {
   const [addDate, setAddDate] = useState(dateKey())
   const [addTime, setAddTime] = useState('10:00')
   const [saving, setSaving] = useState(false)
+  const [chartAsk, setChartAsk] = useState<BookingRow | null>(null)
+  const [chartOpen, setChartOpen] = useState(false)
+  const [chartCustomer, setChartCustomer] = useState<any>(null)
+  const [chartInitials, setChartInitials] = useState<{ name?: string; service?: string; price?: string | number; date?: string }>({})
 
   const showToast = (text: string) => {
     setMsg(text)
@@ -107,6 +113,7 @@ export default function BookingManagePage() {
   }
 
   const loadBookings = async (oid: string, currentTab: TabKey, dayKey: string) => {
+    if (currentTab === 'charts') return
     const sb = supabaseRef.current
     let q = sb
       .from('bookings')
@@ -418,6 +425,51 @@ export default function BookingManagePage() {
 
     showToast('저장됐어요 💜')
     await loadBookings(ownerId, tab, selectedDate)
+    if (status === 'completed' && bookingForMsg) {
+      setChartAsk(bookingForMsg)
+    }
+  }
+
+  const openChartForBooking = async (b: BookingRow) => {
+    if (!ownerId) return
+    setChartAsk(null)
+    const sb = supabaseRef.current
+    let customer: any = null
+    if (b.external_customer_id) {
+      const { data } = await sb.from('external_customers').select('*').eq('id', b.external_customer_id).maybeSingle()
+      customer = data
+    }
+    const name = String(b.displayName || b.customer_name || '').trim()
+    if (!customer && name) {
+      const { data: found } = await sb.from('external_customers').select('*').eq('owner_id', ownerId).eq('name', name).limit(1).maybeSingle()
+      customer = found
+    }
+    if (!customer) {
+      const { data: created, error } = await sb
+        .from('external_customers')
+        .insert({
+          name: name || '고객',
+          owner_id: ownerId,
+          auran_joined: false,
+          visit_count: 0,
+          auran_user_id: b.customer_id || null,
+        } as any)
+        .select('*')
+        .single()
+      if (error || !created) {
+        showToast('차트 고객을 찾지 못했어요')
+        return
+      }
+      customer = created
+    }
+    setChartCustomer(customer)
+    setChartInitials({
+      name: name || customer.name || '',
+      service: b.service_name || '',
+      price: b.service_price ?? '',
+      date: b.booking_date || '',
+    })
+    setChartOpen(true)
   }
 
   const addBooking = async () => {
@@ -458,6 +510,7 @@ export default function BookingManagePage() {
   const tabLabel = useMemo(() => {
     if (tab === 'today') return fmtDateKo(selectedDate)
     if (tab === 'upcoming') return '다가오는 예약'
+    if (tab === 'charts') return '시술차트'
     return '지난 예약'
   }, [tab, selectedDate])
 
@@ -465,6 +518,7 @@ export default function BookingManagePage() {
     { key: 'today', label: '오늘' },
     { key: 'upcoming', label: '예정' },
     { key: 'past', label: '지난' },
+    { key: 'charts', label: '시술차트' },
   ]
 
   return (
@@ -502,6 +556,9 @@ export default function BookingManagePage() {
         ))}
       </div>
 
+      {tab === 'charts' ? (
+        <ChartsSection />
+      ) : (
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           {tab === 'today' ? (
@@ -592,6 +649,7 @@ export default function BookingManagePage() {
           })
         )}
       </div>
+      )}
 
       {showAdd ? (
         <>
@@ -615,10 +673,34 @@ export default function BookingManagePage() {
         </>
       ) : null}
 
-      {msg ? (
+      {chartAsk ? (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: PURPLE, color: '#fff', borderRadius: 12, padding: '12px 16px', fontSize: 13, zIndex: 120, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, maxWidth: '90%' }}>
+          <span>차트를 바로 작성하시겠어요?</span>
+          <button type="button" onClick={() => void openChartForBooking(chartAsk)} style={{ border: 'none', background: '#fff', color: PURPLE, borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
+            예
+          </button>
+          <button type="button" onClick={() => setChartAsk(null)} style={{ border: '1px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer' }}>
+            아니요
+          </button>
+        </div>
+      ) : msg ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: PURPLE, color: '#fff', borderRadius: 12, padding: '10px 16px', fontSize: 13, zIndex: 110 }}>
           {msg}
         </div>
+      ) : null}
+
+      {ownerId && chartCustomer ? (
+        <ChartPopup
+          open={chartOpen}
+          onClose={() => { setChartOpen(false); setChartCustomer(null) }}
+          onSaved={() => { setChartOpen(false); setChartCustomer(null) }}
+          customer={chartCustomer}
+          ownerId={ownerId}
+          initialCustomerName={chartInitials.name}
+          initialServiceName={chartInitials.service}
+          initialPrice={chartInitials.price}
+          initialDate={chartInitials.date}
+        />
       ) : null}
     </div>
   )

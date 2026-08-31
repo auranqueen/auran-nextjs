@@ -27,6 +27,10 @@ type Props = {
   customer: any
   ownerId: string
   onOpenSalonChat?: (customer: any) => void
+  initialCustomerName?: string
+  initialServiceName?: string
+  initialPrice?: string | number
+  initialDate?: string
 }
 
 type Draft = {
@@ -127,7 +131,18 @@ function parseItems(raw: unknown) {
   return null
 }
 
-export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, onOpenSalonChat }: Props) {
+export default function ChartPopup({
+  open,
+  onClose,
+  onSaved,
+  customer,
+  ownerId,
+  onOpenSalonChat,
+  initialCustomerName,
+  initialServiceName,
+  initialPrice,
+  initialDate,
+}: Props) {
   const supabaseRef = useRef(createClient())
   const [phase, setPhase] = useState('—')
   const [goldenHint, setGoldenHint] = useState('')
@@ -220,6 +235,9 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
   useEffect(() => {
     if (!open || !customer?.id) return
     resetForm()
+    if (initialServiceName) setTreatmentName(initialServiceName)
+    if (initialPrice != null && initialPrice !== '') setTreatmentAmount(String(initialPrice))
+    if (initialDate) setNextVisitDate(String(initialDate).slice(0, 10))
     const run = async () => {
       const sb = supabaseRef.current
       let lastPeriod: string | null = null
@@ -248,7 +266,8 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
       setPhase(p)
       const golden = canShowCyclePhase(hormoneTrack, customerGender) ? getNextGoldenDate(lastPeriod) : null
       setGoldenHint(golden || '')
-      if (golden) setNextVisitDate(golden)
+      if (initialDate) setNextVisitDate(String(initialDate).slice(0, 10))
+      else if (golden) setNextVisitDate(golden)
 
       const { data: hist } = await sb
         .from('treatment_charts')
@@ -269,7 +288,7 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
       }
     }
     void run()
-  }, [open, customer?.id, customer?.auran_user_id, memoData.birth_date, memoData.menstruation, ownerId])
+  }, [open, customer?.id, customer?.auran_user_id, memoData.birth_date, memoData.menstruation, ownerId, initialServiceName, initialPrice, initialDate])
 
   useEffect(() => {
     if (!toast) return
@@ -416,7 +435,7 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 100px' }}>
           <div style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 15, fontWeight: 500 }}>{customer.name}님</span>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>{initialCustomerName || customer.name}님</span>
               <button type="button" style={{ border: 'none', background: 'transparent', color: POINT, fontSize: 13, cursor: 'pointer' }}>
                 앱 초대 →
               </button>

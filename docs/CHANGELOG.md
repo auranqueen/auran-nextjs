@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-31
+### feat: 예약관리에 시술차트 서브탭 + 완료 후 차트작성 연결
+- ChartsSection으로 charts-v2 본문 분리. `/dashboard/owner/charts-v2`는 헤더 wrapper. 예약관리 밑줄탭 「시술차트」에서 동일 섹션 렌더(날짜 네비 숨김).
+- 오렌 예약 고객/내방 고객 탭에 ❓ `title` 안내. 예약 완료 성공 후 「차트를 바로 작성하시겠어요?」→ 예이면 ChartPopup을 시술명·가격·날짜로 채움. 회차차감·살롱메시지·꿀 로직은 그대로.
+- ChartPopup에 선택적 initial* prop. 고객목록 「차트 작성」은 prop 없이 기존 빈 폼.
+- 쉽게: 예약 관리에서 차트도 보고, 완료 누르면 바로 차트 쓸 수 있다.
+
 ### perf: 에듀케이션 신청 즉시반영 + 세션 카운트 집계 + 연결브랜드 조회 병렬화
 - programs `onApply`: 클릭 즉시 applied/applied_count 낙관적 업데이트, `setLoading`·`loadSessions` 없음. API 실패 시 -1/applied:false 롤백 + 「신청 실패, 다시 시도해주세요」. 탭 재진입 useEffect는 유지.
 - `/api/owner/education/sessions`: applications를 session_id IN 한 번으로 읽어 count·내 신청여부를 같은 결과에서 집계.
