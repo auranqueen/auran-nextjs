@@ -327,16 +327,7 @@ export default function OwnerHomeV3({
         </div>
 
         {pointsReady && areteCompanyId ? (
-          ledgerTrack ? (
-            <OwnerPointsLedgerView
-              track={ledgerTrack}
-              companyId={areteCompanyId}
-              onBack={() => {
-                setLedgerTrack(null)
-                void loadPoints()
-              }}
-            />
-          ) : (
+          <>
           <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
             <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: 9, background: '#c9a96e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
@@ -363,7 +354,17 @@ export default function OwnerHomeV3({
               </button>
             </div>
           </div>
-          )
+          {ledgerTrack ? (
+            <OwnerPointsLedgerView
+              track={ledgerTrack}
+              companyId={areteCompanyId}
+              onBack={() => {
+                setLedgerTrack(null)
+                void loadPoints()
+              }}
+            />
+          ) : null}
+          </>
         ) : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>

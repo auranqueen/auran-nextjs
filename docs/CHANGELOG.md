@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-31
+### ui: 포인트 관리/내역을 잘림 없는 풀뷰포트 팝업으로
+- BrandPointsManage·OwnerPointsLedgerView: 각 파일 로컬 FullViewportModal. 오버레이 클릭 닫힘, 안쪽 stopPropagation, sticky ✕.
+- BrandTabOwners: 원장 목록을 유지한 채 「포인트 관리」를 모달로. OwnerHomeV3·AreteMembershipCard: 카드 유지한 채 「내역보기」를 모달로. 탭/잔액/폼/내역 로직 미변경.
+- 쉽게: 포인트 관리와 내역이 페이지를 바꾸지 않고 큰 팝업으로 열려서 잘리지 않는다.
+
 ### fix: 아레테 50만포인트 지급 시점을 구독 결제완료로 이동 + 원장(ledger)
 - 지급 버그: 청구서 생성 크론·아레테 ON 토글 즉시 +50만 → **삭제**. ARETE 50만은 civasan 웹훅 `kind=arete` paid(및 데모 create)에서만 지급. 웰컴보너스(ON upsert 50만) 완전 삭제.
 - `brand_points_ledger` 신규(마이그레이션 **186**): 적립/차감 전 거래 이력. `source_type` CHECK = `manual` | `invoice_webhook` | `arete_payment` | `monthly_billing`.

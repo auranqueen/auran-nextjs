@@ -542,29 +542,6 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
 
   const showCsvAtTop = !initLedgerLoading && !hasManualInit
 
-  if (pointsManageOwner && companyId) {
-    return (
-      <div>
-        {toast && (
-          <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
-            {toast}
-          </div>
-        )}
-        <BrandPointsManage
-          companyId={companyId}
-          staffId={staffId}
-          ownerId={pointsManageOwner.id}
-          ownerName={pointsManageOwner.name}
-          ownerShop={pointsManageOwner.salon_name}
-          onBack={() => {
-            setPointsManageOwner(null)
-            void loadPointBalances()
-          }}
-        />
-      </div>
-    )
-  }
-
   return (
     <div>
       {toast && (
@@ -819,6 +796,19 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
             </div>
           )}
         </div>
+      ) : null}
+      {pointsManageOwner && companyId ? (
+        <BrandPointsManage
+          companyId={companyId}
+          staffId={staffId}
+          ownerId={pointsManageOwner.id}
+          ownerName={pointsManageOwner.name}
+          ownerShop={pointsManageOwner.salon_name}
+          onBack={() => {
+            setPointsManageOwner(null)
+            void loadPointBalances()
+          }}
+        />
       ) : null}
     </div>
   )

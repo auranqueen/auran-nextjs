@@ -240,19 +240,6 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
         </div>
       )}
       <div style={{ display: 'flex', gap: 10, margin: '0 16px 12px' }}>
-        {ledgerTrack ? (
-          <div style={{ flex: 1 }}>
-            <OwnerPointsLedgerView
-              track={ledgerTrack}
-              companyId={companyId}
-              onBack={() => {
-                setLedgerTrack(null)
-                void load()
-              }}
-            />
-          </div>
-        ) : (
-          <>
         <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: 14 }}>
           <div style={{ width: 28, height: 28, borderRadius: 9, background: '#c9a96e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
           <div style={{ fontSize: 11, color: '#a8863f', marginBottom: 4 }}>적립포인트</div>
@@ -277,9 +264,17 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
             내역보기 →
           </button>
         </div>
-          </>
-        )}
       </div>
+      {ledgerTrack ? (
+        <OwnerPointsLedgerView
+          track={ledgerTrack}
+          companyId={companyId}
+          onBack={() => {
+            setLedgerTrack(null)
+            void load()
+          }}
+        />
+      ) : null}
     </div>
   )
 }

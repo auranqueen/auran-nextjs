@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 type Track = 'REWARD' | 'ARETE'
 
@@ -35,6 +35,64 @@ function fmtDate(iso: string) {
   } catch {
     return iso
   }
+}
+
+function FullViewportModal({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <div
+      role="presentation"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        zIndex: 9999,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          borderRadius: 18,
+          background: '#fff',
+          padding: 16,
+        }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+          style={{
+            position: 'sticky',
+            top: 0,
+            float: 'right',
+            zIndex: 2,
+            width: 32,
+            height: 32,
+            border: 'none',
+            background: 'transparent',
+            color: '#666',
+            fontSize: 18,
+            cursor: 'pointer',
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
+        {children}
+      </div>
+    </div>
+  )
 }
 
 export default function OwnerPointsLedgerView({ track, companyId, title, onBack }: Props) {
@@ -73,6 +131,7 @@ export default function OwnerPointsLedgerView({ track, companyId, title, onBack 
   }, [load])
 
   return (
+    <FullViewportModal onClose={onBack}>
     <div style={wrap}>
       <button
         type="button"
@@ -121,5 +180,6 @@ export default function OwnerPointsLedgerView({ track, companyId, title, onBack 
         })
       )}
     </div>
+    </FullViewportModal>
   )
 }
