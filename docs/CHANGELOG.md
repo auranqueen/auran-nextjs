@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-31
+### fix: 원장 「고객 관리」 깨진 링크 임시조치 → charts-v2
+- OwnerSidebarShell: `/dashboard/owner/customers`(존재하지 않는 path → `[id]` 신고 프로필로 잘못 매칭)를 `/dashboard/owner/charts-v2`로 변경.
+- 임시조치: 화면 제목은 「시술 차트 V2」라 메뉴명과 어긋날 수 있음. 다음 세션에 예약(자동+수동)·수동등록 고객을 합친 **진짜 고객관리 독립 화면** 예정.
+- 쉽게: 고객 관리를 누르면 이상한 신고 화면 대신, 일단 시술차트에 있는 고객 목록으로 가게  Temporary 고쳤다.
 ### perf: 원장 발주(brand-orders) 로딩 병렬화 + 발주확인 후 타겟 갱신
 - `load()`: `profiles`를 `users`·`resolveOwnerIds`와 같은 Promise.all로 동시 실행. `brand_orders`는 brands 체인 시작 시 별도 promise로 미리 띄우고 inventory 완료 후 await(⑤~⑪ 로직·순서 유지).
 - `loadOrders` / `loadMonthlySummary` / `loadRewardBalances` 추출. 발주 성공 시 `void load()`(전체 재조회+전체 스피너) 제거 → 위 3개만 `Promise.all`로 갱신.
