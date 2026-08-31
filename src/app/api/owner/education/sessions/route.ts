@@ -37,27 +37,32 @@ export async function GET() {
   const list = sessions || []
   const sessionIds = list.map((s: { id: string }) => s.id)
   const appliedSet = new Set<string>()
+  const countMap: Record<string, number> = {}
 
   if (sessionIds.length > 0) {
     const { data: apps } = await db
       .from('education_applications')
-      .select('session_id')
+      .select('session_id, owner_id')
       .in('session_id', sessionIds)
-      .eq('owner_id', me.id)
       .eq('status', 'applied')
 
     for (const a of apps || []) {
-      appliedSet.add(String((a as { session_id: string }).session_id))
+      const sid = String((a as { session_id: string }).session_id)
+      countMap[sid] = (countMap[sid] || 0) + 1
+      if (String((a as { owner_id: string }).owner_id) === me.id) {
+        appliedSet.add(sid)
+      }
     }
   }
 
   const rows = list.map((s: Record<string, unknown>) => {
     const applied = appliedSet.has(String(s.id))
+    const applied_count = countMap[String(s.id)] || 0
     const { link, asset_url, ...rest } = s
     if (applied) {
-      return { ...rest, link, asset_url, applied: true }
+      return { ...rest, link, asset_url, applied: true, applied_count }
     }
-    return { ...rest, applied: false }
+    return { ...rest, applied: false, applied_count }
   })
 
   return NextResponse.json({ ok: true, sessions: rows })

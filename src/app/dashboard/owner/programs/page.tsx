@@ -34,6 +34,7 @@ interface SessionRow {
   link?: string | null
   capacity?: number | null
   applied?: boolean
+  applied_count?: number
   asset_url?: string | null
 }
 
@@ -59,6 +60,7 @@ export default function OwnerProgramsPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [preview, setPreview] = useState<ArchiveItem | null>(null)
+  const [selectedSession, setSelectedSession] = useState<SessionRow | null>(null)
   const [applyingId, setApplyingId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
@@ -108,6 +110,16 @@ export default function OwnerProgramsPage() {
       void loadArchive()
     }
   }, [sub, loadArchive, loadSessions])
+
+  useEffect(() => {
+    if (!selectedSession) return
+    const next = sessions.find((s) => s.id === selectedSession.id)
+    if (!next) {
+      setSelectedSession(null)
+      return
+    }
+    if (next !== selectedSession) setSelectedSession(next)
+  }, [sessions, selectedSession])
 
   const filtered = useMemo(
     () =>
@@ -180,6 +192,7 @@ export default function OwnerProgramsPage() {
             onClick={() => {
               setSub(t.key)
               setPreview(null)
+              setSelectedSession(null)
             }}
             style={{
               fontSize: 12,
@@ -200,11 +213,141 @@ export default function OwnerProgramsPage() {
         {loading ? (
           <div style={{ color: SUB, fontSize: 13, padding: 20, textAlign: 'center' }}>불러오는 중…</div>
         ) : sub === 'education' ? (
-          sessions.length === 0 ? (
+          selectedSession ? (
+            <div style={CARD}>
+              <button
+                type="button"
+                onClick={() => setSelectedSession(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: PURPLE,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginBottom: 12,
+                }}
+              >
+                ← 목록으로
+              </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>{selectedSession.title}</div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 10,
+                    background: `${PURPLE}15`,
+                    color: PURPLE,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {selectedSession.format === 'online' ? '온라인' : '오프라인'}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, color: TEXT, marginBottom: 8 }}>
+                {selectedSession.session_date} {String(selectedSession.start_time).slice(0, 5)}–{String(selectedSession.end_time).slice(0, 5)}
+              </div>
+              {selectedSession.format === 'offline' ? (
+                selectedSession.location ? (
+                  <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>{selectedSession.location}</div>
+                ) : null
+              ) : selectedSession.applied && selectedSession.link ? (
+                <a
+                  href={selectedSession.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'inline-block', marginBottom: 10, fontSize: 12, color: PURPLE }}
+                >
+                  참여 링크 열기
+                </a>
+              ) : (
+                <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>신청 후 링크 확인 가능</div>
+              )}
+              {(() => {
+                const cap = selectedSession.capacity != null ? Number(selectedSession.capacity) : null
+                const filled = selectedSession.applied_count ?? 0
+                const pct = cap && Number.isFinite(cap) && cap > 0 ? Math.min(100, (filled / cap) * 100) : 0
+                return (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: SUB, marginBottom: 4 }}>
+                      <span>정원</span>
+                      <span>{filled}/{cap != null && Number.isFinite(cap) && cap > 0 ? cap : '—'}</span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 4, background: BORDER, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: PURPLE, borderRadius: 4 }} />
+                    </div>
+                  </div>
+                )
+              })()}
+              {selectedSession.applied && selectedSession.asset_url && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                  <a
+                    href={selectedSession.asset_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: 12,
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: `1px solid ${PURPLE}`,
+                      color: PURPLE,
+                      textDecoration: 'none',
+                      background: '#fff',
+                    }}
+                  >
+                    🖨️ 출력하기
+                  </a>
+                  <a
+                    href={selectedSession.asset_url}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: 12,
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      color: '#fff',
+                      textDecoration: 'none',
+                      background: PURPLE,
+                    }}
+                  >
+                    ⬇️ 다운로드
+                  </a>
+                </div>
+              )}
+              {selectedSession.applied ? (
+                <div style={{ fontSize: 13, color: PURPLE, fontWeight: 500 }}>신청완료</div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={applyingId === selectedSession.id}
+                  onClick={() => void onApply(selectedSession.id)}
+                  style={{
+                    width: '100%',
+                    fontSize: 13,
+                    padding: 12,
+                    borderRadius: 10,
+                    border: 'none',
+                    background: PURPLE,
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {applyingId === selectedSession.id ? '신청 중...' : '신청하기'}
+                </button>
+              )}
+            </div>
+          ) : sessions.length === 0 ? (
             <div style={{ color: SUB, fontSize: 13 }}>예정된 세션이 없어요.</div>
           ) : (
             sessions.map((s) => (
-              <div key={s.id} style={CARD}>
+              <div
+                key={s.id}
+                onClick={() => setSelectedSession(s)}
+                style={{ ...CARD, cursor: 'pointer' }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{s.title}</div>
@@ -222,7 +365,10 @@ export default function OwnerProgramsPage() {
                     <button
                       type="button"
                       disabled={applyingId === s.id}
-                      onClick={() => void onApply(s.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void onApply(s.id)
+                      }}
                       style={{
                         fontSize: 11,
                         padding: '6px 12px',
@@ -243,6 +389,7 @@ export default function OwnerProgramsPage() {
                     href={s.link}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     style={{ display: 'inline-block', marginTop: 8, fontSize: 12, color: PURPLE }}
                   >
                     참여 링크 열기
@@ -254,6 +401,7 @@ export default function OwnerProgramsPage() {
                       href={s.asset_url}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       style={{
                         fontSize: 12,
                         padding: '8px 14px',
@@ -271,6 +419,7 @@ export default function OwnerProgramsPage() {
                       download
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       style={{
                         fontSize: 12,
                         padding: '8px 14px',
