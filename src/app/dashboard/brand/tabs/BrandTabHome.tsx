@@ -30,7 +30,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [productCount, setProductCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [expiringLots, setExpiringLots] = useState<Array<{ product_name: string; lot_number: string; days: number; remaining_qty: number }>>([])
-  const [brandChatSummary, setBrandChatSummary] = useState<Array<{ owner_name: string; shop_name: string; preview: string; unread: number }>>([])
+  const [brandChatSummary, setBrandChatSummary] = useState<{ owner_name: string; shop_name: string; preview: string; unread: number; grade: string | null; is_arete: boolean; reward_points: number; arete_points: number }[]>([])
   const [brandChatUnreadTotal, setBrandChatUnreadTotal] = useState(0)
   const [recentOrders, setRecentOrders] = useState<Array<{ order_no: string; product_name: string; amount: number; status: string }>>([])
   const [sampleRequests, setSampleRequests] = useState<Array<{ owner_name: string; product_name: string; status: string }>>([])
@@ -106,6 +106,10 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
               salon_name?: string | null
               last_message?: string | null
               unread_by_brand?: number | null
+              grade?: string | null
+              is_arete?: boolean | null
+              reward_points?: number | null
+              arete_points?: number | null
             }>
           }
           if (json.ok && Array.isArray(json.channels)) {
@@ -118,6 +122,10 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                 shop_name: String(ch.salon_name || '-'),
                 preview: String(ch.last_message || ''),
                 unread: Number(ch.unread_by_brand || 0),
+                grade: ch.grade ? String(ch.grade) : null,
+                is_arete: Boolean(ch.is_arete),
+                reward_points: Number(ch.reward_points || 0),
+                arete_points: Number(ch.arete_points || 0),
               })),
             )
           } else {
@@ -326,6 +334,38 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           </div>
         ))}
       </div>
+      <div style={{ ...CARD, marginBottom: 12, border: '1px solid rgba(155,127,212,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontSize: 13, color: TEXT }}>💬 오렌상담톡{brandChatUnreadTotal > 0 ? ` (${brandChatUnreadTotal})` : ''}</span>
+          <span style={{ fontSize: 11, color: '#9B7FD4', cursor: 'pointer' }} onClick={() => onTabChange('orentalk', 'chat')}>원장님 상담 전체보기 ›</span>
+        </div>
+        {brandChatSummary.length === 0 ? (
+          <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 16 }}>대화 없음</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {brandChatSummary.map((t, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: TEXT }}>{t.owner_name}</span>
+                    <span style={{ fontSize: 11, color: SUB }}>· {t.shop_name}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    {t.grade && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 20, background: 'rgba(155,127,212,0.15)', color: '#9B7FD4' }}>{t.grade}</span>}
+                    {t.is_arete && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 20, background: 'rgba(228,198,138,0.16)', color: '#E4C68A' }}>⭐ 아레테</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: SUB, marginTop: 5 }}>{t.preview}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  {t.unread > 0 && <span style={{ fontSize: 10, background: '#e85555', color: '#fff', borderRadius: 20, padding: '2px 7px' }}>{t.unread}</span>}
+                  <div style={{ fontSize: 10, color: '#E4C68A', marginTop: 6 }}>💰 {t.reward_points.toLocaleString()}원</div>
+                  {t.is_arete && <div style={{ fontSize: 10, color: '#E4C68A', marginTop: 2 }}>⭐ {t.arete_points.toLocaleString()}원</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       {salesOpen && brandId && (
         <MonthlyOrderAccordion brandId={brandId} onClose={() => setSalesOpen(false)} />
       )}
@@ -358,22 +398,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           ))
         )}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-        <div style={CARD}>
-          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-            <span>💬 오렌상담톡{brandChatUnreadTotal > 0 ? ` (${brandChatUnreadTotal})` : ''}</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('orentalk', 'chat')}>전체 ›</span>
-          </div>
-          {brandChatSummary.length === 0 ? (
-            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>대화 없음</div>
-          ) : brandChatSummary.map((t, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < brandChatSummary.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.unread > 0 ? '#e85555' : 'transparent', flexShrink: 0 }} />
-              <div style={{ fontSize: 10, color: GOLD, width: 52, flexShrink: 0 }}>{t.owner_name}</div>
-              <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.preview}</div>
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div style={CARD}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
             <span>🛒 최근 주문</span>

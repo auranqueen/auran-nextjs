@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-31
+### ux: 브랜드 홈 오렌상담톡 카드 — KPI 아래 확대 배치 + 등급·적립 표시
+- BrandTabHome: 오렌상담톡 카드를 3열 grid에서 빼 KPI 5열 바로 아래 full-width로 이동. 최근 주문·재고 현황은 2열 grid로 유지.
+- 미리보기에 `grade`·`is_arete`·`reward_points`·`arete_points` 표시(API `/api/brand/chat/channels` enriched 필드 매핑).
+- 「원장님 상담 전체보기 ›」→ `orentalk` + `chat` 딥링크 유지.
+- 쉽게: 홈 맨 위 KPI 밑에서 원장님 상담을 크게 보고, 등급·아레테·적립금까지 한눈에 확인한다.
 ### fix: 브랜드 홈 오렌상담톡 카드 — 잘못된 고객↔오렌 채널 미리보기 제거
 - BrandTabHome: `chat_channels`(channel_type=owner, 고객↔오렌) 직접 조회를 제거하고 `/api/brand/chat/channels`로 **브랜드↔원장** 1:1 대화 미리보기로 교체.
 - 미읽음 합계·최근 메시지는 `brand_chat_channels` 기준으로만 표시.
