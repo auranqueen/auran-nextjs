@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import OwnerOrenTalkButton from '../components/OwnerOrenTalkButton'
+import BrandPointsManage from '@/components/brand/BrandPointsManage'
 import {
   type OwnerRow,
   type CsvRowResult,
@@ -23,7 +24,7 @@ const GRADE_COLORS: Record<string, string> = {
   '전문점': '#9C7FD4',
   '취급점': '#64B5F6',
 }
-export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
+export default function BrandTabOwners({ brandId, brandName, authId, staffId = null }: Props) {
   const supabase = createClient()
   const [owners, setOwners] = useState<OwnerRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +49,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const [hasManualInit, setHasManualInit] = useState(false)
   const [initLedgerLoading, setInitLedgerLoading] = useState(true)
   const [showCsvReupload, setShowCsvReupload] = useState(false)
+  const [pointsManageOwner, setPointsManageOwner] = useState<OwnerRow | null>(null)
 
   const checkManualInitExists = async (cid: string) => {
     setInitLedgerLoading(true)
@@ -389,14 +391,6 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         status: 'active',
         started_at: new Date().toISOString(),
       }, { onConflict: 'company_id,owner_id' })
-      await supabase.from('brand_points').upsert({
-        brand_id: brandId,
-        company_id: companyId,
-        owner_id: ownerId,
-        track: 'ARETE',
-        balance: 500000,
-        total_earned: 500000,
-      }, { onConflict: 'company_id,owner_id,track' })
     } else if (!next && companyId) {
       await supabase.from('brand_arete_members').update({ status: 'cancelled' })
         .eq('company_id', companyId).eq('owner_id', ownerId)
@@ -547,6 +541,29 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   }
 
   const showCsvAtTop = !initLedgerLoading && !hasManualInit
+
+  if (pointsManageOwner && companyId) {
+    return (
+      <div>
+        {toast && (
+          <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
+            {toast}
+          </div>
+        )}
+        <BrandPointsManage
+          companyId={companyId}
+          staffId={staffId}
+          ownerId={pointsManageOwner.id}
+          ownerName={pointsManageOwner.name}
+          ownerShop={pointsManageOwner.salon_name}
+          onBack={() => {
+            setPointsManageOwner(null)
+            void loadPointBalances()
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -716,6 +733,15 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
                   </button>
                   <OwnerOrenTalkButton brandId={brandId} ownerId={o.id} ownerName={o.name} />
                 </div>
+                {companyId ? (
+                  <button
+                    type="button"
+                    onClick={() => setPointsManageOwner(o)}
+                    style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, border: '0.5px solid rgba(201,169,110,0.4)', background: 'rgba(201,169,110,0.08)', color: GOLD, cursor: 'pointer' }}
+                  >
+                    💰 포인트 관리
+                  </button>
+                ) : null}
               </div>
             </div>
           ))

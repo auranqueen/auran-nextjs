@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { formEncode, parsePayAppResponse, PAYAPP_API_URL } from '@/lib/payments/payappUtil'
+import { applyPointsDelta } from '@/lib/points/applyPointsDelta'
 
 const MIN_AMOUNT = 1000
 
@@ -10,11 +11,41 @@ async function markAreteInvoicePaid(
   invoiceId: string,
 ) {
   const nowIso = new Date().toISOString()
-  await svc
+  return svc
     .from('brand_arete_invoices')
     .update({ status: 'paid', paid_at: nowIso })
     .eq('id', invoiceId)
     .eq('status', 'unpaid')
+    .select('id, billing_month, company_id, owner_id')
+    .maybeSingle()
+}
+
+async function grantAretePointsIfNeeded(
+  svc: NonNullable<ReturnType<typeof tryCreateServiceClient>>,
+  opts: { companyId: string; ownerId: string; invoiceId: string; billingMonth?: string | null },
+) {
+  const { data: existingGrant } = await svc
+    .from('brand_points_ledger')
+    .select('id')
+    .eq('company_id', opts.companyId)
+    .eq('owner_id', opts.ownerId)
+    .eq('track', 'ARETE')
+    .eq('source_type', 'arete_payment')
+    .ilike('reason', `%${opts.invoiceId}%`)
+    .limit(1)
+    .maybeSingle()
+  if (existingGrant?.id) return
+  const bm = String(opts.billingMonth || new Date().toISOString().slice(0, 10))
+  const y = Number(bm.slice(0, 4)) || new Date().getFullYear()
+  const m = Number(bm.slice(5, 7)) || new Date().getMonth() + 1
+  await applyPointsDelta(svc, {
+    companyId: opts.companyId,
+    ownerId: opts.ownerId,
+    track: 'ARETE',
+    amount: 500000,
+    reason: `${y}년 ${m}월 아레테 구독 결제완료 지급 (${opts.invoiceId})`,
+    sourceType: 'arete_payment',
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -102,7 +133,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: intentErr?.message || 'intent_failed' }, { status: 500 })
     }
 
-    await markAreteInvoicePaid(svc, invoiceId)
+    const { data: paidInv } = await markAreteInvoicePaid(svc, invoiceId)
+    await grantAretePointsIfNeeded(svc, {
+      companyId: String(invoice.company_id),
+      ownerId: profile.id,
+      invoiceId,
+      billingMonth: (paidInv as { billing_month?: string } | null)?.billing_month || String(invoice.billing_month),
+    })
     return NextResponse.json({ ok: true, demo: true, intent_id: intent.id })
   }
 

@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
 
   const billingMonth = todayMonthDate()
   let invoicesCreated = 0
-  let pointsGranted = 0
   const errors: string[] = []
 
   const { data: companies } = await svc.from('brand_companies').select('id')
@@ -54,34 +53,6 @@ export async function GET(req: NextRequest) {
         continue
       }
       invoicesCreated += 1
-
-      const { data: pointRow } = await svc
-        .from('brand_points')
-        .select('balance, total_earned')
-        .eq('company_id', companyId)
-        .eq('owner_id', ownerId)
-        .eq('track', 'ARETE')
-        .maybeSingle()
-
-      if (pointRow) {
-        const nextBalance = Math.trunc(Number((pointRow as { balance?: number }).balance) || 0) + 500000
-        const nextEarned = Math.trunc(Number((pointRow as { total_earned?: number }).total_earned) || 0) + 500000
-        await svc
-          .from('brand_points')
-          .update({ balance: nextBalance, total_earned: nextEarned })
-          .eq('company_id', companyId)
-          .eq('owner_id', ownerId)
-          .eq('track', 'ARETE')
-      } else {
-        await svc.from('brand_points').insert({
-          company_id: companyId,
-          owner_id: ownerId,
-          track: 'ARETE',
-          balance: 500000,
-          total_earned: 500000,
-        })
-      }
-      pointsGranted += 1
     }
   }
 
@@ -89,7 +60,6 @@ export async function GET(req: NextRequest) {
     ok: true,
     billing_month: billingMonth,
     invoices_created: invoicesCreated,
-    points_granted: pointsGranted,
     errors,
   })
 }

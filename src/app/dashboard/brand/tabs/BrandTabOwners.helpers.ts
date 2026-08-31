@@ -45,6 +45,7 @@ export interface Props {
   brandId: string | null
   brandName: string
   authId: string | null
+  staffId?: string | null
 }
 
 export function downloadCsvTemplate() {

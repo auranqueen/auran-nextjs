@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { calcPouchTier } from '@/lib/brand/brandBilling'
+import { applyPointsDelta } from '@/lib/points/applyPointsDelta'
 export type AggregateBrandBillingParams = {
   companyId: string
   profileId: string
@@ -124,39 +125,28 @@ export async function aggregateBrandBilling(
       error: upsertErr?.message || 'upsert_failed',
     }
   }
+  const ymLabel = String(monthDate).slice(0, 7)
+  const yLabel = Number(ymLabel.slice(0, 4)) || new Date().getFullYear()
+  const mLabel = Number(ymLabel.slice(5, 7)) || new Date().getMonth() + 1
   if (pointsDelta > 0) {
-    const { data: pointRow } = await supabase
-      .from('brand_points')
-      .select('balance')
-      .eq('company_id', companyId)
-      .eq('owner_id', profileId)
-      .eq('track', 'ARETE')
-      .maybeSingle()
-    const currentBalance = Math.trunc(Number((pointRow as { balance?: number } | null)?.balance) || 0)
-    const nextBalance = Math.max(0, currentBalance - pointsDelta)
-    await supabase
-      .from('brand_points')
-      .update({ balance: nextBalance })
-      .eq('company_id', companyId)
-      .eq('owner_id', profileId)
-      .eq('track', 'ARETE')
+    await applyPointsDelta(supabase, {
+      companyId,
+      ownerId: profileId,
+      track: 'ARETE',
+      amount: -pointsDelta,
+      reason: `${yLabel}년 ${mLabel}월 정산 아레테 사용분 차감`,
+      sourceType: 'monthly_billing',
+    })
   }
   if (pointsRewardDelta > 0) {
-    const { data: rewardPointRow } = await supabase
-      .from('brand_points')
-      .select('balance')
-      .eq('company_id', companyId)
-      .eq('owner_id', profileId)
-      .eq('track', 'REWARD')
-      .maybeSingle()
-    const currentRewardBalance = Math.trunc(Number((rewardPointRow as { balance?: number } | null)?.balance) || 0)
-    const nextRewardBalance = Math.max(0, currentRewardBalance - pointsRewardDelta)
-    await supabase
-      .from('brand_points')
-      .update({ balance: nextRewardBalance })
-      .eq('company_id', companyId)
-      .eq('owner_id', profileId)
-      .eq('track', 'REWARD')
+    await applyPointsDelta(supabase, {
+      companyId,
+      ownerId: profileId,
+      track: 'REWARD',
+      amount: -pointsRewardDelta,
+      reason: `${yLabel}년 ${mLabel}월 정산 리워드 사용분 차감`,
+      sourceType: 'monthly_billing',
+    })
   }
   return {
     ok: true,

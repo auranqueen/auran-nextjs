@@ -306,7 +306,7 @@ export default function BrandHubContent({
           {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t, s) => { setMainTab(t as MainTab); setMainSub(s) }} />}
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
-          {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
+          {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} staffId={staffId} />}
           {mainTab === 'arete' && <BrandTabArete companyId={companyId} staffId={staffId} />}
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} brandId={brandId} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} companyId={companyId} staffId={staffId} initialSub={mainSub as 'history' | 'chat' | undefined} />}

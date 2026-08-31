@@ -4,6 +4,13 @@
 ---
 
 ## 2026-08-31
+### fix: 아레테 50만포인트 지급 시점을 구독 결제완료로 이동 + 원장(ledger)
+- 지급 버그: 청구서 생성 크론·아레테 ON 토글 즉시 +50만 → **삭제**. ARETE 50만은 civasan 웹훅 `kind=arete` paid(및 데모 create)에서만 지급. 웰컴보너스(ON upsert 50만) 완전 삭제.
+- `brand_points_ledger` 신규(마이그레이션 **186**): 적립/차감 전 거래 이력. `source_type` CHECK = `manual` | `invoice_webhook` | `arete_payment` | `monthly_billing`.
+- `applyPointsDelta` 공용 헬퍼로 지급/차감 통일: 청구서 REWARD 웹훅, 아레테 결제, 월정산(aggregateBrandBilling) 델타 차감, 브랜드 수동 조정.
+- 브랜드 「원장님 현황」: 행별 「포인트 관리」→ 강제적립/차감(사유 필수)+내역 (`BrandPointsManage`, `/api/brand/points/*`).
+- 원장 홈(OwnerHomeV3)·AreteMembershipCard: REWARD/아레테 카드 「내역보기」→ `OwnerPointsLedgerView` (`/api/owner/points/ledger`).
+- 쉽게: 아레테 포인트는 **구독료 낸 뒤에만** 쌓이고, 적립·차감마다 내역이 남으며, 브랜드/원장 화면에서 그 내역을 볼 수 있다. DB에 **186** SQL 적용 필요.
 ### fix: 고객관리·매출리포트 준비중 페이지 분리 + 사이드바 하이라이트 중복 수정
 - 신규: `/dashboard/owner/customers`, `/dashboard/owner/sales-report` 라이트 테마 준비중 안내 페이지.
 - OwnerSidebarShell: 고객 관리→`/customers`, 매출 리포트→`/sales-report`. 활성탭에서 `/dashboard/owner` 접두 매칭 제외해 홈이 하위 메뉴와 동시 하이라이트되던 버그 수정. href 고유화로 key 충돌 해소.

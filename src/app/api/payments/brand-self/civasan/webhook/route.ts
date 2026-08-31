@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { applyPointsDelta } from '@/lib/points/applyPointsDelta'
 type BrandPaymentIntentRow = {
   id: string
   brand_id: string | null
@@ -112,31 +113,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     if (updatedInvoice && Number(updatedInvoice.points_total) > 0) {
       const rewardAmount = Math.trunc(Number(updatedInvoice.points_total) || 0)
-      const { data: pointRow } = await svc
-        .from('brand_points')
-        .select('balance, total_earned')
-        .eq('company_id', intent.company_id)
-        .eq('owner_id', intent.owner_id)
-        .eq('track', 'REWARD')
-        .maybeSingle()
-      if (pointRow) {
-        const nextBalance = Math.trunc(Number((pointRow as { balance?: number }).balance) || 0) + rewardAmount
-        const nextEarned = Math.trunc(Number((pointRow as { total_earned?: number }).total_earned) || 0) + rewardAmount
-        await svc
-          .from('brand_points')
-          .update({ balance: nextBalance, total_earned: nextEarned })
-          .eq('company_id', intent.company_id)
-          .eq('owner_id', intent.owner_id)
-          .eq('track', 'REWARD')
-      } else {
-        await svc.from('brand_points').insert({
-          company_id: intent.company_id,
-          owner_id: intent.owner_id,
-          track: 'REWARD',
-          balance: rewardAmount,
-          total_earned: rewardAmount,
-        })
-      }
+      await applyPointsDelta(svc, {
+        companyId: intent.company_id,
+        ownerId: intent.owner_id,
+        track: 'REWARD',
+        amount: rewardAmount,
+        reason: '청구서 결제완료 적립 (등급 비율)',
+        sourceType: 'invoice_webhook',
+      })
     }
     return new NextResponse('SUCCESS', { status: 200 })
   }
@@ -145,11 +129,39 @@ export async function POST(req: NextRequest) {
       .from('brand_payment_intents')
       .update({ status: 'paid', provider_trade_id: mulNo || intent.provider_trade_id, updated_at: nowIso })
       .eq('id', intent.id)
-    await svc
+    const { data: paidAreteInvoice } = await svc
       .from('brand_arete_invoices')
       .update({ status: 'paid', paid_at: nowIso })
       .eq('id', intent.arete_invoice_id)
       .eq('status', 'unpaid')
+      .select('id, billing_month')
+      .maybeSingle()
+    const invoiceRef = intent.arete_invoice_id
+    const { data: existingGrant } = await svc
+      .from('brand_points_ledger')
+      .select('id')
+      .eq('company_id', intent.company_id)
+      .eq('owner_id', intent.owner_id)
+      .eq('track', 'ARETE')
+      .eq('source_type', 'arete_payment')
+      .ilike('reason', `%${invoiceRef}%`)
+      .limit(1)
+      .maybeSingle()
+    if (!existingGrant?.id) {
+      const bm = String(
+        (paidAreteInvoice as { billing_month?: string } | null)?.billing_month || nowIso.slice(0, 10),
+      )
+      const y = Number(bm.slice(0, 4)) || new Date().getFullYear()
+      const m = Number(bm.slice(5, 7)) || new Date().getMonth() + 1
+      await applyPointsDelta(svc, {
+        companyId: intent.company_id,
+        ownerId: intent.owner_id,
+        track: 'ARETE',
+        amount: 500000,
+        reason: `${y}년 ${m}월 아레테 구독 결제완료 지급 (${invoiceRef})`,
+        sourceType: 'arete_payment',
+      })
+    }
     return new NextResponse('SUCCESS', { status: 200 })
   }
   if (intent.kind === 'tier' && intent.tier_order_id) {

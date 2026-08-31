@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { OwnerBadgeTierSection, type TierBadgeBrand } from './OwnerBadgeTierSection'
 import { OwnerBrandSelfTierSection, type SelfTierBrand } from './OwnerBrandSelfTierSection'
 import OwnerBrandProductRevenueRow from '@/components/salon-store/OwnerBrandProductRevenueRow'
+import OwnerPointsLedgerView from '@/components/owner/OwnerPointsLedgerView'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 
 const GRADE_COLORS: Record<string, string> = {
@@ -116,6 +117,7 @@ export default function OwnerHomeV3({
   const [pointBalance, setPointBalance] = useState(0)
   const [rewardBalance, setRewardBalance] = useState(0)
   const [pointsReady, setPointsReady] = useState(false)
+  const [ledgerTrack, setLedgerTrack] = useState<'REWARD' | 'ARETE' | null>(null)
 
   const loadBrandChats = useCallback(async () => {
     try {
@@ -325,20 +327,43 @@ export default function OwnerHomeV3({
         </div>
 
         {pointsReady && areteCompanyId ? (
+          ledgerTrack ? (
+            <OwnerPointsLedgerView
+              track={ledgerTrack}
+              companyId={areteCompanyId}
+              onBack={() => {
+                setLedgerTrack(null)
+                void loadPoints()
+              }}
+            />
+          ) : (
           <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
             <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: 9, background: '#c9a96e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
               <div style={{ fontSize: 11, color: '#a8863f', marginBottom: 4 }}>적립포인트</div>
               <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{rewardBalance.toLocaleString()}P</div>
-              <div style={{ borderTop: '1px solid #ecdfc4', marginTop: 10, paddingTop: 8, fontSize: 10, color: '#888888' }}>발주 시 등급 비율로 적립</div>
+              <button
+                type="button"
+                onClick={() => setLedgerTrack('REWARD')}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', borderTop: '1px solid #ecdfc4', marginTop: 10, paddingTop: 8, background: 'transparent', fontSize: 10, color: '#a8863f', cursor: 'pointer' }}
+              >
+                내역보기 →
+              </button>
             </div>
             <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #f1ecf7 100%)', border: '1px solid #e2d5f0', borderRadius: 16, padding: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: 9, background: '#7b5ea7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
               <div style={{ fontSize: 11, color: '#7b5ea7', marginBottom: 4 }}>아레테포인트</div>
               <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{pointBalance.toLocaleString()}P</div>
-              <div style={{ borderTop: '1px solid #e2d5f0', marginTop: 10, paddingTop: 8, fontSize: 10, color: '#888888' }}>포인트 누적잔액 · 이벤트 상품 결제시 사용 가능</div>
+              <button
+                type="button"
+                onClick={() => setLedgerTrack('ARETE')}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', borderTop: '1px solid #e2d5f0', marginTop: 10, paddingTop: 8, background: 'transparent', fontSize: 10, color: '#7b5ea7', cursor: 'pointer' }}
+              >
+                내역보기 →
+              </button>
             </div>
           </div>
+          )
         ) : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
