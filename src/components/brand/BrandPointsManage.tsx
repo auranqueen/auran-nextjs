@@ -216,13 +216,6 @@ export default function BrandPointsManage({
           {toast}
         </div>
       ) : null}
-      <button
-        type="button"
-        onClick={onBack}
-        style={{ background: 'transparent', border: 'none', color: SUB, fontSize: 12, cursor: 'pointer', marginBottom: 10, padding: 0 }}
-      >
-        ← 원장 목록
-      </button>
       <div style={CARD}>
         <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>{ownerName}</div>
         <div style={{ fontSize: 11, color: SUB, marginBottom: 12 }}>{ownerShop || '-'}</div>

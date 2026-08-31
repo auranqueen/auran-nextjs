@@ -133,13 +133,6 @@ export default function OwnerPointsLedgerView({ track, companyId, title, onBack 
   return (
     <FullViewportModal onClose={onBack}>
     <div style={wrap}>
-      <button
-        type="button"
-        onClick={onBack}
-        style={{ background: 'transparent', border: 'none', color: '#888', fontSize: 12, cursor: 'pointer', padding: 0, marginBottom: 12 }}
-      >
-        ← 돌아가기
-      </button>
       <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1A2E', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 11, color: accent, marginBottom: 4 }}>현재 잔액</div>
       <div style={{ fontSize: 22, fontWeight: 600, color: '#1A1A2E', marginBottom: 16 }}>
