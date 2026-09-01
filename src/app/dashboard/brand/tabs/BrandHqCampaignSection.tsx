@@ -18,6 +18,10 @@ type Campaign = {
   is_active: boolean
   target_grades?: string[] | null
   broadcasted_at?: string | null
+  view_count?: number
+  order_count?: number
+  revenue?: number
+  conversion_pct?: number
 }
 type TierGiftDraft = { product_id: string; qty: string }
 type TierDraft = {
@@ -93,7 +97,20 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
       .eq('company_id', companyId)
       .is('owner_id', null)
       .order('start_at', { ascending: false })
-    setCampaigns((campaignRows || []) as Campaign[])
+    const rows = (campaignRows || []) as Campaign[]
+    const withStats = await Promise.all(rows.map(async (c) => {
+      const [viewsRes, ordersRes] = await Promise.all([
+        supabase.from('hq_campaign_views').select('*', { count: 'exact', head: true }).eq('campaign_id', c.id),
+        supabase.from('brand_orders').select('total_amount').eq('campaign_id', c.id),
+      ])
+      const viewCount = viewsRes.count ?? 0
+      const orders = (ordersRes.data || []) as { total_amount?: number | null }[]
+      const orderCount = orders.length
+      const revenue = orders.reduce((sum, o) => sum + Math.trunc(Number(o.total_amount) || 0), 0)
+      const conversionPct = viewCount > 0 ? Math.round((orderCount / viewCount) * 100) : 0
+      return { ...c, view_count: viewCount, order_count: orderCount, revenue, conversion_pct: conversionPct }
+    }))
+    setCampaigns(withStats)
   }, [companyId, supabase])
   useEffect(() => {
     void load()
@@ -292,6 +309,12 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                     · 발송 {new Date(c.broadcasted_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 ) : null}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12, fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>
+                <span>👀 읽음 {c.view_count ?? 0}</span>
+                <span>🛒 구매 {c.order_count ?? 0}건</span>
+                <span>💰 매출 {(c.revenue ?? 0).toLocaleString()}원</span>
+                <span>📈 전환율 {c.conversion_pct ?? 0}%</span>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
                 <button type="button" onClick={() => openBroadcastPanel(c.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(255,193,7,0.35)', background: 'rgba(255,193,7,0.1)', color: 'rgba(255,193,7,0.9)', cursor: 'pointer' }}>

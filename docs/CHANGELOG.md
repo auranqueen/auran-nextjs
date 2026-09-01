@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### feat: HQ 이벤트 등록화면 캠페인별 실시간 통계 미니카드
+
+- `BrandHqCampaignSection`: 캠페인 카드에 읽음(`hq_campaign_views`)·구매/매출(`brand_orders`)·전환율 미니 통계바 표시
+
 ### fix: HQ 이벤트 발송 API insert 실패 에러 응답 노출
 
 - `POST /api/brand/campaigns/broadcast`: per-owner `msgErr`를 `failed_count`·`first_error`로 응답에 포함 (기존 `sent_count`·성공 흐름 유지)
