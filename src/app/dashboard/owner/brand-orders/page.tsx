@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import BrandOrderProductCard from './BrandOrderProductCard'
-import EventPackageSection from './components/EventPackageSection'
 import AreteMembershipCard from './components/AreteMembershipCard'
 import OwnerOrderStatement from './components/OwnerOrderStatement'
 import BrandSamplesSection from '@/components/owner/BrandSamplesSection'
@@ -22,7 +21,6 @@ import {
 import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
-import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 import { billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
 
 const BG = '#ffffff'
@@ -129,7 +127,6 @@ export default function BrandOrdersPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [supplyPromos, setSupplyPromos] = useState<SupplyPromoRow[]>([])
-  const [hqForcedCampaigns, setHqForcedCampaigns] = useState<HqForcedCampaign[]>([])
   const [gradeByBrandId, setGradeByBrandId] = useState<Record<string, string>>({})
   const [linkedBrandIds, setLinkedBrandIds] = useState<string[]>([])
   const [linkedBrandNames, setLinkedBrandNames] = useState<Record<string, string>>({})
@@ -328,67 +325,6 @@ export default function BrandOrdersPage() {
       }
     }
     setGradeByBrandId(gradeMap)
-    // HQ 강제이벤트 조회 (본사 강제노출, owner_id is null, 활성+기간내)
-    let hqCampaigns: HqForcedCampaign[] = []
-    if (companyIdsForGrade.length > 0) {
-      const { data: campaignRows } = await supabase
-        .from('hq_forced_campaigns')
-        .select('id, company_id, title, description, image_url, badge_text, target_product_ids, start_at, end_at, target_grades')
-        .in('company_id', companyIdsForGrade)
-        .is('owner_id', null)
-        .eq('is_active', true)
-        .lte('start_at', new Date().toISOString())
-        .gte('end_at', new Date().toISOString())
-      // target_grades null/[] = 전체노출; 배열이면 해당 회사 소속 브랜드 등급 중 하나라도 포함 시 노출
-      const filteredCampaignRows = (campaignRows || []).filter((r: {
-        target_grades?: string[] | null
-        company_id?: string
-      }) => {
-        const tg = r.target_grades
-        if (!tg || !Array.isArray(tg) || tg.length === 0) return true
-        const companyId = String(r.company_id || '')
-        const brandsInCompany = brandIds.filter((bid) => brandCompanyMap[bid] === companyId)
-        const grades = (brandsInCompany.length > 0 ? brandsInCompany : brandIds).map((bid) =>
-          gradeForBrand(gradeMap, bid),
-        )
-        return grades.some((g) => tg.includes(g))
-      })
-      const campaignIds = filteredCampaignRows.map((r: { id: string }) => r.id)
-      const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
-      if (campaignIds.length > 0) {
-        const { data: tierRows } = await supabase
-          .from('hq_forced_campaign_tiers')
-          .select('campaign_id, min_qty, min_amount, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
-          .in('campaign_id', campaignIds)
-        for (const t of (tierRows || []) as {
-          campaign_id: string
-          min_qty: number
-          min_amount: number | null
-          discount_pct: number | null
-          discount_amount: number | null
-          fixed_price: number | null
-          gifts: { product_id: string; qty: number }[] | null
-          highlight_text: string | null
-        }[]) {
-          const cid = String(t.campaign_id)
-          if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
-          tiersByCampaign[cid]!.push({
-            min_qty: t.min_qty,
-            min_amount: t.min_amount ?? null,
-            discount_pct: t.discount_pct,
-            discount_amount: t.discount_amount,
-            fixed_price: t.fixed_price,
-            gifts: t.gifts ?? [],
-            highlight_text: t.highlight_text,
-          })
-        }
-      }
-      hqCampaigns = (filteredCampaignRows as any[]).map((r) => ({
-        ...r,
-        tiers: tiersByCampaign[String(r.id)] || [],
-      })) as HqForcedCampaign[]
-    }
-    setHqForcedCampaigns(hqCampaigns)
 
     if (brandIds.length > 0) {
       const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
@@ -551,20 +487,7 @@ export default function BrandOrdersPage() {
     ).line_amount,
     0,
   )
-  const hqCampaignEffects = resolveHqCampaignEffects(
-    popupCart.map((c) => ({
-      product_id: c.product.id,
-      qty: cartLineQty(c),
-      unit_price: buildOrderLineItem(
-        c.product,
-        cartLineQty(c),
-        promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-        c.promo,
-      ).unit_price,
-    })),
-    hqForcedCampaigns,
-  )
-  const popupFinalAmount = popupTotalAmount - hqCampaignEffects.discountTotal
+  const popupFinalAmount = popupTotalAmount
   const popupPointsEarned = (() => {
     const byBrand = new Map<string, typeof popupCart>()
     for (const c of popupCart) {
@@ -779,13 +702,6 @@ export default function BrandOrdersPage() {
         ratesByCompany[cid][String((row as { grade: string }).grade)] = Number((row as { rate: number }).rate)
       }
     }
-    const wholeCartItems = cart.map((c) => ({
-      product_id: c.product.id,
-      qty: cartLineQty(c),
-      unit_price: buildOrderLineItem(c.product, cartLineQty(c), promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.promo).unit_price,
-    }))
-    const wholeCartEffects = resolveHqCampaignEffects(wholeCartItems, hqForcedCampaigns)
-    const wholeCartLineTotal = wholeCartItems.reduce((s, i) => s + i.qty * i.unit_price, 0)
     const cartItems = Array.from(byBrand.entries()).map(([brandId, rows]) => {
       const orderGrade = gradeForBrand(gradeByBrandId, brandId)
       const items = rows.map((c) => {
@@ -797,35 +713,8 @@ export default function BrandOrdersPage() {
         )
         return { ...line, bonus: cartLineBonus(line.bonus, c.sets) }
       })
-      const giftItemsForBrand = wholeCartEffects.giftLines
-        .filter((g) => {
-          if (g.effect_type !== 'gift' || !g.product_id) return false
-          const giftBrandId = products.find((p) => p.id === g.product_id)?.brand_id
-          if (giftBrandId) return giftBrandId === brandId
-          const camp = hqForcedCampaigns.find((c) => c.id === g.campaign_id)
-          const targets = camp?.target_product_ids ?? []
-          return rows.some((r) => targets.includes(r.product.id))
-        })
-        .map((g) => {
-          const pid = String(g.product_id)
-          const prod = products.find((p) => p.id === pid)
-          return {
-            product_id: pid,
-            name: prod?.name || g.label,
-            qty: g.qty,
-            unit_price: 0,
-            line_amount: 0,
-            bonus: 0,
-            promo: g.label,
-          }
-        })
-      const itemsWithGifts = [...items, ...giftItemsForBrand]
-      const totalItems = itemsWithGifts.reduce((s, i) => s + i.qty, 0)
-      const brandLineTotal = items.reduce((s, i) => s + i.line_amount, 0)
-      const brandShareDiscount = wholeCartLineTotal > 0
-        ? Math.round(wholeCartEffects.discountTotal * (brandLineTotal / wholeCartLineTotal))
-        : 0
-      const totalAmount = brandLineTotal - brandShareDiscount
+      const totalItems = items.reduce((s, i) => s + i.qty, 0)
+      const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
       const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
       const companyIdForBrand = brandCompanyMap[brandId]
       const pointsEarned = calcPointsEarned(totalAmount, orderGrade, companyIdForBrand ? (ratesByCompany[companyIdForBrand] ?? null) : null)
@@ -835,7 +724,7 @@ export default function BrandOrdersPage() {
         owner_name: ownerName,
         salon_name: salonName,
         grade: orderGrade,
-        items: itemsWithGifts,
+        items,
         total_qty: totalItems,
         total_amount: totalAmount,
         promo_applied: promoApplied,
@@ -1065,7 +954,6 @@ export default function BrandOrdersPage() {
           </button>
         </div>
       )}
-      <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} ownerName={ownerName} salonName={salonName} />
       <AreteMembershipCard ownerProfileId={ownerProfileId} />
       <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', margin: '0 16px 12px' }} />
       {linkedBrandOptions.length > 0 && (
@@ -1244,24 +1132,13 @@ export default function BrandOrdersPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>
               </div>
-              {hqCampaignEffects.discountTotal > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e74c3c' }}>
-                  <span>캠페인 할인</span>
-                  <span>-{hqCampaignEffects.discountTotal.toLocaleString()}원</span>
-                </div>
-              )}
-              {hqCampaignEffects.giftLines.filter(g => g.effect_type === 'gift').map((g, i) => (
-                <div key={i} style={{ fontSize: 13, color: '#7B5EA7' }}>
-                  🎁 {g.label}
-                </div>
-              ))}
               {popupRewardUsable > 0 && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
                   <input type="checkbox" checked={usePointsReward} onChange={(e) => setUsePointsReward(e.target.checked)} />
                   일반적립금으로 결제할게요 (누적잔액 {popupRewardBalanceTotal.toLocaleString()}P)
                 </label>
               )}
-              {(hqCampaignEffects.discountTotal > 0 || popupRewardApplied > 0) && (
+              {popupRewardApplied > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}>
                   <span>최종 결제금액</span>
                   <span>{popupFinalAfterReward.toLocaleString()}원</span>

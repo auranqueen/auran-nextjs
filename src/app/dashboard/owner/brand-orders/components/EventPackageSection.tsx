@@ -39,6 +39,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId, ownerNa
   const [selectedSets, setSelectedSets] = useState(1)
   const [usePoints, setUsePoints] = useState(true)
   const [usePointsReward, setUsePointsReward] = useState(true)
+  const [areteHintOpen, setAreteHintOpen] = useState(false)
   const [ordering, setOrdering] = useState(false)
   const [toast, setToast] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -46,6 +47,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId, ownerNa
     setSelected(c)
     setSelectedSets(defaultSelectedSets(c))
     setUsePoints(true)
+    setAreteHintOpen(false)
     if (ownerProfileId) {
       void (async () => {
         await supabase.from('hq_campaign_views').insert({
@@ -444,10 +446,62 @@ export default function EventPackageSection({ campaigns, ownerProfileId, ownerNa
                       <span>결제 예정 ({selectedSets}세트)</span>
                       <span>{packageFinalAmount.toLocaleString()}원</span>
                     </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)} />
-                      아레테 포인트로 결제할게요 (누적잔액 {selectedBalance.toLocaleString()}P)
-                    </label>
+                    <div style={{ position: 'relative', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, cursor: 'pointer', flex: 1 }}>
+                          <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)} />
+                          아레테 포인트로 결제할게요 (누적잔액 {selectedBalance.toLocaleString()}P)
+                        </label>
+                        <button
+                          type="button"
+                          aria-label="아레테 포인트 안내"
+                          aria-expanded={areteHintOpen}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setAreteHintOpen((v) => !v)
+                          }}
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            border: '1px solid #7B5EA7',
+                            background: areteHintOpen ? '#7B5EA7' : 'transparent',
+                            color: areteHintOpen ? '#fff' : '#c4a7e7',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            lineHeight: '16px',
+                            padding: 0,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                          }}
+                        >
+                          ?
+                        </button>
+                      </div>
+                      {areteHintOpen ? (
+                        <div
+                          role="tooltip"
+                          style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            marginTop: 6,
+                            zIndex: 5,
+                            maxWidth: 240,
+                            padding: '8px 10px',
+                            borderRadius: 8,
+                            background: '#3A3540',
+                            color: '#fff',
+                            fontSize: 11,
+                            lineHeight: 1.5,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                          }}
+                        >
+                          포인트는 지금 바로 차감되지 않고, 이번 달 청구서에서 한번에 정산돼요
+                        </div>
+                      ) : null}
+                    </div>
                     {selectedRewardBalance > 0 && (
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
                         <input type="checkbox" checked={usePointsReward} onChange={(e) => setUsePointsReward(e.target.checked)} />

@@ -3,6 +3,22 @@
 
 ---
 
+## 2026-09-02
+### fix: 원장 발주(A/B) 일반카트에서 HQ 캠페인 자동할인·배너·서버검증 제거
+
+- `brand-orders/page.tsx`: `EventPackageSection` 언마운트. `hq_forced_campaigns` 조회·`resolveHqCampaignEffects` 카트 할인/증정 병합·팝업 「캠페인 할인」 UI 제거. 일반카트는 `buildOrderLineItem`(N+M)만 사용
+- `hq-stock-orders/page.tsx`: 동일하게 캠페인 로드·할인 계산·증정 라인·할인 UI 제거. `final_amount`는 카탈로그 `cartTotal`
+- `/api/brand-order-batches/create`: `package_campaign_id` 선주문 분기(공용 `computeCampaignPackagePricing` 검증)는 유지. 일반카트 `else`의 `hq_forced_campaigns` 재검증/`resolveHqCampaignEffects` 제거 — `line_amount` 합과 클라이언트 금액만 비교
+- `/api/hq-stock-orders/create`: `resolveHqCampaignEffects` 검증 제거. `expectedFinal = rawLineTotal`
+- 트랙 A/B 정책 격리 유지: 카탈로그 카트에 HQ 캠페인 할인을 자동 적용하지 않음. 선주문은 채팅/소식 `CampaignQuickOrderModal` → `package_campaign_id` 경로만 캠페인 가격 사용. `brand_tier_promo_rules`/`buildOrderLineItem` 미변경
+
+### feat: 선주문 아레테 포인트 체크박스에 월정산 안내 말풍선 추가
+
+- `CampaignQuickOrderModal`: 아레테 포인트 체크박스 옆에 `?` 아이콘. 기본 숨김, 클릭 시 「포인트는 지금 바로 차감되지 않고, 이번 달 청구서에서 한번에 정산돼요」 토글
+- `EventPackageSection`: 동일 UI. 캠페인 팝업을 다시 열면 말풍선은 닫힌 상태. 아이콘은 label 밖이라 체크박스와 독립 토글
+
+---
+
 ## 2026-09-01
 ### fix: 캠페인 주문경로에서 원장이름/샵명 누락되던 것 수정
 
