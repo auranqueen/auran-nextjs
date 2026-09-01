@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: HQ 이벤트 발송 버튼 + 원장 소식/채팅 캠페인 카드 렌더링
+
+- `BrandHqCampaignSection`: 캠페인 카드에 발송/재발송 버튼·인라인 등급 선택 패널, `POST /api/brand/campaigns/broadcast` 연동 (`target_grades`, `broadcasted_at` 조회)
+- `brand-community/page`: `campaign_id` 있는 `brand_posts`에 🔥 이벤트 배지·캠페인 썸네일·주문 CTA; 일반 공지 렌더 회귀 없음
+- `BrandChatThreadLite` + `GET /api/owner/chat/messages`: `message_type='campaign'` 메시지 카드형(이미지+CTA) 렌더, 일반 텍스트/첨부 메시지 기존 유지
+
 ### feat: HQ 이벤트 등급 타겟 발송 API (1:1 채팅 + 소식)
 
 - `resolveOwnersByGrades`: 회사 소속 brand 전체 `get_brand_owner_roster` → active dedupe, `brand_owner_grades`(origin_track A) 등급 필터

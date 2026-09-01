@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export type OwnerBrandChatChannel = {
   id: string
@@ -18,6 +19,7 @@ export type OwnerBrandChatMessage = {
   message_type: string
   body: string | null
   attachment_url: string | null
+  campaign_id?: string | null
   created_at: string
 }
 
@@ -40,6 +42,7 @@ const THEIR_BG = '#f0f0f3'
 export default function BrandChatThreadLite({
   channel, messages, onSend, onSendAttachment,
 }: Props) {
+  const router = useRouter()
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -99,18 +102,38 @@ export default function BrandChatThreadLite({
           <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 12, padding: 24 }}>메시지를 보내보세요</div>
         ) : messages.map((m) => {
           const mine = m.sender_type === 'owner'
+          const isCampaign = m.message_type === 'campaign'
           return (
             <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 8 }}>
               <div style={{
                 maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
                 background: mine ? MINE_BG : THEIR_BG, color: TEXT, fontSize: 13, lineHeight: 1.45,
               }}>
-                {m.body ? <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div> : null}
-                {m.attachment_url ? (
-                  <a href={m.attachment_url} target="_blank" rel="noreferrer" style={{ color: PURPLE, fontSize: 12 }}>
-                    📎 첨부파일 보기
-                  </a>
-                ) : null}
+                {isCampaign ? (
+                  <>
+                    {m.attachment_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.attachment_url} alt="" style={{ maxWidth: 200, width: '100%', borderRadius: 8, marginBottom: 6, display: 'block' }} />
+                    ) : null}
+                    {m.body ? <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div> : null}
+                    <button
+                      type="button"
+                      onClick={() => router.push('/dashboard/owner/brand-orders')}
+                      style={{ marginTop: 8, fontSize: 12, padding: '6px 10px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
+                    >
+                      자세히 보고 주문하기 →
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {m.body ? <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div> : null}
+                    {m.attachment_url ? (
+                      <a href={m.attachment_url} target="_blank" rel="noreferrer" style={{ color: PURPLE, fontSize: 12 }}>
+                        📎 첨부파일 보기
+                      </a>
+                    ) : null}
+                  </>
+                )}
                 <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4, textAlign: mine ? 'right' : 'left' }}>
                   {new Date(m.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                 </div>

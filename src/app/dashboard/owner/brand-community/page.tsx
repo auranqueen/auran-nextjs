@@ -19,6 +19,8 @@ interface Post {
   created_at: string
   brand_id: string
   brands: { name: string } | null
+  campaign_id?: string | null
+  campaign_image_url?: string | null
 }
 export default function BrandCommunityPage() {
   const router = useRouter()
@@ -43,14 +45,29 @@ export default function BrandCommunityPage() {
     if (ids.length === 0) { setLoading(false); return }
     let query = supabase
       .from('brand_posts')
-      .select('id, title, body, is_pinned, reply_count, author_type, created_at, brand_id, brands(name)')
+      .select('id, title, body, is_pinned, reply_count, author_type, created_at, brand_id, campaign_id, brands(name)')
       .in('brand_id', ids)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30)
     if (selBrand) query = query.eq('brand_id', selBrand)
     const { data } = await query
-    setPosts((data || []) as unknown as Post[])
+    const rows = (data || []) as unknown as Post[]
+    const campaignIds = Array.from(new Set(rows.map((p) => p.campaign_id).filter(Boolean))) as string[]
+    const imageByCampaign: Record<string, string> = {}
+    if (campaignIds.length > 0) {
+      const { data: campaigns } = await supabase
+        .from('hq_forced_campaigns')
+        .select('id, image_url')
+        .in('id', campaignIds)
+      for (const c of (campaigns || []) as { id: string; image_url?: string | null }[]) {
+        if (c.image_url) imageByCampaign[c.id] = String(c.image_url)
+      }
+    }
+    setPosts(rows.map((p) => ({
+      ...p,
+      campaign_image_url: p.campaign_id ? (imageByCampaign[p.campaign_id] || null) : null,
+    })))
     setLoading(false)
   }, [selBrand])
   useEffect(() => { void load() }, [load])
@@ -106,14 +123,30 @@ export default function BrandCommunityPage() {
                   {post.is_pinned && (
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${PURPLE}15`, color: PURPLE }}>📌 공지</span>
                   )}
+                  {post.campaign_id && (
+                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(229,57,53,0.1)', color: '#E53935' }}>🔥 이벤트</span>
+                  )}
                   <span style={{ fontSize: 11, color: PURPLE }}>{post.brands?.name || ''}</span>
                 </div>
+                {post.campaign_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={post.campaign_image_url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />
+                ) : null}
                 {post.title && (
                   <div style={{ fontSize: 14, fontWeight: 500, color: TEXT, marginBottom: 4 }}>{post.title}</div>
                 )}
                 <div style={{ fontSize: 13, color: expandId === post.id ? TEXT : SUB, lineHeight: 1.6, display: expandId === post.id ? 'block' : '-webkit-box', WebkitLineClamp: expandId === post.id ? undefined : 2, WebkitBoxOrient: 'vertical' as const, overflow: expandId === post.id ? 'visible' : 'hidden' }}>
                   {post.body}
                 </div>
+                {post.campaign_id ? (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); router.push('/dashboard/owner/brand-orders') }}
+                    style={{ marginTop: 10, fontSize: 12, padding: '6px 12px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
+                  >
+                    자세히 보고 주문하기 →
+                  </button>
+                ) : null}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: SUB }}>

@@ -16,6 +16,8 @@ type Campaign = {
   start_at: string
   end_at: string
   is_active: boolean
+  target_grades?: string[] | null
+  broadcasted_at?: string | null
 }
 type TierGiftDraft = { product_id: string; qty: string }
 type TierDraft = {
@@ -52,6 +54,7 @@ const EMPTY_DRAFT = {
   end_at: '',
 }
 type Props = { companyId: string | null; staffId: string | null; isCEO: boolean }
+const BROADCAST_GRADE_OPTIONS = ['\uCDE8\uAE09\uC810', '\uC804\uBB38\uC810', '\uD504\uB9AC\uBBF8\uC5C4\uC804\uBB38\uC810'] as const
 export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Props) {
   const supabase = createClient()
   const [brands, setBrands] = useState<BrandOpt[]>([])
@@ -63,6 +66,10 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [toast, setToast] = useState('')
+  const [broadcastPanelId, setBroadcastPanelId] = useState<string | null>(null)
+  const [broadcastAll, setBroadcastAll] = useState(true)
+  const [broadcastGrades, setBroadcastGrades] = useState<string[]>([])
+  const [broadcasting, setBroadcasting] = useState(false)
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
@@ -82,7 +89,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     }
     const { data: campaignRows } = await supabase
       .from('hq_forced_campaigns')
-      .select('id, title, description, image_url, badge_text, campaign_type, target_product_ids, start_at, end_at, is_active')
+      .select('id, title, description, image_url, badge_text, campaign_type, target_product_ids, start_at, end_at, is_active, target_grades, broadcasted_at')
       .eq('company_id', companyId)
       .is('owner_id', null)
       .order('start_at', { ascending: false })
@@ -208,8 +215,50 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
       showToast('삭제 실패')
       return
     }
-    showToast('삭제됐어요')
+    showToast('\uC0AD\uC81C\uB410\uC5B4\uC694')
     await load()
+  }
+  const openBroadcastPanel = (campaignId: string) => {
+    setBroadcastPanelId((prev) => (prev === campaignId ? null : campaignId))
+    setBroadcastAll(true)
+    setBroadcastGrades([])
+  }
+  const toggleBroadcastGrade = (grade: string) => {
+    setBroadcastGrades((prev) =>
+      prev.includes(grade) ? prev.filter((g) => g !== grade) : [...prev, grade],
+    )
+  }
+  const confirmBroadcast = async (campaignId: string) => {
+    if (!companyId) return
+    const targetGrades = broadcastAll ? 'all' : broadcastGrades
+    if (!broadcastAll && broadcastGrades.length === 0) {
+      showToast('\uB4F1\uAE09\uC744 \uC120\uD0DD\uD574\uC8FC\uC138\uC694')
+      return
+    }
+    setBroadcasting(true)
+    try {
+      const res = await fetch('/api/brand/campaigns/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          company_id: companyId,
+          staff_id: staffId,
+          campaign_id: campaignId,
+          target_grades: targetGrades,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.ok) {
+        showToast('\uBC1C\uC1A1 \uC2E4\uD328')
+        return
+      }
+      showToast(`${json.sent_count ?? 0}\uBA85\uC5D0\uAC8C \uBC1C\uC1A1\uD588\uC5B4\uC694`)
+      setBroadcastPanelId(null)
+      await load()
+    } finally {
+      setBroadcasting(false)
+    }
   }
   if (!companyId) return null
   return (
@@ -238,10 +287,50 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
                 {c.start_at?.slice(0, 10)} ~ {c.end_at?.slice(0, 10)} · 제품 {c.target_product_ids?.length || 0}개
+                {c.broadcasted_at ? (
+                  <span style={{ marginLeft: 8, color: 'rgba(129,199,132,0.85)' }}>
+                    · 발송 {new Date(c.broadcasted_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                ) : null}
               </div>
-              <button type="button" onClick={() => void remove(c.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: 'pointer' }}>
-                삭제
-              </button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+                <button type="button" onClick={() => openBroadcastPanel(c.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(255,193,7,0.35)', background: 'rgba(255,193,7,0.1)', color: 'rgba(255,193,7,0.9)', cursor: 'pointer' }}>
+                  {c.broadcasted_at ? '\uC7AC\uBC1C\uC1A1' : '\uBC1C\uC1A1'}
+                </button>
+                <button type="button" onClick={() => void remove(c.id)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: 'pointer' }}>
+                  삭제
+                </button>
+              </div>
+              {broadcastPanelId === c.id && (
+                <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.2)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>발송 대상</div>
+                  <button
+                    type="button"
+                    onClick={() => { setBroadcastAll(true); setBroadcastGrades([]) }}
+                    style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, marginRight: 6, marginBottom: 6, border: `0.5px solid ${broadcastAll ? 'rgba(255,193,7,0.5)' : 'rgba(255,255,255,0.15)'}`, background: broadcastAll ? 'rgba(255,193,7,0.15)' : 'transparent', color: broadcastAll ? 'rgba(255,193,7,0.95)' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                  >
+                    전체 원장
+                  </button>
+                  {BROADCAST_GRADE_OPTIONS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => { setBroadcastAll(false); toggleBroadcastGrade(g) }}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, marginRight: 6, marginBottom: 6, border: `0.5px solid ${!broadcastAll && broadcastGrades.includes(g) ? 'rgba(123,94,167,0.5)' : 'rgba(255,255,255,0.15)'}`, background: !broadcastAll && broadcastGrades.includes(g) ? 'rgba(123,94,167,0.2)' : 'transparent', color: !broadcastAll && broadcastGrades.includes(g) ? '#c4a7e7' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={broadcasting}
+                    onClick={() => void confirmBroadcast(c.id)}
+                    style={{ display: 'block', width: '100%', marginTop: 6, padding: '7px', fontSize: 12, borderRadius: 6, border: 'none', background: broadcasting ? 'rgba(123,94,167,0.35)' : '#7B5EA7', color: '#fff', cursor: broadcasting ? 'not-allowed' : 'pointer' }}
+                  >
+                    {broadcasting ? '\uBC1C\uC1A1 \uC911...' : '\uBC1C\uC1A1\uD558\uAE30'}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

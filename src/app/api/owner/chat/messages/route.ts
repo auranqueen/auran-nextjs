@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   const { data: messages, error } = await db
     .from('brand_chat_messages')
-    .select('id, channel_id, sender_type, sender_staff_id, message_type, body, attachment_url, created_at')
+    .select('id, channel_id, sender_type, sender_staff_id, message_type, body, attachment_url, campaign_id, created_at')
     .eq('channel_id', channelId)
     .order('created_at', { ascending: true })
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       body: text || null,
       attachment_url: attachmentUrl,
     } as any)
-    .select('id, channel_id, sender_type, sender_staff_id, message_type, body, attachment_url, created_at')
+    .select('id, channel_id, sender_type, sender_staff_id, message_type, body, attachment_url, campaign_id, created_at')
     .single()
 
   if (error) {
