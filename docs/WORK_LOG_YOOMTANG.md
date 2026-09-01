@@ -1,6 +1,8 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-01
+이벤트 등록 화면에서 **등급 타겟 발송** API(`POST /api/brand/campaigns/broadcast`)를 새로 만들었어요. 선택한 등급(또는 전체) active 원장마다 1:1 채팅(`brand_chat_messages`, type `campaign`)으로 보내고, 커뮤니티 소식(`brand_posts`)도 한 번 같이 올려요. `resolveOwnersByGrades` 헬퍼로 원장 목록을 뽑아요.
+
 이벤트 패키지 **패키지 담기**할 때 사용자가 고른 캠페인 ID(`selected.id`)를 서버로 보내요. 서버는 활성·기간·등급이 맞는 캠페인 목록에 있을 때만 그 ID를 `brand_orders`·`brand_order_batches`에 저장하고, tier 미달로 할인이 없어도 캠페인 연결은 남아요. 조작·만료 ID는 무시하고 예전처럼 giftLines 추론값(없으면 null)으로 처리해요.
 
 HQ 이벤트 패키지를 **담을 때**(`brand-order-batches/create`) 캠페인 할인이 실제로 잡히면 `brand_orders`·`brand_order_batches`에 **campaign_id**가 같이 저장돼요. 캠페인 없는 일반 발주는 예전처럼 campaign_id 없이 들어가요. 이벤트 패키지 **카드를 눌러 상세 시트가 열릴 때** `hq_campaign_views`에 조회 기록도 남겨요(실패해도 주문은 막지 않음).

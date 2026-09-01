@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-01
+### feat: HQ 이벤트 등급 타겟 발송 API (1:1 채팅 + 소식)
+
+- `resolveOwnersByGrades`: 회사 소속 brand 전체 `get_brand_owner_roster` → active dedupe, `brand_owner_grades`(origin_track A) 등급 필터
+- `POST /api/brand/campaigns/broadcast`: `marketing_create` 권한 검증 후 대상 원장마다 `getOrCreateChatChannel` + `brand_chat_messages`(message_type `campaign`, campaign_id) + `brand_posts` 1건 + `broadcasted_at` 갱신
+
 ### feat: 패키지 담기 시 선택 캠페인 ID 서버 검증 후 저장
 
 - `submitOrderBatch`: 3번째 인자 `campaignId?` 추가, API body에 `campaign_id` 포함
