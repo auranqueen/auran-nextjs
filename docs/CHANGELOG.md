@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: 원장 홈·브랜드채팅 10초 자동갱신 + 소식 신규게시물 빨간점
+
+- `OwnerHomeV3`: 브랜드 상담 채널 `loadBrandChats` 10초 polling
+- `brand-chat/page`: 채널 목록 `loadChannels` 10초 polling (메시지창 자동갱신은 미포함)
+- `OwnerSidebarShell`: 연결 브랜드 `brand_posts` 24시간 이내 게시물 있으면 「소식」 메뉴 빨간점 (마운트 시 1회 조회)
+
 ### fix: 캠페인 발송 대상에 수기등급 부여 원장 포함 (링크 무관)
 
 - `resolveOwnersByGrades`: roster active 1차 + `brand_owner_grades`(origin_track A) 합집합 — link 없이 등급행만 있는 원장도 profiles→users 체인으로 발송 대상에 포함

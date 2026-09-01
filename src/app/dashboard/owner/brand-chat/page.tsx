@@ -35,7 +35,11 @@ export default function OwnerBrandChatPage() {
     }
   }, [loadChannels])
 
-  useEffect(() => { void loadChannels() }, [loadChannels])
+  useEffect(() => {
+    void loadChannels()
+    const id = setInterval(() => { void loadChannels() }, 10000)
+    return () => clearInterval(id)
+  }, [loadChannels])
   useEffect(() => {
     if (!selectedId) { setMessages([]); return }
     void loadMessages(selectedId)

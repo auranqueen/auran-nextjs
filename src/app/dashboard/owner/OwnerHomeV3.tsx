@@ -154,6 +154,8 @@ export default function OwnerHomeV3({
 
   useEffect(() => {
     void loadBrandChats()
+    const id = setInterval(() => { void loadBrandChats() }, 10000)
+    return () => clearInterval(id)
   }, [loadBrandChats])
 
   const loadPoints = useCallback(async () => {

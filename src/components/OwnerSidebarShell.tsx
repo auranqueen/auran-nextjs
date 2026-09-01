@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { useIsTrackA } from '@/hooks/useIsTrackA'
 import { useOwnerStorePeriod } from '@/hooks/useOwnerStorePeriod'
+import { createClient } from '@/lib/supabase/client'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 
 const PURPLE = '#7B5EA7'
 const SIDEBAR_BG = '#FBFAFE'
@@ -56,6 +58,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
   const router = useRouter()
   const pathname = usePathname()
   const [isPC, setIsPC] = useState(false)
+  const [newsDot, setNewsDot] = useState(false)
   const { isTrackA, ready } = useIsTrackA()
   // 레이어1(스토어유지비) 기준 D-day — store_trial_started_at ?? created_at 반영
   const { phase, daysLeft, ready: periodReady } = useOwnerStorePeriod({ layer: 'store' })
@@ -79,6 +82,28 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id, { includePending: true })
+      if (brandIds.length === 0) {
+        if (!cancelled) setNewsDot(false)
+        return
+      }
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      const { count } = await supabase
+        .from('brand_posts')
+        .select('id', { count: 'exact', head: true })
+        .in('brand_id', brandIds)
+        .gte('created_at', since)
+      if (!cancelled) setNewsDot((count ?? 0) > 0)
+    })()
+    return () => { cancelled = true }
   }, [])
 
   if (pathname?.startsWith('/dashboard/owner/chat')) {
@@ -116,6 +141,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
         {menuItems.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && item.href !== '/dashboard/owner' && pathname?.startsWith(item.href + '/'))
           const isSubMenu = item.href === '/dashboard/owner/subscription'
+          const isNews = item.href === '/dashboard/owner/brand-community'
           const badge = isSubMenu && periodReady ? periodBadge(phase, daysLeft) : null
           return (
             <button
@@ -138,7 +164,21 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                <span>{item.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {item.label}
+                  {isNews && newsDot ? (
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: '#e85555',
+                        flexShrink: 0,
+                      }}
+                      aria-hidden
+                    />
+                  ) : null}
+                </span>
                 {badge ? (
                   <span
                     style={{
