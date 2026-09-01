@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: 발주관리 유령 프로모션UI 제거, 등급별 적립율을 등급관리로 이동
+
+- `BrandGradePointRatesCard`: `brand_grade_point_rates` 조회/저장 카드를 독립 컴포넌트로 분리 (`companyId`만)
+- `BrandTabTierPackages` 등급·가격 서브탭 맨 위(패키지 목록 앞)에 적립율 카드 배치 — N+M(`BrandTierPromoRulesSection`) 유지
+- `BrandTabOrders`: `BrandOrdersPromoSettings` 렌더 제거 (`supply_promos` 유령 UI + 적립율). 파일은 참조만 끊고 삭제하지 않음
+
 ### fix: 발주화면 패키지 적립포인트도 포인트결제 여부와 무관하게 주문총액 기준으로 통일
 
 - `EventPackageSection`: `calcPointsEarned` 입력을 `total_amount - 아레테/일반적립금` → `total_amount`로 변경 (`gradeByCompany` 없으면 적립 건너뛰기·포인트 차감은 유지)

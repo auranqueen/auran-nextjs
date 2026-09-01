@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
+import BrandGradePointRatesCard from '../components/BrandGradePointRatesCard'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -330,6 +331,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
       ) : null}
       {sub === 'price' && (
         <>
+        <BrandGradePointRatesCard companyId={companyId} />
         {loading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
         ) : rows.length === 0 ? (

@@ -5,7 +5,6 @@ import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
 import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
 import BrandShippedOrderReport from '../components/BrandShippedOrderReport'
-import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
 import type { CSSProperties } from 'react'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -52,9 +51,6 @@ export default function BrandTabOrders({ myBrands }: Props) {
         selectedBrandId={selectedBrandId}
         onBrandChange={handleBrandChange}
       />
-      {selectedBrandId && companyId && (
-        <BrandOrdersPromoSettings brandId={selectedBrandId} companyId={companyId} />
-      )}
       <BrandOrderBatchApproval
         brandId={selectedBrandId}
         brandIds={myBrands.map((b) => b.id)}
