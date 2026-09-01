@@ -115,13 +115,13 @@ export async function POST(req: NextRequest) {
     if (campaignIds.length > 0) {
       const { data: tierRows } = await svc
         .from('hq_forced_campaign_tiers')
-        .select('campaign_id, min_qty, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+        .select('campaign_id, min_qty, min_amount, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
         .in('campaign_id', campaignIds)
       for (const t of (tierRows || []) as any[]) {
         const cid = String(t.campaign_id)
         if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
         tiersByCampaign[cid]!.push({
-          min_qty: t.min_qty, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
+          min_qty: t.min_qty, min_amount: t.min_amount ?? null, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
           fixed_price: t.fixed_price, gifts: t.gifts ?? [], highlight_text: t.highlight_text,
         })
       }

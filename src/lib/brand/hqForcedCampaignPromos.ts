@@ -8,6 +8,7 @@ export type HqCampaignEffectRow = {
 }
 export type HqForcedCampaignTier = {
   min_qty: number
+  min_amount?: number | null
   discount_pct: number | null
   discount_amount: number | null
   fixed_price: number | null
@@ -91,13 +92,36 @@ export function resolveHqCampaignEffects(
     const matchedItems = cartItems.filter((i) => targets.includes(i.product_id))
     const matchedQty = matchedItems.reduce((sum, i) => sum + i.qty, 0)
     if (matchedQty === 0) continue
-    const tiers = campaign.tiers ?? []
-    const matchedTier = tiers.filter((t) => matchedQty >= t.min_qty).sort((a, b) => b.min_qty - a.min_qty)[0]
-    if (!matchedTier) continue
     const matchedSubtotal = matchedItems.reduce((sum, i) => sum + i.qty * i.unit_price, 0)
-    const { discountAmount, rows } = resolveTierEffects(campaign, matchedTier, matchedQty, matchedSubtotal)
-    discountTotal += discountAmount
-    giftLines.push(...rows)
+    const tiers = campaign.tiers ?? []
+    const qtyTiers = tiers.filter((t) => t.min_qty > 0 && (t.min_amount == null || t.min_amount === 0))
+    const matchedTier = qtyTiers.filter((t) => matchedQty >= t.min_qty).sort((a, b) => b.min_qty - a.min_qty)[0]
+    let paymentAmount = matchedSubtotal
+    if (matchedTier) {
+      const { discountAmount, rows } = resolveTierEffects(campaign, matchedTier, matchedQty, matchedSubtotal)
+      discountTotal += discountAmount
+      giftLines.push(...rows)
+      paymentAmount = matchedSubtotal - discountAmount
+    }
+    const amountTiers = tiers.filter((t) => t.min_amount != null && t.min_amount > 0)
+    const matchedAmountTier = amountTiers
+      .filter((t) => paymentAmount >= (t.min_amount ?? 0))
+      .sort((a, b) => (b.min_amount ?? 0) - (a.min_amount ?? 0))[0]
+    if (matchedAmountTier) {
+      const suffix = matchedAmountTier.highlight_text ? ` · ${matchedAmountTier.highlight_text}` : ''
+      for (const g of matchedAmountTier.gifts ?? []) {
+        if (g.qty > 0 && g.product_id) {
+          giftLines.push({
+            campaign_id: campaign.id,
+            product_id: g.product_id,
+            qty: g.qty,
+            amount: 0,
+            effect_type: 'gift',
+            label: `${g.qty}개 증정${suffix}`,
+          })
+        }
+      }
+    }
   }
   return { discountTotal, giftLines }
 }

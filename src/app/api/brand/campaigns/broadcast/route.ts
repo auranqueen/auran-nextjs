@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (brandRow?.id) {
-    const postTitle = `[\uC774\uBCA4\uD2B8] ${String(campaign.title || defaultTitle)}`
+    const postTitle = `[캠페인] ${String(campaign.title || defaultTitle)}`
     await db.from('brand_posts').insert({
       brand_id: brandRow.id,
       title: postTitle,

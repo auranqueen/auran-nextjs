@@ -124,7 +124,7 @@ export default function BrandCommunityPage() {
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${PURPLE}15`, color: PURPLE }}>📌 공지</span>
                   )}
                   {post.campaign_id && (
-                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(229,57,53,0.1)', color: '#E53935' }}>🔥 이벤트</span>
+                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(229,57,53,0.1)', color: '#E53935' }}>🔥 캠페인</span>
                   )}
                   <span style={{ fontSize: 11, color: PURPLE }}>{post.brands?.name || ''}</span>
                 </div>

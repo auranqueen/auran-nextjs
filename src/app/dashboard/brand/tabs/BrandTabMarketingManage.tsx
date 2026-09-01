@@ -12,7 +12,7 @@ const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 
 const SUBTABS = [
-  { key: 'events', label: '이벤트' },
+  { key: 'events', label: '캠페인' },
   { key: 'stock', label: '재고' },
 ] as const
 

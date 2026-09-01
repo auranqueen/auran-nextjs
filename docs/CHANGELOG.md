@@ -4,6 +4,13 @@
 ---
 
 ## 2026-09-01
+### feat: HQ 캠페인 등록화면 전면 개편 — 수량/금액 구간 동시지원, 명칭통일, 다크테마
+
+- `BrandHqCampaignSection`: 유형 토글·campaign_type 종속 필드 제거, 수량/금액 구간 토글·분리 추가, `campaign_type` 저장값 `'discount'` 고정, 이벤트→캠페인 문구·다크 입력 통일
+- `hqForcedCampaignPromos`: `min_amount` 금액구간 증정(수량구간 할인/확정가 후 결제예정금액 기준, discount/fixed_price 미사용) + 기존 수량구간 로직 유지
+- `hq-campaigns/save` + tier select 4곳: `min_amount` 컬럼 insert/select 추가
+- `BrandTabMarketingManage` 서브탭·`brand-community` 배지·`campaigns/broadcast` post 제목: 이벤트→캠페인
+
 ### feat: HQ 이벤트 등록화면 캠페인별 실시간 통계 미니카드
 
 - `BrandHqCampaignSection`: 캠페인 카드에 읽음(`hq_campaign_views`)·구매/매출(`brand_orders`)·전환율 미니 통계바 표시

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const badgeText = typeof body?.badge_text === 'string' ? body.badge_text.trim() : null
-  const campaignType = typeof body?.campaign_type === 'string' ? body.campaign_type.trim() : ''
+  const campaignType = 'discount'
   const targetProductIds = Array.isArray(body?.target_product_ids) ? body.target_product_ids.map(String) : []
   const buyQty = body?.buy_qty != null ? Math.trunc(Number(body.buy_qty)) : null
   const bonusQty = body?.bonus_qty != null ? Math.trunc(Number(body.bonus_qty)) : null
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     ? body.tiers
         .map((t: any) => ({
           min_qty: Math.trunc(Number(t?.min_qty)) || 0,
+          min_amount: t?.min_amount != null && t.min_amount !== '' ? Math.trunc(Number(t.min_amount)) : null,
           discount_pct: t?.discount_pct != null && t.discount_pct !== '' ? Number(t.discount_pct) : null,
           discount_amount: t?.discount_amount != null && t.discount_amount !== '' ? Math.trunc(Number(t.discount_amount)) : null,
           fixed_price: t?.fixed_price != null && t.fixed_price !== '' ? Math.trunc(Number(t.fixed_price)) : null,
@@ -64,16 +65,15 @@ export async function POST(req: NextRequest) {
             : [],
           highlight_text: typeof t?.highlight_text === 'string' && t.highlight_text.trim() ? t.highlight_text.trim() : null,
         }))
-        .filter((t: any) =>
-          t.min_qty > 0 &&
-          (t.discount_pct != null || t.discount_amount != null || t.fixed_price != null || t.gifts.length > 0)
-        )
+        .filter((t: any) => {
+          const hasQty = t.min_qty > 0
+          const hasAmount = t.min_amount != null && t.min_amount > 0
+          if (!hasQty && !hasAmount) return false
+          return t.discount_pct != null || t.discount_amount != null || t.fixed_price != null || t.gifts.length > 0
+        })
     : []
   if (!companyId) return NextResponse.json({ ok: false, error: 'missing_company' }, { status: 400 })
   if (!title) return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
-  if (!['bundle', 'gift', 'discount'].includes(campaignType)) {
-    return NextResponse.json({ ok: false, error: 'invalid_campaign_type' }, { status: 400 })
-  }
   if (targetProductIds.length === 0) {
     return NextResponse.json({ ok: false, error: 'no_products' }, { status: 400 })
   }
@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
       tiers.map((t: any) => ({
         campaign_id: data.id,
         min_qty: t.min_qty,
+        min_amount: t.min_amount ?? null,
         discount_pct: t.discount_pct,
         discount_amount: t.discount_amount,
         fixed_price: t.fixed_price ?? null,
