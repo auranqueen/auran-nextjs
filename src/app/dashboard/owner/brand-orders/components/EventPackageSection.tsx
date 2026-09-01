@@ -194,7 +194,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
           total_amount: g.amount - share,
         }
       })
-      const result = await submitOrderBatch(cartItems)
+      const result = await submitOrderBatch(cartItems, null, selected.id)
       if (!result?.ok) {
         showToast('주문 실패: ' + (result?.error || '다시 시도해주세요'))
         setOrdering(false)

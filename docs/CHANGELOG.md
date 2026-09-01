@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: 패키지 담기 시 선택 캠페인 ID 서버 검증 후 저장
+
+- `submitOrderBatch`: 3번째 인자 `campaignId?` 추가, API body에 `campaign_id` 포함
+- `EventPackageSection`: `submitOrderBatch(cartItems, null, selected.id)` — 사용자가 선택한 캠페인 ID 전달
+- `/api/brand-order-batches/create`: body `campaign_id`를 `campaignRowsFiltered`(활성·기간·등급 일치) 목록과 대조 후 유효할 때만 `appliedCampaignId` 우선 사용, 무효 시 기존 `giftLines` 추론값으로 폴백 (에러 없음)
+
 ### feat: HQ 캠페인 주문·조회 추적 연결
 
 - `insertBrandOrder`: `CreateBrandOrderInput.campaign_id` 선택 필드 추가, `brand_orders` insert 시 `batch_id`와 동일 패턴으로만 설정

@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
     typeof body?.owner_note === 'string' && body.owner_note.trim()
       ? body.owner_note.trim()
       : null
+  const clientCampaignId =
+    typeof body?.campaign_id === 'string' && body.campaign_id.trim()
+      ? body.campaign_id.trim()
+      : null
   if (!cartItems || cartItems.length === 0) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: '잘못된 요청입니다' }, { status: 400 })
   }
@@ -133,7 +137,12 @@ export async function POST(req: NextRequest) {
     const effects = resolveHqCampaignEffects(wholeCartForServer, serverCampaigns)
     serverDiscountTotal = effects.discountTotal
     // 추후 복수 캠페인 적용 시 campaign_id[] 확장 가능 — 현재는 giftLines 첫 항목만
-    appliedCampaignId = effects.giftLines.find((g) => g.campaign_id)?.campaign_id ?? null
+    const giftLinesCampaignId = effects.giftLines.find((g) => g.campaign_id)?.campaign_id ?? null
+    const validClientCampaignId =
+      clientCampaignId && campaignRowsFiltered.some((r: { id: string }) => r.id === clientCampaignId)
+        ? clientCampaignId
+        : null
+    appliedCampaignId = validClientCampaignId ?? giftLinesCampaignId
   }
   const clientTotalAmount = cartItems.reduce((s: number, g: any) => s + Math.trunc(Number(g.total_amount) || 0), 0)
   const rawLineTotal = cartItems.reduce((s: number, g: any) => s + (g.items || []).reduce((s2: number, i: any) => s2 + Math.trunc(Number(i.line_amount) || 0), 0), 0)

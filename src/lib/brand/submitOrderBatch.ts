@@ -22,6 +22,7 @@ export type SubmitOrderBatchResult =
 export async function submitOrderBatch(
   cartGroupedByBrand: SubmitOrderBatchGroup[],
   ownerNote?: string | null,
+  campaignId?: string | null,
 ): Promise<SubmitOrderBatchResult> {
   if (!Array.isArray(cartGroupedByBrand) || cartGroupedByBrand.length === 0) {
     return { ok: false, error: 'invalid_request', message: '발주할 상품이 없습니다' }
@@ -34,6 +35,7 @@ export async function submitOrderBatch(
     body: JSON.stringify({
       cartItems: cartGroupedByBrand,
       owner_note: note || null,
+      campaign_id: campaignId || null,
     }),
   })
   const result = await res.json().catch(() => ({})) as {
