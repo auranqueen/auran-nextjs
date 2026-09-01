@@ -36,6 +36,18 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const [ordering, setOrdering] = useState(false)
   const [toast, setToast] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  const openCampaignDetail = (c: HqForcedCampaign) => {
+    setSelected(c)
+    setUsePoints(true)
+    if (ownerProfileId) {
+      void (async () => {
+        await supabase.from('hq_campaign_views').insert({
+          campaign_id: c.id,
+          owner_id: ownerProfileId,
+        })
+      })()
+    }
+  }
   const companyIds = useMemo(
     () => Array.from(new Set(campaigns.map((c) => (c as unknown as { company_id?: string }).company_id).filter(Boolean))) as string[],
     [campaigns],
@@ -263,7 +275,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
         {visibleCampaigns.map((c) => {
           const meta = c as unknown as { title?: string; image_url?: string | null }
           return (
-            <div key={c.id} onClick={() => { setSelected(c); setUsePoints(true) }} style={{ ...CARD, cursor: 'pointer' }}>
+            <div key={c.id} onClick={() => openCampaignDetail(c)} style={{ ...CARD, cursor: 'pointer' }}>
               {meta.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={meta.image_url} alt="" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: 8, marginBottom: 6 }} />

@@ -3,6 +3,14 @@
 
 ---
 
+## 2026-09-01
+### feat: HQ 캠페인 주문·조회 추적 연결
+
+- `insertBrandOrder`: `CreateBrandOrderInput.campaign_id` 선택 필드 추가, `brand_orders` insert 시 `batch_id`와 동일 패턴으로만 설정
+- `/api/brand-order-batches/create`: `resolveHqCampaignEffects` 결과 `giftLines` 첫 `campaign_id`를 배치·주문 insert에 전달 (복수 캠페인 시 배열 확장 여지 주석)
+- `EventPackageSection`: 이벤트 패키지 카드 클릭(상세 시트 오픈) 시 `hq_campaign_views` insert (실패 무시, 통계용)
+- 일반 발주(캠페인 미적용)는 `campaign_id` 없이 기존과 동일 insert
+
 ## 2026-08-31
 ### feat: 브랜드 마케팅관리 탭 신설 및 메뉴·서브탭 재구성
 

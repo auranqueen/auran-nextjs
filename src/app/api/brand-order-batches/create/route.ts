@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
     companyIdForCampaign = brandRow?.company_id ? String(brandRow.company_id) : null
   }
   let serverDiscountTotal = 0
+  let appliedCampaignId: string | null = null
   if (companyIdForCampaign) {
     const { data: gradeRow } = await svc
       .from('brand_owner_grades')
@@ -131,6 +132,8 @@ export async function POST(req: NextRequest) {
     )
     const effects = resolveHqCampaignEffects(wholeCartForServer, serverCampaigns)
     serverDiscountTotal = effects.discountTotal
+    // 추후 복수 캠페인 적용 시 campaign_id[] 확장 가능 — 현재는 giftLines 첫 항목만
+    appliedCampaignId = effects.giftLines.find((g) => g.campaign_id)?.campaign_id ?? null
   }
   const clientTotalAmount = cartItems.reduce((s: number, g: any) => s + Math.trunc(Number(g.total_amount) || 0), 0)
   const rawLineTotal = cartItems.reduce((s: number, g: any) => s + (g.items || []).reduce((s2: number, i: any) => s2 + Math.trunc(Number(i.line_amount) || 0), 0), 0)
@@ -148,17 +151,21 @@ export async function POST(req: NextRequest) {
   const maxAttempts = 8
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const candidate = makeOrderNo()
+    const batchRow: Record<string, unknown> = {
+      order_no: candidate,
+      profile_id: profile.id,
+      owner_name: ownerName,
+      salon_name: salonName,
+      total_amount: totalAmount,
+      status: '승인대기',
+      owner_note: ownerNote,
+    }
+    if (appliedCampaignId) {
+      batchRow.campaign_id = appliedCampaignId
+    }
     const { data: batch, error: batchErr } = await svc
       .from('brand_order_batches')
-      .insert({
-        order_no: candidate,
-        profile_id: profile.id,
-        owner_name: ownerName,
-        salon_name: salonName,
-        total_amount: totalAmount,
-        status: '승인대기',
-        owner_note: ownerNote,
-      })
+      .insert(batchRow)
       .select('id, order_no')
       .single()
 
@@ -205,6 +212,7 @@ export async function POST(req: NextRequest) {
       promo_applied: promoApplied,
       points_earned: g.points_earned,
       batch_id: batchId,
+      ...(appliedCampaignId ? { campaign_id: appliedCampaignId } : {}),
     })
     if (!result.ok) {
       await svc.from('brand_orders').delete().eq('batch_id', batchId)

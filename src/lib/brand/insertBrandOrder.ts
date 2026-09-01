@@ -30,6 +30,7 @@ export type CreateBrandOrderInput = {
   points_earned?: number
   /** 멀티브랜드 배치 묶음 (선택) */
   batch_id?: string | null
+  campaign_id?: string
   status?: string
 }
 
@@ -99,6 +100,9 @@ export async function insertBrandOrder(
   }
   if (input.batch_id) {
     row.batch_id = input.batch_id
+  }
+  if (input.campaign_id) {
+    row.campaign_id = input.campaign_id
   }
 
   const { data: order, error: insertErr } = await svc
