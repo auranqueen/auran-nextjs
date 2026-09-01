@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### fix: HQ 캠페인 구간 저장 시 혜택 미설정 사전 경고
+
+- `BrandHqCampaignSection.submit`: min_qty/min_amount만 있고 할인·확정가·증정품이 없는 구간이 있으면 API 호출 전 토스트로 차단(몇 번째 구간인지 명시)
+
 ### feat: 캠페인 패키지 세트수 선택 + 서버 금액검증 정합성
 
 - `EventPackageSection`: qty tier별 세트 수 선택(10/20/30세트 등), 로컬 tier·fixed_price/할인/증정 계산, cartItems `qty=selectedSets`

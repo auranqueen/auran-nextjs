@@ -185,6 +185,29 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     if (!draft.title.trim()) { showToast('캠페인명을 입력해주세요'); return }
     if (draft.target_product_ids.length === 0) { showToast('제품을 하나 이상 골라주세요'); return }
     if (!draft.start_at || !draft.end_at) { showToast('시작일/종료일을 입력해주세요'); return }
+
+    for (let i = 0; i < draft.tiers.length; i++) {
+      const t = draft.tiers[i]
+      const minQty = Math.trunc(Number(t.min_qty) || 0)
+      const minAmount = Math.trunc(Number(t.min_amount) || 0)
+      const hasThreshold = t.tierType === 'qty' ? minQty > 0 : minAmount > 0
+      if (!hasThreshold) continue
+
+      const hasDiscount =
+        t.useDiscount &&
+        (String(t.discount_pct || '').trim() !== '' || String(t.discount_amount || '').trim() !== '')
+      const hasFixedPrice = t.useFixedPrice && String(t.fixed_price || '').trim() !== ''
+      const hasGifts = t.useGifts && t.gifts.some((g) => Boolean(g.product_id))
+      if (hasDiscount || hasFixedPrice || hasGifts) continue
+
+      const label =
+        t.tierType === 'qty' ? `${minQty}개 이상` : `${minAmount.toLocaleString()}원 이상`
+      showToast(
+        `${i + 1}번째 구간(${label})에 할인/확정가/증정품 중 하나도 설정 안 되어있어요. 혜택을 추가하거나 그 구간을 삭제해주세요`,
+      )
+      return
+    }
+
     setSaving(true)
     try {
       const res = await fetch('/api/brand/hq-campaigns/save', {
