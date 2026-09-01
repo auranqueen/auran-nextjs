@@ -2,15 +2,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
-import BrandHqCampaignSection from './BrandHqCampaignSection'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
 const SUBTABS = [
   { key: 'price', label: '등급·가격' },
-  { key: 'events', label: '이벤트' },
-  { key: 'orders', label: '발송오더' },
+  { key: 'orders', label: '등급구매 승인' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 type TierPackage = {
@@ -298,7 +296,9 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
       ) : (
       <>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>등급 패키지 관리</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+          {sub === 'orders' ? '등급구매 승인 관리' : '등급 패키지 관리'}
+        </div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
           {companyName || '회사'} 전체
         </div>
@@ -498,9 +498,6 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
           </div>
         )}
         </>
-      )}
-      {sub === 'events' && (
-        <BrandHqCampaignSection companyId={companyId} staffId={staffId} isCEO={isCEO} />
       )}
       {sub === 'orders' && (
         <BrandTierOrderApprovalSection companyId={companyId} />

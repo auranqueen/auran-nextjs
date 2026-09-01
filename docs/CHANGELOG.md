@@ -4,6 +4,15 @@
 ---
 
 ## 2026-08-31
+### feat: 브랜드 마케팅관리 탭 신설 및 메뉴·서브탭 재구성
+
+- 사이드바 **마케팅** 섹션에 **마케팅관리**(`marketingManage`, `marketing_create`) 메인탭 추가
+- `BrandTabMarketingManage` 신설: [이벤트] → 기존 `BrandHqCampaignSection`, [재고] → 기존 `BrandInventoryMarketing` 재사용
+- **등급·이벤트 관리** → **등급 관리**로 개명, 이벤트 서브탭 제거(마케팅관리로 이전)
+- **아레테클럽** → **아레테클럽관리**로 개명
+- 재고·물류에서 **마케팅자료** 서브탭 제거(마케팅관리 [재고]로 이전)
+- 홈 카드 「아레테클럽 번들 구성」→「재고 소진 마케팅」, `marketingManage` + `stock:bundle` 딥링크
+
 ### chore: 브랜드 「이벤트·라이브」 독립탭 제거, 에듀케이션/자료관리 서브탭으로 통합
 
 - `BrandTabLive` 본문을 `src/components/brand/BrandLiveSection.tsx`로 분리

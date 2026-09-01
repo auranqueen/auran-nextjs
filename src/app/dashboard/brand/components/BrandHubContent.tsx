@@ -20,7 +20,8 @@ const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'
 const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
 const BrandTabArete = dynamic(() => import('../tabs/BrandTabArete'), { ssr: false })
 const BrandTabArchive = dynamic(() => import('../tabs/BrandTabArchive'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete' | 'archive'
+const BrandTabMarketingManage = dynamic(() => import('../tabs/BrandTabMarketingManage'), { ssr: false })
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete' | 'archive' | 'marketingManage'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -65,6 +66,7 @@ export default function BrandHubContent({
     {
       label: '마케팅',
       items: [
+        { key: 'marketingManage', label: '마케팅관리', icon: 'ti-speakerphone', requiredModule: 'marketing_create' },
         { key: 'community', label: '커뮤니티', icon: 'ti-users', requiredModule: 'community_post' },
         { key: 'archive', label: '에듀케이션/자료관리', icon: 'ti-book', requiredModule: ['education_manage', 'marketing_create'] },
       ],
@@ -73,9 +75,9 @@ export default function BrandHubContent({
       label: '제품·파트너',
       items: [
         { key: 'products', label: '제품 관리', icon: 'ti-package', requiredModule: 'product_manage' },
-        { key: 'tierPackages', label: '등급·이벤트 관리', icon: 'ti-medal', requiredModule: 'tier_view' },
+        { key: 'tierPackages', label: '등급 관리', icon: 'ti-medal', requiredModule: 'tier_view' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store', requiredModule: 'owners_view' },
-        { key: 'arete', label: '아레테클럽', icon: 'ti-crown', requiredModule: 'product_manage' },
+        { key: 'arete', label: '아레테클럽관리', icon: 'ti-crown', requiredModule: 'product_manage' },
       ],
     },
     {
@@ -306,6 +308,7 @@ export default function BrandHubContent({
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} companyId={companyId} staffId={staffId} initialSub={mainSub as 'history' | 'chat' | undefined} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'archive' && <BrandTabArchive brandId={brandId} companyId={companyId} staffId={staffId} myBrands={brandOpts} initialSub={mainSub} />}
+          {mainTab === 'marketingManage' && <BrandTabMarketingManage myBrands={brandOpts} staffId={staffId} isCEO={isCEO} initialSub={mainSub} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} initialSub={mainSub} />}

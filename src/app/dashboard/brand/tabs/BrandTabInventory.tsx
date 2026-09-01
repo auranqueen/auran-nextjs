@@ -10,7 +10,6 @@ const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: 
 const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
 const BrandInventoryClose = dynamic(() => import('./BrandInventoryClose'), { ssr: false })
 const BrandInventoryEmergency = dynamic(() => import('./BrandInventoryEmergency'), { ssr: false })
-const BrandInventoryMarketing = dynamic(() => import('./BrandInventoryMarketing'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
@@ -21,7 +20,6 @@ const SUBTABS = [
   { key: 'qr', label: 'QR발행', icon: '🔲' },
   { key: 'close', label: '월마감', icon: '📅' },
   { key: 'emergency', label: '비상출고', icon: '🚨' },
-  { key: 'marketing', label: '마케팅자료', icon: '📣' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
@@ -76,7 +74,6 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
   }, [loadLowStockCounts])
   const initialSubParts = (initialSub || 'stock').split(':')
   const [sub, setSub] = useState<SubTab>((initialSubParts[0] as SubTab) || 'stock')
-  const initialViewModeHint = initialSubParts[1]
   return (
     <div>
       <TabBrandSelector
@@ -106,7 +103,6 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
       {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={effectiveBrandId} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={effectiveBrandId} brandName={brandName} />}
-      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} companyBrandIds={companyBrandIds} initialViewMode={initialViewModeHint as 'expiry' | 'normal' | 'bundle' | undefined} />}
       </>
       )}
     </div>

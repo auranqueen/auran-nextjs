@@ -462,13 +462,13 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(123,94,167,0.25)', color: '#c4a8f0' }}>번들</span>
-                  <span style={{ fontSize: 11, color: TEXT }}>아레테클럽 번들 구성</span>
+                  <span style={{ fontSize: 11, color: TEXT }}>재고 소진 마케팅</span>
                 </div>
                 <button type="button" onClick={() => setClosedEvents(p => [...p, 'bundle'])}
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
               <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}></div>
-              <button type="button" onClick={() => onTabChange('inventory', 'marketing:bundle')}
+              <button type="button" onClick={() => onTabChange('marketingManage', 'stock:bundle')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(123,94,167,0.35)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>
                 번들 구성하기 →
               </button>
