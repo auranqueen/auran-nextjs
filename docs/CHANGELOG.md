@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### fix: 캠페인 팝업주문 적립포인트를 포인트결제 여부와 무관하게 주문총액 기준으로 계산
+
+- `CampaignQuickOrderModal`: `calcPointsEarned` 입력을 `total_amount - 아레테/일반적립금` → `total_amount`로 변경 (포인트 차감·주문금액 로직은 유지)
+
 ### fix: 패키지주문 금액검증을 공용계산함수 기반으로 서버-클라이언트 일치 (amount_mismatch 근본원인)
 
 - `src/lib/brand/computeCampaignPackagePricing.ts`: `getQtyTiers`·`defaultSelectedSets`·`computeCampaignPackagePricing` 공용 모듈 (팝업·발주 UI와 동일 로직)
