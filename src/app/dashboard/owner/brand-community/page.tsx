@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import CampaignQuickOrderModal from '@/components/owner/CampaignQuickOrderModal'
 import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -30,10 +31,14 @@ export default function BrandCommunityPage() {
   const [selBrand, setSelBrand] = useState<string | null>(null)
   const [brandNames, setBrandNames] = useState<Array<{ id: string; name: string }>>([])
   const [expandId, setExpandId] = useState<string | null>(null)
+  const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
+  const [modalCampaignId, setModalCampaignId] = useState<string | null>(null)
   const load = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
+    const { data: prof } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+    setOwnerProfileId(prof?.id ? String(prof.id) : null)
     const brandIds = await getOwnerLinkedBrandIds(supabase, user.id, { includePending: true })
     if (brandIds.length === 0) { setLoading(false); return }
     const { data: bRows } = await supabase
@@ -141,7 +146,10 @@ export default function BrandCommunityPage() {
                 {post.campaign_id ? (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); router.push('/dashboard/owner/brand-orders') }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (post.campaign_id && ownerProfileId) setModalCampaignId(post.campaign_id)
+                    }}
                     style={{ marginTop: 10, fontSize: 12, padding: '6px 12px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
                   >
                     자세히 보고 주문하기 →
@@ -156,6 +164,13 @@ export default function BrandCommunityPage() {
           </div>
         ))}
       </div>
+      {modalCampaignId && ownerProfileId ? (
+        <CampaignQuickOrderModal
+          campaignId={modalCampaignId}
+          ownerProfileId={ownerProfileId}
+          onClose={() => setModalCampaignId(null)}
+        />
+      ) : null}
       <DashboardBottomNav role="owner" />
     </div>
   )

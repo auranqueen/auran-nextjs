@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: 채팅·소식 캠페인 CTA → 빠른주문 팝업 (페이지 이동 제거)
+
+- `BrandChatThreadLite`: 캠페인 메시지 「자세히 보고 주문하기」→ `CampaignQuickOrderModal` (`campaign_id`·`ownerProfileId`)
+- `brand-community/page`: 캠페인 게시물 CTA 동일 — `router.push('/brand-orders')` 제거
+- `brand-chat/page`: `ownerProfileId` 조회 후 `BrandChatThreadLite`에 전달
+
 ### fix: CampaignQuickOrderModal 세트선택 + 정가패턴 (EventPackageSection 동일)
 
 - `CampaignQuickOrderModal`: `selectedSets`·qty tier 「N세트」 버튼, `computeCampaignPackagePricing` 로컬 계산(`resolveHqCampaignEffects` 제거)

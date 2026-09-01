@@ -19,6 +19,16 @@ export default function OwnerBrandChatPage() {
   const [channels, setChannels] = useState<OwnerBrandChatChannel[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<OwnerBrandChatMessage[]>([])
+  const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
+
+  useEffect(() => {
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: prof } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+      setOwnerProfileId(prof?.id ? String(prof.id) : null)
+    })()
+  }, [supabase])
 
   const loadChannels = useCallback(async () => {
     const res = await fetch('/api/owner/chat/channels')
@@ -146,6 +156,7 @@ export default function OwnerBrandChatPage() {
           messages={messages}
           onSend={onSend}
           onSendAttachment={onSendAttachment}
+          ownerProfileId={ownerProfileId}
         />
       </div>
     </div>

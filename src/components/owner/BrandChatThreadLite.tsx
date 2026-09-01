@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import CampaignQuickOrderModal from '@/components/owner/CampaignQuickOrderModal'
 
 export type OwnerBrandChatChannel = {
   id: string
@@ -28,6 +28,7 @@ type Props = {
   messages: OwnerBrandChatMessage[]
   onSend: (text: string) => void | Promise<void>
   onSendAttachment: (file: File) => void | Promise<void>
+  ownerProfileId: string | null
 }
 
 const BG = '#ffffff'
@@ -40,11 +41,11 @@ const MINE_BG = '#EDE9F7'
 const THEIR_BG = '#f0f0f3'
 
 export default function BrandChatThreadLite({
-  channel, messages, onSend, onSendAttachment,
+  channel, messages, onSend, onSendAttachment, ownerProfileId,
 }: Props) {
-  const router = useRouter()
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [modalCampaignId, setModalCampaignId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -118,7 +119,9 @@ export default function BrandChatThreadLite({
                     {m.body ? <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div> : null}
                     <button
                       type="button"
-                      onClick={() => router.push('/dashboard/owner/brand-orders')}
+                      onClick={() => {
+                        if (m.campaign_id && ownerProfileId) setModalCampaignId(m.campaign_id)
+                      }}
                       style={{ marginTop: 8, fontSize: 12, padding: '6px 10px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
                     >
                       자세히 보고 주문하기 →
@@ -195,6 +198,13 @@ export default function BrandChatThreadLite({
           전송
         </button>
       </div>
+      {modalCampaignId && ownerProfileId ? (
+        <CampaignQuickOrderModal
+          campaignId={modalCampaignId}
+          ownerProfileId={ownerProfileId}
+          onClose={() => setModalCampaignId(null)}
+        />
+      ) : null}
     </div>
   )
 }
