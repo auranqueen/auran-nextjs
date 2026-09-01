@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString()
 
   let sentCount = 0
+  const failedOwners: Array<{ owner_user_id: string; error: string }> = []
   for (const owner of owners) {
     try {
       const channelId = await getOrCreateChatChannel(db, companyId, owner.owner_user_id)
@@ -127,7 +128,10 @@ export async function POST(req: NextRequest) {
         campaign_id: campaignId,
       } as Record<string, unknown>)
 
-      if (msgErr) continue
+      if (msgErr) {
+        failedOwners.push({ owner_user_id: owner.owner_user_id, error: msgErr.message })
+        continue
+      }
 
       await db
         .from('brand_chat_channels')
@@ -166,5 +170,17 @@ export async function POST(req: NextRequest) {
 
   await db.from('hq_forced_campaigns').update({ broadcasted_at: now }).eq('id', campaignId)
 
-  return NextResponse.json({ ok: true, sent_count: sentCount })
+  const response: {
+    ok: true
+    sent_count: number
+    failed_count: number
+    first_error?: string
+  } = {
+    ok: true,
+    sent_count: sentCount,
+    failed_count: failedOwners.length,
+  }
+  if (failedOwners[0]?.error) response.first_error = failedOwners[0].error
+
+  return NextResponse.json(response)
 }

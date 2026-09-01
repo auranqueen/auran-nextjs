@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### fix: HQ 이벤트 발송 API insert 실패 에러 응답 노출
+
+- `POST /api/brand/campaigns/broadcast`: per-owner `msgErr`를 `failed_count`·`first_error`로 응답에 포함 (기존 `sent_count`·성공 흐름 유지)
+
 ### feat: HQ 이벤트 발송 버튼 + 원장 소식/채팅 캠페인 카드 렌더링
 
 - `BrandHqCampaignSection`: 캠페인 카드에 발송/재발송 버튼·인라인 등급 선택 패널, `POST /api/brand/campaigns/broadcast` 연동 (`target_grades`, `broadcasted_at` 조회)
