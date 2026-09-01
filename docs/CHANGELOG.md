@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### feat: 캠페인 패키지 세트수 선택 + 서버 금액검증 정합성
+
+- `EventPackageSection`: qty tier별 세트 수 선택(10/20/30세트 등), 로컬 tier·fixed_price/할인/증정 계산, cartItems `qty=selectedSets`
+- cartItems `line_amount`=정가(`unit_price×세트`), `total_amount`=할인 후 최종금액 — `brand-order-batches/create` amount_mismatch 검증과 일치
+- `GET /api/owner/campaigns/[id]`, `CampaignQuickOrderModal`: 캠페인 ID 단건 상세·빠른주문(grades-only 원장 소속 검증 포함)
+
 ### feat: 원장 홈·브랜드채팅 10초 자동갱신 + 소식 신규게시물 빨간점
 
 - `OwnerHomeV3`: 브랜드 상담 채널 `loadBrandChats` 10초 polling

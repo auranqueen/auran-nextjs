@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
+import type { HqForcedCampaign, HqForcedCampaignTier } from '@/lib/brand/hqForcedCampaignPromos'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
-import { resolveHqCampaignEffects } from '@/lib/brand/hqForcedCampaignPromos'
 import { calcPointsEarned } from '@/lib/brand/brandOrderPromos'
+
 interface Props {
   campaigns: HqForcedCampaign[]
   ownerProfileId: string | null
@@ -17,11 +17,93 @@ interface ProductInfo {
   thumb_img: string | null
   supply_price: number
 }
+type GiftLine = { product_id: string; qty: number; label: string }
+
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12 }
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const PURPLE = '#7B5EA7'
 const PAGE_SIZE = 3
+
+function getQtyTiers(campaign: HqForcedCampaign): HqForcedCampaignTier[] {
+  return (campaign.tiers ?? []).filter(
+    (t) => t.min_qty > 0 && (t.min_amount == null || t.min_amount === 0),
+  )
+}
+
+function defaultSelectedSets(campaign: HqForcedCampaign): number {
+  const qtyTiers = getQtyTiers(campaign)
+  if (qtyTiers.length === 0) return 1
+  return Math.min(...qtyTiers.map((t) => t.min_qty))
+}
+
+function computeCampaignPackagePricing(
+  campaign: HqForcedCampaign,
+  productMap: Record<string, ProductInfo>,
+  selectedSets: number,
+) {
+  const unitSetTotal = (campaign.target_product_ids || []).reduce((sum, pid) => {
+    const p = productMap[pid]
+    return sum + (p ? p.supply_price : 0)
+  }, 0)
+  const baseTotal = unitSetTotal * selectedSets
+
+  const qtyTiers = getQtyTiers(campaign)
+  const matchedTier =
+    qtyTiers
+      .filter((t) => selectedSets >= t.min_qty)
+      .sort((a, b) => b.min_qty - a.min_qty)[0] ?? null
+
+  let finalAmount = baseTotal
+  let discountTotal = 0
+  const qtyGifts: GiftLine[] = []
+
+  if (matchedTier) {
+    if (matchedTier.fixed_price != null) {
+      finalAmount = Math.trunc(Number(matchedTier.fixed_price))
+      discountTotal = Math.max(0, baseTotal - finalAmount)
+    } else if (matchedTier.discount_pct != null) {
+      discountTotal = Math.round(baseTotal * ((matchedTier.discount_pct ?? 0) / 100))
+      finalAmount = baseTotal - discountTotal
+    } else if (matchedTier.discount_amount != null) {
+      discountTotal = Math.trunc(Number(matchedTier.discount_amount))
+      finalAmount = Math.max(0, baseTotal - discountTotal)
+    }
+    for (const g of matchedTier.gifts ?? []) {
+      if (g.qty > 0 && g.product_id) {
+        qtyGifts.push({ product_id: g.product_id, qty: g.qty, label: `${g.qty}개 증정` })
+      }
+    }
+  }
+
+  const amountTiers = (campaign.tiers ?? []).filter((t) => t.min_amount != null && t.min_amount > 0)
+  const matchedAmountTier =
+    amountTiers
+      .filter((t) => finalAmount >= (t.min_amount ?? 0))
+      .sort((a, b) => (b.min_amount ?? 0) - (a.min_amount ?? 0))[0] ?? null
+
+  const amountGifts: GiftLine[] = []
+  if (matchedAmountTier) {
+    const suffix = matchedAmountTier.highlight_text ? ` · ${matchedAmountTier.highlight_text}` : ''
+    for (const g of matchedAmountTier.gifts ?? []) {
+      if (g.qty > 0 && g.product_id) {
+        amountGifts.push({ product_id: g.product_id, qty: g.qty, label: `${g.qty}개 증정${suffix}` })
+      }
+    }
+  }
+
+  return {
+    unitSetTotal,
+    baseTotal,
+    finalAmount,
+    discountTotal,
+    matchedTier,
+    matchedAmountTier,
+    gifts: [...qtyGifts, ...amountGifts],
+    selectedSets,
+  }
+}
+
 export default function EventPackageSection({ campaigns, ownerProfileId }: Props) {
   const supabase = createClient()
   const [productMap, setProductMap] = useState<Record<string, ProductInfo>>({})
@@ -31,6 +113,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const [ratesByCompany, setRatesByCompany] = useState<Record<string, Record<string, number>>>({})
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [selected, setSelected] = useState<HqForcedCampaign | null>(null)
+  const [selectedSets, setSelectedSets] = useState(1)
   const [usePoints, setUsePoints] = useState(true)
   const [usePointsReward, setUsePointsReward] = useState(true)
   const [ordering, setOrdering] = useState(false)
@@ -38,6 +121,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const openCampaignDetail = (c: HqForcedCampaign) => {
     setSelected(c)
+    setSelectedSets(defaultSelectedSets(c))
     setUsePoints(true)
     if (ownerProfileId) {
       void (async () => {
@@ -56,6 +140,11 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
     const ids = new Set<string>()
     for (const c of campaigns) {
       for (const pid of c.target_product_ids || []) ids.add(pid)
+      for (const t of c.tiers ?? []) {
+        for (const g of t.gifts ?? []) {
+          if (g.product_id) ids.add(g.product_id)
+        }
+      }
       const giftId = (c as unknown as { gift_product_id?: string | null }).gift_product_id
       if (giftId) ids.add(giftId)
     }
@@ -153,77 +242,119 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
       return sum + (p ? p.supply_price : 0)
     }, 0)
   }, [productMap])
+
+  const packagePricing = useMemo(() => {
+    if (!selected) return null
+    return computeCampaignPackagePricing(selected, productMap, selectedSets)
+  }, [selected, productMap, selectedSets])
+
+  const selectedQtyTiers = selected ? getQtyTiers(selected).sort((a, b) => a.min_qty - b.min_qty) : []
+
   if (!campaigns.length) return null
   const visibleCampaigns = campaigns.slice(0, visibleCount)
   const selectedCompanyId = selected ? (selected as unknown as { company_id?: string }).company_id : null
   const selectedBalance = selectedCompanyId ? (pointBalances[selectedCompanyId] || 0) : 0
   const selectedRewardBalance = selectedCompanyId ? (rewardBalances[selectedCompanyId] || 0) : 0
-  const selectedTotal = selected ? campaignTotal(selected) : 0
-  const afterArete = usePoints ? Math.max(0, selectedTotal - selectedBalance) : selectedTotal
+  const packageFinalAmount = packagePricing?.finalAmount ?? 0
+  const afterArete = usePoints ? Math.max(0, packageFinalAmount - selectedBalance) : packageFinalAmount
   const rewardApplied = usePointsReward ? Math.min(selectedRewardBalance, afterArete) : 0
-  const finalAmount = Math.max(0, afterArete - rewardApplied)
+  const checkoutAmount = Math.max(0, afterArete - rewardApplied)
+
   const submitOrder = async () => {
-    if (!selected || !ownerProfileId) return
+    if (!selected || !ownerProfileId || !packagePricing) return
     setOrdering(true)
     try {
-      const groups: Record<string, { brand_id: string; items: { product_id: string; name: string; qty: number; unit_price: number; line_amount: number }[]; amount: number }> = {}
+      const { finalAmount, baseTotal, gifts } = packagePricing
+      const sets = selectedSets
+
+      type LineItem = { product_id: string; name: string; qty: number; unit_price: number; line_amount: number; promo?: string }
+      const groups: Record<string, { brand_id: string; items: LineItem[]; amount: number }> = {}
+
+      const targetLines: { pid: string; p: ProductInfo; lineBase: number }[] = []
       for (const pid of selected.target_product_ids || []) {
         const p = productMap[pid]
         if (!p) continue
-        if (!groups[p.brand_id]) groups[p.brand_id] = { brand_id: p.brand_id, items: [], amount: 0 }
-        groups[p.brand_id].items.push({ product_id: p.id, name: p.name, qty: 1, unit_price: p.supply_price, line_amount: p.supply_price })
-        groups[p.brand_id].amount += p.supply_price
+        targetLines.push({ pid, p, lineBase: p.supply_price * sets })
       }
-      const groupList = Object.values(groups)
-      if (!groupList.length) { showToast('구성 제품 정보를 불러오지 못했어요'); setOrdering(false); return }
-      const allCartItemsForEffects = groupList.flatMap((g) =>
-        g.items.map((i) => ({ product_id: i.product_id, qty: i.qty, unit_price: i.unit_price })),
-      )
-      const { discountTotal } = resolveHqCampaignEffects(allCartItemsForEffects, [selected])
-      const rawGrandTotal = groupList.reduce((s, g) => s + g.amount, 0)
-      let remainingDiscount = discountTotal
-      const cartItems = groupList.map((g, idx) => {
-        const isLast = idx === groupList.length - 1
-        const share = isLast ? remainingDiscount : Math.round(discountTotal * (g.amount / rawGrandTotal))
-        remainingDiscount -= share
-        return {
-          brand_id: g.brand_id,
-          profile_id: ownerProfileId,
-          items: g.items,
-          total_qty: g.items.length,
-          total_amount: g.amount - share,
-        }
-      })
-      const result = await submitOrderBatch(cartItems, null, selected.id)
-      if (!result?.ok) {
-        showToast('주문 실패: ' + (result?.error || '다시 시도해주세요'))
+      if (!targetLines.length) {
+        showToast('구성 제품 정보를 불러오지 못했어요')
         setOrdering(false)
         return
       }
+
+      let remainingLineAmount = finalAmount
+      targetLines.forEach((row, idx) => {
+        const isLast = idx === targetLines.length - 1
+        const lineAmount = isLast || baseTotal <= 0
+          ? remainingLineAmount
+          : Math.round(finalAmount * (row.lineBase / baseTotal))
+        remainingLineAmount -= lineAmount
+        if (!groups[row.p.brand_id]) {
+          groups[row.p.brand_id] = { brand_id: row.p.brand_id, items: [], amount: 0 }
+        }
+        groups[row.p.brand_id].items.push({
+          product_id: row.p.id,
+          name: row.p.name,
+          qty: sets,
+          unit_price: row.p.supply_price,
+          line_amount: row.lineBase,
+        })
+        groups[row.p.brand_id].amount += lineAmount
+      })
+
+      for (const g of gifts) {
+        const gp = productMap[g.product_id]
+        if (!gp) continue
+        if (!groups[gp.brand_id]) groups[gp.brand_id] = { brand_id: gp.brand_id, items: [], amount: 0 }
+        groups[gp.brand_id].items.push({
+          product_id: gp.id,
+          name: gp.name,
+          qty: g.qty,
+          unit_price: 0,
+          line_amount: 0,
+          promo: g.label,
+        })
+      }
+
+      const groupList = Object.values(groups)
+      const cartItems = groupList.map((g) => ({
+        brand_id: g.brand_id,
+        profile_id: ownerProfileId,
+        items: g.items,
+        total_qty: g.items.reduce((s, i) => s + i.qty, 0),
+        total_amount: g.amount,
+      }))
+
+      const result = await submitOrderBatch(cartItems, null, selected.id)
+      if (!result?.ok) {
+        showToast('주문 실패: ' + (result?.message || result?.error || '다시 시도해주세요'))
+        setOrdering(false)
+        return
+      }
+
       const orderIds: string[] = result.order_ids || []
       const pointsByOrder: Record<string, number> = {}
       if (usePoints && selectedBalance > 0 && orderIds.length) {
-        const grandTotal = rawGrandTotal - discountTotal
-        const pointsUsedTotal = Math.min(selectedBalance, grandTotal)
+        const pointsUsedTotal = Math.min(selectedBalance, finalAmount)
         let remaining = pointsUsedTotal
         orderIds.forEach((id, idx) => {
           const g = groupList[idx]
           if (!g) return
-          const share = idx === orderIds.length - 1 ? remaining : Math.round(pointsUsedTotal * (g.amount / grandTotal))
+          const share = idx === orderIds.length - 1 ? remaining : Math.round(pointsUsedTotal * (g.amount / Math.max(1, finalAmount)))
           pointsByOrder[id] = Math.min(share, remaining)
           remaining -= pointsByOrder[id]
         })
       }
       const rewardByOrder: Record<string, number> = {}
       if (usePointsReward && selectedRewardBalance > 0 && orderIds.length) {
-        const afterAreteTotal = usePoints ? Math.max(0, rawGrandTotal - discountTotal - selectedBalance) : rawGrandTotal - discountTotal
+        const afterAreteTotal = usePoints ? Math.max(0, finalAmount - selectedBalance) : finalAmount
         const rewardUsedTotal = Math.min(selectedRewardBalance, afterAreteTotal)
         if (rewardUsedTotal > 0) {
           let remainingReward = rewardUsedTotal
           orderIds.forEach((id, idx) => {
             const g = groupList[idx]
             if (!g) return
-            const share = idx === orderIds.length - 1 ? remainingReward : Math.round(rewardUsedTotal * (g.amount / afterAreteTotal))
+            const share = idx === orderIds.length - 1 ? remainingReward : Math.round(rewardUsedTotal * (g.amount / Math.max(1, afterAreteTotal)))
             rewardByOrder[id] = Math.min(share, remainingReward)
             remainingReward -= rewardByOrder[id]
           })
@@ -265,6 +396,16 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
       setOrdering(false)
     }
   }
+
+  const tierSummary = (() => {
+    if (!packagePricing?.matchedTier) return null
+    const t = packagePricing.matchedTier
+    if (t.fixed_price != null) return `${t.min_qty}세트 · 확정가 ${t.fixed_price.toLocaleString()}원`
+    if (t.discount_pct != null) return `${t.min_qty}세트 · ${t.discount_pct}% 할인`
+    if (t.discount_amount != null) return `${t.min_qty}세트 · ${t.discount_amount.toLocaleString()}원 할인`
+    return `${t.min_qty}세트 구간`
+  })()
+
   return (
     <div style={{ padding: '0 16px 16px', background: 'rgba(123,94,167,0.04)' }}>
       {toast && (
@@ -309,17 +450,77 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
                   )}
                   <div style={{ fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 6 }}>{meta.title || '이벤트 패키지'}</div>
                   {meta.description && <div style={{ fontSize: 12, color: SUB, lineHeight: 1.6, marginBottom: 14, whiteSpace: 'pre-wrap' }}>{meta.description}</div>}
-                  <div style={{ fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 8 }}>포함 구성</div>
+
+                  {selectedQtyTiers.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 8 }}>구매 세트 수</div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {selectedQtyTiers.map((t) => (
+                          <button
+                            key={t.min_qty}
+                            type="button"
+                            onClick={() => setSelectedSets(t.min_qty)}
+                            style={{
+                              padding: '8px 14px',
+                              borderRadius: 8,
+                              border: `1px solid ${selectedSets === t.min_qty ? PURPLE : 'rgba(255,255,255,0.15)'}`,
+                              background: selectedSets === t.min_qty ? 'rgba(123,94,167,0.25)' : 'transparent',
+                              color: selectedSets === t.min_qty ? '#fff' : TEXT,
+                              fontSize: 12,
+                              fontWeight: selectedSets === t.min_qty ? 600 : 400,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {t.min_qty}세트
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 8 }}>
+                    포함 구성 {selectedQtyTiers.length > 0 ? `(세트당 · ${selectedSets}세트 주문)` : ''}
+                  </div>
                   {(selected.target_product_ids || []).map((pid) => {
                     const p = productMap[pid]
                     return (
                       <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)', fontSize: 12, color: TEXT }}>
-                        <span>{p?.name || '제품'}</span>
-                        <span style={{ color: SUB }}>{(p?.supply_price || 0).toLocaleString()}원</span>
+                        <span>{p?.name || '제품'} × {selectedSets}</span>
+                        <span style={{ color: SUB }}>{((p?.supply_price || 0) * selectedSets).toLocaleString()}원</span>
                       </div>
                     )
                   })}
+
+                  {packagePricing && packagePricing.discountTotal > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 12, color: '#c4a7e7' }}>
+                      <span>캠페인 할인</span>
+                      <span>-{packagePricing.discountTotal.toLocaleString()}원</span>
+                    </div>
+                  )}
+
+                  {tierSummary && (
+                    <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 6 }}>적용 구간: {tierSummary}</div>
+                  )}
+
+                  {packagePricing && packagePricing.gifts.length > 0 && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: SUB, marginBottom: 6 }}>증정</div>
+                      {packagePricing.gifts.map((g, i) => {
+                        const gp = productMap[g.product_id]
+                        return (
+                          <div key={`${g.product_id}-${i}`} style={{ fontSize: 12, color: TEXT, padding: '4px 0' }}>
+                            🎁 {gp?.name || '증정품'} × {g.qty}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
                   <div style={{ ...CARD, marginTop: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 8 }}>
+                      <span>결제 예정 ({selectedSets}세트)</span>
+                      <span>{packageFinalAmount.toLocaleString()}원</span>
+                    </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
                       <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)} />
                       아레테 포인트로 결제할게요 (누적잔액 {selectedBalance.toLocaleString()}P)
@@ -332,7 +533,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT }}>
                       <span>{(usePoints || usePointsReward) ? '추가 결제금액' : '패키지 합계'}</span>
-                      <span>{finalAmount.toLocaleString()}원</span>
+                      <span>{checkoutAmount.toLocaleString()}원</span>
                     </div>
                   </div>
                   <button type="button" onClick={submitOrder} disabled={ordering}
