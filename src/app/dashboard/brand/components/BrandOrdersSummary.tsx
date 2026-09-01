@@ -29,8 +29,6 @@ type OrderLine = {
 
 interface Props {
   myBrands: BrandOpt[]
-  selectedBrandId: string | null
-  onBrandChange: (brandId: string | null) => void
 }
 
 function startOfLocalDay(d: Date) {
@@ -116,10 +114,9 @@ function downloadCsv(rows: OrderLine[], filename: string) {
   URL.revokeObjectURL(url)
 }
 
-export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandChange }: Props) {
+export default function BrandOrdersSummary({ myBrands }: Props) {
   const supabase = createClient()
   const [companyBrands, setCompanyBrands] = useState<BrandOpt[]>(myBrands)
-  const [brandOpen, setBrandOpen] = useState(false)
   const [period, setPeriod] = useState<PeriodKey>('thisMonth')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
@@ -139,8 +136,8 @@ export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandC
   }, [companyBrands])
 
   const activeBrandIds = useMemo(
-    () => (selectedBrandId ? [selectedBrandId] : companyBrands.map((b) => b.id)),
-    [selectedBrandId, companyBrands],
+    () => companyBrands.map((b) => b.id),
+    [companyBrands],
   )
 
   const periodMeta = useMemo(
@@ -148,22 +145,11 @@ export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandC
     [period, customStart, customEnd],
   )
 
-  const brandLabel = selectedBrandId
-    ? (brandMap[selectedBrandId] || '브랜드')
-    : `전체 (${companyBrands.length}개 브랜드)`
+  const brandLabel = `전체 (${companyBrands.length}개 브랜드)`
 
   useEffect(() => {
-    const loadBrands = async () => {
-      if (myBrands.length === 0) { setCompanyBrands([]); return }
-      const { data } = await supabase.from('brands').select('company_id').eq('id', myBrands[0].id).maybeSingle()
-      const cid = data?.company_id ? String(data.company_id) : null
-      if (!cid) { setCompanyBrands(myBrands); return }
-      const { data: rows } = await supabase.from('brands').select('id, name').eq('company_id', cid).order('name')
-      if (rows && rows.length > 0) setCompanyBrands(rows as BrandOpt[])
-      else setCompanyBrands(myBrands)
-    }
-    void loadBrands()
-  }, [myBrands, supabase])
+    setCompanyBrands(myBrands)
+  }, [myBrands])
 
   const fetchOrdersInRange = useCallback(async (brandIds: string[], startIso: string, endIso: string): Promise<OrderLine[]> => {
     if (brandIds.length === 0) return []
@@ -313,52 +299,6 @@ export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandC
 
   return (
     <div style={{ marginBottom: 10 }}>
-      {/* 브랜드 드롭다운 */}
-      <div style={{ position: 'relative', marginBottom: 10 }}>
-        <button
-          type="button"
-          onClick={() => setBrandOpen((v) => !v)}
-          style={{
-            width: '100%', textAlign: 'left', fontSize: 12, padding: '9px 12px', borderRadius: 8,
-            border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: TEXT, cursor: 'pointer',
-          }}
-        >
-          {brandLabel} ▾
-        </button>
-        {brandOpen && (
-          <div style={{
-            position: 'absolute', zIndex: 20, left: 0, right: 0, marginTop: 4, maxHeight: 220, overflowY: 'auto',
-            background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 8,
-          }}>
-            <button
-              type="button"
-              onClick={() => { onBrandChange(null); setBrandOpen(false); setDetailMode(null) }}
-              style={{
-                display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: 12, border: 'none', cursor: 'pointer',
-                background: !selectedBrandId ? 'rgba(123,94,167,0.15)' : 'transparent',
-                color: !selectedBrandId ? '#c4a7e7' : TEXT,
-              }}
-            >
-              전체 ({companyBrands.length}개 브랜드)
-            </button>
-            {companyBrands.map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => { onBrandChange(b.id); setBrandOpen(false); setDetailMode(null) }}
-                style={{
-                  display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', fontSize: 12, border: 'none', cursor: 'pointer',
-                  background: selectedBrandId === b.id ? 'rgba(123,94,167,0.15)' : 'transparent',
-                  color: selectedBrandId === b.id ? '#c4a7e7' : TEXT,
-                }}
-              >
-                {b.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* 기간 필터 */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
         {presetBtn('thisMonth', '이번달')}

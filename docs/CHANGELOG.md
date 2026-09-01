@@ -4,6 +4,13 @@
 ---
 
 ## 2026-09-01
+### fix: 발주관리 브랜드선택 UI 제거, 컴퍼니 전체 기준으로 통일
+
+- `BrandTabOrders`: `selectedBrandId`·`localStorage['brand-tab-selection']` 읽기/쓰기/삭제 전부 제거. `companyId`로 회사 전체 `companyBrandIds`를 조회해 Summary·승인리스트가 같은 집합을 사용
+- `BrandOrdersSummary`: 브랜드 드롭다운·`onBrandChange` 제거. 날짜 프리셋/CSV는 유지, KPI는 항상 회사 전체 브랜드
+- `BrandOrderBatchApproval`: `brandId`는 옵셔널(미전달). `brandIds`(회사 전체)만으로 조회 — 캠페인 제품이 브랜드가 섞여도 승인리스트에서 누락되지 않음
+- 물류마감·아레테 안내 카드는 브랜드 선택 게이트 없이 항상 렌더. 재고·마케팅 탭의 `brand-tab-selection`은 미변경
+
 ### feat: 발주관리 유령 프로모션UI 제거, 등급별 적립율을 등급관리로 이동
 
 - `BrandGradePointRatesCard`: `brand_grade_point_rates` 조회/저장 카드를 독립 컴포넌트로 분리 (`companyId`만)

@@ -77,7 +77,7 @@ function endExclusiveIso(dateStr: string): string | null {
   return d.toISOString()
 }
 
-export default function BrandOrderBatchApproval({ brandId = null, brandIds = [], brandName = '' }: Props) {
+export default function BrandOrderBatchApproval({ brandIds = [], brandName = '' }: Props) {
   const supabase = createClient()
   const [batches, setBatches] = useState<BatchRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -93,14 +93,16 @@ export default function BrandOrderBatchApproval({ brandId = null, brandIds = [],
     setTimeout(() => setToast(''), 2500)
   }
 
-  const scopeBrandIds = brandId
-    ? [brandId]
-    : Array.from(new Set((brandIds || []).filter(Boolean)))
+  const scopeBrandIds = Array.from(new Set((brandIds || []).filter(Boolean)))
   const scopeKey = scopeBrandIds.slice().sort().join('|')
 
   const load = useCallback(async () => {
     const ids = scopeKey ? scopeKey.split('|').filter(Boolean) : []
-    if (ids.length === 0) return
+    if (ids.length === 0) {
+      setBatches([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
 
     let orderQ = supabase

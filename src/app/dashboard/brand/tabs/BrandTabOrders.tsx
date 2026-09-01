@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
@@ -16,44 +16,40 @@ interface Props {
 
 export default function BrandTabOrders({ myBrands }: Props) {
   const supabase = createClient()
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [reportOpen, setReportOpen] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
-  const brandName = myBrands.find((b) => b.id === selectedBrandId)?.name || ''
-
-  const handleBrandChange = (id: string | null) => {
-    setSelectedBrandId(id)
-    if (typeof window === 'undefined') return
-    if (id) localStorage.setItem('brand-tab-selection', id)
-    else localStorage.removeItem('brand-tab-selection')
-  }
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const saved = localStorage.getItem('brand-tab-selection')
-    if (saved && myBrands.some((b) => b.id === saved)) setSelectedBrandId(saved)
-  }, [myBrands])
+  const [companyBrands, setCompanyBrands] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     const resolve = async () => {
-      const brandId = selectedBrandId || myBrands[0]?.id
-      if (!brandId) { setCompanyId(null); return }
-      const { data } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      setCompanyId(data?.company_id ? String(data.company_id) : null)
+      const seedId = myBrands[0]?.id
+      if (!seedId) {
+        setCompanyId(null)
+        setCompanyBrands([])
+        return
+      }
+      const { data } = await supabase.from('brands').select('company_id').eq('id', seedId).maybeSingle()
+      const cid = data?.company_id ? String(data.company_id) : null
+      setCompanyId(cid)
+      if (!cid) {
+        setCompanyBrands(myBrands)
+        return
+      }
+      const { data: rows } = await supabase.from('brands').select('id, name').eq('company_id', cid).order('name')
+      setCompanyBrands(rows && rows.length > 0 ? (rows as { id: string; name: string }[]) : myBrands)
     }
     void resolve()
-  }, [selectedBrandId, myBrands, supabase])
+  }, [myBrands, supabase])
+
+  const companyBrandIds = useMemo(() => companyBrands.map((b) => b.id), [companyBrands])
+  const hubBrandId = companyBrandIds[0] || ''
+  const brandName = companyBrands[0]?.name || ''
 
   return (
     <div>
-      <BrandOrdersSummary
-        myBrands={myBrands}
-        selectedBrandId={selectedBrandId}
-        onBrandChange={handleBrandChange}
-      />
+      <BrandOrdersSummary myBrands={companyBrands} />
       <BrandOrderBatchApproval
-        brandId={selectedBrandId}
-        brandIds={myBrands.map((b) => b.id)}
+        brandIds={companyBrandIds}
         brandName={brandName}
       />
       <div style={CARD}>
@@ -71,24 +67,20 @@ export default function BrandTabOrders({ myBrands }: Props) {
           <div style={{ marginTop: 12 }}>
             <BrandShippedOrderReport
               companyId={companyId}
-              hubBrandId={selectedBrandId || myBrands[0]?.id || ''}
+              hubBrandId={hubBrandId}
             />
           </div>
         ) : reportOpen ? (
           <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>company_id가 없어요</div>
         ) : null}
       </div>
-      {selectedBrandId && (
-        <>
-          <BrandLogisticsClosingReview brandId={selectedBrandId} brandName={brandName} />
-          <div style={CARD}>
-            <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
-            <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>
-              💡 아레테 포인트 + 발주 적립 포인트 → 시바산 제품 구매 시 통합 사용
-            </div>
-          </div>
-        </>
-      )}
+      <BrandLogisticsClosingReview brandId={hubBrandId} brandName={brandName} />
+      <div style={CARD}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
+        <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>
+          💡 아레테 포인트 + 발주 적립 포인트 → 시바산 제품 구매 시 통합 사용
+        </div>
+      </div>
     </div>
   )
 }
