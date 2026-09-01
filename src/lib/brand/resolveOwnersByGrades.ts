@@ -32,23 +32,89 @@ export async function resolveOwnersByGrades(
     }
   }
 
-  const owners = Array.from(ownerMap.values())
-  if (targetGrades === 'all') return owners
+  let primaryOwners = Array.from(ownerMap.values())
+  if (targetGrades !== 'all') {
+    const grades = targetGrades.map((g) => g.trim()).filter(Boolean)
+    if (grades.length === 0) return []
+    const profileIds = primaryOwners.map((o) => o.profile_id)
+    if (profileIds.length > 0) {
+      const { data: gradeRows } = await supabase
+        .from('brand_owner_grades')
+        .select('owner_id, grade')
+        .eq('company_id', cid)
+        .eq('origin_track', 'A')
+        .in('grade', grades)
+        .in('owner_id', profileIds)
+      const allowed = new Set((gradeRows || []).map((row: { owner_id: string }) => String(row.owner_id)))
+      primaryOwners = primaryOwners.filter((o) => allowed.has(o.profile_id))
+    } else {
+      primaryOwners = []
+    }
+  }
 
-  const grades = targetGrades.map((g) => g.trim()).filter(Boolean)
-  if (grades.length === 0) return []
+  const existingProfileIds = new Set(primaryOwners.map((o) => o.profile_id))
 
-  const profileIds = owners.map((o) => o.profile_id)
-  if (profileIds.length === 0) return []
-
-  const { data: gradeRows } = await supabase
+  let gradeQuery = supabase
     .from('brand_owner_grades')
-    .select('owner_id, grade')
+    .select('owner_id')
     .eq('company_id', cid)
     .eq('origin_track', 'A')
-    .in('grade', grades)
-    .in('owner_id', profileIds)
 
-  const allowed = new Set((gradeRows || []).map((row: { owner_id: string }) => String(row.owner_id)))
-  return owners.filter((o) => allowed.has(o.profile_id))
+  if (targetGrades !== 'all') {
+    const grades = targetGrades.map((g) => g.trim()).filter(Boolean)
+    gradeQuery = gradeQuery.in('grade', grades)
+  }
+
+  const { data: gradeOnlyRows } = await gradeQuery
+  const extraProfileIds = Array.from(
+    new Set(
+      (gradeOnlyRows || [])
+        .map((row: { owner_id: string }) => String(row.owner_id || '').trim())
+        .filter((id) => id && !existingProfileIds.has(id)),
+    ),
+  )
+
+  const extraOwners: ResolvedOwner[] = []
+  if (extraProfileIds.length > 0) {
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, auth_id')
+      .in('id', extraProfileIds)
+
+    const authIds = Array.from(
+      new Set(
+        (profileRows || [])
+          .map((p: { auth_id?: string | null }) => String(p.auth_id || '').trim())
+          .filter(Boolean),
+      ),
+    )
+
+    const authToUserId = new Map<string, string>()
+    if (authIds.length > 0) {
+      const { data: userRows } = await supabase
+        .from('users')
+        .select('id, auth_id')
+        .in('auth_id', authIds)
+      for (const u of userRows || []) {
+        const authId = String((u as { auth_id?: string }).auth_id || '').trim()
+        const userId = String((u as { id?: string }).id || '').trim()
+        if (authId && userId) authToUserId.set(authId, userId)
+      }
+    }
+
+    for (const p of profileRows || []) {
+      const profileId = String((p as { id?: string }).id || '').trim()
+      const authId = String((p as { auth_id?: string | null }).auth_id || '').trim()
+      const ownerUserId = authId ? authToUserId.get(authId) : undefined
+      if (profileId && ownerUserId) {
+        extraOwners.push({ owner_user_id: ownerUserId, profile_id: profileId })
+      }
+    }
+  }
+
+  const byProfile = new Map<string, ResolvedOwner>()
+  for (const o of [...primaryOwners, ...extraOwners]) {
+    if (!byProfile.has(o.profile_id)) byProfile.set(o.profile_id, o)
+  }
+  return Array.from(byProfile.values())
 }

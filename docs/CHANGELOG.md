@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### fix: 캠페인 발송 대상에 수기등급 부여 원장 포함 (링크 무관)
+
+- `resolveOwnersByGrades`: roster active 1차 + `brand_owner_grades`(origin_track A) 합집합 — link 없이 등급행만 있는 원장도 profiles→users 체인으로 발송 대상에 포함
+
 ### feat: HQ 캠페인 등록화면 전면 개편 — 수량/금액 구간 동시지원, 명칭통일, 다크테마
 
 - `BrandHqCampaignSection`: 유형 토글·campaign_type 종속 필드 제거, 수량/금액 구간 토글·분리 추가, `campaign_type` 저장값 `'discount'` 고정, 이벤트→캠페인 문구·다크 입력 통일
