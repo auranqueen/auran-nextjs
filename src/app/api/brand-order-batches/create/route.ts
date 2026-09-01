@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { insertBrandOrder } from '@/lib/brand/insertBrandOrder'
 import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
+import { computeCampaignPackagePricing } from '@/lib/brand/computeCampaignPackagePricing'
 
 function yyyymmddLocal(d = new Date()): string {
   const y = d.getFullYear()
@@ -67,6 +68,11 @@ export async function POST(req: NextRequest) {
     typeof body?.campaign_id === 'string' && body.campaign_id.trim()
       ? body.campaign_id.trim()
       : null
+  const packageCampaignId =
+    typeof body?.package_campaign_id === 'string' && body.package_campaign_id.trim()
+      ? body.package_campaign_id.trim()
+      : null
+  const packageSets = Math.trunc(Number(body?.package_sets) || 0)
   if (!cartItems || cartItems.length === 0) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: '잘못된 요청입니다' }, { status: 400 })
   }
@@ -80,75 +86,204 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 서버 재검증: 전체 카트(모든 브랜드) 기준으로 활성 캠페인 재계산
-  const brandIdsInCart = Array.from(new Set(cartItems.map((g: any) => g.brand_id)))
-  let companyIdForCampaign: string | null = null
-  if (brandIdsInCart.length > 0) {
-    const { data: brandRow } = await svc.from('brands').select('company_id').eq('id', brandIdsInCart[0]).maybeSingle()
-    companyIdForCampaign = brandRow?.company_id ? String(brandRow.company_id) : null
-  }
+  const clientTotalAmount = cartItems.reduce((s: number, g: any) => s + Math.trunc(Number(g.total_amount) || 0), 0)
   let serverDiscountTotal = 0
   let appliedCampaignId: string | null = null
-  if (companyIdForCampaign) {
-    const { data: gradeRow } = await svc
-      .from('brand_owner_grades')
-      .select('grade')
-      .eq('owner_id', profile.id)
-      .eq('company_id', companyIdForCampaign)
-      .eq('origin_track', 'A')
-      .eq('payment_status', 'paid')
-      .maybeSingle()
-    const ownerGrade = String(gradeRow?.grade || '취급점')
-    const { data: campaignRows } = await svc
+
+  if (packageCampaignId) {
+    if (packageSets < 1) {
+      return NextResponse.json({ ok: false, error: 'invalid_package_sets', message: '세트 수가 올바르지 않습니다' }, { status: 400 })
+    }
+
+    const { data: userRow } = await svc.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const ownerUserId = userRow?.id ? String(userRow.id) : ''
+    if (!ownerUserId) {
+      return NextResponse.json({ ok: false, error: 'profile_missing', message: '프로필이 없습니다' }, { status: 400 })
+    }
+
+    const { data: packageCampaign, error: packageCampErr } = await svc
       .from('hq_forced_campaigns')
-      .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
-      .eq('company_id', companyIdForCampaign)
-      .is('owner_id', null)
-      .eq('is_active', true)
-      .lte('start_at', new Date().toISOString())
-      .gte('end_at', new Date().toISOString())
-    const campaignRowsFiltered = (campaignRows || []).filter((r: { target_grades?: string[] | null }) =>
-      !r.target_grades || r.target_grades.length === 0 || r.target_grades.includes(ownerGrade)
-    )
-    const campaignIds = campaignRowsFiltered.map((r: { id: string }) => r.id)
-    const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
-    if (campaignIds.length > 0) {
-      const { data: tierRows } = await svc
-        .from('hq_forced_campaign_tiers')
-        .select('campaign_id, min_qty, min_amount, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
-        .in('campaign_id', campaignIds)
-      for (const t of (tierRows || []) as any[]) {
-        const cid = String(t.campaign_id)
-        if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
-        tiersByCampaign[cid]!.push({
-          min_qty: t.min_qty, min_amount: t.min_amount ?? null, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
-          fixed_price: t.fixed_price, gifts: t.gifts ?? [], highlight_text: t.highlight_text,
-        })
+      .select('id, company_id, target_product_ids, start_at, end_at')
+      .eq('id', packageCampaignId)
+      .maybeSingle()
+    if (packageCampErr) {
+      return NextResponse.json({ ok: false, error: 'query_failed', message: packageCampErr.message }, { status: 500 })
+    }
+    if (!packageCampaign?.id) {
+      return NextResponse.json({ ok: false, error: 'campaign_not_found', message: '캠페인을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    const packageCompanyId = packageCampaign.company_id ? String(packageCampaign.company_id) : ''
+    if (!packageCompanyId) {
+      return NextResponse.json({ ok: false, error: 'invalid_campaign', message: '캠페인 회사 정보가 없습니다' }, { status: 400 })
+    }
+
+    const { data: brandRows } = await svc.from('brands').select('id').eq('company_id', packageCompanyId)
+    const brandIds = (brandRows || []).map((b: { id: string }) => String(b.id)).filter(Boolean)
+
+    let hasLink = false
+    if (brandIds.length > 0) {
+      const { data: linkRows } = await svc
+        .from('brand_owner_links')
+        .select('id')
+        .eq('owner_id', ownerUserId)
+        .eq('status', 'active')
+        .in('brand_id', brandIds)
+        .limit(1)
+      hasLink = (linkRows || []).length > 0
+    }
+
+    let hasGrade = false
+    if (!hasLink) {
+      const { data: gradeRow } = await svc
+        .from('brand_owner_grades')
+        .select('owner_id')
+        .eq('owner_id', profile.id)
+        .eq('company_id', packageCompanyId)
+        .eq('origin_track', 'A')
+        .limit(1)
+        .maybeSingle()
+      hasGrade = Boolean(gradeRow?.owner_id)
+    }
+
+    if (!hasLink && !hasGrade) {
+      return NextResponse.json(
+        { ok: false, error: 'forbidden', message: '이 캠페인에 접근할 권한이 없습니다' },
+        { status: 403 },
+      )
+    }
+
+    const { data: packageTierRows, error: packageTierErr } = await svc
+      .from('hq_forced_campaign_tiers')
+      .select('min_qty, min_amount, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+      .eq('campaign_id', packageCampaignId)
+    if (packageTierErr) {
+      return NextResponse.json({ ok: false, error: 'tiers_failed', message: packageTierErr.message }, { status: 500 })
+    }
+
+    const packageTiers: NonNullable<HqForcedCampaign['tiers']> = (packageTierRows || []).map((t: {
+      min_qty: number | null
+      min_amount: number | null
+      discount_pct: number | null
+      discount_amount: number | null
+      fixed_price: number | null
+      gifts: { product_id?: string; qty?: number }[] | null
+      highlight_text: string | null
+    }) => ({
+      min_qty: Math.trunc(Number(t.min_qty) || 0),
+      min_amount: t.min_amount == null ? null : Math.trunc(Number(t.min_amount) || 0),
+      discount_pct: t.discount_pct,
+      discount_amount: t.discount_amount,
+      fixed_price: t.fixed_price,
+      gifts: Array.isArray(t.gifts)
+        ? t.gifts.map((g) => ({
+            product_id: String(g.product_id || ''),
+            qty: Math.trunc(Number(g.qty) || 0),
+          }))
+        : [],
+      highlight_text: t.highlight_text,
+    }))
+
+    const targetProductIds = ((packageCampaign.target_product_ids as string[] | null) || [])
+      .map((id) => String(id))
+      .filter(Boolean)
+    const serverProductMap: Record<string, { supply_price: number }> = {}
+    if (targetProductIds.length > 0) {
+      const { data: prodRows, error: prodErr } = await svc
+        .from('brand_products')
+        .select('id, supply_price')
+        .in('id', targetProductIds)
+      if (prodErr) {
+        return NextResponse.json({ ok: false, error: 'products_failed', message: prodErr.message }, { status: 500 })
+      }
+      for (const p of (prodRows || []) as { id: string; supply_price: number | null }[]) {
+        serverProductMap[String(p.id)] = { supply_price: Math.trunc(Number(p.supply_price) || 0) }
       }
     }
-    const serverCampaigns = (campaignRowsFiltered as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
-    const wholeCartForServer = cartItems.flatMap((g) =>
-      (Array.isArray(g.items) ? g.items : []).map((i: any) => ({
-        product_id: String(i.product_id || ''),
-        qty: Math.trunc(Number(i.qty) || 0),
-        unit_price: Math.trunc(Number(i.unit_price) || 0),
-      }))
+
+    const pricing = computeCampaignPackagePricing(
+      {
+        id: String(packageCampaign.id),
+        target_product_ids: targetProductIds,
+        start_at: packageCampaign.start_at ? String(packageCampaign.start_at) : '',
+        end_at: packageCampaign.end_at ? String(packageCampaign.end_at) : '',
+        tiers: packageTiers,
+      },
+      serverProductMap,
+      packageSets,
     )
-    const effects = resolveHqCampaignEffects(wholeCartForServer, serverCampaigns)
-    serverDiscountTotal = effects.discountTotal
-    // 추후 복수 캠페인 적용 시 campaign_id[] 확장 가능 — 현재는 giftLines 첫 항목만
-    const giftLinesCampaignId = effects.giftLines.find((g) => g.campaign_id)?.campaign_id ?? null
-    const validClientCampaignId =
-      clientCampaignId && campaignRowsFiltered.some((r: { id: string }) => r.id === clientCampaignId)
-        ? clientCampaignId
-        : null
-    appliedCampaignId = validClientCampaignId ?? giftLinesCampaignId
-  }
-  const clientTotalAmount = cartItems.reduce((s: number, g: any) => s + Math.trunc(Number(g.total_amount) || 0), 0)
-  const rawLineTotal = cartItems.reduce((s: number, g: any) => s + (g.items || []).reduce((s2: number, i: any) => s2 + Math.trunc(Number(i.line_amount) || 0), 0), 0)
-  const expectedTotal = rawLineTotal - serverDiscountTotal
-  if (Math.abs(expectedTotal - clientTotalAmount) > 10) {
-    return NextResponse.json({ ok: false, error: 'amount_mismatch' }, { status: 400 })
+    if (Math.abs(pricing.finalAmount - clientTotalAmount) > 10) {
+      return NextResponse.json({ ok: false, error: 'amount_mismatch' }, { status: 400 })
+    }
+    appliedCampaignId = packageCampaignId
+  } else {
+    // 서버 재검증: 전체 카트(모든 브랜드) 기준으로 활성 캠페인 재계산
+    const brandIdsInCart = Array.from(new Set(cartItems.map((g: any) => g.brand_id)))
+    let companyIdForCampaign: string | null = null
+    if (brandIdsInCart.length > 0) {
+      const { data: brandRow } = await svc.from('brands').select('company_id').eq('id', brandIdsInCart[0]).maybeSingle()
+      companyIdForCampaign = brandRow?.company_id ? String(brandRow.company_id) : null
+    }
+    if (companyIdForCampaign) {
+      const { data: gradeRow } = await svc
+        .from('brand_owner_grades')
+        .select('grade')
+        .eq('owner_id', profile.id)
+        .eq('company_id', companyIdForCampaign)
+        .eq('origin_track', 'A')
+        .eq('payment_status', 'paid')
+        .maybeSingle()
+      const ownerGrade = String(gradeRow?.grade || '취급점')
+      const { data: campaignRows } = await svc
+        .from('hq_forced_campaigns')
+        .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
+        .eq('company_id', companyIdForCampaign)
+        .is('owner_id', null)
+        .eq('is_active', true)
+        .lte('start_at', new Date().toISOString())
+        .gte('end_at', new Date().toISOString())
+      const campaignRowsFiltered = (campaignRows || []).filter((r: { target_grades?: string[] | null }) =>
+        !r.target_grades || r.target_grades.length === 0 || r.target_grades.includes(ownerGrade)
+      )
+      const campaignIds = campaignRowsFiltered.map((r: { id: string }) => r.id)
+      const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
+      if (campaignIds.length > 0) {
+        const { data: tierRows } = await svc
+          .from('hq_forced_campaign_tiers')
+          .select('campaign_id, min_qty, min_amount, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+          .in('campaign_id', campaignIds)
+        for (const t of (tierRows || []) as any[]) {
+          const cid = String(t.campaign_id)
+          if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
+          tiersByCampaign[cid]!.push({
+            min_qty: t.min_qty, min_amount: t.min_amount ?? null, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
+            fixed_price: t.fixed_price, gifts: t.gifts ?? [], highlight_text: t.highlight_text,
+          })
+        }
+      }
+      const serverCampaigns = (campaignRowsFiltered as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+      const wholeCartForServer = cartItems.flatMap((g) =>
+        (Array.isArray(g.items) ? g.items : []).map((i: any) => ({
+          product_id: String(i.product_id || ''),
+          qty: Math.trunc(Number(i.qty) || 0),
+          unit_price: Math.trunc(Number(i.unit_price) || 0),
+        }))
+      )
+      const effects = resolveHqCampaignEffects(wholeCartForServer, serverCampaigns)
+      serverDiscountTotal = effects.discountTotal
+      // 추후 복수 캠페인 적용 시 campaign_id[] 확장 가능 — 현재는 giftLines 첫 항목만
+      const giftLinesCampaignId = effects.giftLines.find((g) => g.campaign_id)?.campaign_id ?? null
+      const validClientCampaignId =
+        clientCampaignId && campaignRowsFiltered.some((r: { id: string }) => r.id === clientCampaignId)
+          ? clientCampaignId
+          : null
+      appliedCampaignId = validClientCampaignId ?? giftLinesCampaignId
+    }
+    const rawLineTotal = cartItems.reduce((s: number, g: any) => s + (g.items || []).reduce((s2: number, i: any) => s2 + Math.trunc(Number(i.line_amount) || 0), 0), 0)
+    const expectedTotal = rawLineTotal - serverDiscountTotal
+    if (Math.abs(expectedTotal - clientTotalAmount) > 10) {
+      return NextResponse.json({ ok: false, error: 'amount_mismatch' }, { status: 400 })
+    }
   }
 
   const ownerName = String(cartItems[0]?.owner_name || '')

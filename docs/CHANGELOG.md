@@ -4,6 +4,13 @@
 ---
 
 ## 2026-09-01
+### fix: 패키지주문 금액검증을 공용계산함수 기반으로 서버-클라이언트 일치 (amount_mismatch 근본원인)
+
+- `src/lib/brand/computeCampaignPackagePricing.ts`: `getQtyTiers`·`defaultSelectedSets`·`computeCampaignPackagePricing` 공용 모듈 (팝업·발주 UI와 동일 로직)
+- `EventPackageSection`·`CampaignQuickOrderModal`: 로컬 함수 제거 후 공용 모듈 import, `submitOrderBatch`에 `package_campaign_id`·`package_sets` 전달 (`campaign_id` 유지)
+- `submitOrderBatch`: 4·5번째 인자 옵셔널 — 일반 장바구니는 기존 호출 그대로
+- `/api/brand-order-batches/create`: `package_campaign_id` 있으면 공용함수 `finalAmount` vs `clientTotalAmount`(±10원) 검증 + 링크 OR 수기등급 소속체크; 없으면 기존 `resolveHqCampaignEffects` 경로 유지
+
 ### feat: 채팅·소식 캠페인 CTA → 빠른주문 팝업 (페이지 이동 제거)
 
 - `BrandChatThreadLite`: 캠페인 메시지 「자세히 보고 주문하기」→ `CampaignQuickOrderModal` (`campaign_id`·`ownerProfileId`)

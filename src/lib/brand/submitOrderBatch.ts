@@ -23,12 +23,19 @@ export async function submitOrderBatch(
   cartGroupedByBrand: SubmitOrderBatchGroup[],
   ownerNote?: string | null,
   campaignId?: string | null,
+  packageCampaignId?: string | null,
+  packageSets?: number | null,
 ): Promise<SubmitOrderBatchResult> {
   if (!Array.isArray(cartGroupedByBrand) || cartGroupedByBrand.length === 0) {
     return { ok: false, error: 'invalid_request', message: '발주할 상품이 없습니다' }
   }
 
   const note = typeof ownerNote === 'string' ? ownerNote.trim() : ''
+  const pkgId =
+    typeof packageCampaignId === 'string' && packageCampaignId.trim()
+      ? packageCampaignId.trim()
+      : ''
+  const pkgSets = Math.trunc(Number(packageSets) || 0)
   const res = await fetch('/api/brand-order-batches/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -36,6 +43,9 @@ export async function submitOrderBatch(
       cartItems: cartGroupedByBrand,
       owner_note: note || null,
       campaign_id: campaignId || null,
+      ...(pkgId
+        ? { package_campaign_id: pkgId, package_sets: pkgSets }
+        : {}),
     }),
   })
   const result = await res.json().catch(() => ({})) as {
