@@ -143,8 +143,12 @@ export async function POST(req: NextRequest) {
         .eq('id', channelId)
 
       sentCount += 1
-    } catch {
-      /* skip failed owner */
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message.trim() : ''
+      failedOwners.push({
+        owner_user_id: owner.owner_user_id,
+        error: errMsg || 'channel_create_failed',
+      })
     }
   }
 
