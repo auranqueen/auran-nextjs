@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-01
+### fix: CampaignQuickOrderModal 세트선택 + 정가패턴 (EventPackageSection 동일)
+
+- `CampaignQuickOrderModal`: `selectedSets`·qty tier 「N세트」 버튼, `computeCampaignPackagePricing` 로컬 계산(`resolveHqCampaignEffects` 제거)
+- submit cartItems: `qty=selectedSets`, `line_amount`=정가, `total_amount`=할인 후 배분, 증정품 별도 line — `EventPackageSection`·`brand-order-batches/create` 검증과 동일
+
 ### fix: HQ 캠페인 구간 저장 시 혜택 미설정 사전 경고
 
 - `BrandHqCampaignSection.submit`: min_qty/min_amount만 있고 할인·확정가·증정품이 없는 구간이 있으면 API 호출 전 토스트로 차단(몇 번째 구간인지 명시)
