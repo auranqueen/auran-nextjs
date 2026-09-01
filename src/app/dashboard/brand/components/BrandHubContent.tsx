@@ -7,7 +7,6 @@ const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr
 const BrandTabOwners = dynamic(() => import('../tabs/BrandTabOwners'), { ssr: false })
 const BrandTabOrders = dynamic(() => import('../tabs/BrandTabOrders'), { ssr: false })
 const BrandTabOrenTalk = dynamic(() => import('../tabs/BrandTabOrenTalk'), { ssr: false })
-const BrandTabLive = dynamic(() => import('../tabs/BrandTabLive'), { ssr: false })
 const BrandTabSample = dynamic(() => import('../tabs/BrandTabSample'), { ssr: false })
 const BrandTabCommunity = dynamic(() => import('../tabs/BrandTabCommunity'), { ssr: false })
 const BrandTabExpand = dynamic(() => import('../tabs/BrandTabExpand'), { ssr: false })
@@ -21,7 +20,7 @@ const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'
 const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
 const BrandTabArete = dynamic(() => import('../tabs/BrandTabArete'), { ssr: false })
 const BrandTabArchive = dynamic(() => import('../tabs/BrandTabArchive'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete' | 'archive'
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete' | 'archive'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -66,7 +65,6 @@ export default function BrandHubContent({
     {
       label: '마케팅',
       items: [
-        { key: 'live', label: '이벤트·라이브', icon: 'ti-speakerphone', requiredModule: 'marketing_create' },
         { key: 'community', label: '커뮤니티', icon: 'ti-users', requiredModule: 'community_post' },
         { key: 'archive', label: '에듀케이션/자료관리', icon: 'ti-book', requiredModule: ['education_manage', 'marketing_create'] },
       ],
@@ -197,11 +195,6 @@ export default function BrandHubContent({
               { type: 'flow', text: '대기중 요청을 확인 후 발송 처리하면 원장님에게 자동으로 오렌톡이 발송돼요.' },
               { type: 'warn', text: '발송 처리 전에 재고를 먼저 확인하세요.' },
             ]},
-            live: { title: '이벤트·라이브', items: [
-              { type: 'flow', text: '라이브 일정을 등록하면 D-3, D-1, 당일 자동으로 원장님에게 알림이 가요.' },
-              { type: 'info', text: '플랫폼 URL과 대상 등급을 정확히 입력하세요.' },
-              { type: 'tip', text: '완료 후 녹화 URL을 등록하면 원장님이 다시보기 할 수 있어요.' },
-            ]},
             community: { title: '커뮤니티', items: [
               { type: 'flow', text: '공지/프로모션/신제품 소식을 작성하면 원장님 대시보드 브랜드 소식에 자동으로 공개돼요.' },
               { type: 'warn', text: '원장님이 댓글을 달 수 없어요. 중요한 내용은 오렌상담톡으로 별도 발송하세요.' },
@@ -209,6 +202,7 @@ export default function BrandHubContent({
             archive: { title: '에듀케이션/자료관리', items: [
               { type: 'flow', text: '트리트먼트·제품교육 자료를 등록하면 연결 원장님이 볼 수 있어요.' },
               { type: 'flow', text: '에듀케이션 세션을 만들면 원장님이 신청할 수 있어요.' },
+              { type: 'flow', text: '「라이브」 서브탭에서 라이브 일정을 등록·관리할 수 있어요.' },
               { type: 'warn', text: '아레테전용 자료는 아레테 회원에게만 보여요.' },
             ]},
             products: { title: '제품 관리', items: [
@@ -310,9 +304,8 @@ export default function BrandHubContent({
           {mainTab === 'arete' && <BrandTabArete companyId={companyId} staffId={staffId} />}
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} brandId={brandId} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} companyId={companyId} staffId={staffId} initialSub={mainSub as 'history' | 'chat' | undefined} />}
-          {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
-          {mainTab === 'archive' && <BrandTabArchive brandId={brandId} companyId={companyId} staffId={staffId} />}
+          {mainTab === 'archive' && <BrandTabArchive brandId={brandId} companyId={companyId} staffId={staffId} myBrands={brandOpts} initialSub={mainSub} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} initialSub={mainSub} />}

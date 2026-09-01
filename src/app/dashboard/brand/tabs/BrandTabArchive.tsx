@@ -3,13 +3,16 @@
 import { useState, type CSSProperties } from 'react'
 import BrandArchiveManage from '@/components/brand/BrandArchiveManage'
 import BrandArchiveEducationManage from '@/components/brand/BrandArchiveEducationManage'
+import BrandLiveSection from '@/components/brand/BrandLiveSection'
 
-type SubTab = 'treatment' | 'material' | 'education'
+type SubTab = 'treatment' | 'material' | 'education' | 'live'
 
 interface Props {
   brandId: string | null
   companyId: string | null
   staffId: string | null
+  myBrands: { id: string; name: string }[]
+  initialSub?: string
 }
 
 const PURPLE = '#7B5EA7'
@@ -27,10 +30,11 @@ const TABS: { key: SubTab; label: string }[] = [
   { key: 'treatment', label: '트리트먼트 프로그램' },
   { key: 'material', label: '제품교육자료' },
   { key: 'education', label: '에듀케이션 관리' },
+  { key: 'live', label: '라이브' },
 ]
 
-export default function BrandTabArchive({ brandId: _brandId, companyId, staffId }: Props) {
-  const [sub, setSub] = useState<SubTab>('treatment')
+export default function BrandTabArchive({ brandId, companyId, staffId, myBrands, initialSub }: Props) {
+  const [sub, setSub] = useState<SubTab>((initialSub as SubTab) || 'treatment')
 
   if (!companyId) {
     return <div style={{ ...CARD, color: SUB, fontSize: 13 }}>회사 정보를 불러오는 중…</div>
@@ -63,6 +67,9 @@ export default function BrandTabArchive({ brandId: _brandId, companyId, staffId 
       )}
       {sub === 'education' && (
         <BrandArchiveEducationManage companyId={companyId} staffId={staffId} />
+      )}
+      {sub === 'live' && (
+        <BrandLiveSection myBrands={myBrands} brandId={brandId} />
       )}
     </div>
   )

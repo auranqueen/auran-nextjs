@@ -484,7 +484,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                 <button type="button" onClick={() => setClosedEvents(p => [...p, 'live'])}
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
-              <button type="button" onClick={() => onTabChange('live')}
+              <button type="button" onClick={() => onTabChange('archive', 'live')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(59,130,246,0.25)', background: 'transparent', color: '#60a5fa', cursor: 'pointer' }}>
                 라이브 관리 →
               </button>

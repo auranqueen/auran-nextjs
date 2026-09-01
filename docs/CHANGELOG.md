@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-31
+### chore: 브랜드 「이벤트·라이브」 독립탭 제거, 에듀케이션/자료관리 서브탭으로 통합
+
+- `BrandTabLive` 본문을 `src/components/brand/BrandLiveSection.tsx`로 분리
+- `BrandTabArchive`에 「라이브」서브탭 추가 → `BrandLiveSection` 렌더
+- `BrandHubContent` 사이드바·`mainTab === 'live'` 분기 제거 (`BrandTabLive.tsx` 파일은 하위호환 래퍼로 유지)
+
 ### chore: 원장 사이드바 「시술차트」 독립메뉴 제거, 예약관리 서브탭으로 완전통합
 - OwnerSidebarShell MENU_ITEMS에서 시술차트(`/charts-v2`) 한 줄 삭제. 예약 관리·charts-v2 URL은 유지(둘 다 트랙 무관 전체공개).
 - 쉽게: 사이드바에서는 예약 관리만 보이고, 차트는 그 안의 탭으로 들어간다.
