@@ -26,6 +26,7 @@ type BookingRow = {
   service_name?: string | null
   service_price?: number | null
   status?: string | null
+  // TEMP 191: 수동추가 응급조치. external_customers 통합 시 정리
   customer_name?: string | null
   customer_id?: string | null
   external_customer_id?: string | null
@@ -117,6 +118,7 @@ export default function BookingManagePage() {
     const sb = supabaseRef.current
     let q = sb
       .from('bookings')
+      // TEMP 191: customer_name 읽기 — 수동추가 응급조치. external_customers 통합 시 정리
       .select('id, booking_date, booking_time, service_name, service_price, status, customer_name, customer_id, external_customer_id, notes, purchase_id')
       .eq('owner_id', oid)
 
@@ -482,6 +484,7 @@ export default function BookingManagePage() {
       return
     }
     setSaving(true)
+    // TEMP 191: customer_name 쓰기 — 수동추가 응급조치. external_customers 통합 시 정리
     const { error } = await supabaseRef.current.from('bookings').insert({
       owner_id: ownerId,
       salon_id: salonId,

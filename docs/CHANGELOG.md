@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-02
+### fix: 원장 예약 수동추가 PGRST204 — bookings.customer_name 응급조치
+
+- 마이그레이션 `191_bookings_customer_name.sql`: `bookings.customer_name text` nullable. **Supabase에서 직접 실행 필요**
+- `BookingManagePage`: 기존 insert/select의 `customer_name` 읽기·쓰기 유지. TEMP 주석(external_customers 통합 시 정리)
+- 앱 고객 예약(`customer_id`) 경로 미변경. 오프라인 고객 통합은 후속 작업
+
 ### feat: 원장 반품을 발주건 통째 신청 + 증정 포함 + 본사 멀티SKU 재고복구
 
 - 마이그레이션 `190_brand_returns_items.sql`: `brand_returns.items jsonb` (brand_orders.items와 동일 스냅샷). **Supabase에서 직접 실행 필요**
