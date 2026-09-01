@@ -100,6 +100,8 @@ export async function POST(req: NextRequest) {
       .eq('company_id', companyIdForCampaign)
       .is('owner_id', null)
       .eq('is_active', true)
+      .lte('start_at', new Date().toISOString())
+      .gte('end_at', new Date().toISOString())
     const campaignRowsFiltered = (campaignRows || []).filter((r: { target_grades?: string[] | null }) =>
       !r.target_grades || r.target_grades.length === 0 || r.target_grades.includes(ownerGrade)
     )

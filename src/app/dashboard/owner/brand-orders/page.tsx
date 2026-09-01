@@ -337,6 +337,8 @@ export default function BrandOrdersPage() {
         .in('company_id', companyIdsForGrade)
         .is('owner_id', null)
         .eq('is_active', true)
+        .lte('start_at', new Date().toISOString())
+        .gte('end_at', new Date().toISOString())
       // target_grades null/[] = 전체노출; 배열이면 해당 회사 소속 브랜드 등급 중 하나라도 포함 시 노출
       const filteredCampaignRows = (campaignRows || []).filter((r: {
         target_grades?: string[] | null
