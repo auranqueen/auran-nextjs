@@ -5,6 +5,7 @@ export const TEXT = '#1A1A2E'
 export const SUB = '#888888'
 
 export type OrderItemLine = {
+  product_id?: string
   name: string
   qty: number
   unit_price?: number

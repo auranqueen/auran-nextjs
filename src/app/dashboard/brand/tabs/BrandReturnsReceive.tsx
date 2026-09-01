@@ -20,8 +20,18 @@ const REASON_CONDITION_MAP: Record<string, string> = {
   '수량 오류': '정상',
   '단순 변심': '정상',
 }
+interface ReturnItem {
+  product_id?: string | null
+  name?: string
+  qty?: number
+  unit_price?: number
+  line_amount?: number
+  bonus?: number
+  promo?: string | null
+}
 interface ReturnRow {
   id: string
+  brand_id: string
   type: string
   reason_code: string
   reason_detail: string | null
@@ -33,8 +43,39 @@ interface ReturnRow {
   created_at: string
   order_id: string | null
   requested_by: string | null
+  items: ReturnItem[] | null
 }
 interface Props { brandId: string | null; companyBrandIds: string[] }
+
+type InvHit = { id: string; total_stock: number; product_name: string | null; brand_id: string }
+
+async function matchInventoryForReturn(
+  supabase: ReturnType<typeof createClient>,
+  item: ReturnItem,
+  brandId: string,
+  companyBrandIds: string[],
+): Promise<InvHit | null> {
+  const companyIds = Array.from(new Set([brandId, ...companyBrandIds].filter(Boolean)))
+  const lookup = async (scope: string[], byProductId: boolean) => {
+    let q = supabase.from('brand_inventory').select('id, total_stock, product_name, brand_id').in('brand_id', scope)
+    if (byProductId && item.product_id) q = q.eq('product_id', String(item.product_id))
+    else q = q.eq('product_name', String(item.name || ''))
+    const { data } = await q.limit(1).maybeSingle()
+    return (data as InvHit | null) || null
+  }
+  if (item.product_id) {
+    const byBrandId = await lookup([brandId], true)
+    if (byBrandId) return byBrandId
+    const byCompanyId = await lookup(companyIds, true)
+    if (byCompanyId) return byCompanyId
+  }
+  if (item.name) {
+    const byBrandName = await lookup([brandId], false)
+    if (byBrandName) return byBrandName
+    return lookup(companyIds, false)
+  }
+  return null
+}
 export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props) {
   const supabase = createClient()
   const [codeInput, setCodeInput] = useState('')
@@ -54,7 +95,7 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
-      .select('id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at, order_id, requested_by')
+      .select('id, brand_id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at, order_id, requested_by, items')
       .in('brand_id', companyBrandIds)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
@@ -92,38 +133,123 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
     if (!isRestock && !disposeMemo.trim()) { showToast('폐기 사유 메모를 입력해주세요'); return }
     if (!matched || !brandId) return
     setSaving(true)
-    const { error } = await supabase
-      .from('brand_returns')
-      .update({
-        status: isRestock ? 'done' : 'received',
-        condition,
-        process: isRestock ? 'restock' : 'dispose',
-        received_by: staffName.trim(),
-      })
-      .eq('id', matched.id)
-    if (!error) {
-      if (isRestock && matched.inventory_id) {
-        const { data: invRow } = await supabase
-          .from('brand_inventory')
-          .select('total_stock, product_name')
-          .eq('id', matched.inventory_id)
-          .maybeSingle()
-        await supabase.rpc('increment_inventory_stock', { p_inventory_id: matched.inventory_id, p_qty: matched.qty })
-        if (invRow) {
-          await notifyRestockIfNeeded(supabase, { brandId, productName: invRow.product_name, beforeStock: Math.trunc(Number(invRow.total_stock) || 0) })
+    const lines = Array.isArray(matched.items) ? matched.items : []
+    const unmatched: string[] = []
+    let restocked = 0
+    try {
+      if (isRestock) {
+        if (lines.length === 0) {
+          showToast('반품 품목(items)이 없어 재고를 반영할 수 없어요')
+          return
         }
-        await supabase.from('brand_stock_logs').insert({
-          brand_id: brandId,
-          inventory_id: matched.inventory_id,
-          type: 'return_in',
-          qty: matched.qty,
-          before_qty: 0,
-          after_qty: matched.qty,
-          ref_type: 'return',
-          ref_id: matched.id,
-          staff_name: staffName.trim(),
-          memo: `반품 입고: ${matched.reason_code} · ${condition}`,
-        })
+        for (const item of lines) {
+          const bonusQty = Math.trunc(Number(item.bonus) || 0)
+          const saleQty = Math.trunc(Number(item.qty) || 0)
+          const outQty = saleQty + bonusQty
+          if (outQty <= 0) continue
+          const label = String(item.name || item.product_id || '품목')
+          const giftSku = Math.trunc(Number(item.unit_price) || 0) === 0 && Math.trunc(Number(item.line_amount) || 0) === 0
+          const invRow = await matchInventoryForReturn(supabase, item, matched.brand_id || brandId, companyBrandIds)
+          if (!invRow) {
+            unmatched.push(label)
+            console.warn(`[반품입고 실패] 매칭 안 됨: ${label} (return ${matched.id})`)
+            await supabase.from('brand_stock_logs').insert({
+              brand_id: matched.brand_id || brandId,
+              inventory_id: null,
+              type: 'adjust',
+              qty: outQty,
+              before_qty: 0,
+              after_qty: 0,
+              ref_type: 'return',
+              ref_id: matched.id,
+              staff_name: staffName.trim(),
+              memo: `재고매칭 실패로 미입고: ${label} (product_id: ${item.product_id || '없음'})`,
+            })
+            continue
+          }
+          await supabase.rpc('increment_inventory_stock', { p_inventory_id: invRow.id, p_qty: outQty })
+          await notifyRestockIfNeeded(supabase, {
+            brandId: invRow.brand_id || matched.brand_id || brandId,
+            productName: invRow.product_name || label,
+            beforeStock: Math.trunc(Number(invRow.total_stock) || 0),
+          })
+          const midStock = Math.trunc(Number(invRow.total_stock) || 0) + saleQty
+          const logRows: Record<string, unknown>[] = []
+          if (saleQty > 0) {
+            logRows.push({
+              brand_id: invRow.brand_id || matched.brand_id || brandId,
+              inventory_id: invRow.id,
+              type: 'return_in',
+              qty: saleQty,
+              before_qty: invRow.total_stock,
+              after_qty: midStock,
+              ref_type: 'return',
+              ref_id: matched.id,
+              staff_name: staffName.trim(),
+              memo: `반품 입고(${giftSku ? '증정SKU' : '판매'}): ${label} ${saleQty}개 · ${condition}`,
+              is_gift: giftSku,
+            })
+          }
+          if (bonusQty > 0) {
+            logRows.push({
+              brand_id: invRow.brand_id || matched.brand_id || brandId,
+              inventory_id: invRow.id,
+              type: 'return_in',
+              qty: bonusQty,
+              before_qty: saleQty > 0 ? midStock : invRow.total_stock,
+              after_qty: (saleQty > 0 ? midStock : Math.trunc(Number(invRow.total_stock) || 0)) + bonusQty,
+              ref_type: 'return',
+              ref_id: matched.id,
+              staff_name: staffName.trim(),
+              memo: `반품 입고(증정): ${label} ${bonusQty}개 · ${condition}`,
+              is_gift: true,
+            })
+          }
+          if (logRows.length > 0) {
+            await supabase.from('brand_stock_logs').insert(logRows)
+          }
+          restocked += 1
+        }
+        if (restocked === 0) {
+          showToast(`재고 매칭 실패로 입고되지 않았어요: ${unmatched.join(', ')}`)
+          return
+        }
+      } else if (lines.length > 0) {
+        for (const item of lines) {
+          const outQty = Math.trunc(Number(item.qty) || 0) + Math.trunc(Number(item.bonus) || 0)
+          if (outQty <= 0) continue
+          const label = String(item.name || item.product_id || '품목')
+          const invRow = await matchInventoryForReturn(supabase, item, matched.brand_id || brandId, companyBrandIds)
+          if (!invRow) {
+            unmatched.push(label)
+            console.warn(`[반품폐기 로그] 매칭 안 됨: ${label} (return ${matched.id})`)
+            await supabase.from('brand_stock_logs').insert({
+              brand_id: matched.brand_id || brandId,
+              inventory_id: null,
+              type: 'adjust',
+              qty: outQty,
+              before_qty: 0,
+              after_qty: 0,
+              ref_type: 'dispose',
+              ref_id: matched.id,
+              staff_name: staffName.trim(),
+              memo: `재고매칭 실패(폐기 기록만): ${label} (product_id: ${item.product_id || '없음'}) · ${disposeMemo.trim()}`,
+            })
+            continue
+          }
+          await supabase.from('brand_stock_logs').insert({
+            brand_id: invRow.brand_id || matched.brand_id || brandId,
+            inventory_id: invRow.id,
+            type: 'out',
+            qty: outQty,
+            before_qty: 0,
+            after_qty: 0,
+            ref_type: 'dispose',
+            ref_id: matched.id,
+            staff_name: staffName.trim(),
+            memo: `[폐기] ${condition} · ${disposeMemo.trim()} · ${label}`,
+          })
+        }
       } else if (matched.inventory_id) {
         await supabase.from('brand_stock_logs').insert({
           brand_id: brandId,
@@ -138,6 +264,21 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
           memo: `[폐기] ${condition} · ${disposeMemo.trim()}`,
         })
       }
+
+      const { error } = await supabase
+        .from('brand_returns')
+        .update({
+          status: isRestock ? 'done' : 'received',
+          condition,
+          process: isRestock ? 'restock' : 'dispose',
+          received_by: staffName.trim(),
+        })
+        .eq('id', matched.id)
+      if (error) {
+        showToast('처리 실패: ' + error.message)
+        return
+      }
+
       let targetOwnerId: string | null = null
       if (matched.order_id) {
         const { data: ord } = await supabase.from('brand_orders').select('profile_id').eq('id', matched.order_id).maybeSingle()
@@ -155,12 +296,15 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
         send_count: 1,
       })
       setDone(true)
-      showToast(isRestock ? '수령 완료! 재고 자동 반영됨' : '수령 완료! 폐기 기록 저장됨')
+      if (unmatched.length > 0) {
+        showToast(`${isRestock ? '수령 완료' : '폐기 기록'} · 매칭 실패 ${unmatched.length}건: ${unmatched.join(', ')}`)
+      } else {
+        showToast(isRestock ? '수령 완료! 재고 자동 반영됨' : '수령 완료! 폐기 기록 저장됨')
+      }
       void loadPending()
-    } else {
-      showToast('처리 실패: ' + error.message)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
   if (loading) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>불러오는 중...</div>
   return (
@@ -183,7 +327,22 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
           <div style={{ ...CARD, borderColor: 'rgba(76,175,80,0.3)' }}>
             <div style={{ fontSize: 11, color: GREEN, marginBottom: 8 }}>✓ 코드 확인됨</div>
             <div style={{ fontSize: 13, color: TEXT, marginBottom: 4 }}>{matched.type === 'exchange' ? '교환' : '반품'} · {matched.reason_code}</div>
-            <div style={{ fontSize: 12, color: SUB, marginBottom: matched.reason_detail || (matched.photos && matched.photos.length > 0) ? 8 : 0 }}>수량: {matched.qty}개 · 코드: {matched.return_code}</div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>수량: {matched.qty}개 · 코드: {matched.return_code}</div>
+            {Array.isArray(matched.items) && matched.items.length > 0 && (
+              <div style={{ fontSize: 12, color: TEXT, marginBottom: 8 }}>
+                {matched.items.map((it, idx) => {
+                  const giftSku = Math.trunc(Number(it.unit_price) || 0) === 0 && Math.trunc(Number(it.line_amount) || 0) === 0
+                  const bonus = Math.trunc(Number(it.bonus) || 0)
+                  return (
+                    <div key={`${it.product_id || it.name}-${idx}`} style={{ padding: '2px 0' }}>
+                      {it.name || '품목'} · {Math.trunc(Number(it.qty) || 0)}개
+                      {giftSku ? ' · 증정' : ''}
+                      {bonus > 0 ? ` · +${bonus} 증정` : ''}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {matched.reason_detail && (
               <div style={{ fontSize: 12, color: TEXT, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', marginBottom: matched.photos && matched.photos.length > 0 ? 8 : 0 }}>
                 "{matched.reason_detail}"
@@ -261,6 +420,12 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
               onClick={() => { setCodeInput(r.return_code || ''); selectMatch(r) }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: TEXT }}>{r.type === 'exchange' ? '교환' : '반품'} · {r.reason_code} · {r.qty}개</div>
+                {Array.isArray(r.items) && r.items.length > 0 && (
+                  <div style={{ fontSize: 11, color: SUB }}>
+                    {r.items.slice(0, 2).map((it) => it.name).filter(Boolean).join(', ')}
+                    {r.items.length > 2 ? ` 외 ${r.items.length - 2}` : ''}
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: GREEN }}>{r.return_code}</div>
               </div>
               {r.photos && r.photos.length > 0 && (

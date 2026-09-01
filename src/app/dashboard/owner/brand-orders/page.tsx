@@ -9,7 +9,6 @@ import BrandOrderProductCard from './BrandOrderProductCard'
 import AreteMembershipCard from './components/AreteMembershipCard'
 import OwnerOrderStatement from './components/OwnerOrderStatement'
 import BrandSamplesSection from '@/components/owner/BrandSamplesSection'
-import BrandReturnsSection from '@/components/owner/BrandReturnsSection'
 import { BORDER, PURPLE, SUB, TEXT } from './brandOrdersUi'
 import {
   buildOrderLineItem,
@@ -52,12 +51,33 @@ function cartLineBonus(bonus: number, sets: number): number {
 }
 
 interface OrderItem {
+  product_id?: string
   name: string
   qty: number
   unit_price?: number
   line_amount?: number
   bonus?: number
   promo?: string
+}
+
+function snapshotReturnItems(items: OrderItem[]) {
+  return items.map((i) => ({
+    product_id: i.product_id ? String(i.product_id) : null,
+    name: String(i.name || ''),
+    qty: Math.trunc(Number(i.qty) || 0),
+    unit_price: Math.trunc(Number(i.unit_price) || 0),
+    line_amount: Math.trunc(Number(i.line_amount) || 0),
+    bonus: Math.trunc(Number(i.bonus) || 0),
+    promo: i.promo ? String(i.promo) : null,
+  }))
+}
+
+function returnSnapshotQty(items: ReturnType<typeof snapshotReturnItems>) {
+  return items.reduce((s, i) => s + i.qty + i.bonus, 0)
+}
+
+function isGiftReturnLine(i: { unit_price?: number | null; line_amount?: number | null }) {
+  return Math.trunc(Number(i.unit_price) || 0) === 0 && Math.trunc(Number(i.line_amount) || 0) === 0
 }
 
 function gradeForBrand(gradeByBrandId: Record<string, string>, brandId: string | null | undefined): string {
@@ -144,12 +164,11 @@ export default function BrandOrdersPage() {
   const [returnType, setReturnType] = useState<'return' | 'exchange'>('return')
   const [returnReason, setReturnReason] = useState('')
   const [returnDetail, setReturnDetail] = useState('')
-  const [returnQty, setReturnQty] = useState(1)
   const [returnPhotos, setReturnPhotos] = useState<string[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [returnSaving, setReturnSaving] = useState(false)
   const [toast, setToast] = useState('')
-  const [tab, setTab] = useState<'shop' | 'orders' | 'samples' | 'returns'>('shop')
+  const [tab, setTab] = useState<'shop' | 'orders' | 'samples'>('shop')
   const [ownerName, setOwnerName] = useState('')
   const [salonName, setSalonName] = useState('')
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
@@ -815,6 +834,9 @@ export default function BrandOrdersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: prof } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+    const snapshot = snapshotReturnItems(returnPopup.order.items || [])
+    if (snapshot.length === 0) { showToast('반품할 품목이 없어요'); return }
+    const qty = returnSnapshotQty(snapshot)
     setReturnSaving(true)
     const { error } = await supabase.from('brand_returns').insert({
       brand_id: returnPopup.order.brand_id,
@@ -822,7 +844,8 @@ export default function BrandOrdersPage() {
       type: returnType,
       reason_code: returnReason,
       reason_detail: returnDetail.trim() || null,
-      qty: returnQty,
+      items: snapshot,
+      qty,
       status: 'requested',
       requested_by: (prof as { id?: string } | null)?.id || user.id,
       photos: returnPhotos,
@@ -831,7 +854,6 @@ export default function BrandOrdersPage() {
       setReturnPopup({ open: false, order: null })
       setReturnReason('')
       setReturnDetail('')
-      setReturnQty(1)
       setReturnPhotos([])
       showToast('반품·교환 신청 완료! 브랜드사 검토 중')
     } else {
@@ -1008,10 +1030,10 @@ export default function BrandOrdersPage() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
-        {(['shop', 'orders', 'samples', 'returns'] as const).map((t) => (
+        {(['shop', 'orders', 'samples'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
             style={{ flex: 1, padding: '10px', fontSize: 13, border: 'none', background: 'none', color: tab === t ? PURPLE : SUB, borderBottom: tab === t ? `2px solid ${PURPLE}` : '2px solid transparent', cursor: 'pointer' }}>
-            {t === 'shop' ? '브랜드 제품' : t === 'orders' ? `발주 내역 (${orders.length})` : t === 'samples' ? '샘플' : '반품'}
+            {t === 'shop' ? '브랜드 제품' : t === 'orders' ? `발주 내역 (${orders.length})` : '샘플'}
           </button>
         ))}
       </div>
@@ -1070,14 +1092,12 @@ export default function BrandOrdersPage() {
             ownerProfileId={ownerProfileId}
             onReturnRequest={(o) => {
               setReturnPopup({ open: true, order: o as Order })
-              setReturnQty(o.items.reduce((s, i) => s + i.qty, 0))
             }}
           />
         </div>
       )}
 
       {tab === 'samples' && <BrandSamplesSection embedded />}
-      {tab === 'returns' && <BrandReturnsSection embedded />}
 
       {showPopup && (
         <div
@@ -1187,8 +1207,31 @@ export default function BrandOrdersPage() {
               <button type="button" onClick={() => setReturnPopup({ open: false, order: null })}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888', lineHeight: 1 }}>✕</button>
             </div>
-            <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
-              {returnPopup.order.brand_name} · {returnPopup.order.items.map((i) => `${i.name} ${i.qty}ea`).join(', ')}
+            <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+              {returnPopup.order.brand_name}
+            </div>
+            <div style={{ background: '#F8F7FC', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A2E', marginBottom: 8 }}>
+                이 발주건 전체를 반품 신청합니다
+              </div>
+              {returnPopup.order.items.map((i, idx) => {
+                const giftSku = isGiftReturnLine(i)
+                const bonus = Math.trunc(Number(i.bonus) || 0)
+                return (
+                  <div key={`${i.product_id || i.name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#1A1A2E', padding: '4px 0' }}>
+                    <span style={{ flex: 1 }}>{i.name} · {i.qty}개</span>
+                    {giftSku && (
+                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>증정</span>
+                    )}
+                    {bonus > 0 && (
+                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>+{bonus} 증정</span>
+                    )}
+                  </div>
+                )
+              })}
+              <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+                합계 {returnSnapshotQty(snapshotReturnItems(returnPopup.order.items))}개 (구매+증정 포함)
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               {(['return', 'exchange'] as const).map((t) => (
@@ -1236,14 +1279,6 @@ export default function BrandOrdersPage() {
                   </label>
                 )}
               </div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>수량</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <button type="button" onClick={() => setReturnQty((q) => Math.max(1, q - 1))}
-                style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid #eee', background: '#f9f9f9', fontSize: 16, cursor: 'pointer', color: '#333' }}>−</button>
-              <span style={{ fontSize: 16, fontWeight: 500, minWidth: 36, textAlign: 'center' as const, color: '#1A1A2E' }}>{returnQty}</span>
-              <button type="button" onClick={() => setReturnQty((q) => q + 1)}
-                style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 16, cursor: 'pointer' }}>+</button>
-            </div>
             <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>상세 내용</div>
             <textarea value={returnDetail} onChange={(e) => setReturnDetail(e.target.value)} placeholder="구체적인 상황을 입력해주세요"
               style={{ width: '100%', minHeight: 60, border: '1px solid #eee', borderRadius: 8, padding: '8px 10px', fontSize: 12, resize: 'none', outline: 'none', marginBottom: 14, color: '#333' }} />

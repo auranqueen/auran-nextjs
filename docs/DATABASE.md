@@ -166,9 +166,15 @@ brand_returns — 반품·교환
   id UUID PK
   brand_id UUID → brands.id
   order_id UUID → brand_orders.id
-  rtn_code TEXT UNIQUE
-  status TEXT (pending/approved/rejected/received)
-  reason TEXT
+  items JSONB — 주문 라인 스냅샷 (brand_orders.items 동일: product_id/name/qty/unit_price/line_amount/bonus/promo). 발주건 통째+증정. 190
+  qty INTEGER — items 전체 수량 합(구매 qty + bonus + 증정라인). 하위호환·표시용
+  type TEXT (return/exchange)
+  reason_code TEXT
+  reason_detail TEXT
+  status TEXT (requested/approved/denied/received/done)
+  return_code TEXT
+  photos JSONB
+  inventory_id UUID — 레거시 단일 SKU (실제 재고반영은 items)
   created_at TIMESTAMPTZ
 
 brand_monthly_close — 월 마감

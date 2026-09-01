@@ -1,7 +1,5 @@
-'use client'
-
-import BrandReturnsSection from '@/components/owner/BrandReturnsSection'
+import { redirect } from 'next/navigation'
 
 export default function BrandReturnsPage() {
-  return <BrandReturnsSection />
+  redirect('/dashboard/owner/brand-orders')
 }

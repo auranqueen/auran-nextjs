@@ -4,6 +4,15 @@
 ---
 
 ## 2026-09-02
+### feat: 원장 반품을 발주건 통째 신청 + 증정 포함 + 본사 멀티SKU 재고복구
+
+- 마이그레이션 `190_brand_returns_items.sql`: `brand_returns.items jsonb` (brand_orders.items와 동일 스냅샷). **Supabase에서 직접 실행 필요**
+- 죽은 자유입력 화면 제거: `BrandReturnsSection.tsx` 삭제, `/brand-returns`는 발주관리로 redirect, 사이드바 「반품」·발주화면 반품 탭 제거
+- 발주내역 「반품·교환 신청」: 수량 ± 제거. 주문 items(구매+증정라인+bonus) 스냅샷 저장. `qty`는 합계(하위호환)
+- `BrandReturnsList`: 행 클릭 시 items 펼침, 증정 SKU/`bonus` 뱃지. 승인 `return_code` 로직 유지
+- `BrandReturnsReceive`: items 순회 후 `product_id`→이름, 브랜드→컴퍼니 `brand_inventory` 매칭으로 `increment_inventory_stock`(qty+bonus). 매칭 실패는 토스트+stock_logs(무음 스킵 금지). `inventory_id`는 레거시
+- 트랙B `hq-stock-orders` 미변경
+
 ### fix: 원장 발주(A/B) 일반카트에서 HQ 캠페인 자동할인·배너·서버검증 제거
 
 - `brand-orders/page.tsx`: `EventPackageSection` 언마운트. `hq_forced_campaigns` 조회·`resolveHqCampaignEffects` 카트 할인/증정 병합·팝업 「캠페인 할인」 UI 제거. 일반카트는 `buildOrderLineItem`(N+M)만 사용

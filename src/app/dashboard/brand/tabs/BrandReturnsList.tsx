@@ -16,6 +16,15 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   done:      { label: '처리완료', color: SUB },
   denied:    { label: '반려', color: DANGER },
 }
+interface ReturnItem {
+  product_id?: string | null
+  name?: string
+  qty?: number
+  unit_price?: number
+  line_amount?: number
+  bonus?: number
+  promo?: string | null
+}
 interface ReturnRow {
   id: string
   type: string
@@ -33,6 +42,10 @@ interface ReturnRow {
   process: string | null
   created_at: string
   order_id: string | null
+  items: ReturnItem[] | null
+}
+function isGiftReturnLine(i: ReturnItem) {
+  return Math.trunc(Number(i.unit_price) || 0) === 0 && Math.trunc(Number(i.line_amount) || 0) === 0
 }
 interface Props { brandId: string | null; companyBrandIds: string[] }
 export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
@@ -44,13 +57,14 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
   const [denyId, setDenyId] = useState<string | null>(null)
   const [denyReason, setDenyReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadData = useCallback(async () => {
     if (!companyBrandIds.length) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
-      .select('id, type, reason_code, reason_detail, status, qty, return_code, photos, requested_by, approved_by, received_by, denied_reason, condition, process, created_at, order_id')
+      .select('id, type, reason_code, reason_detail, status, qty, return_code, photos, requested_by, approved_by, received_by, denied_reason, condition, process, created_at, order_id, items')
       .in('brand_id', companyBrandIds)
       .order('created_at', { ascending: false })
       .limit(30)
@@ -167,7 +181,11 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
       ) : filtered.map(r => {
         const st = STATUS_MAP[r.status] || { label: r.status, color: SUB }
         return (
-          <div key={r.id} style={CARD}>
+          <div
+            key={r.id}
+            style={{ ...CARD, cursor: 'pointer' }}
+            onClick={() => setExpandedId((id) => id === r.id ? null : r.id)}
+          >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' as const }}>
@@ -184,15 +202,37 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
               </div>
               <span style={{ fontSize: 11, color: SUB, flexShrink: 0 }}>{timeAgo(r.created_at)}</span>
             </div>
+            {expandedId === r.id && Array.isArray(r.items) && r.items.length > 0 && (
+              <div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)' }}>
+                {r.items.map((it, idx) => {
+                  const giftSku = isGiftReturnLine(it)
+                  const bonus = Math.trunc(Number(it.bonus) || 0)
+                  return (
+                    <div key={`${it.product_id || it.name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TEXT, padding: '3px 0' }}>
+                      <span style={{ flex: 1 }}>{it.name || '품목'} · {Math.trunc(Number(it.qty) || 0)}개</span>
+                      {giftSku && (
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>증정</span>
+                      )}
+                      {bonus > 0 && (
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>+{bonus} 증정</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {expandedId === r.id && (!Array.isArray(r.items) || r.items.length === 0) && (
+              <div style={{ fontSize: 11, color: SUB, marginBottom: 10 }}>품목 스냅샷이 없는 이전 신청이에요</div>
+            )}
             {Array.isArray(r.photos) && r.photos.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }} onClick={(e) => e.stopPropagation()}>
                 {r.photos.slice(0,3).map((p, pi) => (
                   <div key={pi} style={{ width: 48, height: 48, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📷</div>
                 ))}
               </div>
             )}
             {r.status === 'requested' && (
-              <div>
+              <div onClick={(e) => e.stopPropagation()}>
                 {denyId === r.id ? (
                   <div>
                     <input value={denyReason} onChange={e => setDenyReason(e.target.value)} placeholder="반려 사유 입력"
