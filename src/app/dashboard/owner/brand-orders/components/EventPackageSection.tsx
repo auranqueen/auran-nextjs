@@ -10,6 +10,8 @@ import { calcPointsEarned } from '@/lib/brand/brandOrderPromos'
 interface Props {
   campaigns: HqForcedCampaign[]
   ownerProfileId: string | null
+  ownerName?: string
+  salonName?: string
 }
 interface ProductInfo {
   id: string
@@ -25,7 +27,7 @@ const SUB = 'rgba(255,255,255,0.3)'
 const PURPLE = '#7B5EA7'
 const PAGE_SIZE = 3
 
-export default function EventPackageSection({ campaigns, ownerProfileId }: Props) {
+export default function EventPackageSection({ campaigns, ownerProfileId, ownerName = '', salonName = '' }: Props) {
   const supabase = createClient()
   const [productMap, setProductMap] = useState<Record<string, ProductInfo>>({})
   const [pointBalances, setPointBalances] = useState<Record<string, number>>({})
@@ -241,6 +243,8 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
       const cartItems = groupList.map((g) => ({
         brand_id: g.brand_id,
         profile_id: ownerProfileId,
+        owner_name: ownerName,
+        salon_name: salonName,
         items: g.items,
         total_qty: g.items.reduce((s, i) => s + i.qty, 0),
         total_amount: g.amount,

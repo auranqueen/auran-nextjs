@@ -1065,7 +1065,7 @@ export default function BrandOrdersPage() {
           </button>
         </div>
       )}
-      <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} />
+      <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} ownerName={ownerName} salonName={salonName} />
       <AreteMembershipCard ownerProfileId={ownerProfileId} />
       <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', margin: '0 16px 12px' }} />
       {linkedBrandOptions.length > 0 && (

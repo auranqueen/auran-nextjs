@@ -111,6 +111,8 @@ export default function CampaignQuickOrderModal({ campaignId, ownerProfileId, on
   const [toast, setToast] = useState('')
   const [done, setDone] = useState(false)
   const [earnedPreview, setEarnedPreview] = useState(0)
+  const [ownerName, setOwnerName] = useState('')
+  const [salonName, setSalonName] = useState('')
 
   const showToast = (t: string) => {
     setToast(t)
@@ -128,15 +130,21 @@ export default function CampaignQuickOrderModal({ campaignId, ownerProfileId, on
         message?: string
         campaign?: CampaignDetail
         products?: Record<string, ProductInfo>
+        owner_name?: string
+        salon_name?: string
       }
       if (!res.ok || !json.ok || !json.campaign) {
         setLoadError(json.message || json.error || `불러오기 실패 (${res.status})`)
         setCampaign(null)
         setProductMap({})
+        setOwnerName('')
+        setSalonName('')
         return
       }
       setCampaign(json.campaign)
       setProductMap(json.products || {})
+      setOwnerName(String(json.owner_name || ''))
+      setSalonName(String(json.salon_name || ''))
       setSelectedSets(defaultSelectedSets(json.campaign))
 
       const companyId = json.campaign.company_id
@@ -274,6 +282,8 @@ export default function CampaignQuickOrderModal({ campaignId, ownerProfileId, on
       const cartItems = groupList.map((g) => ({
         brand_id: g.brand_id,
         profile_id: ownerProfileId,
+        owner_name: ownerName,
+        salon_name: salonName,
         items: g.items,
         total_qty: g.items.reduce((s, i) => s + i.qty, 0),
         total_amount: g.amount,

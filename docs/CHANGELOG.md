@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-01
+### fix: 캠페인 주문경로에서 원장이름/샵명 누락되던 것 수정
+
+- `CampaignQuickOrderModal`: 캠페인 API가 내려준 `owner_name`/`salon_name`을 cartItems에 실어 `submitOrderBatch`로 전달
+- `/api/owner/campaigns/[id]`: 로그인 원장의 `profiles.full_name`/`owner_store_name`(없으면 `users.name`/`salon_name`)을 응답에 포함
+- `EventPackageSection`: 부모 `brand-orders/page.tsx`의 `ownerName`/`salonName`을 props로 받아 cartItems에 채움 — 발주상세에 "원장" fallback만 뜨던 문제
+
 ### fix: 발주관리 브랜드선택 UI 제거, 컴퍼니 전체 기준으로 통일
 
 - `BrandTabOrders`: `selectedBrandId`·`localStorage['brand-tab-selection']` 읽기/쓰기/삭제 전부 제거. `companyId`로 회사 전체 `companyBrandIds`를 조회해 Summary·승인리스트가 같은 집합을 사용

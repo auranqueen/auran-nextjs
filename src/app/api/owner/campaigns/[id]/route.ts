@@ -32,8 +32,8 @@ export async function GET(
   }
 
   const [{ data: userRow }, { data: profileRow }] = await Promise.all([
-    svc.from('users').select('id, role').eq('auth_id', user.id).maybeSingle(),
-    svc.from('profiles').select('id').eq('auth_id', user.id).maybeSingle(),
+    svc.from('users').select('id, role, name, salon_name').eq('auth_id', user.id).maybeSingle(),
+    svc.from('profiles').select('id, full_name, owner_store_name').eq('auth_id', user.id).maybeSingle(),
   ])
 
   const ownerUserId = userRow?.id ? String(userRow.id) : ''
@@ -170,8 +170,21 @@ export async function GET(
   const notStarted = startAt > 0 && now < startAt
   const expired = endAt > 0 && now > endAt
 
+  const ownerName = String(
+    (profileRow as { full_name?: string | null } | null)?.full_name
+    || (userRow as { name?: string | null } | null)?.name
+    || '',
+  )
+  const salonName = String(
+    (profileRow as { owner_store_name?: string | null } | null)?.owner_store_name
+    || (userRow as { salon_name?: string | null } | null)?.salon_name
+    || '',
+  )
+
   return NextResponse.json({
     ok: true,
+    owner_name: ownerName,
+    salon_name: salonName,
     campaign: {
       id: String(campaign.id),
       company_id: companyId,
