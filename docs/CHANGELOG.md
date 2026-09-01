@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-01
+### fix: 발주화면 패키지 적립포인트도 포인트결제 여부와 무관하게 주문총액 기준으로 통일
+
+- `EventPackageSection`: `calcPointsEarned` 입력을 `total_amount - 아레테/일반적립금` → `total_amount`로 변경 (`gradeByCompany` 없으면 적립 건너뛰기·포인트 차감은 유지)
+
 ### fix: 캠페인 팝업주문 적립포인트를 포인트결제 여부와 무관하게 주문총액 기준으로 계산
 
 - `CampaignQuickOrderModal`: `calcPointsEarned` 입력을 `total_amount - 아레테/일반적립금` → `total_amount`로 변경 (포인트 차감·주문금액 로직은 유지)

@@ -288,9 +288,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
         orderIds.forEach((id, idx) => {
           const item = cartItems[idx]
           if (!item) return
-          const areteUsed = pointsByOrder[id] || 0
-          const rewardUsed = rewardByOrder[id] || 0
-          const netForEarning = Math.max(0, item.total_amount - areteUsed - rewardUsed)
+          const netForEarning = item.total_amount
           earnedByOrder[id] = calcPointsEarned(netForEarning, grade, rateMap)
         })
       }
