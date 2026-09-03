@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-03
+### perf: 예약관리 상태변경 시 전체재조회 → 로컬 타겟갱신
+
+- `BookingManagePage` `updateStatus`: 성공 후 `loadBookings` 전체 재호출 제거
+- `rows`에서 해당 예약 `status`만 패치. 탭 날짜 조건에 안 맞으면 그 행만 제거
+- Realtime 자동 재조회·수동 추가 성공 시 전체 재조회는 유지
+
 ### perf: 원장 발주화면 load() 추가 병렬화 (brands∥products, promo∥inventory)
 
 - `brand-orders/page.tsx` `load()`: `brandIds` 확보 후 `brands`와 `brand_products`를 `Promise.all`로 동시 조회

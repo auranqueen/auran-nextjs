@@ -426,7 +426,20 @@ export default function BookingManagePage() {
     }
 
     showToast('저장됐어요 💜')
-    await loadBookings(ownerId, tab, selectedDate)
+    // 전체 loadBookings 대신 로컬 패치 (탭 날짜 조건에 안 맞으면 제거 — status만 바뀌면 보통 유지)
+    setRows((prev) => {
+      const patched = prev.map((b) => (b.id === id ? { ...b, status } : b))
+      const updated = patched.find((b) => b.id === id)
+      if (!updated) return prev
+      const bd = String(updated.booking_date || '')
+      const today = dateKey()
+      let stays = true
+      if (tab === 'today') stays = bd === selectedDate
+      else if (tab === 'upcoming') stays = bd >= today
+      else if (tab === 'past') stays = bd < today
+      if (!stays) return prev.filter((b) => b.id !== id)
+      return patched
+    })
     if (status === 'completed' && bookingForMsg) {
       setChartAsk(bookingForMsg)
     }
