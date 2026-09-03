@@ -287,84 +287,95 @@ export default function BrandOrdersPage() {
 
     let brandNameMap: Record<string, string> = {}
     const brandCompanyMap: Record<string, string> = {}
-    if (brandIds.length > 0) {
-      const { data: brandRows } = await supabase
-        .from('brands')
-        .select('id, name, company_id')
-        .in('id', brandIds)
-      for (const row of brandRows || []) {
-        const rid = String((row as { id: string }).id)
-        brandNameMap[rid] = String((row as { name?: string }).name || '브랜드')
-        const cid = (row as { company_id?: string | null }).company_id
-        if (cid) brandCompanyMap[rid] = String(cid)
-      }
-    }
-    setLinkedBrandNames(brandNameMap)
-    setBrandCompanyMap(brandCompanyMap)
     let gradeMap: Record<string, string> = {}
     const tierPackageByCompany: Record<string, string> = {}
     const gradeByCompanyOuter: Record<string, string> = {}
-    const companyIdsForGrade = Array.from(new Set(Object.values(brandCompanyMap)))
-    if (companyIdsForGrade.length > 0) {
-      const { data: gradeRows } = await supabase
-        .from('brand_owner_grades')
-        .select('company_id, grade, tier_package_id, payment_status')
-        .eq('owner_id', profileId)
-        .eq('origin_track', 'A')
-        .eq('payment_status', 'paid')
-        .in('company_id', companyIdsForGrade)
-      for (const row of gradeRows || []) {
-        const cid = String((row as { company_id: string }).company_id)
-        const g = String((row as { grade?: string }).grade || DEFAULT_GRADE)
-        gradeByCompanyOuter[cid] = g
-        const tpid = (row as { tier_package_id?: string | null }).tier_package_id
-        if (tpid) tierPackageByCompany[cid] = String(tpid)
-      }
-      for (const bid of brandIds) {
-        const cid = brandCompanyMap[bid]
-        if (cid && gradeByCompanyOuter[cid]) gradeMap[bid] = gradeByCompanyOuter[cid]
-      }
-      const missingPkgCompanyIds = Object.keys(gradeByCompanyOuter).filter(
-        (cid) => Boolean(gradeByCompanyOuter[cid]) && !tierPackageByCompany[cid],
-      )
-      if (missingPkgCompanyIds.length > 0) {
-        const { data: fallbackPkgs } = await supabase
-          .from('brand_tier_packages')
-          .select('id, company_id, tier_name')
-          .in('company_id', missingPkgCompanyIds)
-          .eq('is_active', true)
-        for (const pkg of fallbackPkgs || []) {
-          const cid = String((pkg as { company_id?: string }).company_id || '')
-          if (!cid || tierPackageByCompany[cid]) continue
-          const ownerGrade = gradeByCompanyOuter[cid]
-          if (ownerGrade && String((pkg as { tier_name?: string }).tier_name || '') === ownerGrade) {
-            tierPackageByCompany[cid] = String((pkg as { id: string }).id)
-          }
-        }
-      }
-    }
-    setGradeByBrandId(gradeMap)
 
     if (brandIds.length > 0) {
-      const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
-      const gradeByTierPackage: Record<string, string> = {}
-      for (const cid of Object.keys(tierPackageByCompany)) {
-        const mappedGrade = gradeByCompanyOuter[cid]
-        if (mappedGrade) gradeByTierPackage[tierPackageByCompany[cid]] = mappedGrade
-      }
-      const [{ data: prodRows }, { data: promoRuleRows }] = await Promise.all([
+      // brandIds만 있으면 되는 조회는 병렬 (brands ↔ products). grades/promo는 company·패키지 의존.
+      const [{ data: brandRows }, { data: prodRows }] = await Promise.all([
+        supabase
+          .from('brands')
+          .select('id, name, company_id')
+          .in('id', brandIds),
         supabase
           .from('brand_products')
           .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
           .in('brand_id', brandIds)
           .eq('status', 'active')
           .order('created_at', { ascending: false }),
+      ])
+      for (const row of brandRows || []) {
+        const rid = String((row as { id: string }).id)
+        brandNameMap[rid] = String((row as { name?: string }).name || '브랜드')
+        const cid = (row as { company_id?: string | null }).company_id
+        if (cid) brandCompanyMap[rid] = String(cid)
+      }
+      setLinkedBrandNames(brandNameMap)
+      setBrandCompanyMap(brandCompanyMap)
+
+      const companyIdsForGrade = Array.from(new Set(Object.values(brandCompanyMap)))
+      if (companyIdsForGrade.length > 0) {
+        const { data: gradeRows } = await supabase
+          .from('brand_owner_grades')
+          .select('company_id, grade, tier_package_id, payment_status')
+          .eq('owner_id', profileId)
+          .eq('origin_track', 'A')
+          .eq('payment_status', 'paid')
+          .in('company_id', companyIdsForGrade)
+        for (const row of gradeRows || []) {
+          const cid = String((row as { company_id: string }).company_id)
+          const g = String((row as { grade?: string }).grade || DEFAULT_GRADE)
+          gradeByCompanyOuter[cid] = g
+          const tpid = (row as { tier_package_id?: string | null }).tier_package_id
+          if (tpid) tierPackageByCompany[cid] = String(tpid)
+        }
+        for (const bid of brandIds) {
+          const cid = brandCompanyMap[bid]
+          if (cid && gradeByCompanyOuter[cid]) gradeMap[bid] = gradeByCompanyOuter[cid]
+        }
+        const missingPkgCompanyIds = Object.keys(gradeByCompanyOuter).filter(
+          (cid) => Boolean(gradeByCompanyOuter[cid]) && !tierPackageByCompany[cid],
+        )
+        if (missingPkgCompanyIds.length > 0) {
+          const { data: fallbackPkgs } = await supabase
+            .from('brand_tier_packages')
+            .select('id, company_id, tier_name')
+            .in('company_id', missingPkgCompanyIds)
+            .eq('is_active', true)
+          for (const pkg of fallbackPkgs || []) {
+            const cid = String((pkg as { company_id?: string }).company_id || '')
+            if (!cid || tierPackageByCompany[cid]) continue
+            const ownerGrade = gradeByCompanyOuter[cid]
+            if (ownerGrade && String((pkg as { tier_name?: string }).tier_name || '') === ownerGrade) {
+              tierPackageByCompany[cid] = String((pkg as { id: string }).id)
+            }
+          }
+        }
+      }
+      setGradeByBrandId(gradeMap)
+
+      const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
+      const gradeByTierPackage: Record<string, string> = {}
+      for (const cid of Object.keys(tierPackageByCompany)) {
+        const mappedGrade = gradeByCompanyOuter[cid]
+        if (mappedGrade) gradeByTierPackage[tierPackageByCompany[cid]] = mappedGrade
+      }
+      const prodIds = (prodRows || []).map((p: { id: string }) => p.id)
+      // promo는 tierPackageIds 의존, inventory는 prodIds 의존 — 서로 독립이라 병렬
+      const [{ data: promoRuleRows }, { data: invRows }] = await Promise.all([
         tierPackageIds.length > 0
           ? supabase
               .from('brand_tier_promo_rules')
               .select('id, brand_id, min_qty, bonus_qty, tier_package_id')
               .in('tier_package_id', tierPackageIds)
               .eq('is_active', true)
+          : Promise.resolve({ data: [] as any[] }),
+        prodIds.length > 0
+          ? supabase
+              .from('brand_inventory')
+              .select('product_id, available_stock')
+              .in('product_id', prodIds)
           : Promise.resolve({ data: [] as any[] }),
       ])
       setSupplyPromos(
@@ -378,12 +389,7 @@ export default function BrandOrdersPage() {
           title: null,
         })) as SupplyPromoRow[],
       )
-      const prodIds = (prodRows || []).map((p: { id: string }) => p.id)
       if (prodIds.length > 0) {
-        const { data: invRows } = await supabase
-          .from('brand_inventory')
-          .select('product_id, available_stock')
-          .in('product_id', prodIds)
         const sMap: Record<string, number> = {}
         for (const r of (invRows || []) as any[]) {
           sMap[String(r.product_id)] = Math.trunc(Number(r.available_stock) || 0)
@@ -413,6 +419,9 @@ export default function BrandOrdersPage() {
         }
       }))
     } else {
+      setLinkedBrandNames({})
+      setBrandCompanyMap({})
+      setGradeByBrandId({})
       setProducts([])
       setSupplyPromos([])
     }

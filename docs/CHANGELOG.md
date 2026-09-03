@@ -4,6 +4,13 @@
 ---
 
 ## 2026-09-03
+### perf: 원장 발주화면 load() 추가 병렬화 (brands∥products, promo∥inventory)
+
+- `brand-orders/page.tsx` `load()`: `brandIds` 확보 후 `brands`와 `brand_products`를 `Promise.all`로 동시 조회
+- 등급·패키지 워터폴(`grades` → 필요 시 `brand_tier_packages`)은 의존 유지
+- `brand_tier_promo_rules`와 `brand_inventory`는 서로 독립이라 `Promise.all`로 병렬
+- `ordersPromise`는 links 직후 시작 구조 유지. 쿼리 조건·매핑·화면 데이터는 동일
+
 ### feat: 물류허브 발송처리 10초 자동갱신 + 신규건 알림음 + 안내문구
 
 - `BrandInventoryFulfillment`: 🔔 알림음 토글(기본 ON)·Web Audio `playBeep`, 섹션별 대기건수 증가 시에만 재생
