@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const GREEN = 'rgba(61,184,100,0.9)'
@@ -21,16 +21,22 @@ type Props = {
   companyId: string | null
   filter: 'approved' | 'shipped'
   onToast: (t: string) => void
+  onPendingCount?: (count: number) => void
 }
-export default function BrandTierOrderFulfillmentList({ companyId, filter, onToast }: Props) {
+export default function BrandTierOrderFulfillmentList({ companyId, filter, onToast, onPendingCount }: Props) {
   const supabase = createClient()
   const [orders, setOrders] = useState<Enriched[]>([])
   const [loading, setLoading] = useState(false)
   const [inputs, setInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [submittingId, setSubmittingId] = useState<string | null>(null)
-  const load = useCallback(async () => {
-    if (!companyId) return
-    setLoading(true)
+  const onPendingCountRef = useRef(onPendingCount)
+  onPendingCountRef.current = onPendingCount
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!companyId) {
+      onPendingCountRef.current?.(0)
+      return
+    }
+    if (!opts?.silent) setLoading(true)
     try {
       let q = supabase
         .from('brand_tier_orders')
@@ -46,6 +52,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, filter, onToa
       const rows = (orderRows || []) as OrderRow[]
       if (rows.length === 0) {
         setOrders([])
+        onPendingCountRef.current?.(filter === 'approved' ? 0 : 0)
         return
       }
       const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id)))
@@ -91,12 +98,15 @@ export default function BrandTierOrderFulfillmentList({ companyId, filter, onToa
           items: itemsByOrder[r.id] || [],
         })),
       )
+      onPendingCountRef.current?.(filter === 'approved' ? rows.length : 0)
     } finally {
       setLoading(false)
     }
   }, [companyId, filter, supabase])
   useEffect(() => {
     void load()
+    const id = setInterval(() => { void load({ silent: true }) }, 10000)
+    return () => clearInterval(id)
   }, [load])
   const decrementInventoryForOrder = async (order: Enriched) => {
     for (const item of order.items) {

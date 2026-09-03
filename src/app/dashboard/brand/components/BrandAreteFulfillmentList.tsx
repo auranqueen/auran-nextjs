@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -31,6 +31,7 @@ type Props = {
   filter: FilterTab
   onToast: (msg: string) => void
   onShipped?: () => void
+  onPendingCount?: (count: number) => void
 }
 
 function monthKey(raw: string) {
@@ -49,20 +50,23 @@ function parseSnapshot(raw: unknown): KitItem[] {
   }).filter((x) => (x.qty || 0) > 0)
 }
 
-export default function BrandAreteFulfillmentList({ companyId, filter, onToast, onShipped }: Props) {
+export default function BrandAreteFulfillmentList({ companyId, filter, onToast, onShipped, onPendingCount }: Props) {
   const supabase = createClient()
   const [rows, setRows] = useState<AreteInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const onPendingCountRef = useRef(onPendingCount)
+  onPendingCountRef.current = onPendingCount
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!companyId) {
       setRows([])
       setLoading(false)
+      onPendingCountRef.current?.(0)
       return
     }
-    setLoading(true)
+    if (!opts?.silent) setLoading(true)
     let invQuery = supabase
       .from('brand_arete_invoices')
       .select('id, owner_id, billing_month, kit_snapshot, tracking_no, courier, shipped_at, ship_status')
@@ -132,9 +136,14 @@ export default function BrandAreteFulfillmentList({ companyId, filter, onToast, 
       }
     }))
     setLoading(false)
+    onPendingCountRef.current?.(filter === 'approved' ? list.length : 0)
   }, [companyId, filter, supabase])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    void load()
+    const id = setInterval(() => { void load({ silent: true }) }, 10000)
+    return () => clearInterval(id)
+  }, [load])
 
   const shipArete = async (inv: AreteInvoice) => {
     const input = trackingInputs[inv.id]

@@ -1,12 +1,31 @@
 'use client'
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
 import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
 import BrandPouchFulfillmentList from './BrandPouchFulfillmentList'
 import BrandAreteFulfillmentList from './BrandAreteFulfillmentList'
 import BrandTierOrderFulfillmentList from './BrandTierOrderFulfillmentList'
+
+function playBeep() {
+  try {
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AC) return
+    const ctx = new AC()
+    const o = ctx.createOscillator()
+    const g = ctx.createGain()
+    o.connect(g)
+    g.connect(ctx.destination)
+    o.frequency.value = 880
+    g.gain.value = 0.08
+    o.start()
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+    o.stop(ctx.currentTime + 0.3)
+  } catch {
+    /* ignore */
+  }
+}
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -81,7 +100,21 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const [selectedLineIds, setSelectedLineIds] = useState<Record<string, Set<string>>>({})
   const [todayClosed, setTodayClosed] = useState(false)
   const [batchTick, setBatchTick] = useState(0)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const pendingCountRef = useRef<Record<string, number | null>>({})
+  const soundEnabledRef = useRef(soundEnabled)
+  soundEnabledRef.current = soundEnabled
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+
+  const reportPendingCount = useCallback((key: string, count: number) => {
+    const prev = pendingCountRef.current[key]
+    if (prev != null && count > prev && soundEnabledRef.current) playBeep()
+    pendingCountRef.current[key] = count
+  }, [])
+
+  useEffect(() => {
+    pendingCountRef.current = {}
+  }, [filter])
 
   const resolveCompanyBrands = useCallback(async () => {
     if (!brandId) {
@@ -105,14 +138,15 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
 
   const companyKey = companyBrandIds.slice().sort().join('|')
 
-  const fetchTrackB = useCallback(async () => {
+  const fetchTrackB = useCallback(async (opts?: { silent?: boolean }) => {
     const ids = companyKey ? companyKey.split('|').filter(Boolean) : []
     if (ids.length === 0) {
       setBBatches([])
       setLoadingB(false)
+      reportPendingCount('trackB', 0)
       return
     }
-    setLoadingB(true)
+    if (!opts?.silent) setLoadingB(true)
     const pending = filter === 'approved'
     const brandIdSet = new Set(ids)
 
@@ -136,6 +170,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     if (rawHq.length === 0) {
       setBBatches([])
       setLoadingB(false)
+      reportPendingCount('trackB', 0)
       return
     }
 
@@ -255,9 +290,15 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     }
     setBBatches(batches)
     setLoadingB(false)
-  }, [companyKey, companyId, filter, supabase])
+    reportPendingCount('trackB', pending ? batches.length : 0)
+  }, [companyKey, companyId, filter, supabase, reportPendingCount])
 
   useEffect(() => { void fetchTrackB() }, [fetchTrackB, batchTick])
+
+  useEffect(() => {
+    const id = setInterval(() => { void fetchTrackB({ silent: true }) }, 10000)
+    return () => clearInterval(id)
+  }, [fetchTrackB])
 
   const toggleLineSelect = (orderId: string, lineId: string) => {
     setSelectedLineIds((prev) => {
@@ -463,7 +504,15 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           <div style={{ fontSize: 12, color: SUB }}>
             📦 발송 처리 (A: 배치·주문번호 단위 · B: 라인 단위)
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: TEXT, cursor: 'pointer', marginRight: 4 }}>
+              <input
+                type="checkbox"
+                checked={soundEnabled}
+                onChange={(e) => setSoundEnabled(e.target.checked)}
+              />
+              🔔 알림음
+            </label>
             {([
               { key: 'approved' as const, label: '발송 대기' },
               { key: 'shipped' as const, label: '발송 이력' },
@@ -485,6 +534,9 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           </div>
         </div>
 
+        <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 10, opacity: 0.85 }}>
+          여기서 브랜드사가 승인완료한 발주를 확인하고 물류처리(발송) 하시면 됩니다. 새 건이 들어오면 알림음이 울려요.
+        </div>
         <div style={{ fontSize: 11, color: GOLD, marginBottom: 8 }}>트랙A · 배치(주문번호) 단위</div>
         {companyBrandIds.length > 0 ? (
           <BrandBatchFulfillmentList
@@ -493,6 +545,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
             todayClosed={todayClosed}
             onToast={showToast}
             onShipped={() => setBatchTick((n) => n + 1)}
+            onPendingCount={(n) => reportPendingCount('trackA', n)}
           />
         ) : (
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>브랜드 범위 확인 중…</div>
@@ -502,17 +555,24 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
         등급파우치 · {filter === 'approved' ? '발송대기' : '발송이력'}
       </div>
+      <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 6, opacity: 0.85 }}>
+        샘플파우치 발송 대기
+      </div>
       <div style={CARD}>
         <BrandPouchFulfillmentList
           companyId={companyId}
           filter={filter}
           onToast={showToast}
           onShipped={() => setBatchTick((n) => n + 1)}
+          onPendingCount={(n) => reportPendingCount('pouch', n)}
         />
       </div>
 
       <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
         아레테 월간번들 · {filter === 'approved' ? '발송대기' : '발송이력'}
+      </div>
+      <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 6, opacity: 0.85 }}>
+        아레테 번들 발송 대기
       </div>
       <div style={CARD}>
         <BrandAreteFulfillmentList
@@ -520,16 +580,28 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           filter={filter}
           onToast={showToast}
           onShipped={() => setBatchTick((n) => n + 1)}
+          onPendingCount={(n) => reportPendingCount('arete', n)}
         />
       </div>
 
       <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
         등급혜택 · {filter === 'approved' ? '발송대기' : '발송이력'}
       </div>
-      <BrandTierOrderFulfillmentList companyId={companyId} filter={filter} onToast={showToast} />
+      <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 6, opacity: 0.85 }}>
+        등급혜택 자재 발송 대기
+      </div>
+      <BrandTierOrderFulfillmentList
+        companyId={companyId}
+        filter={filter}
+        onToast={showToast}
+        onPendingCount={(n) => reportPendingCount('tier', n)}
+      />
 
       <div style={CARD}>
-        <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 라인별 발송 (체크박스)</div>
+        <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 6 }}>트랙B · 라인별 발송 (체크박스)</div>
+        <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 8, opacity: 0.85 }}>
+          오렌몰(트랙B) 재구매 주문 발송 대기 목록입니다
+        </div>
         {loadingB ? (
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>불러오는 중...</div>
         ) : bBatches.length === 0 ? (

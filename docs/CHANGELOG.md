@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-03
+### feat: 물류허브 발송처리 10초 자동갱신 + 신규건 알림음 + 안내문구
+
+- `BrandInventoryFulfillment`: 🔔 알림음 토글(기본 ON)·Web Audio `playBeep`, 섹션별 대기건수 증가 시에만 재생
+- `BrandBatchFulfillmentList`·트랙B·파우치·아레테·등급혜택: `setInterval(load, 10000)` + unmount `clearInterval`, silent 폴링(로딩 깜빡임 완화)
+- 사용법 안내: 승인완료 발주 처리 / 트랙B / 샘플파우치·아레테·등급혜택 대기 문구
+
 ### fix: 관리자관리에서 본인 PIN은 role과 무관하게 직접 변경 가능
 
 - `BrandHubContent`: `currentStaff`에 `id`(pinAuth.id) 전달

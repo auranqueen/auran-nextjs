@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -44,6 +44,7 @@ type Props = {
   filter: FilterTab
   onToast: (msg: string) => void
   onShipped?: () => void
+  onPendingCount?: (count: number) => void
 }
 
 const TIER_COLOR: Record<number, string> = {
@@ -64,22 +65,25 @@ function parseSnapshot(raw: unknown): KitItem[] {
   }).filter((x) => (x.qty || 0) > 0)
 }
 
-export default function BrandPouchFulfillmentList({ companyId, filter, onToast, onShipped }: Props) {
+export default function BrandPouchFulfillmentList({ companyId, filter, onToast, onShipped, onPendingCount }: Props) {
   const supabase = createClient()
   const [rows, setRows] = useState<PouchInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [repBrandId, setRepBrandId] = useState<string | null>(null)
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const onPendingCountRef = useRef(onPendingCount)
+  onPendingCountRef.current = onPendingCount
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!companyId) {
       setRows([])
       setRepBrandId(null)
       setLoading(false)
+      onPendingCountRef.current?.(0)
       return
     }
-    setLoading(true)
+    if (!opts?.silent) setLoading(true)
     const pouchStatus = filter === 'approved' ? 'approved' : 'shipped'
     const [{ data: invData }, { data: hqData }, { data: brandRow }] = await Promise.all([
       supabase
@@ -145,9 +149,14 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
       salon_name: nameMap[r.owner_id]?.salon || '-',
     })))
     setLoading(false)
+    onPendingCountRef.current?.(filter === 'approved' ? list.length : 0)
   }, [companyId, filter, supabase])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    void load()
+    const id = setInterval(() => { void load({ silent: true }) }, 10000)
+    return () => clearInterval(id)
+  }, [load])
 
   const decrementStockForPouchItem = async (
     brandId: string,

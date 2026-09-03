@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const PURPLE = '#7B5EA7'
@@ -58,6 +58,7 @@ interface Props {
   todayClosed: boolean
   onToast: (msg: string) => void
   onShipped?: () => void
+  onPendingCount?: (count: number) => void
 }
 
 function brandColor(brandId: string): string {
@@ -87,6 +88,7 @@ export default function BrandBatchFulfillmentList({
   todayClosed,
   onToast,
   onShipped,
+  onPendingCount,
 }: Props) {
   const supabase = createClient()
   const [batches, setBatches] = useState<BatchCard[]>([])
@@ -96,16 +98,19 @@ export default function BrandBatchFulfillmentList({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Record<string, Set<string>>>({})
   const scopeKey = brandIds.slice().sort().join('|')
+  const onPendingCountRef = useRef(onPendingCount)
+  onPendingCountRef.current = onPendingCount
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     const ids = scopeKey ? scopeKey.split('|').filter(Boolean) : []
     if (ids.length === 0) {
       setBatches([])
       setChecklists({})
       setLoading(false)
+      onPendingCountRef.current?.(0)
       return
     }
-    setLoading(true)
+    if (!opts?.silent) setLoading(true)
 
     const { data: orderSeed } = await supabase
       .from('brand_orders')
@@ -125,6 +130,7 @@ export default function BrandBatchFulfillmentList({
       setBatches([])
       setChecklists({})
       setLoading(false)
+      onPendingCountRef.current?.(0)
       return
     }
 
@@ -157,6 +163,7 @@ export default function BrandBatchFulfillmentList({
       setBatches([])
       setChecklists({})
       setLoading(false)
+      onPendingCountRef.current?.(0)
       return
     }
 
@@ -220,9 +227,14 @@ export default function BrandBatchFulfillmentList({
       })),
     )
     setLoading(false)
-  }, [scopeKey, filter])
+    onPendingCountRef.current?.(pending ? batchList.length : 0)
+  }, [scopeKey, filter, supabase])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    void load()
+    const id = setInterval(() => { void load({ silent: true }) }, 10000)
+    return () => clearInterval(id)
+  }, [load])
 
   const toggleChecklistItem = async (item: ChecklistItem) => {
     if (todayClosed) {
