@@ -74,6 +74,105 @@ async function getUserStatus(supabase: ReturnType<typeof createServerClient>, au
   return null
 }
 
+/** 서명된 role/status 캐시 (DB 조회 스킵용). ROLE_CACHE_SECRET 없으면 비활성. */
+const ROLE_CACHE_COOKIE = 'auran_role_cache'
+const ROLE_CACHE_TTL_MS = 60_000
+
+function getRoleCacheSecret(): string | null {
+  const s = process.env.ROLE_CACHE_SECRET
+  return typeof s === 'string' && s.length >= 16 ? s : null
+}
+
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let out = 0
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return out === 0
+}
+
+async function hmacSha256Hex(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message))
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+type RoleCachePayload = { role: string; status: string | null }
+
+/** 쿠키 형식: v1.<base64url JSON>.<hmacHex> — 서명 메시지 = body(JSON 문자열) */
+async function readRoleCache(
+  req: NextRequest,
+  authId: string,
+): Promise<RoleCachePayload | null> {
+  const secret = getRoleCacheSecret()
+  if (!secret) return null
+  const raw = req.cookies.get(ROLE_CACHE_COOKIE)?.value
+  if (!raw) return null
+  const parts = raw.split('.')
+  if (parts.length !== 3 || parts[0] !== 'v1') return null
+  const [, bodyB64, sigHex] = parts
+  if (!bodyB64 || !sigHex || !/^[0-9a-f]+$/i.test(sigHex)) return null
+  let bodyJson: string
+  try {
+    const pad = bodyB64.length % 4 === 0 ? '' : '='.repeat(4 - (bodyB64.length % 4))
+    bodyJson = atob(bodyB64.replace(/-/g, '+').replace(/_/g, '/') + pad)
+  } catch {
+    return null
+  }
+  const expected = await hmacSha256Hex(secret, bodyJson)
+  if (!timingSafeEqualHex(expected.toLowerCase(), sigHex.toLowerCase())) return null
+  let parsed: { u?: string; r?: string; s?: string | null; t?: number }
+  try {
+    parsed = JSON.parse(bodyJson)
+  } catch {
+    return null
+  }
+  if (typeof parsed.u !== 'string' || parsed.u !== authId) return null
+  if (typeof parsed.r !== 'string' || !parsed.r) return null
+  if (typeof parsed.t !== 'number' || !Number.isFinite(parsed.t)) return null
+  if (Date.now() - parsed.t > ROLE_CACHE_TTL_MS || Date.now() - parsed.t < -5_000) return null
+  const status =
+    parsed.s === null || parsed.s === undefined
+      ? null
+      : typeof parsed.s === 'string'
+        ? parsed.s
+        : null
+  return { role: parsed.r, status }
+}
+
+async function writeRoleCacheCookie(
+  res: NextResponse,
+  authId: string,
+  role: string,
+  status: string | null,
+) {
+  const secret = getRoleCacheSecret()
+  if (!secret || !role) return
+  const bodyJson = JSON.stringify({
+    u: authId,
+    r: role,
+    s: status,
+    t: Date.now(),
+  })
+  const sigHex = await hmacSha256Hex(secret, bodyJson)
+  const bodyB64 = btoa(bodyJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  res.cookies.set(ROLE_CACHE_COOKIE, `v1.${bodyB64}.${sigHex}`, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60,
+  })
+}
+
 const PRODUCTION_ORIGIN = 'https://www.auran.kr'
 
 function isSoftAuthPath(pathname: string): boolean {
@@ -194,20 +293,51 @@ export async function middleware(req: NextRequest) {
     return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
   }
 
-  let role = await getDbRole(supabase, user.id)
-  // If RLS blocks role lookup, fall back to email allowlist for admin entry
-  if (!role && user.email === 'admin@auran.kr') role = 'admin'
+  // 빠른 경로: 서명 캐시가 유효하면 getDbRole/getUserStatus DB 조회 스킵 (함수 본문은 변경하지 않음)
+  const roleCache = await readRoleCache(req, user.id)
+  let role: string | null
+  let statusFromCache: string | null | undefined
+  let usedRoleCache = false
+  let pendingRoleCache: RoleCachePayload | null = null
+
+  if (roleCache) {
+    role = roleCache.role
+    statusFromCache = roleCache.status
+    usedRoleCache = true
+  } else {
+    role = await getDbRole(supabase, user.id)
+    // If RLS blocks role lookup, fall back to email allowlist for admin entry
+    if (!role && user.email === 'admin@auran.kr') role = 'admin'
+    if (role) pendingRoleCache = { role, status: null }
+  }
+
+  const attachPendingRoleCache = async (response: NextResponse) => {
+    if (!usedRoleCache && pendingRoleCache?.role) {
+      await writeRoleCacheCookie(
+        response,
+        user.id,
+        pendingRoleCache.role,
+        pendingRoleCache.status,
+      )
+    }
+    return response
+  }
+
+  const redirectWithCache = async (to: NextResponse) => {
+    return attachPendingRoleCache(redirectPreservingSupabaseCookies(res, to))
+  }
+
   const normalizedRole = role === 'owner' ? 'salon' : role
 
   if (user && isHome) {
     if (normalizedRole === 'admin' && req.nextUrl.searchParams.get('preview') !== 'guest')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/admin', req.url)))
+      return redirectWithCache(NextResponse.redirect(new URL('/admin', req.url)))
     if (normalizedRole === 'brand')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/brand', req.url)))
+      return redirectWithCache(NextResponse.redirect(new URL('/dashboard/brand', req.url)))
     if (normalizedRole === 'salon' || normalizedRole === 'owner')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/owner', req.url)))
+      return redirectWithCache(NextResponse.redirect(new URL('/dashboard/owner', req.url)))
     if (normalizedRole === 'partner')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/partner', req.url)))
+      return redirectWithCache(NextResponse.redirect(new URL('/dashboard/partner', req.url)))
   }
 
   // admin routes: admin only (and keeps session refreshed via middleware cookies)
@@ -220,9 +350,9 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/super-console/login'
       url.searchParams.set('next', pathname)
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
-    return res
+    return attachPendingRoleCache(res)
   }
 
   // super-console: admin only
@@ -231,9 +361,9 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
-    return res
+    return attachPendingRoleCache(res)
   }
 
   if (isBrand) {
@@ -241,9 +371,9 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
-    return res
+    return attachPendingRoleCache(res)
   }
 
   // dashboards: auto-route to role-matching dashboard root
@@ -258,7 +388,7 @@ export async function middleware(req: NextRequest) {
     const target = normalizedRole && map[normalizedRole] ? map[normalizedRole] : '/dashboard/customer'
     if (pathname.startsWith('/dashboard/logi')) {
       // 물류허브는 role 강제라우팅 예외 — 페이지 자체(소유권/컴퍼니멤버십+PIN게이트)에서 인증 처리
-      return res
+      return attachPendingRoleCache(res)
     }
     if (pathname.startsWith('/dashboard/admin')) {
       const appRole = (user as any)?.app_metadata?.role ?? ''
@@ -267,22 +397,22 @@ export async function middleware(req: NextRequest) {
         const redirectUrl = req.nextUrl.clone()
         redirectUrl.pathname = '/'
         redirectUrl.search = ''
-        return redirectPreservingSupabaseCookies(res, NextResponse.redirect(redirectUrl))
+        return redirectWithCache(NextResponse.redirect(redirectUrl))
       }
-      return res
+      return attachPendingRoleCache(res)
     }
     if (target === '/admin') {
       // admin은 대시보드 경로로 접근 시 홈으로 보내고 슈퍼콘솔로만 진입
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
     if (!pathname.startsWith(target)) {
       const url = req.nextUrl.clone()
       url.pathname = target
       url.search = ''
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
 
     // 고객 대시보드 루트(/dashboard/customer)는 비활성화 → 앱 홈으로
@@ -290,22 +420,26 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+      return redirectWithCache(NextResponse.redirect(url))
     }
 
     // partner/owner/brand는 본사 승인 전 접근 차단 (users.status !== 'active')
     if (normalizedRole === 'partner' || normalizedRole === 'salon' || normalizedRole === 'brand') {
-      const status = await getUserStatus(supabase, user.id)
+      const status =
+        usedRoleCache && statusFromCache !== undefined
+          ? statusFromCache
+          : await getUserStatus(supabase, user.id)
+      if (!usedRoleCache && pendingRoleCache) pendingRoleCache.status = status
       if (status && status !== 'active') {
         const url = req.nextUrl.clone()
         url.pathname = '/auth/pending-approval'
         url.searchParams.set('role', normalizedRole === 'salon' ? 'owner' : normalizedRole)
-        return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+        return redirectWithCache(NextResponse.redirect(url))
       }
     }
   }
 
-  return res
+  return attachPendingRoleCache(res)
 }
 
 const supabaseAdmin = () => {

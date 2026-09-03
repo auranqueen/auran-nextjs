@@ -45,5 +45,14 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, active_role: role })
+  const res = NextResponse.json({ ok: true, active_role: role })
+  // 미들웨어 role/status 서명 캐시 무효화 (역할 전환 직후 구 캐시 사용 방지)
+  res.cookies.set('auran_role_cache', '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  })
+  return res
 }
