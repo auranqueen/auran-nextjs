@@ -321,7 +321,7 @@ export default function BrandHubContent({
               brandId={brandId}
               companyId={companyId}
               currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'}
-              currentStaff={pinAuth ? { name: pinAuth.name, role: pinAuth.role } : null}
+              currentStaff={pinAuth ? { id: pinAuth.id, name: pinAuth.name, role: pinAuth.role } : null}
               onSwitchStaff={onSwitchStaff}
               onFullLogout={onFullLogout}
             />

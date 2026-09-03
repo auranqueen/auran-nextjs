@@ -46,7 +46,7 @@ interface Props {
   brandId: string | null
   companyId?: string | null
   currentUserRole?: string
-  currentStaff?: { name: string; role: string } | null
+  currentStaff?: { id?: string; name: string; role: string } | null
   onSwitchStaff?: () => void
   onFullLogout?: () => void | Promise<void>
 }
@@ -281,6 +281,7 @@ export default function BrandInventoryStaff({
         ) : staff.map((s, i) => {
           const role = ROLE_MAP[s.role] || { label: s.role, color: SUB, pin: 4 }
           const canManage = GRANT_ROLES[currentUserRole]?.includes(s.role)
+          const canEditOwnPin = Boolean(currentStaff?.id && currentStaff.id === s.id)
           return (
             <div key={s.id} style={{
               paddingBottom: 12,
@@ -307,33 +308,41 @@ export default function BrandInventoryStaff({
                     <div style={{ fontSize: 11, color: DANGER, marginTop: 3 }}>⚠️ 아이디 없음 — 등록해주세요</div>
                   )}
                 </div>
-                {canManage && (
+                {(canManage || canEditOwnPin) && (
                   <div style={{ display: 'flex', gap: 5, flexShrink: 0, flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
-                    <button type="button" onClick={() => setPermTarget(s)}
-                      style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', cursor: 'pointer' }}>
-                      권한
-                    </button>
-                    <button type="button" onClick={() => {
-                      setEditUsernameId(editUsernameId === s.id ? null : s.id)
-                      setNewUsernameEdit(s.username || '')
-                      setEditPinId(null); setEditPin('')
-                    }}
-                      style={{
-                        fontSize: 11, padding: '3px 8px', borderRadius: 5, cursor: 'pointer',
-                        border: `0.5px solid ${!s.username ? DANGER : 'rgba(255,255,255,0.1)'}`,
-                        background: !s.username ? 'rgba(229,57,53,0.12)' : 'transparent',
-                        color: !s.username ? DANGER : SUB,
-                      }}>
-                      아이디
-                    </button>
-                    <button type="button" onClick={() => { setEditPinId(editPinId === s.id ? null : s.id); setEditPin(''); setEditUsernameId(null) }}
-                      style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, cursor: 'pointer' }}>
-                      PIN
-                    </button>
-                    <button type="button" onClick={() => void toggleActive(s)}
-                      style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${s.is_active ? 'rgba(229,57,53,0.3)' : 'rgba(76,175,80,0.3)'}`, background: 'transparent', color: s.is_active ? DANGER : '#4CAF50', cursor: 'pointer' }}>
-                      {s.is_active ? '퇴사처리' : '복귀'}
-                    </button>
+                    {canManage && (
+                      <button type="button" onClick={() => setPermTarget(s)}
+                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', cursor: 'pointer' }}>
+                        권한
+                      </button>
+                    )}
+                    {canManage && (
+                      <button type="button" onClick={() => {
+                        setEditUsernameId(editUsernameId === s.id ? null : s.id)
+                        setNewUsernameEdit(s.username || '')
+                        setEditPinId(null); setEditPin('')
+                      }}
+                        style={{
+                          fontSize: 11, padding: '3px 8px', borderRadius: 5, cursor: 'pointer',
+                          border: `0.5px solid ${!s.username ? DANGER : 'rgba(255,255,255,0.1)'}`,
+                          background: !s.username ? 'rgba(229,57,53,0.12)' : 'transparent',
+                          color: !s.username ? DANGER : SUB,
+                        }}>
+                        아이디
+                      </button>
+                    )}
+                    {(canManage || canEditOwnPin) && (
+                      <button type="button" onClick={() => { setEditPinId(editPinId === s.id ? null : s.id); setEditPin(''); setEditUsernameId(null) }}
+                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, cursor: 'pointer' }}>
+                        PIN
+                      </button>
+                    )}
+                    {canManage && (
+                      <button type="button" onClick={() => void toggleActive(s)}
+                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: `0.5px solid ${s.is_active ? 'rgba(229,57,53,0.3)' : 'rgba(76,175,80,0.3)'}`, background: 'transparent', color: s.is_active ? DANGER : '#4CAF50', cursor: 'pointer' }}>
+                        {s.is_active ? '퇴사처리' : '복귀'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

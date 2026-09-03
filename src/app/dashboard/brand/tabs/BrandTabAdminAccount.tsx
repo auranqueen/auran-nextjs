@@ -17,7 +17,7 @@ type Props = {
   brandId: string | null
   companyId: string | null
   currentUserRole?: string
-  currentStaff?: { name: string; role: string } | null
+  currentStaff?: { id?: string; name: string; role: string } | null
   onSwitchStaff?: () => void
   onFullLogout?: () => void | Promise<void>
 }

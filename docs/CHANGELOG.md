@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-09-03
+### fix: 관리자관리에서 본인 PIN은 role과 무관하게 직접 변경 가능
+
+- `BrandHubContent`: `currentStaff`에 `id`(pinAuth.id) 전달
+- `BrandInventoryStaff`: PIN 버튼 노출 = `canManage || currentStaff.id === s.id` (권한/아이디/퇴사는 `canManage`만 유지)
+
 ## 2026-09-02
 ### fix: 원장 예약 수동추가 PGRST204 — bookings.customer_name 응급조치
 
