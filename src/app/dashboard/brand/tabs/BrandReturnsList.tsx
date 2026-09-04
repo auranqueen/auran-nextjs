@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -93,15 +94,18 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
       } else if (row?.requested_by) {
         targetOwnerId = row.requested_by
       }
-      await supabase.from('brand_messages').insert({
-        brand_id: brandId,
-        message_type: 'auto_order',
-        target_type: targetOwnerId ? 'selected' : 'all',
-        target_owner_id: targetOwnerId,
-        title: '반품·교환 승인 완료',
-        body: `반품·교환 신청이 승인됐어요. 반품 코드: ${code}\n코드를 제품과 함께 보내주세요.`,
-        send_count: 1,
-      })
+      if (brandId) {
+        const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+        const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+        if (companyId) {
+          await notifyOwners(supabase, {
+            companyId: String(companyId),
+            target: targetOwnerId ? { type: 'one', ownerId: targetOwnerId } : { type: 'all' },
+            title: '반품·교환 승인 완료',
+            body: `반품·교환 신청이 승인됐어요. 반품 코드: ${code}\n코드를 제품과 함께 보내주세요.`,
+          })
+        }
+      }
       showToast(`승인 완료! 코드: ${code} · 원장님 오렌톡 발송됨`)
     } else {
       showToast('처리 실패: ' + error.message)
@@ -125,15 +129,18 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
       } else if (row?.requested_by) {
         targetOwnerId = row.requested_by
       }
-      await supabase.from('brand_messages').insert({
-        brand_id: brandId,
-        message_type: 'auto_order',
-        target_type: targetOwnerId ? 'selected' : 'all',
-        target_owner_id: targetOwnerId,
-        title: '반품·교환 반려 안내',
-        body: `반품·교환 신청이 반려됐어요. 사유: ${denyReason.trim()}`,
-        send_count: 1,
-      })
+      if (brandId) {
+        const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+        const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+        if (companyId) {
+          await notifyOwners(supabase, {
+            companyId: String(companyId),
+            target: targetOwnerId ? { type: 'one', ownerId: targetOwnerId } : { type: 'all' },
+            title: '반품·교환 반려 안내',
+            body: `반품·교환 신청이 반려됐어요. 사유: ${denyReason.trim()}`,
+          })
+        }
+      }
       setDenyId(null); setDenyReason('')
       showToast('반려 처리 완료 · 원장님 오렌톡 발송됨')
     } else {

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 
 export const BRAND_ORDER_UNPAID_MESSAGE = '미납 청구서가 있어 발주가 제한됩니다'
 
@@ -123,15 +124,14 @@ export async function insertBrandOrder(
     .map((i) => `${i.name || ''} ${i.qty || 0}ea · ₩${Number(i.line_amount || 0).toLocaleString()}`)
     .join(', ')
 
-  await svc.from('brand_messages').insert({
-    brand_id: brandId,
-    message_type: 'auto_order',
-    target_type: profileId ? 'selected' : 'all',
-    target_owner_id: profileId || null,
-    title: `발주가 접수됐어요`,
-    body: `${salonName} 발주가 정상 접수됐습니다. ${itemSummary}`,
-    send_count: 1,
-  })
+  if (companyId) {
+    await notifyOwners(svc, {
+      companyId: String(companyId),
+      target: profileId ? { type: 'one', ownerId: profileId } : { type: 'all' },
+      title: '발주가 접수됐어요',
+      body: `${salonName} 발주가 정상 접수됐습니다. ${itemSummary}`,
+    })
+  }
 
   return { ok: true, order_id: order.id }
 }

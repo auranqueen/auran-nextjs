@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -286,15 +287,18 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
       } else if (matched.requested_by) {
         targetOwnerId = matched.requested_by
       }
-      await supabase.from('brand_messages').insert({
-        brand_id: brandId,
-        message_type: 'auto_order',
-        target_type: targetOwnerId ? 'selected' : 'all',
-        target_owner_id: targetOwnerId,
-        title: `반품 수령 완료`,
-        body: `반품 제품이 수령됐어요. 상태: ${condition} · 처리: ${isRestock ? '재고 반영' : '폐기 처리(본사 확인 필요)'}`,
-        send_count: 1,
-      })
+      if (brandId) {
+        const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+        const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+        if (companyId) {
+          await notifyOwners(supabase, {
+            companyId: String(companyId),
+            target: targetOwnerId ? { type: 'one', ownerId: targetOwnerId } : { type: 'all' },
+            title: '반품 수령 완료',
+            body: `반품 제품이 수령됐어요. 상태: ${condition} · 처리: ${isRestock ? '재고 반영' : '폐기 처리(본사 확인 필요)'}`,
+          })
+        }
+      }
       setDone(true)
       if (unmatched.length > 0) {
         showToast(`${isRestock ? '수령 완료' : '폐기 기록'} · 매칭 실패 ${unmatched.length}건: ${unmatched.join(', ')}`)

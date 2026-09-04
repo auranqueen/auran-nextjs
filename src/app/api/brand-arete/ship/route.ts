@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 import { decrementStockForAreteItem, parseKitSnapshot, restoreAreteDecrements, type AppliedDecrement } from './decrementStock'
 
 function monthKey(raw: string) {
@@ -127,14 +128,11 @@ export async function POST(req: NextRequest) {
   }
 
   const kitSummary = kit.map((k) => `${k.name || ''}×${k.qty || 0}`).join(', ')
-  await svc.from('brand_messages').insert({
-    brand_id: repBrandId,
-    message_type: 'arete_dispatch',
-    target_type: 'selected',
-    target_owner_id: invoice.owner_id,
+  await notifyOwners(svc, {
+    companyId,
+    target: { type: 'one', ownerId: String(invoice.owner_id) },
     title: '아레테 월간번들 발송 안내',
     body: `아레테 월간번들이 발송됐어요. 택배사: ${courier} · 운송장: ${trackingNo}${kitSummary ? ` · 구성: ${kitSummary}` : ''}`,
-    send_count: 1,
   })
 
   return NextResponse.json({ ok: true })

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -29,18 +30,22 @@ export default function OwnerOrenTalkButton({ brandId, ownerId, ownerName }: Pro
     if (!brandId) { showToast('브랜드 정보가 없습니다'); return }
     if (!msg.trim()) { showToast('메시지를 입력해주세요'); return }
     setSending(true)
-    const { error } = await supabase.from('brand_messages').insert({
-      brand_id: brandId,
-      message_type: 'manual',
-      target_type: 'selected',
-      target_owner_id: ownerId,
+    const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+    const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+    if (!companyId) {
+      setSending(false)
+      showToast('발송 실패: 회사 정보 없음')
+      return
+    }
+    const result = await notifyOwners(supabase, {
+      companyId: String(companyId),
+      target: { type: 'one', ownerId },
       title: `${ownerName} 원장님 오렌톡`,
       body: msg.trim(),
-      send_count: 1,
     })
     setSending(false)
-    if (error) {
-      showToast('발송 실패: ' + error.message)
+    if (result.sent_count <= 0) {
+      showToast('발송 실패')
       return
     }
     setMsg('')

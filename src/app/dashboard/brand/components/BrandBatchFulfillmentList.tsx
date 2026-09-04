@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -409,15 +410,22 @@ export default function BrandBatchFulfillmentList({
     const firstTarget = batch.orders.find((o) => targetOrderIds.includes(o.id))
     const firstBrandId = firstTarget?.brand_id
     if (firstBrandId) {
-      await supabase.from('brand_messages').insert({
-        brand_id: firstBrandId,
-        message_type: 'auto_order',
-        target_type: batch.profile_id ? 'selected' : 'all',
-        target_owner_id: batch.profile_id || null,
-        title: `발주 ${batch.order_no} 배송 시작`,
-        body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}`,
-        send_count: 1,
-      })
+      const { data: brandRow } = await supabase
+        .from('brands')
+        .select('company_id')
+        .eq('id', firstBrandId)
+        .maybeSingle()
+      const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+      if (companyId) {
+        await notifyOwners(supabase, {
+          companyId: String(companyId),
+          target: batch.profile_id
+            ? { type: 'one', ownerId: batch.profile_id }
+            : { type: 'all' },
+          title: `발주 ${batch.order_no} 배송 시작`,
+          body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}`,
+        })
+      }
     }
 
     setTrackingInputs((prev) => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyOwners } from '@/lib/brand/notifyOwners'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -312,17 +313,16 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
       return
     }
 
-    // 3) 원장 개인 알림
+    // 3) 원장 개인 알림 (상담채팅)
     const kitSummary = kit.map((k) => `${k.name || ''}×${k.qty || 0}`).join(', ')
-    await supabase.from('brand_messages').insert({
-      brand_id: repBrandId,
-      message_type: 'pouch_dispatch',
-      target_type: 'selected',
-      target_owner_id: inv.owner_id,
-      title: '등급파우치 발송 안내',
-      body: `등급파우치(${inv.pouch_tier}만)가 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}${kitSummary ? ` · 구성: ${kitSummary}` : ''}`,
-      send_count: 1,
-    })
+    if (companyId) {
+      await notifyOwners(supabase, {
+        companyId,
+        target: { type: 'one', ownerId: inv.owner_id },
+        title: '등급파우치 발송 안내',
+        body: `등급파우치(${inv.pouch_tier}만)가 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}${kitSummary ? ` · 구성: ${kitSummary}` : ''}`,
+      })
+    }
 
     setTrackingInputs((prev) => {
       const n = { ...prev }

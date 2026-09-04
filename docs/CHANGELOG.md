@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-03
+### feat: 원장 1명 타깃 알림 8곳을 진짜 오렌톡(brand_chat_messages)으로 이관
+
+- 공용 헬퍼 `notifyOwners` (`src/lib/brand/notifyOwners.ts`) — one/many/all/grades/arete → 채팅 채널 메시지
+- 교체(기존 `brand_messages` insert 제거): 발주접수(`insertBrandOrder`), 배치 배송시작, 등급파우치 발송, 아레테 발송, 반품 승인/반려/수령, 원장 1명 수동 오렌톡
+- profile 있으면 `one`, 없으면 `all` 폴백 유지. 알림 외 본연 로직 미변경
+
 ### perf: 예약관리 상태변경 시 전체재조회 → 로컬 타겟갱신
 
 - `BookingManagePage` `updateStatus`: 성공 후 `loadBookings` 전체 재호출 제거
