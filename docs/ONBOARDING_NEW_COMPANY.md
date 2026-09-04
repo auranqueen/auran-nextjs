@@ -29,6 +29,9 @@ returning id;
 
 (`payapp_active`, `auto_approve_owner_invite`는 기본값 false로 생성되며 나중에 UI에서 켤 수 있다.)
 
+**볼라욘그룹 일괄 시드(시바산 패턴):** Auth·users·profiles·형제브랜드 3개·CEO PIN까지 한 번에 만들려면
+`node scripts/seed-volayon-company.cjs` (company명 `볼라욘그룹`, slug `volayon`, PIN `volayonceo`/`1234`).
+
 ## 2. 대표(CEO) 계정 가입 + 허브 브랜드 신청 — UI (일반 절차)
 
 1. 대표가 일반 회원가입(Auth 계정 생성)

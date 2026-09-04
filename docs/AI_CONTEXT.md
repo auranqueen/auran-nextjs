@@ -186,6 +186,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 | 브랜드 | slug | 접속 URL |
 |--------|------|---------|
 | 시바산 (CIVASAN) | civasan | auran.kr/brand/civasan |
+| 볼라욘그룹 (볼라욘/디에뷰/셀렌덤) | volayon | auran.kr/brand/volayon |
 
 ---
 

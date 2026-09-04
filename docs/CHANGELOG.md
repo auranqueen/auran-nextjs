@@ -3,6 +3,16 @@
 
 ---
 
+## 2026-09-04
+### feat: 볼라욘그룹 온보딩 — 컴퍼니 생성 및 계정 발급
+
+- `brand_companies` 볼라욘그룹 생성 (`company_id: 8932591f-e7bf-40d5-b9ed-f3b7bd3cea43`)
+- 형제브랜드 3개 연결(동일 company_id): 볼라욘(slug=`volayon`, hub) / 디에뷰 / 셀렌덤
+- Hub 로그인: Auth `volayon@auran.kr` · `/brand/volayon` · `login_role=ceo`
+- PIN 게이트: `brand_staff` username=`volayonceo` · PIN=`1234`(임시) · role=ceo
+- 시드: `scripts/seed-volayon-company.cjs` (+ `.ts` 동일 로직). 시바산 계정 생성 패턴 재사용
+- `BrandPinGate`: PIN 입력 자리수를 저장된 `pin` 길이 우선(CEO 임시 4자리 지원). 지사장 UI 미구현이라 empty-state 수정 없음
+
 ## 2026-09-03
 ### feat: 원장 1명 타깃 알림 8곳을 진짜 오렌톡(brand_chat_messages)으로 이관
 

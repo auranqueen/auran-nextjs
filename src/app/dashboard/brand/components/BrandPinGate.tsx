@@ -219,7 +219,11 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     onAuth({ id: String(row.id), name: String(row.name), role: String(row.role), permissions })
     setBootstrapSaving(false)
   }
-  const pinLen = ROLE_MAP[selected?.role || 'staff']?.pin || 4
+  // 저장된 PIN 길이를 우선 (임시 4자리 CEO PIN 등). 없으면 role 기본자리수.
+  const pinLen =
+    selected?.pin && /^\d{4,8}$/.test(selected.pin)
+      ? selected.pin.length
+      : ROLE_MAP[selected?.role || 'staff']?.pin || 4
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f0d14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 14 }}>
       불러오는 중...

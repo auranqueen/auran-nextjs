@@ -109,6 +109,14 @@ Brand Hub: auran.kr/brand/civasan
 물류 허브: auran.kr/logi/civasan
 테스트 직원: 윰탱 이사 (PIN: 123456)
 
+볼라욘그룹:
+slug: volayon (형제: 볼라욘/디에뷰/셀렌덤, 동일 company_id)
+login_role: ceo
+이메일: volayon@auran.kr / 임시비번 volayon1234
+Brand Hub: auran.kr/brand/volayon
+PIN: volayonceo / 1234 (임시)
+시드: `node scripts/seed-volayon-company.cjs`
+
 ## 9. 작업 후 문서 업데이트 규칙
 
 새 기능 추가 시:
