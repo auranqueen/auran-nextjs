@@ -7,6 +7,7 @@ import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
 import BrandPouchFulfillmentList from './BrandPouchFulfillmentList'
 import BrandAreteFulfillmentList from './BrandAreteFulfillmentList'
 import BrandTierOrderFulfillmentList from './BrandTierOrderFulfillmentList'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 
 function playBeep() {
   try {
@@ -91,6 +92,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const supabase = createClient()
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [areteEnabled, setAreteEnabled] = useState(false)
   const [bBatches, setBBatches] = useState<TrackBBatch[]>([])
   const [loadingB, setLoadingB] = useState(true)
   const [toast, setToast] = useState('')
@@ -120,6 +122,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     if (!brandId) {
       setCompanyBrandIds([])
       setCompanyId(null)
+      setAreteEnabled(false)
       return
     }
     const { data } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
@@ -127,14 +130,23 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     setCompanyId(cid)
     if (!cid) {
       setCompanyBrandIds([brandId])
+      setAreteEnabled(false)
       return
     }
-    const { data: rows } = await supabase.from('brands').select('id').eq('company_id', cid)
+    const [{ data: rows }, { data: companyRow }] = await Promise.all([
+      supabase.from('brands').select('id').eq('company_id', cid),
+      supabase.from('brand_companies').select('arete_enabled').eq('id', cid).maybeSingle(),
+    ])
     const ids = ((rows || []) as Array<{ id: string }>).map((r) => r.id)
     setCompanyBrandIds(ids.length > 0 ? ids : [brandId])
+    setAreteEnabled(Boolean(companyRow?.arete_enabled))
   }, [brandId, supabase])
 
   useEffect(() => { void resolveCompanyBrands() }, [resolveCompanyBrands])
+
+  useEffect(() => {
+    if (!areteEnabled) reportPendingCount('arete', 0)
+  }, [areteEnabled, reportPendingCount])
 
   const companyKey = companyBrandIds.slice().sort().join('|')
 
@@ -568,21 +580,25 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         />
       </div>
 
-      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
-        아레테 월간번들 · {filter === 'approved' ? '발송대기' : '발송이력'}
-      </div>
-      <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 6, opacity: 0.85 }}>
-        아레테 번들 발송 대기
-      </div>
-      <div style={CARD}>
-        <BrandAreteFulfillmentList
-          companyId={companyId}
-          filter={filter}
-          onToast={showToast}
-          onShipped={() => setBatchTick((n) => n + 1)}
-          onPendingCount={(n) => reportPendingCount('arete', n)}
-        />
-      </div>
+      {areteEnabled && (
+        <>
+          <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
+            {getMembershipClubLabel(companyId)} 월간번들 · {filter === 'approved' ? '발송대기' : '발송이력'}
+          </div>
+          <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, marginBottom: 6, opacity: 0.85 }}>
+            {getMembershipClubLabel(companyId)} 번들 발송 대기
+          </div>
+          <div style={CARD}>
+            <BrandAreteFulfillmentList
+              companyId={companyId}
+              filter={filter}
+              onToast={showToast}
+              onShipped={() => setBatchTick((n) => n + 1)}
+              onPendingCount={(n) => reportPendingCount('arete', n)}
+            />
+          </div>
+        </>
+      )}
 
       <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
         등급혜택 · {filter === 'approved' ? '발송대기' : '발송이력'}

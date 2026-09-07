@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -179,7 +180,7 @@ export default function BrandAreteFulfillmentList({ companyId, filter, onToast, 
       delete n[inv.id]
       return n
     })
-    onToast('아레테 월간번들 발송 완료!')
+    onToast(`${getMembershipClubLabel(companyId)} 월간번들 발송 완료!`)
     onShipped?.()
     await load()
   }
@@ -188,6 +189,8 @@ export default function BrandAreteFulfillmentList({ companyId, filter, onToast, 
     return <div style={{ fontSize: 12, color: SUB, padding: '8px 0' }}>company_id가 없어요</div>
   }
 
+  const clubLabel = getMembershipClubLabel(companyId)
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>불러오는 중...</div>
   }
@@ -195,7 +198,7 @@ export default function BrandAreteFulfillmentList({ companyId, filter, onToast, 
   if (rows.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>
-        {filter === 'approved' ? '아레테 발송 대기 없음' : '아레테 발송 이력 없음'}
+        {filter === 'approved' ? `${clubLabel} 발송 대기 없음` : `${clubLabel} 발송 이력 없음`}
       </div>
     )
   }

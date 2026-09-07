@@ -4,6 +4,15 @@
 ---
 
 ## 2026-09-07
+### fix: 물류허브 아레테 번들 섹션을 arete_enabled로 게이트
+- `BrandInventoryFulfillment`: `brand_companies.arete_enabled`가 true일 때만 월간번들 발송 섹션(`BrandAreteFulfillmentList` 포함) 렌더 — Hub 사이드바 「아레테클럽관리」와 동일. false면 섹션 자체 비렌더(빈 상태·안내문구 없음)
+- 다른 발송 섹션(트랙A/파우치/등급혜택/트랙B) 미변경
+- **확인:** `arete_enabled` — 시바산만 true / 볼라욘·안나로자·제네틱·SH는 false
+
+### fix: 물류허브 아레테 번들 문구를 회사별 클럽명으로
+- `BrandInventoryFulfillment` / `BrandAreteFulfillmentList` / `brand-arete/ship` 오렌톡: 하드코딩 「아레테」→ `getMembershipClubLabel(companyId)` (시바산=`아레테클럽`, 볼라욘=`볼라욘 멤버십 클럽`)
+- ship API는 요청 body의 `company_id` 그대로 사용
+
 ### fix: 물류허브 버튼을 컴퍼니 허브 slug로 진입
 - `BrandHubContent` 「물류허브」만: `currentBrandId`(이름순 기본 브랜드, slug null인 형제 브랜드일 수 있음) 대신 같은 `company_id`에서 `slug IS NOT NULL`인 허브 브랜드로 `/dashboard/logi?slug=…` 이동 — 형제브랜드가 기본값일 때 생기던 `/logi` 404 해결
 - 0개/조회실패 → alert + `console.error`; 2개 이상 → 첫 행 사용 + `console.error` (시바산=`civasan`, 볼라욘=`volayon` 전제)
