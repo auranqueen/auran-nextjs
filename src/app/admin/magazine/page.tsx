@@ -29,6 +29,9 @@ export default function AdminMagazinePage() {
   const [title, setTitle] = useState('')
   const [subtitle, setSubtitle] = useState('')
   const [category, setCategory] = useState<string>(CATS[0])
+  const [slug, setSlug] = useState('')
+  const [metaTitle, setMetaTitle] = useState('')
+  const [metaDescription, setMetaDescription] = useState('')
   const [content, setContent] = useState('')
   const [thumbFile, setThumbFile] = useState<File | null>(null)
   const [thumbPreview, setThumbPreview] = useState('')
@@ -87,6 +90,9 @@ export default function AdminMagazinePage() {
     setTitle('')
     setSubtitle('')
     setCategory(CATS[0])
+    setSlug('')
+    setMetaTitle('')
+    setMetaDescription('')
     setContent('')
     setThumbFile(null)
     setThumbPreview('')
@@ -102,6 +108,9 @@ export default function AdminMagazinePage() {
     setTitle(String(r.title || ''))
     setSubtitle(String(r.subtitle || ''))
     setCategory((CATS as readonly string[]).includes(String(r.category)) ? String(r.category) : CATS[0])
+    setSlug(String(r.slug || ''))
+    setMetaTitle(String(r.meta_title || ''))
+    setMetaDescription(String(r.meta_description || ''))
     setContent(String(r.content || ''))
     setThumbFile(null)
     setThumbPreview(String(r.thumbnail_url || ''))
@@ -171,6 +180,9 @@ export default function AdminMagazinePage() {
       title: title.trim(),
       subtitle: subtitle.trim() || null,
       category,
+      slug: slug.trim() || null,
+      meta_title: metaTitle.trim() || null,
+      meta_description: metaDescription.trim() || null,
       thumbnail_url: thumbUrl,
       content,
       product_tags: productTags,
@@ -304,6 +316,35 @@ export default function AdminMagazinePage() {
                 </option>
               ))}
             </select>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+              검색엔진용 URL 이름 (예: hormone-cycle-skincare), 영문 소문자·숫자·하이픈만
+            </div>
+            <input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="hormone-cycle-skincare"
+              style={{ width: '100%', boxSizing: 'border-box', marginBottom: 8, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', fontSize: 13 }}
+            />
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+              검색결과에 뜰 제목 (비워두면 제목 그대로 사용)
+            </div>
+            <input
+              value={metaTitle}
+              onChange={(e) => setMetaTitle(e.target.value)}
+              placeholder="검색결과 제목"
+              style={{ width: '100%', boxSizing: 'border-box', marginBottom: 8, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', fontSize: 13 }}
+            />
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+              검색결과에 뜰 설명 (비워두면 자동생성 문구 사용) · 최대 160자
+            </div>
+            <textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value.slice(0, 160))}
+              placeholder="검색결과 설명"
+              rows={3}
+              maxLength={160}
+              style={{ width: '100%', boxSizing: 'border-box', marginBottom: 8, padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', fontSize: 13, resize: 'vertical' }}
+            />
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>썸네일</div>
             <input
               type="file"

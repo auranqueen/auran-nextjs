@@ -64,7 +64,7 @@ export default function MagazineDetailClient() {
       const { data, error } = await supabase
         .from('magazines' as any)
         .select('*')
-        .eq('id', id)
+        .or(`id.eq.${id},slug.eq.${id}`)
         .eq('is_published', true)
         .lte('published_at', nowIso)
         .maybeSingle()
@@ -75,11 +75,12 @@ export default function MagazineDetailClient() {
       }
 
       let nextRow = data as any
-      const sessKey = `magazine_view_${id}`
+      const rowId = String((data as any).id || '')
+      const sessKey = `magazine_view_${rowId || id}`
       const already = typeof sessionStorage !== 'undefined' && sessionStorage.getItem(sessKey)
-      if (!already) {
+      if (!already && rowId) {
         const vc = Number((data as any).view_count || 0) + 1
-        const { error: upErr } = await supabase.from('magazines' as any).update({ view_count: vc } as any).eq('id', id)
+        const { error: upErr } = await supabase.from('magazines' as any).update({ view_count: vc } as any).eq('id', rowId)
         if (!upErr) {
           try {
             sessionStorage.setItem(sessKey, '1')
@@ -98,7 +99,7 @@ export default function MagazineDetailClient() {
         .eq('is_published', true)
         .lte('published_at', nowIso)
         .eq('category', cat)
-        .neq('id', id)
+        .neq('id', rowId || id)
         .order('published_at', { ascending: false })
         .limit(3)
       setRelated(((rel as any[]) || []).filter(Boolean))

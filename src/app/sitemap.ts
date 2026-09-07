@@ -1,4 +1,4 @@
-// ===== [사이트맵] 제품·발행 스토리 페이지 =====
+// ===== [사이트맵] 제품·발행 스토리·매거진 페이지 =====
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   let storyUrls: MetadataRoute.Sitemap = []
+  let magazineUrls: MetadataRoute.Sitemap = []
   const service = tryCreateAdminClient()
   if (service) {
     const { data: stories } = await service
@@ -28,6 +29,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     }))
+
+    const { data: magazines } = await service
+      .from('magazines')
+      .select('id, slug, updated_at, published_at')
+      .eq('is_published', true)
+    magazineUrls = (magazines || []).map((m) => ({
+      url: m.slug ? `https://auran.kr/magazine/${m.slug}` : `https://auran.kr/magazine/${m.id}`,
+      lastModified: m.updated_at || m.published_at || new Date().toISOString(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }))
   }
 
   return [
@@ -39,5 +51,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...productUrls,
     ...storyUrls,
+    ...magazineUrls,
   ]
 }

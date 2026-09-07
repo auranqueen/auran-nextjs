@@ -4,6 +4,17 @@
 ---
 
 ## 2026-09-07
+### feat: 매거진 상세 URL이 id·slug 모두 수용
+- `magazine/[id]/page.tsx` / `MagazineDetailClient`: `params.id` 조회를 `.or(id.eq, slug.eq)`로 변경 — UUID·slug URL 모두 메타·본문·조회수 동작. 폴더명 `[id]` 유지
+- 조회수 update·관련글 제외는 해석된 실제 UUID 사용
+
+### feat: 매거진 SEO 필드 + 메타/JSON-LD + sitemap
+- 마이그레이션 `193_magazines_seo_fields.sql`: `magazines`에 `slug` / `meta_title` / `meta_description` + slug partial unique 인덱스 (파일만 추가, DB 실행은 SQL Editor)
+- `admin/magazine`: 작성/수정 폼에 SEO 입력 3칸 추가, 저장 payload에 반영 (빈 값 → null). 기존 제목·본문·발행 로직 유지
+- `magazine/[id]/page`: `generateMetadata`가 meta_* 우선, 없으면 기존 title/자동 description. Article JSON-LD 스크립트 추가. 라우트 `/magazine/[id]`·`MagazineDetailClient` 미변경
+- `sitemap.ts`: 발행 매거진 URL 추가 (slug 있으면 `/magazine/{slug}`, 없으면 id). priority 0.6 · monthly
+- **주의:** 193 SQL 미실행 시 admin SEO 저장·sitemap magazines select가 실패할 수 있음 → Supabase SQL Editor에서 193 실행 필요. slug 기반 실제 라우팅은 아직 없음(sitemap만 slug URL 우선)
+
 ### fix: 물류허브 아레테 번들 섹션을 arete_enabled로 게이트
 - `BrandInventoryFulfillment`: `brand_companies.arete_enabled`가 true일 때만 월간번들 발송 섹션(`BrandAreteFulfillmentList` 포함) 렌더 — Hub 사이드바 「아레테클럽관리」와 동일. false면 섹션 자체 비렌더(빈 상태·안내문구 없음)
 - 다른 발송 섹션(트랙A/파우치/등급혜택/트랙B) 미변경
