@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-07
+### fix: 등급별 적립율 카드 DB조회 전환
+- `BrandGradePointRatesCard.tsx`: 등급 목록을 `GRADE_POINT_RATES` 하드코딩(`Object.keys`) → `brand_tier_packages` 동적조회(`fetchCompanyTierNames`)로 전환
+- 적립율은 `brand_grade_point_rates` 저장값 우선, 없으면 「미설정」(편집 draft 0). 시바산 외 회사에 `GRADE_POINT_RATES`(3/2/1.5/1%)를 초기값으로 쓰지 않음. 상수 자체는 `brandOrderPromos.ts`에 유지
+- 확인: 시바산 4등급·기존 저장 적립율 그대로 / 볼라욘 「볼라욘 클럽」1개·적립율 미설정
+
 ### feat: 등급 표시 DB조회 전환 + 아레테클럽명 임시분기 + 볼라욘 등급 등록
 - 등급칩(Owners/오렌톡/라이브)을 하드코딩 배열 → `brand_tier_packages` 동적조회(`fetchCompanyTierNames`)로 전환. 시바산 4개·볼라욘 「볼라욘 클럽」(300만원) 확인
 - 아레테클럽명은 `src/lib/brand/companyMembershipTemp.ts` 임시 회사ID 분기로 표시 — 시바산=`아레테클럽`, 볼라욘=`볼라욘 멤버십 클럽`, 그 외=`브랜드 멤버십 클럽`. 정식 DB 컬럼(`club_name` 등) 기반 전환은 다음 작업으로 남김
