@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-07
+### fix: 물류허브 버튼을 컴퍼니 허브 slug로 진입
+- `BrandHubContent` 「물류허브」만: `currentBrandId`(이름순 기본 브랜드, slug null인 형제 브랜드일 수 있음) 대신 같은 `company_id`에서 `slug IS NOT NULL`인 허브 브랜드로 `/dashboard/logi?slug=…` 이동 — 형제브랜드가 기본값일 때 생기던 `/logi` 404 해결
+- 0개/조회실패 → alert + `console.error`; 2개 이상 → 첫 행 사용 + `console.error` (시바산=`civasan`, 볼라욘=`volayon` 전제)
+- `currentBrandId`를 쓰는 재고·제품 등 다른 화면은 미변경
+- **별개:** 로컬 `.next` 캐시 오류(`Cannot find module './vendor-chunks/@swc.js'`)는 이번 수정과 무관 — `next dev` 재시작 또는 `.next` 삭제로 해결 예정
+
 ### fix: 등급별 적립율 카드 DB조회 전환
 - `BrandGradePointRatesCard.tsx`: 등급 목록을 `GRADE_POINT_RATES` 하드코딩(`Object.keys`) → `brand_tier_packages` 동적조회(`fetchCompanyTierNames`)로 전환
 - 적립율은 `brand_grade_point_rates` 저장값 우선, 없으면 「미설정」(편집 draft 0). 시바산 외 회사에 `GRADE_POINT_RATES`(3/2/1.5/1%)를 초기값으로 쓰지 않음. 상수 자체는 `brandOrderPromos.ts`에 유지

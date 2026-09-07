@@ -173,11 +173,45 @@ export default function BrandHubContent({
               <button
                 type="button"
                 onClick={async () => {
-                  if (!brandId) return
-                  const { data } = await supabase.from('brands').select('slug').eq('id', brandId).maybeSingle()
-                  const slug = data?.slug != null ? String(data.slug) : null
-                  const href = slug ? `/dashboard/logi?slug=${encodeURIComponent(slug)}` : '/dashboard/logi'
-                  window.open(href, '_blank', 'noopener,noreferrer')
+                  // 물류허브만: currentBrandId(이름순)가 아니라 컴퍼니 허브 브랜드(slug 있는 행) 사용
+                  let cid = companyId
+                  if (!cid && brandId) {
+                    const { data: brandRow } = await supabase
+                      .from('brands')
+                      .select('company_id')
+                      .eq('id', brandId)
+                      .maybeSingle()
+                    cid = brandRow?.company_id ? String(brandRow.company_id) : null
+                  }
+                  if (!cid) {
+                    console.error('[logi-hub] company_id 없음 — brandId=', brandId)
+                    window.alert('물류허브 진입에 필요한 회사 정보가 없어요.')
+                    return
+                  }
+                  const { data: hubRows, error } = await supabase
+                    .from('brands')
+                    .select('id, name, slug')
+                    .eq('company_id', cid)
+                    .not('slug', 'is', null)
+                  if (error) {
+                    console.error('[logi-hub] hub slug 조회 실패', { companyId: cid, error })
+                    window.alert('물류허브 브랜드를 찾지 못했어요. 잠시 후 다시 시도해주세요.')
+                    return
+                  }
+                  const withSlug = (hubRows || []).filter((r) => String(r.slug || '').trim() !== '')
+                  if (withSlug.length === 0) {
+                    console.error('[logi-hub] slug 있는 브랜드 0개', { companyId: cid })
+                    window.alert('물류허브용 브랜드(slug)가 등록되어 있지 않아요.')
+                    return
+                  }
+                  if (withSlug.length > 1) {
+                    console.error('[logi-hub] slug 있는 브랜드가 여러 개 — 첫 행 사용', {
+                      companyId: cid,
+                      rows: withSlug.map((r) => ({ id: r.id, name: r.name, slug: r.slug })),
+                    })
+                  }
+                  const slug = String(withSlug[0].slug).trim()
+                  window.open(`/dashboard/logi?slug=${encodeURIComponent(slug)}`, '_blank', 'noopener,noreferrer')
                 }}
                 style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, border: '0.5px solid rgba(76,175,80,0.4)', background: 'rgba(76,175,80,0.1)', color: '#81C784', cursor: 'pointer', flexShrink: 0 }}
               >
