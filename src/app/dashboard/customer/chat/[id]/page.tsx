@@ -14,7 +14,7 @@ const CARD_LIB = [
   { card_type: 'skin', title: '😣 피부 이상해요', chips: ['🔥 따갑고 예민함', '💧 너무 건조함', '😣 트러블 났어요', '🫧 번들거려요', '🌫 칙칙해졌어요'], has_text: false, sos: false },
   { card_type: 'routine', title: '📋 루틴 점검해주세요', chips: ['아침 루틴 함', '저녁 루틴 함', '자주 스킵해요', '뭘 발라야 할지 모르겠어요'], has_text: false, sos: false },
   { card_type: 'recommend', title: '💜 제품 추천해주세요', chips: ['진정 제품', '수분 제품', '피지 조절', '영양 크림', '특별 케어'], has_text: false, sos: false },
-  { card_type: 'sample', title: '🎁 샘플 받고싶어요', chips: ['시바산 토너', '르노벨 에센스', '제네틱 크림', '이타카 오일'], has_text: false, sos: false },
+  { card_type: 'sample', title: '🎁 샘플 받고싶어요', chips: ['토너', '에센스', '크림', '오일'], has_text: false, sos: false },
   { card_type: 'sos', title: '🆘 피부 SOS', chips: ['갑자기 뒤집어짐', '새 제품 쓰고 반응', '시술 후 트러블', '극심한 건조함'], has_text: true, sos: true },
 ] as const
 

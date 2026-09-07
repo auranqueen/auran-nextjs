@@ -3,6 +3,19 @@
 
 ---
 
+## 2026-09-07
+### feat: 등급 표시 DB조회 전환 + 아레테클럽명 임시분기 + 볼라욘 등급 등록
+- 등급칩(Owners/오렌톡/라이브)을 하드코딩 배열 → `brand_tier_packages` 동적조회(`fetchCompanyTierNames`)로 전환. 시바산 4개·볼라욘 「볼라욘 클럽」(300만원) 확인
+- 아레테클럽명은 `src/lib/brand/companyMembershipTemp.ts` 임시 회사ID 분기로 표시 — 시바산=`아레테클럽`, 볼라욘=`볼라욘 멤버십 클럽`, 그 외=`브랜드 멤버십 클럽`. 정식 DB 컬럼(`club_name` 등) 기반 전환은 다음 작업으로 남김
+- **백로그:** `companyMembershipTemp.ts`의 `getOwnerGradeOptions` 등 등급 관련 함수는 미사용 추정(`fetchCompanyTierNames`로 대체). 볼라욘 등급명이 DB(「볼라욘 클럽」)와 다르게(「볼라욘전문클럽」) 하드코딩되어 혼동 소지 → 실사용 여부 확인 후 정리 필요
+
+### feat: brand_companies 기능 플래그 + Hub 메뉴 조건부 노출 + 시바산 고정 문구 중립화
+- `brand_companies.tier_enabled` / `arete_enabled` (NOT NULL DEFAULT false) 추가 — 마이그레이션 `192_brand_companies_feature_flags.sql`
+- 시바산그룹: 둘 다 true / 볼라욘그룹: tier만 true / 그 외 신규 컴퍼니는 기본 false
+- `BrandHubContent`: 「등급 관리」·「아레테클럽관리」메뉴를 플래그에 따라 조건부 렌더
+- 공유 UI 문구·placeholder·문의메일·logi civasan 폴백·REVIEW_TOAST 주석을 회사 중립으로 정리
+- **주의:** 192 SQL은 파일 추가. 라이브 DB에 아직 미실행이면 Hub select가 실패해 메뉴가 둘 다 숨겨짐 → Supabase SQL Editor에서 192 실행 필요
+
 ## 2026-09-04
 ### feat: 볼라욘그룹 온보딩 — 컴퍼니 생성 및 계정 발급
 

@@ -64,7 +64,7 @@ function BrandOrdersInvoiceContent() {
   const [pouchTier, setPouchTier] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<BillingInvoice | null>(null)
   const [payappActive, setPayappActive] = useState(false)
-  const [companyName, setCompanyName] = useState('시바산')
+  const [companyName, setCompanyName] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalStep, setModalStep] = useState<'form' | 'success'>('form')
@@ -122,7 +122,7 @@ function BrandOrdersInvoiceContent() {
       .eq('id', companyId)
       .maybeSingle()
 
-    setCompanyName(String(companyRow?.name || '시바산'))
+    setCompanyName(String(companyRow?.name || ''))
     setPayappActive(Boolean(companyRow?.payapp_active))
 
     const { data: companyBrands } = await supabase

@@ -186,9 +186,9 @@ export default function BrandTabInvoice({ myBrands, staffRole, brandId }: Props)
       <div style={CARD_STYLE}>
         <div style={{ fontSize: 12, color: SUB_COLOR, marginBottom: 14 }}>발행/명세서에 표시될 브랜드 정보 (팝빌 연동 예정)</div>
         {([
-          { label: '로고 표시명', key: 'logo_name', placeholder: '예: CIVASAN' },
-          { label: '브랜드 소개', key: 'brand_sub', placeholder: '예: 시바산 코리아 · 에스테틱 전문 브랜드' },
-          { label: '상호(법인명)', key: 'corp_name', placeholder: '예: 주식회사 시바산코리아' },
+          { label: '로고 표시명', key: 'logo_name', placeholder: '예: 브랜드 로고명' },
+          { label: '브랜드 소개', key: 'brand_sub', placeholder: '예: OO코리아 · 에스테틱 전문 브랜드' },
+          { label: '상호(법인명)', key: 'corp_name', placeholder: '예: 주식회사 OO코리아' },
           { label: '사업자등록번호', key: 'biz_no', placeholder: '000-00-00000' },
           { label: '대표자명', key: 'ceo_name', placeholder: '홍길동' },
           { label: '주소', key: 'address', placeholder: '서울시 강남구 ...' },

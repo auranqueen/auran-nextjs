@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-const REVIEW_TOAST_RATE = 5 // 시바산 정책값 하드코딩, 수정 불가
+const REVIEW_TOAST_RATE = 5 // 전체 공통 기본값 하드코딩, 수정 불가 (회사별 분리는 별도 작업)
 const SALON_FREE_SHIPPING_THRESHOLD = 50000
 const SALON_BASIC_SHIPPING_FEE = 3000
 const SALON_JEJU_EXTRA_FEE = 5000

@@ -78,7 +78,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
         <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>
-          💡 아레테 포인트 + 발주 적립 포인트 → 시바산 제품 구매 시 통합 사용
+          💡 아레테 포인트 + 발주 적립 포인트 → 해당 브랜드 제품 구매 시 통합 사용
         </div>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import BrandChatPanel from '@/components/brand/BrandChatPanel'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
+import { fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -10,14 +12,12 @@ const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
-const TARGETS = [
-  { key: 'all', label: '전체 원장님' },
-  { key: 'medi', label: '메디슈티컬' },
-  { key: 'premium', label: '프리미엄전문점' },
-  { key: 'spec', label: '전문점' },
-  { key: 'auth', label: '취급점' },
-  { key: 'arete', label: '아레테클럽' },
-]
+const LEGACY_TARGET_LABELS: Record<string, string> = {
+  medi: '메디슈티컬',
+  premium: '프리미엄전문점',
+  spec: '전문점',
+  auth: '취급점',
+}
 interface MsgRow {
   id: string
   message_type: string
@@ -42,10 +42,17 @@ interface Props {
   initialSub?: 'history' | 'chat'
 }
 export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId, initialSub }: Props) {
+  const supabase = createClient()
+  const clubLabel = getMembershipClubLabel(companyId)
+  const [tierNames, setTierNames] = useState<string[]>([])
+  const TARGETS = [
+    { key: 'all', label: '전체 원장님' },
+    ...tierNames.map((g) => ({ key: g, label: g })),
+    { key: 'arete', label: clubLabel },
+  ]
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [subTab, setSubTab] = useState<'history' | 'chat'>(initialSub === 'history' ? 'history' : 'chat')
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
-  const supabase = createClient()
   const [msg, setMsg] = useState('')
   const [toast, setToast] = useState('')
   const [target, setTarget] = useState('all')
@@ -60,6 +67,15 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
   ])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   useEffect(() => {
+    if (!companyId) { setTierNames([]); return }
+    let cancelled = false
+    void (async () => {
+      const names = await fetchCompanyTierNames(supabase, companyId)
+      if (!cancelled) setTierNames(names)
+    })()
+    return () => { cancelled = true }
+  }, [companyId, supabase])
+  useEffect(() => {
     if (!brandId) { setCompanyBrandIds([]); return }
     let cancelled = false
     void (async () => {
@@ -68,6 +84,10 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
     })()
     return () => { cancelled = true }
   }, [brandId, supabase])
+  const targetLabelOf = (key: string) =>
+    TARGETS.find((t) => t.key === key)?.label
+    || LEGACY_TARGET_LABELS[key]
+    || (key === 'arete' ? clubLabel : key)
   const fetchHistory = useCallback(async () => {
     if (!companyBrandIds.length) return
     const { data } = await supabase
@@ -90,7 +110,7 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
     if (!msg.trim()) { showToast('메시지를 입력해주세요'); return }
     if (!brandId) { showToast('브랜드 정보가 없습니다'); return }
     setSending(true)
-    const targetLabel = TARGETS.find(t => t.key === target)?.label || '전체 원장님'
+    const targetLabel = targetLabelOf(target) || '전체 원장님'
     const { data, error } = await supabase
       .from('brand_messages')
       .insert({
@@ -196,7 +216,7 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
         <textarea
           value={msg}
           onChange={e => setMsg(e.target.value)}
-          placeholder={`${TARGETS.find(t => t.key === target)?.label || '전체 원장님'}에게 보낼 메시지 입력...`}
+          placeholder={`${targetLabelOf(target) || '전체 원장님'}에게 보낼 메시지 입력...`}
           style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: TEXT, minHeight: 80, resize: 'none', outline: 'none', marginBottom: 8 }}
         />
         <div style={{ display: 'flex', gap: 8 }}>
@@ -240,7 +260,7 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: TEXT, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.body}</div>
                 <div style={{ fontSize: 11, color: SUB }}>
-                  {TARGETS.find(t => t.key === h.target_type)?.label || h.target_type}
+                  {targetLabelOf(h.target_type) || h.target_type}
                   {h.send_count > 0 && ` · ${h.send_count}명`}
                 </div>
               </div>

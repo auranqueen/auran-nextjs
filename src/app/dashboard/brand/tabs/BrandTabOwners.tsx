@@ -12,6 +12,11 @@ import {
   type Props,
   downloadCsvTemplate,
 } from './BrandTabOwners.helpers'
+import {
+  getGradeChipShortLabel,
+  getMembershipClubLabel,
+} from '@/lib/brand/companyMembershipTemp'
+import { defaultTierName, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -42,6 +47,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
   const [linkLoading, setLinkLoading] = useState(false)
   const [linkSaving, setLinkSaving] = useState<string | null>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [gradeOptions, setGradeOptions] = useState<string[]>([])
   const [pointBalances, setPointBalances] = useState<Record<string, number>>({})
   const [csvBusy, setCsvBusy] = useState(false)
   const [csvDryRun, setCsvDryRun] = useState(true)
@@ -65,6 +71,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
   const loadPointBalances = async () => {
     if (!brandId) {
       setCompanyId(null)
+      setGradeOptions([])
       setPointBalances({})
       setHasManualInit(false)
       setInitLedgerLoading(false)
@@ -78,6 +85,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
     const cid = (brandRow as { company_id?: string | null } | null)?.company_id
     if (!cid) {
       setCompanyId(null)
+      setGradeOptions([])
       setPointBalances({})
       setHasManualInit(false)
       setInitLedgerLoading(false)
@@ -85,13 +93,15 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
     }
     const cidStr = String(cid)
     setCompanyId(cidStr)
-    const [{ data: rows }] = await Promise.all([
+    const [{ data: rows }, tierNames] = await Promise.all([
       supabase
         .from('brand_owner_point_balance')
         .select('owner_id, balance')
         .eq('company_id', cidStr),
+      fetchCompanyTierNames(supabase, cidStr),
       checkManualInitExists(cidStr),
     ])
+    setGradeOptions(tierNames)
     const map: Record<string, number> = {}
     for (const r of (rows || []) as { owner_id: string; balance: number }[]) {
       map[r.owner_id] = Math.trunc(Number(r.balance) || 0)
@@ -215,7 +225,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
           name: String(r.full_name || r.owner_name || '') || '이름 없음',
           salon_name: String(r.owner_store_name || '') || '-',
           region: '-',
-          grade: gradeMap[id] || '취급점',
+          grade: gradeMap[id] || defaultTierName(gradeOptions),
           arete: false,
           last_order: null,
           monthly: 0,
@@ -225,7 +235,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
       setLoading(false)
     }
     void fetchOwners()
-  }, [brandId, pointBalances, companyBrandIds, companyId])
+  }, [brandId, pointBalances, companyBrandIds, companyId, gradeOptions])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
   const csvRowStyle = (status: CsvRowResult['status']) => {
     if (status === 'ok') {
@@ -340,7 +350,8 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
     setLinkRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, status: 'active', approved_at: now } : r)))
     showToast('원장님 연결을 승인했어요')
   }
-  const grades = ['all', '메디슈티컬', '프리미엄전문점', '전문점', '취급점']
+  const clubLabel = getMembershipClubLabel(companyId)
+  const grades = ['all', ...gradeOptions]
   const filtered = owners.filter(o => {
     const matchGrade = filter === 'all' || o.grade === filter
     const matchSearch = !search || o.name.includes(search) || o.salon_name.includes(search)
@@ -683,7 +694,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
                   </span>
                   {o.arete && (
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(201,169,110,0.1)', color: GOLD, border: '0.5px solid rgba(201,169,110,0.3)' }}>
-                      아레테
+                      {clubLabel}
                     </span>
                   )}
                 </div>
@@ -696,17 +707,17 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5, flexShrink: 0, alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: 4 }}>
-                  {['메디슈티컬', '프리미엄전문점', '전문점', '취급점'].map(g => (
+                  {gradeOptions.map(g => (
                     <button key={g} type="button" onClick={() => updateGrade(o.id, g)}
                       style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, border: `0.5px solid ${o.grade === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: o.grade === g ? 'rgba(123,94,167,0.25)' : 'transparent', color: o.grade === g ? '#c4a8f0' : SUB, cursor: 'pointer', opacity: saving === o.id + '_grade' ? 0.5 : 1 }}>
-                      {g === '메디슈티컬' ? '메디' : g === '프리미엄전문점' ? '프리미엄' : g === '전문점' ? '전문점' : '취급점'}
+                      {getGradeChipShortLabel(g)}
                     </button>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button type="button" onClick={() => toggleArete(o.id, o.arete)}
                     style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, border: `0.5px solid ${o.arete ? 'rgba(201,169,110,0.5)' : 'rgba(255,255,255,0.1)'}`, background: o.arete ? 'rgba(201,169,110,0.15)' : 'transparent', color: o.arete ? GOLD : SUB, cursor: 'pointer', opacity: saving === o.id + '_arete' ? 0.5 : 1 }}>
-                    {o.arete ? '아레테 ON' : '아레테 OFF'}
+                    {o.arete ? `${clubLabel} ON` : `${clubLabel} OFF`}
                   </button>
                   <OwnerOrenTalkButton brandId={brandId} ownerId={o.id} ownerName={o.name} />
                 </div>

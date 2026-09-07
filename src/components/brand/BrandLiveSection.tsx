@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
+import { getMembershipClubLabel, isMembershipClubGradeLabel } from '@/lib/brand/companyMembershipTemp'
+import { fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -9,7 +11,6 @@ const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
-const GRADES = ['전체', '메디슈티컬', '프리미엄전문점', '전문점', '취급점', '아레테클럽']
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   scheduled: { label: '예정', color: 'rgba(100,181,246,0.8)' },
   live:      { label: '진행중', color: 'rgba(229,57,53,0.85)' },
@@ -35,8 +36,12 @@ interface Props {
 }
 export default function BrandLiveSection({ myBrands, brandId }: Props) {
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [tierNames, setTierNames] = useState<string[]>([])
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
+  const clubLabel = getMembershipClubLabel(companyId)
+  const GRADES = ['전체', ...tierNames, clubLabel]
   const [lives, setLives] = useState<Live[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
@@ -50,11 +55,18 @@ export default function BrandLiveSection({ myBrands, brandId }: Props) {
   const [saving, setSaving] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   useEffect(() => {
-    if (!brandId) { setCompanyBrandIds([]); return }
+    if (!brandId) { setCompanyBrandIds([]); setCompanyId(null); setTierNames([]); return }
     let cancelled = false
     void (async () => {
       const ids = await resolveCompanyBrandIds(supabase, brandId)
-      if (!cancelled) setCompanyBrandIds(ids)
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      const names = cid ? await fetchCompanyTierNames(supabase, cid) : []
+      if (!cancelled) {
+        setCompanyBrandIds(ids)
+        setCompanyId(cid)
+        setTierNames(names)
+      }
     })()
     return () => { cancelled = true }
   }, [brandId, supabase])
@@ -149,17 +161,17 @@ export default function BrandLiveSection({ myBrands, brandId }: Props) {
       .in('auth_id', authIds)
     const allIds = (profiles || []).map((p: { id: string }) => String(p.id))
     if (grades.includes('전체') || grades.length === 0) return allIds
-    const wantArete = grades.includes('아레테클럽')
-    const gradeOnly = grades.filter(g => g !== '아레테클럽' && g !== '전체')
+    const wantArete = grades.some((g) => isMembershipClubGradeLabel(g, companyId))
+    const gradeOnly = grades.filter(g => !isMembershipClubGradeLabel(g, companyId) && g !== '전체')
     const idSet = new Set<string>()
     if (gradeOnly.length > 0 && allIds.length > 0) {
       const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
-      const { data: gradeRows } = companyId
+      const companyIdResolved = (brandRow as { company_id?: string | null } | null)?.company_id
+      const { data: gradeRows } = companyIdResolved
         ? await supabase
             .from('brand_owner_grades')
             .select('owner_id, grade')
-            .eq('company_id', companyId)
+            .eq('company_id', companyIdResolved)
             .in('grade', gradeOnly)
             .in('owner_id', allIds)
         : { data: [] }

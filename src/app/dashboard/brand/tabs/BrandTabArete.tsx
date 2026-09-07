@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandArchiveManage from '@/components/brand/BrandArchiveManage'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 interface Props {
   companyId: string | null
   staffId: string | null
@@ -33,6 +34,7 @@ function thisMonthDate() {
 }
 export default function BrandTabArete({ companyId, staffId }: Props) {
   const supabase = createClient()
+  const clubLabel = getMembershipClubLabel(companyId)
   const billingMonth = thisMonthDate()
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<MemberRow[]>([])
@@ -119,7 +121,7 @@ export default function BrandTabArete({ companyId, staffId }: Props) {
   }
   const cancelMember = async (ownerId: string) => {
     if (!companyId) return
-    if (!window.confirm('이 원장님의 아레테 멤버십을 해지할까요?')) return
+    if (!window.confirm(`이 원장님의 ${clubLabel} 멤버십을 해지할까요?`)) return
     await supabase.from('brand_arete_members').update({ status: 'cancelled' }).eq('company_id', companyId).eq('owner_id', ownerId)
     await supabase.from('profiles').update({ arete_member: false }).eq('id', ownerId)
     setMembers((prev) => prev.filter((m) => m.owner_id !== ownerId))
@@ -180,7 +182,7 @@ export default function BrandTabArete({ companyId, staffId }: Props) {
         </button>
       </div>
       <div style={{ ...CARD, marginBottom: 12 }}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>⭐아레테전용 자료</div>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>⭐{clubLabel} 전용 자료</div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
           {([
             { key: 'treatment' as const, label: '트리트먼트 프로그램' },
@@ -209,7 +211,7 @@ export default function BrandTabArete({ companyId, staffId }: Props) {
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>회원 · 포인트 현황</div>
         {members.length === 0 ? (
-          <div style={{ fontSize: 11, color: SUB }}>아레테 회원이 없어요</div>
+          <div style={{ fontSize: 11, color: SUB }}>{clubLabel} 회원이 없어요</div>
         ) : (
           members.map((m) => (
             <div key={m.owner_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>

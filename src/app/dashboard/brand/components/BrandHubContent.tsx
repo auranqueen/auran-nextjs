@@ -2,6 +2,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getMembershipClubManageLabel } from '@/lib/brand/companyMembershipTemp'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
 const BrandTabOwners = dynamic(() => import('../tabs/BrandTabOwners'), { ssr: false })
@@ -53,7 +54,10 @@ export default function BrandHubContent({
   type NavSection = { label: string; items: NavItem[] }
   const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
   const bypassPerm = isCEO || staffRole === 'ceo' || userRole === 'admin'
-  const SB_SECTIONS: NavSection[] = [
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [tierEnabled, setTierEnabled] = useState(false)
+  const [areteEnabled, setAreteEnabled] = useState(false)
+  const SB_SECTIONS: NavSection[] = useMemo(() => [
     {
       label: '실시간',
       items: [
@@ -75,9 +79,13 @@ export default function BrandHubContent({
       label: '제품·파트너',
       items: [
         { key: 'products', label: '제품 관리', icon: 'ti-package', requiredModule: 'product_manage' },
-        { key: 'tierPackages', label: '등급 관리', icon: 'ti-medal', requiredModule: 'tier_view' },
+        ...(tierEnabled
+          ? [{ key: 'tierPackages', label: '등급 관리', icon: 'ti-medal', requiredModule: 'tier_view' as const }]
+          : []),
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store', requiredModule: 'owners_view' },
-        { key: 'arete', label: '아레테클럽관리', icon: 'ti-crown', requiredModule: 'product_manage' },
+        ...(areteEnabled
+          ? [{ key: 'arete', label: getMembershipClubManageLabel(companyId), icon: 'ti-crown', requiredModule: 'product_manage' as const }]
+          : []),
       ],
     },
     {
@@ -89,7 +97,7 @@ export default function BrandHubContent({
         { key: 'staff', label: '관리자계정', icon: 'ti-users', requiredModule: 'staff_manage' },
       ],
     },
-  ]
+  ], [tierEnabled, areteEnabled, bypassPerm, companyId])
   const canSeeModule = (required: string | readonly string[] | null | undefined) => {
     if (bypassPerm) return true
     if (required == null) return true
@@ -102,13 +110,12 @@ export default function BrandHubContent({
       items: sec.items.filter((item) => canSeeModule(item.requiredModule)),
     })).filter((sec) => sec.items.length > 0)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permissions, bypassPerm])
+  }, [permissions, bypassPerm, SB_SECTIONS])
 
   const firstVisibleKey = (visibleSections[0]?.items[0]?.key as MainTab | undefined) ?? null
   const [mainTab, setMainTab] = useState<MainTab | null>(null)
   const [mainSub, setMainSub] = useState<string | undefined>(undefined)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [companyId, setCompanyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!firstVisibleKey) {
@@ -122,11 +129,39 @@ export default function BrandHubContent({
   }, [firstVisibleKey, visibleSections])
 
   useEffect(() => {
-    if (!brandId) { setCompanyId(null); return }
-    supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      .then(({ data }) => setCompanyId(data?.company_id ?? null))
-  }, [brandId])
-
+    if (!brandId) {
+      setCompanyId(null)
+      setTierEnabled(false)
+      setAreteEnabled(false)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const { data: brandRow } = await supabase
+        .from('brands')
+        .select('company_id')
+        .eq('id', brandId)
+        .maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      if (cancelled) return
+      if (!cid) {
+        setCompanyId(null)
+        setTierEnabled(false)
+        setAreteEnabled(false)
+        return
+      }
+      setCompanyId(cid)
+      const { data: companyRow } = await supabase
+        .from('brand_companies')
+        .select('tier_enabled, arete_enabled')
+        .eq('id', cid)
+        .maybeSingle()
+      if (cancelled) return
+      setTierEnabled(Boolean(companyRow?.tier_enabled))
+      setAreteEnabled(Boolean(companyRow?.arete_enabled))
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#0a0908', overflow: 'hidden' }}>
       <div style={{ width: 188, flexShrink: 0, background: '#0d0b0a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>

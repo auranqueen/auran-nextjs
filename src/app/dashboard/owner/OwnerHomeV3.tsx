@@ -657,8 +657,16 @@ export default function OwnerHomeV3({
           <OwnerBadgeTierSection brands={tierBadgeBrands} />
           <OwnerBrandSelfTierSection
             brands={selfTierBrands}
-            sectionTitle="시바산 본사 인증 등급"
-            sectionSubtitle="시바산 파트너 전용 혜택"
+            sectionTitle={
+              selfTierBrands[0]?.brandName
+                ? `${selfTierBrands[0].brandName} 본사 인증 등급`
+                : '본사 인증 등급'
+            }
+            sectionSubtitle={
+              selfTierBrands[0]?.brandName
+                ? `${selfTierBrands[0].brandName} 파트너 전용 혜택`
+                : '파트너 전용 혜택'
+            }
           />
 
           {profile?.origin_track === 'B' && (

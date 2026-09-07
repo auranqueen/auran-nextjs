@@ -515,8 +515,8 @@ export default function BrandDashboardPage() {
                   </button>
                 </div>
                 {[
-                  { label: '브랜드명 (한글)', value: addBrandName, set: setAddBrandName, placeholder: '예: 시바산' },
-                  { label: '브랜드명 (영문)', value: addBrandNameEn, set: setAddBrandNameEn, placeholder: '예: CIVASAN' },
+                  { label: '브랜드명 (한글)', value: addBrandName, set: setAddBrandName, placeholder: '예: 브랜드명' },
+                  { label: '브랜드명 (영문)', value: addBrandNameEn, set: setAddBrandNameEn, placeholder: '예: BrandName' },
                   { label: '원산지', value: addBrandCountry, set: setAddBrandCountry, placeholder: '예: 대한민국' },
                   { label: '담당자 연락처', value: addBrandContact, set: setAddBrandContact, placeholder: '010-0000-0000' },
                 ].map(({ label, value, set, placeholder }) => (

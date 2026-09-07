@@ -148,7 +148,7 @@ export default function LogiLoginPage() {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>아이디</div>
               <input value={userId} onChange={e => setUserId(e.target.value)}
-                placeholder="예: civasan" autoComplete="username" style={INPUT_STYLE} />
+                placeholder="예: 브랜드아이디" autoComplete="username" style={INPUT_STYLE} />
             </div>
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>비밀번호</div>
@@ -175,7 +175,7 @@ export default function LogiLoginPage() {
           </form>
           <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.7 }}>
             물류팀 전용 시스템입니다<br/>
-            계정 문의: civasandesign@gmail.com<br/>
+            계정 문의: support@auran.kr<br/>
             AURAN 물류 허브 · {brand?.name}
           </div>
         </div>

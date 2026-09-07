@@ -229,7 +229,7 @@ export default function BrandLoginPage() {
               <input
                 value={userId}
                 onChange={e => setUserId(e.target.value)}
-                placeholder="예: civasan"
+                placeholder="예: 브랜드아이디"
                 autoComplete="username"
                 style={INPUT_STYLE}
               />
