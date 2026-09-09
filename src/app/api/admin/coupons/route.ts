@@ -268,6 +268,8 @@ export async function POST(req: NextRequest) {
     const coupon_type =
       body?.coupon_type === 'special_event' ? 'special_event' : 'regular'
 
+    const auto_apply = body?.auto_apply === true
+
     const insertRow: Record<string, any> = {
       code,
       name,
@@ -293,6 +295,7 @@ export async function POST(req: NextRequest) {
       birthday_days_before,
       birthday_days_after,
       coupon_type,
+      auto_apply,
     }
 
     const { data: row, error } = await auth.supabase

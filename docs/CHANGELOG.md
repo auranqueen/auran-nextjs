@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-09
+### feat: 쿠폰 auto_apply — 결제창 자동 제시
+- 마이그레이션 `194_coupons_auto_apply.sql`: `coupons.auto_apply` boolean DEFAULT false (파일만, DB는 SQL Editor)
+- `AdminCouponsClient` 생성 폼에 「자동적용」체크박스 + create API `auto_apply` 저장
+- `checkout`: auto_apply·기간 내 쿠폰을 brand 가상쿠폰과 같이 `virtual_` row로 합치고, 적용 가능·할인액 최대를 기본 선택(수동 변경 가능). 파운더/등급/토스트/배송·PayApp 미변경
+
 ### fix: 브랜드관 다크테마 + 홈 루틴체크 링크
 - `brands/page.tsx`: 라이트(`#faf9f6`) → 고객홈과 동일 다크(`BG #0D0B09`, `CARD_BG`/`CARD_BORDER`, 밝은 텍스트). 검색·목록·`/products?brand=` 로직 유지
 - 홈「오늘 루틴 체크하기」카드: `/my/skin-analysis`(404) → `/skin-analysis`

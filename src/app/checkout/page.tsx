@@ -185,6 +185,7 @@ function CheckoutPageInner() {
         { data: shippingRows },
         { rows: ucs, error: ucErr },
         { data: brandCoupons },
+        { data: autoApplyCoupons },
         { data: gRow },
         { data: productRows },
       ] = await Promise.all([
@@ -195,6 +196,7 @@ function CheckoutPageInner() {
           .order('is_default', { ascending: false }),
         fetchUserCouponsWithCoupons(supabase, me.id, { status: 'unused' }),
         supabase.from('coupons').select('*').eq('is_active', true).eq('coupon_type', 'regular').eq('scope', 'brand'),
+        supabase.from('coupons').select('*').eq('auto_apply', true).eq('is_active', true),
         gradeSettingPromise,
         productsPromise,
       ])
@@ -213,19 +215,32 @@ function CheckoutPageInner() {
         setAddressDetail(String(defaultAddr.address_detail || ''))
       }
 
-      // 브랜드 상시 쿠폰 조회 후 가상 row로 주입
+      // 브랜드 상시 + auto_apply 쿠폰 → 가상 user_coupon row로 주입
       const existingCouponIds = new Set((ucs || []).map((u: any) => u.coupon_id))
-      const virtualRows: UcRow[] = (brandCoupons || [])
-        .filter((c: any) => !existingCouponIds.has(c.id))
-        .map((c: any) => ({
-          id: `virtual_${c.id}`,
-          status: 'unused',
-          issued_at: null,
-          used_at: null,
-          expired_at: null,
-          coupon_id: c.id,
-          coupons: c,
-        })) as UcRow[]
+      const virtualRows: UcRow[] = []
+      const pushVirtual = (list: any[]) => {
+        for (const c of list || []) {
+          if (!c?.id || existingCouponIds.has(c.id)) continue
+          existingCouponIds.add(c.id)
+          virtualRows.push({
+            id: `virtual_${c.id}`,
+            status: 'unused',
+            issued_at: null,
+            used_at: null,
+            expired_at: null,
+            coupon_id: c.id,
+            coupons: c,
+          } as UcRow)
+        }
+      }
+      pushVirtual(brandCoupons || [])
+      const nowMs = Date.now()
+      const autoInWindow = (autoApplyCoupons || []).filter((c: any) => {
+        if (c.start_at && new Date(c.start_at).getTime() > nowMs) return false
+        if (c.end_at && new Date(c.end_at).getTime() < nowMs) return false
+        return true
+      })
+      pushVirtual(autoInWindow)
 
       setUserCoupons([...(ucs || []), ...virtualRows] as UcRow[])
       if (productIds.length > 0) {
@@ -429,6 +444,23 @@ function CheckoutPageInner() {
       return computeCouponDiscount(afterGrade, u.coupons, { maxPercent: maxCouponPct }) > 0
     })
   }, [userCoupons, afterGrade, orderLines, authUid, maxCouponPct])
+
+  // 적용 가능 쿠폰 중 할인액 최대를 기본 선택 (미선택일 때만, 수동 변경 유지)
+  useEffect(() => {
+    if (selectedUserCouponId) return
+    if (!authUid || applicableCheckoutCoupons.length === 0) return
+    let bestId: string | null = null
+    let bestDisc = 0
+    for (const u of applicableCheckoutCoupons) {
+      if (!u.coupons) continue
+      const d = computeCouponDiscount(afterGrade, u.coupons, { maxPercent: maxCouponPct })
+      if (d > bestDisc) {
+        bestDisc = d
+        bestId = u.id
+      }
+    }
+    if (bestId && bestDisc > 0) setSelectedUserCouponId(bestId)
+  }, [applicableCheckoutCoupons, selectedUserCouponId, afterGrade, authUid, maxCouponPct])
 
   const onPay = async (allowCharge = true) => {
     if (isPaying) return

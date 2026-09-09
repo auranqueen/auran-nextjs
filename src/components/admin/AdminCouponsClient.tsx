@@ -81,6 +81,7 @@ export default function AdminCouponsClient() {
   const [discountRate, setDiscountRate] = useState(10)
   const [minOrder, setMinOrder] = useState(0)
   const [issueTrigger, setIssueTrigger] = useState('manual')
+  const [autoApply, setAutoApply] = useState(false)
   const [validFrom, setValidFrom] = useState<Date | null>(null)
   const [validTo, setValidTo] = useState<Date | null>(null)
   const [maxIssue, setMaxIssue] = useState<number | ''>('')
@@ -362,6 +363,7 @@ export default function AdminCouponsClient() {
         discount_value: ctype === 'rate' ? discountRate : discountAmount,
         min_order: minOrder,
         issue_trigger: issueTrigger,
+        auto_apply: autoApply,
         start_at: validFrom ? validFrom.toISOString() : null,
         end_at: validTo ? validTo.toISOString() : null,
         max_issue_count: maxIssue === '' ? null : maxIssue,
@@ -383,6 +385,7 @@ export default function AdminCouponsClient() {
     }
     setName('')
     setDescription('')
+    setAutoApply(false)
     setValidFrom(null)
     setValidTo(null)
     setPickedBrands([])
@@ -775,6 +778,10 @@ export default function AdminCouponsClient() {
           <option value="event">이벤트 (event)</option>
           <option value="specific_user">특정인 지정 (specific_user)</option>
         </select>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12, color: 'rgba(255,255,255,0.85)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={autoApply} onChange={(e) => setAutoApply(e.target.checked)} />
+          자동적용 (발급 없이 결제창에서 자동 제시)
+        </label>
 
         {issueTrigger === 'birthday' && (
           <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}>
