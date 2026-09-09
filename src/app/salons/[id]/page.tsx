@@ -14,6 +14,7 @@ import type { SalonBrandProductItem } from '@/types/salonBrandProducts'
 import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { Scissors, Package, Camera, Star, Info } from 'lucide-react'
 
 const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
@@ -979,7 +980,7 @@ export default function SalonHomePage() {
       <StoreRepurchaseCard ownerId={ownerId} customerId={customerUserId} />
       <StoreSnsMapInfo mapUrl={(salon as { map_url?: string | null }).map_url} snsLinks={(salon as { sns_links?: Record<string, string> | null }).sns_links} />
 
-      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, padding: '0 16px', marginTop: 12 }}>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px', marginTop: 12 }}>
         {(
           [
             ['menu', '시술 메뉴'],
@@ -988,25 +989,34 @@ export default function SalonHomePage() {
             ['reviews', `리뷰 ${reviewTotal}`],
             ['info', '샵 정보'],
           ] as const
-        ).map(([key, label]) => (
+        ).map(([key, label]) => {
+          const Icon = { menu: Scissors, products: Package, story: Camera, reviews: Star, info: Info }[key]
+          const active = tab === key
+          return (
           <button
             key={key}
             type="button"
             onClick={() => selectTab(key as SalonTab)}
             style={{
-              flex: 1,
-              border: 'none',
-              background: 'transparent',
-              padding: '12px 4px',
-              fontSize: 13,
-              color: tab === key ? TEXT : TEXT_SUB,
-              borderBottom: tab === key ? `2px solid ${PURPLE}` : '2px solid transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 5,
+              padding: '10px 14px',
+              borderRadius: 12,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               cursor: 'pointer',
+              border: active ? `1.5px solid ${PURPLE}` : `1.5px solid ${BORDER}`,
+              background: active ? PURPLE : 'transparent',
+              color: active ? '#fff' : TEXT_SUB,
             }}
           >
-            {label}
+            {Icon ? <Icon size={16} color={active ? '#fff' : TEXT_SUB} /> : null}
+            <span style={{ fontSize: 12, color: active ? '#fff' : TEXT_SUB }}>{label}</span>
           </button>
-        ))}
+          )
+        })}
       </div>
 
       <div style={{ padding: 16 }}>
