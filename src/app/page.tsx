@@ -3371,6 +3371,8 @@ export default function CustomerHomePage() {
               const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
               const salePrice = item.group_price ?? item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
+              const salePriceDigits = String((salePrice as any)?.toLocaleString?.() ?? salePrice)
+              const salePriceFs = salePriceDigits.length + (discPct ? 6 : 0) > 12 ? 13 : 15
               return (
               <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
@@ -3397,11 +3399,7 @@ export default function CustomerHomePage() {
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
                         {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
                       </span>
-                      <span style={{
-                        fontSize: String(`${(salePrice as any)?.toLocaleString?.() ?? salePrice}원${discPct ? `(-${discPct}%)` : ''}`).length > 12 ? '13px' : '15px',
-                        color: 'rgba(120,160,255,0.9)',
-                        whiteSpace: 'nowrap',
-                      }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
+                      <span style={{ fontSize: `${salePriceFs}px`, color: 'rgba(120,160,255,0.9)', whiteSpace: 'nowrap' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
                       <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
