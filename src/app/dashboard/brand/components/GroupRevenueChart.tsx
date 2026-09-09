@@ -37,8 +37,6 @@ const PALETTE = [
   '#4DD0E1',
 ]
 
-const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
-
 function dayKey(iso: string) {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -117,8 +115,6 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
         { data: createdRows },
         { data: cancelledRows },
         { data: monthRows },
-        { data: hqTrendRows },
-        { data: hqMonthRows },
       ] = await Promise.all([
         supabase
           .from('brand_orders')
@@ -137,28 +133,13 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
           .in('brand_id', brandIds)
           .gte('created_at', thisMonthIso)
           .neq('status', 'cancelled'),
-        // 트랙B: BrandTabHome과 동일 — HQ_PAID + ordered_at
-        supabase
-          .from('hq_stock_orders')
-          .select('brand_id, final_amount, ordered_at')
-          .in('brand_id', brandIds)
-          .in('status', HQ_PAID_STATUSES)
-          .gte('ordered_at', sinceIso),
-        supabase
-          .from('hq_stock_orders')
-          .select('brand_id, final_amount')
-          .in('brand_id', brandIds)
-          .in('status', HQ_PAID_STATUSES)
-          .gte('ordered_at', thisMonthIso),
       ])
 
       const createdByBrandDay: Record<string, Record<string, number>> = {}
       const cancelledByBrandDay: Record<string, Record<string, number>> = {}
-      const hqByBrandDay: Record<string, Record<string, number>> = {}
       for (const id of brandIds) {
         createdByBrandDay[id] = {}
         cancelledByBrandDay[id] = {}
-        hqByBrandDay[id] = {}
       }
 
       for (const o of createdRows || []) {
@@ -177,14 +158,6 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
         cancelledByBrandDay[bid][k] =
           (cancelledByBrandDay[bid][k] || 0) + Math.trunc(Number((o as { total_amount?: number }).total_amount) || 0)
       }
-      for (const o of hqTrendRows || []) {
-        const bid = String((o as { brand_id?: string }).brand_id || '')
-        const at = (o as { ordered_at?: string }).ordered_at
-        if (!bid || !at || !hqByBrandDay[bid]) continue
-        const k = dayKey(at)
-        hqByBrandDay[bid][k] =
-          (hqByBrandDay[bid][k] || 0) + Math.trunc(Number((o as { final_amount?: number }).final_amount) || 0)
-      }
 
       const rows: Array<Record<string, string | number>> = []
       for (let i = 0; i < 30; i++) {
@@ -195,9 +168,7 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
           label: `${d.getMonth() + 1}/${d.getDate()}`,
         }
         for (const id of brandIds) {
-          const trackA = (createdByBrandDay[id][k] || 0) - (cancelledByBrandDay[id][k] || 0)
-          const trackB = hqByBrandDay[id][k] || 0
-          row[id] = trackA + trackB
+          row[id] = (createdByBrandDay[id][k] || 0) - (cancelledByBrandDay[id][k] || 0)
         }
         rows.push(row)
       }
@@ -209,11 +180,6 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
         const bid = String((o as { brand_id?: string }).brand_id || '')
         if (!bid || monthMap[bid] === undefined) continue
         monthMap[bid] += Math.trunc(Number((o as { total_amount?: number }).total_amount) || 0)
-      }
-      for (const o of hqMonthRows || []) {
-        const bid = String((o as { brand_id?: string }).brand_id || '')
-        if (!bid || monthMap[bid] === undefined) continue
-        monthMap[bid] += Math.trunc(Number((o as { final_amount?: number }).final_amount) || 0)
       }
       setMonthByBrand(monthMap)
       setLoading(false)

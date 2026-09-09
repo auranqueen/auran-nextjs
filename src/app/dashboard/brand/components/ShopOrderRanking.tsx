@@ -13,7 +13,6 @@ import {
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 import { createClient } from '@/lib/supabase/client'
-import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -30,8 +29,6 @@ const PINK = '#F48FB1'
 const GRAY = 'rgba(255,255,255,0.22)'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
-
-const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
 
 type RankingRow = {
   key: string
@@ -148,29 +145,7 @@ export default function ShopOrderRanking({ companyId, hubBrandId }: Props) {
           )
         }
 
-        // 다. Track B
-        const { data: hqMonthRows } = await supabase
-          .from('hq_stock_orders')
-          .select('id, final_amount, status, ordered_at, created_at, profile_id')
-          .in('brand_id', brandIds)
-          .in('status', HQ_PAID_STATUSES)
-          .gte('ordered_at', thisMonthIso)
-          .limit(1000)
-
-        const rawHqOrders = hqMonthRows || []
-        const hqProfileIds = Array.from(
-          new Set(rawHqOrders.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
-        )
-        const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(supabase, hqProfileIds)
-
-        for (const o of rawHqOrders as Array<{ profile_id?: string; final_amount?: number }>) {
-          const pid = String(o.profile_id || '')
-          const owner = ownerNameByProfileId[pid] || '원장'
-          const salon = salonNameByProfileId[pid] || ''
-          addAmount(owner, salon, Math.trunc(Number(o.final_amount) || 0))
-        }
-
-        // 라. Aggregate → RankingRow[]
+        // 다. Aggregate → RankingRow[]
         const ranking: RankingRow[] = Array.from(amountByKey.entries())
           .map(([key, v]) => ({
             key,

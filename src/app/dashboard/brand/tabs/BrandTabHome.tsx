@@ -13,8 +13,6 @@ const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
-const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
-
 function dayKey(iso: string) {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -39,7 +37,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   const [salesOpen, setSalesOpen] = useState(false)
   const [pendingOpen, setPendingOpen] = useState(false)
-  const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amountA: number; amountB: number }>>([])
+  const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amount: number }>>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
   useEffect(() => {
     if (!brandId) {
@@ -140,7 +138,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         setBrandChatSummary([])
         setBrandChatUnreadTotal(0)
       }
-      const [{ data: orders }, { count: pendingA }, { count: pendingB }] = await Promise.all([
+      const [{ data: orders }, { count: pendingA }] = await Promise.all([
         supabase
           .from('brand_orders')
           .select('id, items, total_amount, status, created_at')
@@ -152,13 +150,8 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           .select('id', { count: 'exact', head: true })
           .in('brand_id', companyBrandIds)
           .in('status', ['pending', 'approved']),
-        supabase
-          .from('hq_stock_orders')
-          .select('id', { count: 'exact', head: true })
-          .in('brand_id', companyBrandIds)
-          .eq('status', '결제완료'),
       ])
-      setPendingOrders((pendingA ?? 0) + (pendingB ?? 0))
+      setPendingOrders(pendingA ?? 0)
       if (orders) {
         setRecentOrders(orders.map((o: any) => {
           const itemList = Array.isArray(o.items) ? o.items : []
@@ -190,33 +183,21 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       thisMonth.setDate(1)
       thisMonth.setHours(0, 0, 0, 0)
       const thisMonthIso = thisMonth.toISOString()
-      const [{ data: stockOrders }, { data: hqMonthPaid }] = await Promise.all([
-        supabase
-          .from('brand_orders')
-          .select('total_amount')
-          .in('brand_id', companyBrandIds)
-          .gte('created_at', thisMonthIso)
-          .neq('status', 'cancelled'),
-        supabase
-          .from('hq_stock_orders')
-          .select('final_amount')
-          .in('brand_id', companyBrandIds)
-          .in('status', HQ_PAID_STATUSES)
-          .gte('ordered_at', thisMonthIso),
-      ])
+      const { data: stockOrders } = await supabase
+        .from('brand_orders')
+        .select('total_amount')
+        .in('brand_id', companyBrandIds)
+        .gte('created_at', thisMonthIso)
+        .neq('status', 'cancelled')
       const stockSum = (stockOrders || []).reduce((s, o) => s + (o.total_amount || 0), 0)
-      const hqSum = (hqMonthPaid || []).reduce(
-        (s, o) => s + Math.trunc(Number(o.final_amount) || 0),
-        0,
-      )
-      setMonthSales(stockSum + hqSum)
+      setMonthSales(stockSum)
 
       const since = new Date()
       since.setHours(0, 0, 0, 0)
       since.setDate(since.getDate() - 29)
       const sinceIso = since.toISOString()
 
-      const [{ data: createdRows }, { data: cancelledRows }, { data: hqTrendRows }] = await Promise.all([
+      const [{ data: createdRows }, { data: cancelledRows }] = await Promise.all([
         supabase
           .from('brand_orders')
           .select('total_amount, created_at')
@@ -228,16 +209,9 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           .in('brand_id', companyBrandIds)
           .eq('status', 'cancelled')
           .gte('updated_at', sinceIso),
-        supabase
-          .from('hq_stock_orders')
-          .select('final_amount, ordered_at')
-          .in('brand_id', companyBrandIds)
-          .in('status', HQ_PAID_STATUSES)
-          .gte('ordered_at', sinceIso),
       ])
       const createdByDay: Record<string, number> = {}
       const cancelledByDay: Record<string, number> = {}
-      const hqByDay: Record<string, number> = {}
       for (const o of createdRows || []) {
         if (!o.created_at) continue
         const k = dayKey(o.created_at)
@@ -248,20 +222,14 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         const k = dayKey((o as { updated_at: string }).updated_at)
         cancelledByDay[k] = (cancelledByDay[k] || 0) + (o.total_amount || 0)
       }
-      for (const o of hqTrendRows || []) {
-        if (!o.ordered_at) continue
-        const k = dayKey(o.ordered_at)
-        hqByDay[k] = (hqByDay[k] || 0) + Math.trunc(Number(o.final_amount) || 0)
-      }
-      const trend: Array<{ day: string; label: string; amountA: number; amountB: number }> = []
+      const trend: Array<{ day: string; label: string; amount: number }> = []
       for (let i = 0; i < 30; i++) {
         const d = new Date(since.getFullYear(), since.getMonth(), since.getDate() + i)
         const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         trend.push({
           day: k,
           label: `${d.getMonth() + 1}/${d.getDate()}`,
-          amountA: (createdByDay[k] || 0) - (cancelledByDay[k] || 0),
-          amountB: hqByDay[k] || 0,
+          amount: (createdByDay[k] || 0) - (cancelledByDay[k] || 0),
         })
       }
       setSalesTrend(trend)

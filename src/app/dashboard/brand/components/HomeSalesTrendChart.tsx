@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 const CARD: CSSProperties = {
   background: 'rgba(255,255,255,0.03)',
@@ -10,12 +10,11 @@ const CARD: CSSProperties = {
   padding: 12,
   marginBottom: 10,
 }
-const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 
-type Point = { day: string; label: string; amountA: number; amountB: number }
+type Point = { day: string; label: string; amount: number }
 
 interface Props {
   loading: boolean
@@ -53,17 +52,9 @@ export default function HomeSalesTrendChart({ loading, data }: Props) {
                 fontSize: 11,
                 color: TEXT,
               }}
-              formatter={(v: number, name: string) => [
-                `₩${Number(v).toLocaleString()}`,
-                name === 'amountA' ? '트랙A' : '트랙B',
-              ]}
+              formatter={(v: number) => [`₩${Number(v).toLocaleString()}`, '매출']}
             />
-            <Legend
-              wrapperStyle={{ fontSize: 10, color: SUB }}
-              formatter={(value) => (value === 'amountA' ? '트랙A' : '트랙B')}
-            />
-            <Line type="monotone" dataKey="amountA" stroke={GOLD} strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="amountB" stroke={PURPLE} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="amount" stroke={GOLD} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       )}

@@ -12,17 +12,13 @@ const CARD: CSSProperties = {
   padding: 12,
   marginBottom: 10,
 }
-const GOLD = '#C9A96E'
-const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 
 const TRACK_A_PENDING = ['pending', 'approved'] as const
-const TRACK_B_PENDING = ['결제완료'] as const
 
 type PendingRow = {
   id: string
-  track: 'A' | 'B'
   at: string
   ownerName: string
   salonName: string
@@ -70,37 +66,26 @@ export default function PendingOrdersDetail({ brandId, onClose }: Props) {
       setLoading(true)
       const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
 
-      const [{ data: aRows }, { data: bRows }] = await Promise.all([
-        supabase
-          .from('brand_orders')
-          .select('id, created_at, owner_name, salon_name, items, total_amount, status, profile_id')
-          .in('brand_id', companyBrandIds)
-          .in('status', [...TRACK_A_PENDING])
-          .order('created_at', { ascending: false })
-          .limit(80),
-        supabase
-          .from('hq_stock_orders')
-          .select('id, ordered_at, created_at, profile_id, items, final_amount, status')
-          .in('brand_id', companyBrandIds)
-          .in('status', [...TRACK_B_PENDING])
-          .order('ordered_at', { ascending: false })
-          .limit(80),
-      ])
+      const { data: aRows } = await supabase
+        .from('brand_orders')
+        .select('id, created_at, owner_name, salon_name, items, total_amount, status, profile_id')
+        .in('brand_id', companyBrandIds)
+        .in('status', [...TRACK_A_PENDING])
+        .order('created_at', { ascending: false })
+        .limit(80)
 
-      const profileIds = [
-        ...((aRows || []) as Array<{ profile_id?: string }>).map((r) => String(r.profile_id || '')),
-        ...((bRows || []) as Array<{ profile_id?: string }>).map((r) => String(r.profile_id || '')),
-      ].filter(Boolean)
+      const profileIds = ((aRows || []) as Array<{ profile_id?: string }>)
+        .map((r) => String(r.profile_id || ''))
+        .filter(Boolean)
       const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(
         supabase,
         profileIds,
       )
 
-      const mappedA: PendingRow[] = ((aRows || []) as Array<Record<string, unknown>>).map((o) => {
+      const mapped: PendingRow[] = ((aRows || []) as Array<Record<string, unknown>>).map((o) => {
         const pid = String(o.profile_id || '')
         return {
-          id: `A-${String(o.id)}`,
-          track: 'A' as const,
+          id: String(o.id),
           at: String(o.created_at || ''),
           ownerName: ownerNameByProfileId[pid] || String(o.owner_name || '원장'),
           salonName: salonNameByProfileId[pid] || String(o.salon_name || '-'),
@@ -110,25 +95,9 @@ export default function PendingOrdersDetail({ brandId, onClose }: Props) {
         }
       })
 
-      const mappedB: PendingRow[] = ((bRows || []) as Array<Record<string, unknown>>).map((o) => {
-        const pid = String(o.profile_id || '')
-        return {
-          id: `B-${String(o.id)}`,
-          track: 'B' as const,
-          at: String(o.ordered_at || o.created_at || ''),
-          ownerName: ownerNameByProfileId[pid] || '원장',
-          salonName: salonNameByProfileId[pid] || '-',
-          productSummary: summarizeItems(o.items),
-          amount: Math.trunc(Number(o.final_amount) || 0),
-          status: String(o.status || ''),
-        }
-      })
-
-      const merged = [...mappedA, ...mappedB].sort(
-        (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
-      )
+      mapped.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
       if (!cancelled) {
-        setRows(merged)
+        setRows(mapped)
         setLoading(false)
       }
     }
@@ -171,7 +140,7 @@ export default function PendingOrdersDetail({ brandId, onClose }: Props) {
               key={r.id}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '36px 28px 1fr auto',
+                gridTemplateColumns: '36px 1fr auto',
                 gap: 6,
                 alignItems: 'center',
                 padding: '8px 0',
@@ -179,19 +148,6 @@ export default function PendingOrdersDetail({ brandId, onClose }: Props) {
               }}
             >
               <div style={{ fontSize: 10, color: SUB }}>{formatDate(r.at)}</div>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  textAlign: 'center',
-                  padding: '1px 4px',
-                  borderRadius: 4,
-                  background: r.track === 'A' ? 'rgba(201,169,110,0.18)' : 'rgba(123,94,167,0.22)',
-                  color: r.track === 'A' ? GOLD : PURPLE,
-                }}
-              >
-                {r.track}
-              </span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {r.salonName} · {r.ownerName}

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
-import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 const CARD: CSSProperties = {
   background: 'rgba(255,255,255,0.03)',
@@ -13,7 +12,6 @@ const CARD: CSSProperties = {
   padding: 12,
   marginBottom: 10,
 }
-const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -24,11 +22,6 @@ const STATUS_LABEL: Record<string, string> = {
   shipping: '배송중',
   done: '완료',
   cancelled: '취소',
-  '결제대기': '결제대기',
-  '결제완료': '결제완료',
-  '배송완료': '배송완료',
-  '구매확정': '구매확정',
-  '취소': '취소',
 }
 
 type MonthOrderRow = {
@@ -38,7 +31,6 @@ type MonthOrderRow = {
   salon_name: string | null
   amount: number
   status: string
-  track: 'A' | 'B'
   brandBadges?: string[]
   itemsSummary?: string | null
 }
@@ -103,22 +95,14 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
       const thisMonthIso = thisMonth.toISOString()
       const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
 
-      const [{ data: monthRows }, { data: hqMonthRows }] = await Promise.all([
-        supabase
-          .from('brand_orders')
-          .select(
-            'id, batch_id, brand_id, total_amount, status, created_at, owner_name, salon_name, items, brands(name), profile_id, profiles(full_name)',
-          )
-          .in('brand_id', companyBrandIds)
-          .gte('created_at', thisMonthIso)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('hq_stock_orders')
-          .select('id, final_amount, status, ordered_at, created_at, profile_id')
-          .in('brand_id', companyBrandIds)
-          .gte('created_at', thisMonthIso)
-          .order('created_at', { ascending: false }),
-      ])
+      const { data: monthRows } = await supabase
+        .from('brand_orders')
+        .select(
+          'id, batch_id, brand_id, total_amount, status, created_at, owner_name, salon_name, items, brands(name), profile_id, profiles(full_name)',
+        )
+        .in('brand_id', companyBrandIds)
+        .gte('created_at', thisMonthIso)
+        .order('created_at', { ascending: false })
 
       const seedRows = (monthRows || []) as any[]
       const batchIds = Array.from(
@@ -175,7 +159,6 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
               group.reduce((sum, g) => sum + (Number(g.total_amount) || 0), 0),
             ),
             status: (current || primary).status || 'pending',
-            track: 'A',
             brandBadges,
             itemsSummary: itemsSummaryFromOrders(group),
           })
@@ -188,35 +171,14 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
             salon_name: o.salon_name ? String(o.salon_name) : null,
             amount: Math.trunc(Number(o.total_amount) || 0),
             status: o.status || 'pending',
-            track: 'A',
             brandBadges: badge ? [badge] : undefined,
             itemsSummary: itemsSummaryFromOrders([o]),
           })
         }
       }
 
-      // 트랙B: profile_id → profiles.auth_id → users.name / users.id → salons.name
-      const rawHqOrders = hqMonthRows || []
-      const hqProfileIds = Array.from(
-        new Set(rawHqOrders.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
-      )
-      const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(supabase, hqProfileIds)
-
-      const listB = rawHqOrders.map((o: any) => {
-        const pid = String(o.profile_id || '')
-        return {
-          id: `B-${o.id}`,
-          created_at: o.ordered_at || o.created_at,
-          owner_name: ownerNameByProfileId[pid] || '원장',
-          salon_name: salonNameByProfileId[pid] || null,
-          amount: Math.trunc(Number(o.final_amount) || 0),
-          status: o.status || '결제대기',
-          track: 'B' as const,
-        }
-      })
-
       setMonthOrderList(
-        [...listA, ...listB].sort(
+        listA.sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         ),
       )
@@ -266,18 +228,6 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
             >
               <span style={{ color: SUB, width: 72, flexShrink: 0 }}>
                 {new Date(row.created_at).toLocaleDateString('ko-KR')}
-              </span>
-              <span
-                style={{
-                  fontSize: 9,
-                  padding: '1px 5px',
-                  borderRadius: 4,
-                  flexShrink: 0,
-                  background: row.track === 'A' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.18)',
-                  color: row.track === 'A' ? GOLD : '#c4a8f0',
-                }}
-              >
-                {row.track}
               </span>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flexWrap: 'wrap' }}>
@@ -334,7 +284,7 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
                   </span>
                 ) : null}
               </span>
-              <span style={{ color: cancelled ? SUB : (row.track === 'A' ? GOLD : PURPLE), flexShrink: 0 }}>
+              <span style={{ color: cancelled ? SUB : GOLD, flexShrink: 0 }}>
                 {cancelled ? '-' : ''}₩{row.amount.toLocaleString()}
               </span>
               <span
