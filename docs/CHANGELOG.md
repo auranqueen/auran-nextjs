@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-09
+### fix: 브랜드관 다크테마 + 홈 루틴체크 링크
+- `brands/page.tsx`: 라이트(`#faf9f6`) → 고객홈과 동일 다크(`BG #0D0B09`, `CARD_BG`/`CARD_BORDER`, 밝은 텍스트). 검색·목록·`/products?brand=` 로직 유지
+- 홈「오늘 루틴 체크하기」카드: `/my/skin-analysis`(404) → `/skin-analysis`
+
 ### fix: 홈 UI 미세조정 + 뒤로가기 홈강제 제거
 - 홈(`page.tsx`): 푸터 개인정보처리방침을 다른 링크와 동일(`fontSize:10`, `TEXT_DIM`); 공동구매 할인가·할인율 `nowrap`(+긴 가격 시 15→13px); ORÆN PRIVÉ 배경을 채도 있는 딥퍼플(`#2D1F45`→`#4A2F6B`)로 교체(골드 보더 유지)
 - 뒤로가기 5곳: `router.push('/')` 또는 `push('/my')` → `router.back()` — `skin-analysis/result`, `login`, `brands/[id]`, `salons`(문구「돌아가기」), `myworld`(문구「돌아가기」)

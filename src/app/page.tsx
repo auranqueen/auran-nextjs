@@ -3832,7 +3832,7 @@ export default function CustomerHomePage() {
         <div style={{ fontSize: 36, marginLeft: 12 }}>🌸</div>
       </div>
       <div
-        onClick={() => router.push('/my/skin-analysis')}
+        onClick={() => router.push('/skin-analysis')}
         onTouchStart={(e) => setTouchStartX(e.touches[0]?.clientX ?? null)}
         onTouchEnd={(e) => {
           if (touchStartX === null || motivationCarousel.length <= 1) return
