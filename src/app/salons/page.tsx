@@ -223,7 +223,7 @@ function SalonsBrowsePage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '12px 16px 0' }}>
         <button
           type="button"
-          onClick={() => router.push('/')}
+          onClick={() => router.back()}
           style={{
             background: 'none',
             border: 'none',
@@ -233,7 +233,7 @@ function SalonsBrowsePage() {
             cursor: 'pointer',
           }}
         >
-          ← 스토어 둘러보기
+          돌아가기
         </button>
 
         {loading ? (

@@ -3,6 +3,11 @@
 
 ---
 
+## 2026-09-09
+### fix: 홈 UI 미세조정 + 뒤로가기 홈강제 제거
+- 홈(`page.tsx`): 푸터 개인정보처리방침을 다른 링크와 동일(`fontSize:10`, `TEXT_DIM`); 공동구매 할인가·할인율 `nowrap`(+긴 가격 시 15→13px); ORÆN PRIVÉ 배경을 채도 있는 딥퍼플(`#2D1F45`→`#4A2F6B`)로 교체(골드 보더 유지)
+- 뒤로가기 5곳: `router.push('/')` 또는 `push('/my')` → `router.back()` — `skin-analysis/result`, `login`, `brands/[id]`, `salons`(문구「돌아가기」), `myworld`(문구「돌아가기」)
+
 ## 2026-09-07
 ### feat: 매거진 상세 URL이 id·slug 모두 수용
 - `magazine/[id]/page.tsx` / `MagazineDetailClient`: `params.id` 조회를 `.or(id.eq, slug.eq)`로 변경 — UUID·slug URL 모두 메타·본문·조회수 동작. 폴더명 `[id]` 유지

@@ -597,7 +597,7 @@ export default function MyWorldPage() {
       `}</style>
 
       <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(13,11,9,0.96)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={() => router.push('/my')} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>돌아가기</button>
         <div style={{ fontFamily: 'Georgia, serif', color: '#c4a7e7', letterSpacing: '6px', fontSize: 18 }}>MY WORLD</div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>👁 127</div>
       </header>

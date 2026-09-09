@@ -3152,7 +3152,7 @@ export default function CustomerHomePage() {
           cursor: 'pointer',
           borderRadius: 14,
           padding: '18px',
-          background: 'linear-gradient(135deg, #2A2433 0%, #3A2F45 100%)',
+          background: 'linear-gradient(135deg, #2D1F45 0%, #4A2F6B 100%)',
           border: '0.5px solid rgba(201,169,110,0.45)',
         }}
       >
@@ -3391,7 +3391,7 @@ export default function CustomerHomePage() {
                   <div style={{ width: '120px', height: '120px', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
                     {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
                     <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>
@@ -3400,11 +3400,15 @@ export default function CustomerHomePage() {
                         remaining
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
                         {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
                       </span>
-                      <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
+                      <span style={{
+                        fontSize: String(`${(salePrice as any)?.toLocaleString?.() ?? salePrice}원${discPct ? `(-${discPct}%)` : ''}`).length > 12 ? '13px' : '15px',
+                        color: 'rgba(120,160,255,0.9)',
+                        whiteSpace: 'nowrap',
+                      }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
                       <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
@@ -4614,7 +4618,7 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
           {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) =>
             item === '개인정보처리방침' ? (
-              <a key={i} href="/privacy" style={{ color: 'inherit' }}>개인정보처리방침</a>
+              <a key={i} href="/privacy" style={{ fontSize: 10, color: TEXT_DIM }}>개인정보처리방침</a>
             ) : (
               <span key={i} style={{ fontSize: '10px', color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
             )
