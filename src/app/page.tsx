@@ -3820,14 +3820,14 @@ export default function CustomerHomePage() {
       <div style={{ margin: '12px 16px 0', height: 148, background: '#12062a', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(201,169,110,0.2)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 2, border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '2px 8px', fontWeight: 400 }}>✦ 5.24 GRAND OPEN</div>
+            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 2, border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '2px 8px', fontWeight: 400 }}>✦ 10.10 특별 프로모션</div>
           </div>
           <div style={{ fontSize: 15, color: '#fff', lineHeight: 1.5, marginBottom: 8, fontWeight: 400 }}>
             당신의 귀한 피부,<br />
             <span style={{ color: '#C9A96E', fontWeight: 400 }}>호르몬 주기</span>에 맞는<br />
             케어가 시작됩니다
           </div>
-          <div style={{ fontSize: 10, color: '#fff', background: 'rgba(201,169,110,0.2)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '3px 10px', display: 'inline-block', fontWeight: 400 }}>베타 오픈 20% · ~6.7</div>
+          <div style={{ fontSize: 10, color: '#fff', background: 'rgba(201,169,110,0.2)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '3px 10px', display: 'inline-block', fontWeight: 400 }}>전 상품 20% · ~11.9</div>
         </div>
         <div style={{ fontSize: 36, marginLeft: 12 }}>🌸</div>
       </div>
