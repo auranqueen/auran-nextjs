@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-09
+### fix: 호르몬 페이즈 매칭 어휘 통일 (홈 + 멤버십 큐레이션)
+- 홈 `page.tsx` `skinRecList`: `hormone_timing` 비교 시 `달빛기→생리기` 등 `phaseMap` 변환 제거 → `hormonePhase` 원문(달빛기|황금기|만개기|물들기)으로 `includes` (+3/+1). 고민·타입·연령 점수 미변경
+- `lib/membership/curate.ts`: 동일하게 `PHASE_MAP` 삭제, `opts.hormonePhase`를 `hormone_timing`과 변환 없이 비교. 템플릿 `target_phase`·AI/DB 어휘와 일치
+- 배경: DB·AI API·리추얼 템플릿은 「달빛기…」인데 추천만 「생리기…」로 바꿔 비교해 호르몬 +3이 거의 안 붙던 버그
+
 ### feat: 쿠폰 auto_apply — 결제창 자동 제시
 - 마이그레이션 `194_coupons_auto_apply.sql`: `coupons.auto_apply` boolean DEFAULT false (파일만, DB는 SQL Editor)
 - `AdminCouponsClient` 생성 폼에 「자동적용」체크박스 + create API `auto_apply` 저장

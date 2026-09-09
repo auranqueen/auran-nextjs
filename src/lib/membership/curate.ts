@@ -5,13 +5,6 @@
 
 type AnyClient = { from: (table: string) => any }
 
-const PHASE_MAP: Record<string, string> = {
-  달빛기: '생리기',
-  황금기: '여포기',
-  만개기: '배란기',
-  물들기: '황체기',
-}
-
 function parseHormoneTiming(raw: unknown): string[] {
   const arr = Array.isArray(raw) ? raw : []
   return arr.flatMap((v) => {
@@ -64,9 +57,9 @@ export function scoreProduct(
     reasons.push('+1 트러블')
   }
 
-  const dbPhase = PHASE_MAP[opts.hormonePhase] ?? opts.hormonePhase ?? ''
+  // DB/AI/템플릿 전부 달빛기|황금기|만개기|물들기 — 변환 없이 비교
   const pHormone = parseHormoneTiming(p.hormone_timing)
-  if (dbPhase && pHormone.includes(dbPhase)) {
+  if (opts.hormonePhase && pHormone.includes(opts.hormonePhase)) {
     score += 3
     reasons.push(`+3 ${opts.hormonePhase}`)
   } else if (pHormone.length > 0) {
