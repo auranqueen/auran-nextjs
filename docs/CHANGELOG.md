@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-09
+### ui: 홈 인사·케어팁·스킨 접기 + 맑원장 카드 제거
+- `HormoneCard`: 메인 인사(`hormoneMainLine`) 13px 유지, 서브(페이즈/`hormoneSubLine`) 12px→10px
+- 홈 `page.tsx`: TODAY'S CARE TIP·TODAY'S SKIN 기본 접힘 + 헤더 토글. 접힌 SKIN 제목은 「TODAY'S SKIN」만(피부타입은 펼친 뒤). `hormone_daily_tips`·`/my/track` 유지
+- 홈 「맑원장님」대화카드 삭제. `/dashboard/customer/chat/new` 라우트·다른 화면 링크는 미변경
+
 ### fix: 호르몬 페이즈 매칭 어휘 통일 (홈 + 멤버십 큐레이션)
 - 홈 `page.tsx` `skinRecList`: `hormone_timing` 비교 시 `달빛기→생리기` 등 `phaseMap` 변환 제거 → `hormonePhase` 원문(달빛기|황금기|만개기|물들기)으로 `includes` (+3/+1). 고민·타입·연령 점수 미변경
 - `lib/membership/curate.ts`: 동일하게 `PHASE_MAP` 삭제, `opts.hormonePhase`를 `hormone_timing`과 변환 없이 비교. 템플릿 `target_phase`·AI/DB 어휘와 일치

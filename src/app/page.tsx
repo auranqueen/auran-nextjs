@@ -533,6 +533,7 @@ export default function CustomerHomePage() {
   const [showPeriodPopup, setShowPeriodPopup] = useState(false)
   const [showDalbitPopup, setShowDalbitPopup] = useState(false)
   const [dailyCareTip, setDailyCareTip] = useState<{ title: string; message: string; has_bath: boolean } | null>(null)
+  const [careTipOpen, setCareTipOpen] = useState(false)
   const hormoneCardRef = useRef<HTMLDivElement>(null)
   const [showTrackPopup, setShowTrackPopup] = useState(false)
   const [popupPeriodDate, setPopupPeriodDate] = useState('')
@@ -2374,25 +2375,39 @@ export default function CustomerHomePage() {
               background: 'rgba(201,169,110,0.06)',
               border: '0.5px solid rgba(201,169,110,0.2)',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.6)', letterSpacing: '.08em', marginBottom: 5 }}>
-                TODAY'S CARE TIP
-              </div>
-              <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5 }}>
-                {dailyCareTip.title}
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
-                {dailyCareTip.message}
-              </div>
-              {dailyCareTip.has_bath && (
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  background: 'rgba(91,138,107,0.15)',
-                  border: '0.5px solid rgba(91,138,107,0.3)',
-                  borderRadius: 10, padding: '3px 8px',
-                  fontSize: 10, color: '#7BC49A', marginTop: 8,
-                }}>
-                  🛁 오늘 반신욕 추천
+              <div
+                onClick={() => setCareTipOpen(o => !o)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.6)', letterSpacing: '.08em' }}>
+                  TODAY'S CARE TIP
                 </div>
+                <span style={{
+                  fontSize: 13, color: 'rgba(201,169,110,0.6)',
+                  display: 'inline-block', transition: 'transform 0.2s',
+                  transform: careTipOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                }}>›</span>
+              </div>
+              {careTipOpen && (
+                <>
+                  <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5, marginTop: 5 }}>
+                    {dailyCareTip.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+                    {dailyCareTip.message}
+                  </div>
+                  {dailyCareTip.has_bath && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      background: 'rgba(91,138,107,0.15)',
+                      border: '0.5px solid rgba(91,138,107,0.3)',
+                      borderRadius: 10, padding: '3px 8px',
+                      fontSize: 10, color: '#7BC49A', marginTop: 8,
+                    }}>
+                      🛁 오늘 반신욕 추천
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -2418,43 +2433,6 @@ export default function CustomerHomePage() {
               fontSize: 20, lineHeight: 1,
             }}>🌙</div>
           )}
-        </div>
-      </div>
-
-      {/* 원장님 대화카드 */}
-      <div className="select-none" style={{ margin: '12px 16px 0' }}>
-        <div
-          onContextMenu={(e) => e.preventDefault()}
-          onClick={() => { router.push('/dashboard/customer/chat/new') }}
-          style={{
-            background: 'rgba(123,94,167,0.08)',
-            border: '1px solid rgba(123,94,167,0.25)',
-            borderRadius: 14, padding: '11px 14px',
-            display: 'flex', alignItems: 'center',
-            gap: 10, cursor: 'pointer'
-          }}
-        >
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(123,94,167,0.3)',
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 15
-            }}>👩</div>
-            <div style={{
-              position: 'absolute', bottom: 0, right: 0,
-              width: 10, height: 10, borderRadius: '50%',
-              background: '#4cad7e', border: '2px solid #0D0B09'
-            }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
-            <div style={{
-              fontSize: 11, color: 'rgba(255,255,255,0.45)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-            }}>오늘 어떤 도움이 필요하세요?</div>
-          </div>
-          <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>›</div>
         </div>
       </div>
 
@@ -2639,9 +2617,10 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '30px' }}>💧</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: showWeatherDetail ? '3px' : 0, display: 'flex', alignItems: 'center', gap: 4 }}>
               TODAY&apos;S SKIN
-              {weather ? `· ${weather.city} ${weather.temp}°` : ''}
+              {showWeatherDetail && weather ? `· ${weather.city} ${weather.temp}°` : ''}
+              {showWeatherDetail ? (
               <span
                 onClick={e => {
                   e.stopPropagation()
@@ -2651,7 +2630,10 @@ export default function CustomerHomePage() {
                 }}
                 style={{ cursor: 'pointer' }}
               >?</span>
+              ) : null}
             </div>
+            {showWeatherDetail ? (
+              <>
             <div
               onClick={e => { e.stopPropagation(); router.push('/my/track') }}
               style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px', cursor: 'pointer' }}
@@ -2660,6 +2642,8 @@ export default function CustomerHomePage() {
             </div>
             {profileSkinConcerns ? (
               <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.45)' }}>{profileSkinConcerns}</div>
+            ) : null}
+              </>
             ) : null}
           </div>
           <span style={{

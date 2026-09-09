@@ -83,7 +83,7 @@ export default function HormoneCard({
                 display: 'flex',
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                fontSize: 9,
+                fontSize: 10,
                 color: 'rgba(196, 170, 230, 0.75)',
                 marginBottom: 8,
                 letterSpacing: '0.02em',
