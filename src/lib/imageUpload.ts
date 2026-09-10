@@ -13,18 +13,43 @@ export const IMAGE_RULES = {
 
 export type ImageRuleKey = keyof typeof IMAGE_RULES
 
+const COMPRESS_TIMEOUT_MS = 10000
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('compress_timeout')), ms)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 export async function compressImage(
   file: File,
   ruleKey: ImageRuleKey
 ): Promise<File> {
   const rule = IMAGE_RULES[ruleKey]
-  const compressed = await imageCompression(file, {
-    maxSizeMB: rule.maxSizeMB,
-    maxWidthOrHeight: Math.max(rule.maxWidth, rule.maxHeight),
-    useWebWorker: true,
-    fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
-  })
-  return new File([compressed], file.name, { type: compressed.type })
+  const asPng = (file.type || '').toLowerCase() === 'image/png'
+  try {
+    const compressed = await withTimeout(
+      imageCompression(file, {
+        maxSizeMB: rule.maxSizeMB,
+        maxWidthOrHeight: Math.max(rule.maxWidth, rule.maxHeight),
+        useWebWorker: false,
+        fileType: asPng ? 'image/png' : 'image/jpeg',
+      }),
+      COMPRESS_TIMEOUT_MS,
+    )
+    const outType = compressed.type || (asPng ? 'image/png' : 'image/jpeg')
+    const base = file.name.replace(/\.[^.]+$/, '') || 'image'
+    const ext = outType === 'image/png' ? 'png' : 'jpg'
+    return new File([compressed], `${base}.${ext}`, { type: outType })
+  } catch {
+    return file
+  }
 }
 
 export function getImageHint(ruleKey: ImageRuleKey): string {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 import SalonInfoForm from './SalonInfoForm'
 
 const BG = '#f8f7fc'
@@ -129,6 +130,7 @@ export default function StoreDecorationPage() {
   const [salonId, setSalonId] = useState<string | null>(null)
   const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [bankName, setBankName] = useState('')
   const [bankAccount, setBankAccount] = useState('')
   const [bankHolder, setBankHolder] = useState('')
@@ -311,9 +313,23 @@ export default function StoreDecorationPage() {
 
   const handleAvatarUpload = async (file: File | null) => {
     if (!file) return
-    const url = await uploadFile(file, 'avatar')
-    if (!url) return
-    setAvatarUrl(url)
+    setAvatarUploading(true)
+    try {
+      const compressed = await compressImage(file, 'avatar')
+      const mime = (compressed.type || '').toLowerCase()
+      const fname = (compressed.name || '').toLowerCase()
+      if (mime.includes('heic') || mime.includes('heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
+        setToast('JPG 또는 PNG 사진으로 올려주세요')
+        return
+      }
+      const url = await uploadFile(compressed, 'avatar')
+      if (!url) return
+      setAvatarUrl(url)
+    } catch {
+      setToast('업로드에 실패했어요')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   const handleSave = async () => {
@@ -466,8 +482,8 @@ export default function StoreDecorationPage() {
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : '#F5F1FA', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
                 {!avatarUrl ? '🌸' : null}
               </div>
-              <span>사진 업로드</span>
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void handleAvatarUpload(e.target.files?.[0] || null) }} />
+              <span>{avatarUploading ? '업로드 중...' : '사진 업로드'}</span>
+              <input type="file" accept="image/*" disabled={avatarUploading} style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0] || null; e.target.value = ''; void handleAvatarUpload(f) }} />
             </label>
           </div>
           <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 8 }}>권장 정사각형 · 최대 5MB · 고객 스토어·로그인 화면에 노출</div>

@@ -214,9 +214,15 @@ export default function MyProfilePage() {
     setUploading(true)
     try {
       // Supabase 대시보드에서 avatars 버킷 생성 필요
-      const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
-      const filePath = `avatars/${authId}_${Date.now()}.${ext}`
       file = await compressImage(file, 'avatar')
+      const mime = (file.type || '').toLowerCase()
+      const fname = (file.name || '').toLowerCase()
+      if (mime.includes('heic') || mime.includes('heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
+        alert('JPG 또는 PNG 사진으로 올려주세요.')
+        return
+      }
+      const ext = mime.includes('png') ? 'png' : 'jpg'
+      const filePath = `avatars/${authId}_${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })
       if (upErr) {
         alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
