@@ -212,36 +212,37 @@ export default function MyProfilePage() {
     e.target.value = ''
     if (!file || !authId) return
     setUploading(true)
-    // Supabase 대시보드에서 avatars 버킷 생성 필요
-    const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
-    const filePath = `avatars/${authId}_${Date.now()}.${ext}`
-    file = await compressImage(file, 'avatar')
-    const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })
-    if (upErr) {
-      setUploading(false)
-      alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
-      return
-    }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
-    const publicUrl = urlData.publicUrl
-    if (publicUrl) {
-      const { data: auth } = await supabase.auth.getUser()
-      const user = auth.user
-      if (!user) {
-        setUploading(false)
+    try {
+      // Supabase 대시보드에서 avatars 버킷 생성 필요
+      const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
+      const filePath = `avatars/${authId}_${Date.now()}.${ext}`
+      file = await compressImage(file, 'avatar')
+      const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })
+      if (upErr) {
         alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
         return
       }
-      const { error: dbErr } = await supabase.from('profiles').upsert({ auth_id: user.id, avatar_url: publicUrl } as any, { onConflict: 'auth_id' })
-      if (dbErr) {
-        setUploading(false)
-        alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
-        return
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+      const publicUrl = urlData.publicUrl
+      if (publicUrl) {
+        const { data: auth } = await supabase.auth.getUser()
+        const user = auth.user
+        if (!user) {
+          alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
+          return
+        }
+        const { error: dbErr } = await supabase.from('profiles').upsert({ auth_id: user.id, avatar_url: publicUrl } as any, { onConflict: 'auth_id' })
+        if (dbErr) {
+          alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
+          return
+        }
+        setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
       }
-      setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
+    } catch {
+      alert('사진 업로드에 실패했습니다. 다시 시도해주세요.')
+    } finally {
       setUploading(false)
     }
-    setUploading(false)
   }
 
   const toggleRow = (label: string, value: boolean, set: (v: boolean) => void, notifyKey: string) => (
