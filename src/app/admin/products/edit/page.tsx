@@ -1,9 +1,13 @@
-import ProductEditForm from './ProductEditForm'
+import { redirect } from 'next/navigation'
 
 export default function ProductEditPage({
   searchParams,
 }: {
   searchParams: { id?: string }
 }) {
-  return <ProductEditForm id={searchParams.id} />
+  const id = typeof searchParams?.id === 'string' ? searchParams.id.trim() : ''
+  if (id) {
+    redirect(`/admin/products/edit-v2?id=${encodeURIComponent(id)}`)
+  }
+  redirect('/admin/products/edit-v2')
 }
