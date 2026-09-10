@@ -3485,7 +3485,7 @@ export default function CustomerHomePage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 12, cursor: 'pointer',
                       }}
-                    >📤</div>
+                    >💌</div>
                   </div>
                 </div>
               </div>

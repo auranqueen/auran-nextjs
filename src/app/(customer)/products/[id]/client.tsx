@@ -1190,7 +1190,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', background: '#0f0c08' }}>
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
-            <div style={{ fontSize: 9, color: '#7B5EA7', padding: '4px 8px', border: '1px solid #7B5EA7', borderRadius: '12px' }}>공유</div>
+            <div style={{ fontSize: 9, color: '#7B5EA7', padding: '4px 8px', border: '1px solid #7B5EA7', borderRadius: '12px' }}>💌 친구에게 추천하기</div>
             {shareOpen ? (
           <div
             style={{
