@@ -48,9 +48,9 @@ export default function VoiceBoxButton() {
             bottom: 136,
             right: 16,
             zIndex: 999,
-            width: 44,
-            height: 44,
-            borderRadius: '50%',
+            width: 52,
+            height: 52,
+            borderRadius: 12,
             background: '#7B5EA7',
             color: '#fff',
             border: 'none',
@@ -58,11 +58,13 @@ export default function VoiceBoxButton() {
             fontSize: 18,
             boxShadow: '0 2px 12px rgba(123,94,167,0.35)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
           💜
+          <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>의견보내기</span>
         </button>
       )}
 
@@ -82,18 +84,18 @@ export default function VoiceBoxButton() {
           {done ? (
             // 전송 완료
             <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 13, color: '#7B5EA7' }}>
-              맑원장이 확인할게요 💜
+              확인했어요 💜
             </div>
           ) : !type ? (
             // 유형 선택
             <>
               <div style={{ fontSize: 13, color: '#333', marginBottom: 12 }}>
-                오렌에게 말하기
+                말해주세요
               </div>
               {[
-                { key: 'bug', label: '🐛 뭔가 안 돼요' },
-                { key: 'idea', label: '💡 이런 기능 있으면 좋겠어요' },
-                { key: 'praise', label: '💜 칭찬할게요' },
+                { key: 'bug', label: '🐛 버그 신고' },
+                { key: 'idea', label: '💡 기능 제안' },
+                { key: 'praise', label: '💜 칭찬' },
               ].map(item => (
                 <button
                   key={item.key}
@@ -125,13 +127,20 @@ export default function VoiceBoxButton() {
           ) : (
             // 내용 입력
             <>
-              <div style={{ fontSize: 12, color: '#7B5EA7', marginBottom: 8 }}>
-                {type === 'bug' ? '🐛 어떤 문제가 있었나요?' : type === 'idea' ? '💡 어떤 기능이 있으면 좋을까요?' : '💜 칭찬해주세요!'}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: '#7B5EA7' }}>
+                  {type === 'bug' ? '🐛 뭐가 안 되나요?' : type === 'idea' ? '💡 뭐가 필요하세요?' : '💜 뭐가 좋았나요?'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#999', padding: 0, lineHeight: 1, flexShrink: 0 }}
+                >✕</button>
               </div>
               <textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
-                placeholder="자유롭게 적어주세요"
+                placeholder="바로 적어주세요"
                 rows={4}
                 style={{
                   width: '100%',

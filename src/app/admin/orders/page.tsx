@@ -325,7 +325,7 @@ export default function AdminOrdersPage() {
         `운송장번호: ${(o.tracking_no || '').trim() ? String(o.tracking_no) : '(입력 후 자동 반영)'}\n` +
         `주문번호: ${o.order_no}\n\n` +
         `배송조회: https://auran.kr/track/\n` +
-        `문의: support@auran.kr`
+        `문의: queen7176@naver.com`
     )
   }
 
@@ -425,7 +425,7 @@ export default function AdminOrdersPage() {
           `운송장번호: ${tracking}\n` +
           `주문번호: ${ro.order_no}\n\n` +
           `배송조회: https://auran.kr/track/\n` +
-          `문의: support@auran.kr` +
+          `문의: queen7176@naver.com` +
           extraMsg
         await tryNotifyCustomer(ro.customer_id, '🚚 발송 안내', notifyBody)
       }
@@ -657,7 +657,7 @@ export default function AdminOrdersPage() {
         `운송장번호: ${tracking}\n` +
         `주문번호: ${o.order_no}\n\n` +
         `배송조회: https://auran.kr/track/\n` +
-        `문의: support@auran.kr`
+        `문의: queen7176@naver.com`
       await tryNotifyCustomer(o.customer_id, '🚚 발송 안내', body)
       ok++
       updates.push({ id: o.id, tracking, courier })

@@ -124,7 +124,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           `운송장번호: ${trackingNo.trim()}\n` +
           `주문번호: ${order.order_no}\n\n` +
           `배송조회: https://auran.kr/my/orders\n` +
-          `문의: support@auran.kr`,
+          `문의: queen7176@naver.com`,
         icon: '🚚',
         is_read: false,
         created_at: new Date().toISOString(),

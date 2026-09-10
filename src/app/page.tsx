@@ -4678,21 +4678,25 @@ export default function CustomerHomePage() {
       <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: GOLD, letterSpacing: '4px' }}>AURAN</span>
-          <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
           {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) =>
             item === '개인정보처리방침' ? (
-              <a key={i} href="/privacy" style={{ fontSize: 10, color: TEXT_DIM }}>개인정보처리방침</a>
+              <a key={i} href="/privacy" style={{ fontSize: 9, color: TEXT_DIM }}>개인정보처리방침</a>
+            ) : item === '이용약관' ? (
+              <span key={i} onClick={() => router.push('/terms')} style={{ fontSize: 9, color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
+            ) : item === '공지사항' ? (
+              <span key={i} onClick={() => router.push('/notices')} style={{ fontSize: 9, color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
             ) : (
-              <span key={i} style={{ fontSize: '10px', color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
+              <span key={i} style={{ fontSize: 9, color: 'rgba(255,255,255,0.14)', cursor: 'default' }}>{item}</span>
             )
           )}
         </div>
-        <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', marginBottom: 14 }} />
+        <div style={{ textAlign: 'center', fontSize: 8, color: 'rgba(255,255,255,0.12)', lineHeight: 2 }}>
           <div>상호 : 주식회사 티엔씨 · 사업자등록번호 : 197-87-01357</div>
-          <div>경기도 양주시 은현면 화합로610번길30-183 1F · support@auran.kr</div>
-          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>
+          <div>경기도 양주시 은현면 화합로610번길30-183 1F · queen7176@naver.com</div>
+          <div style={{ marginTop: '4px', fontSize: 8, color: 'rgba(255,255,255,0.1)' }}>
             © 2026 AURAN. All rights reserved.
           </div>
         </div>
@@ -4722,6 +4726,36 @@ export default function CustomerHomePage() {
         supabaseClient={supabase}
         showEditChrome={showHomeEditChrome}
       />
+
+      {myUserId ? (
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard/customer/chat/new')}
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 196,
+            zIndex: 999,
+            width: 52,
+            height: 52,
+            borderRadius: 12,
+            background: '#7B5EA7',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            padding: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 12px rgba(123,94,167,0.35)',
+          }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1 }}>💬</span>
+          <span style={{ fontSize: 8, color: 'white', lineHeight: 1.2 }}>상담톡</span>
+        </button>
+      ) : null}
 
       <CheckinTracker />
 

@@ -175,7 +175,7 @@ export default function LogiLoginPage() {
           </form>
           <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.7 }}>
             물류팀 전용 시스템입니다<br/>
-            계정 문의: support@auran.kr<br/>
+            계정 문의: queen7176@naver.com<br/>
             AURAN 물류 허브 · {brand?.name}
           </div>
         </div>

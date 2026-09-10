@@ -59,7 +59,7 @@ export default function MySupportPage() {
           <div style={{ display: 'grid', gap: 8 }}>
             <a href="tel:0212345678" style={{ textDecoration: 'none', color: '#fff', border: CARD_BORDER, borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>📞 전화 문의</a>
             <a href="https://pf.kakao.com/" target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: '#fff', border: CARD_BORDER, borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>💬 카카오톡 채널</a>
-            <a href="mailto:support@auran.co.kr" style={{ textDecoration: 'none', color: '#fff', border: CARD_BORDER, borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>📧 이메일 문의</a>
+            <a href="mailto:queen7176@naver.com" style={{ textDecoration: 'none', color: '#fff', border: CARD_BORDER, borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>📧 이메일 문의</a>
           </div>
         </section>
 
