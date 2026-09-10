@@ -2510,9 +2510,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               background: 'transparent',
               color: '#534AB7', fontSize: 10, cursor: 'pointer',
               letterSpacing: -0.2, marginBottom: 6,
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
             }}
           >
-            이거 나한테 맞을까요? 🤫
+            <span style={{ fontWeight: 500 }}>🤫 이 제품, 나에게 맞을까요?</span>
+            <span style={{ fontSize: 9, color: 'rgba(83,74,183,0.65)' }}>원장님께 바로 물어보기 →</span>
           </button>
         )}
         <div style={{ display: 'flex', gap: 8 }}>

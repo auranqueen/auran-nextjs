@@ -95,7 +95,7 @@ export default function ConsultChat({
 
   return (
     <div style={{
-      position: 'fixed', bottom: 80, right: 16, left: 16,
+      position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 130px)', right: 16, left: 16,
       maxWidth: 360, marginLeft: 'auto',
       zIndex: 1000, borderRadius: 16,
       overflow: 'hidden',

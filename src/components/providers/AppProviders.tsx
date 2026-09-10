@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { logUserBehavior, pathnameToPageViewKey } from '@/lib/skinAnalytics'
 import { AuthSessionProvider } from './AuthSessionProvider'
 import VoiceBoxButton from '@/components/VoiceBoxButton'
+import ChatQuickButton from '@/components/ChatQuickButton'
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || ''
@@ -46,7 +47,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/brand') ||
     pathname.startsWith('/products/')
   const hideVoiceBox =
-    hideCustomerNav ||
+    (hideCustomerNav && !pathname.startsWith('/products/')) ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth') ||
@@ -62,6 +63,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           {showCustomerNav ? <DashboardBottomNav role="customer" /> : null}
           {/* ===== [고객의 목소리 함] 플로팅 버튼 — customer role일 때만 표시 ===== */}
           {!hideVoiceBox ? <VoiceBoxButton /> : null}
+          {!hideVoiceBox ? <ChatQuickButton /> : null}
         </CartProvider>
       </AuthSessionProvider>
     </div>

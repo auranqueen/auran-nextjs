@@ -1,11 +1,13 @@
 'use client'
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 // ===== [고객의 목소리 함] =====
 // 고객이 버그/아이디어/칭찬을 남기는 플로팅 버튼
 // voice_box 테이블에 저장 → 어드민에서 확인
 export default function VoiceBoxButton() {
+  const pathname = usePathname() || ''
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<'bug' | 'idea' | 'praise' | null>(null)
   const [content, setContent] = useState('')
@@ -45,7 +47,7 @@ export default function VoiceBoxButton() {
           onClick={() => setOpen(true)}
           style={{
             position: 'fixed',
-            bottom: 136,
+            bottom: pathname.startsWith('/products/') ? 220 : 148,
             right: 16,
             zIndex: 999,
             width: 52,
@@ -64,7 +66,7 @@ export default function VoiceBoxButton() {
           }}
         >
           💜
-          <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>의견보내기</span>
+          <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>의견보내기</span>
         </button>
       )}
 
