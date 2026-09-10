@@ -93,6 +93,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const [skinConcerns, setSkinConcerns] = useState<string[]>([])
   const [hormoneStages, setHormoneStages] = useState<string[]>([])
+  const [hormoneTiming, setHormoneTiming] = useState<string[]>([])
   const [stepTags, setStepTags] = useState<string[]>([])
   const [skinTypes, setSkinTypes] = useState<string[]>([])
   const [seasonTags, setSeasonTags] = useState<string[]>([])
@@ -295,6 +296,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     is_exclusive: isExclusive,
     is_flash_sale: isFlashSale,
     skin_concerns: skinConcerns.length ? skinConcerns : [],
+    concern_tags: skinConcerns.length ? skinConcerns : [],
     hormone_tags: hormoneStages.length ? hormoneStages : [],
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
