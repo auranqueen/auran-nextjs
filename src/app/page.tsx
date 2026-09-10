@@ -3277,7 +3277,7 @@ export default function CustomerHomePage() {
         </div>
         {/* 탭 */}
         <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
-          {(['group', 'sale'] as const).map((tab) => (
+          {(['group'] as ('group' | 'sale')[]).map((tab) => (
             <div
               key={tab}
               onClick={() => setSaleTab(tab)}
