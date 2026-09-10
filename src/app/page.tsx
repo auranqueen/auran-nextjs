@@ -2342,7 +2342,7 @@ export default function CustomerHomePage() {
                         <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 2 }}>{p.brands?.name || ''}</div>
                         <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: '#fff' }}>
+                        <div style={{ fontSize: 9, color: '#fff' }}>
                           {p.is_timesale && p.sale_price
                             ? `${p.sale_price.toLocaleString()}원`
                             : `${p.retail_price?.toLocaleString()}원`}
@@ -3198,9 +3198,9 @@ export default function CustomerHomePage() {
               </div>
               <div style={{ padding: '9px 11px' }}>
                 {null}
-                <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
+                  <span style={{ fontSize: '9px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
@@ -3297,14 +3297,14 @@ export default function CustomerHomePage() {
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>
                       {item.brand || item.product?.brand}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '11px', color: '#fff', marginBottom: '4px' }}>
                       {item.product?.name}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM, textDecoration: 'line-through' }}>
                         {(item.orig ?? item.original_price)?.toLocaleString()}원
                       </span>
-                      <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
+                      <span style={{ fontSize: '9px', fontWeight: 400, color: '#E07060' }}>
                         {item.product?.retail_price?.toLocaleString()}원
                       </span>
                     </div>
@@ -3355,8 +3355,6 @@ export default function CustomerHomePage() {
               const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
               const salePrice = item.group_price ?? item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
-              const salePriceDigits = String((salePrice as any)?.toLocaleString?.() ?? salePrice)
-              const salePriceFs = salePriceDigits.length + (discPct ? 6 : 0) > 12 ? 13 : 15
               return (
               <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
@@ -3372,7 +3370,7 @@ export default function CustomerHomePage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
-                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
+                    <div style={{ fontSize: '11px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>
                       {pickGroupbuyHook(
                         String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
@@ -3380,10 +3378,10 @@ export default function CustomerHomePage() {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
-                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM, textDecoration: 'line-through' }}>
                         {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
                       </span>
-                      <span style={{ fontSize: `${salePriceFs}px`, color: 'rgba(120,160,255,0.9)', whiteSpace: 'nowrap' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
+                      <span style={{ fontSize: '9px', color: 'rgba(120,160,255,0.9)', whiteSpace: 'nowrap' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
                       <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
@@ -3544,8 +3542,8 @@ export default function CustomerHomePage() {
             </div>
             <div style={{ padding: '9px 10px' }}>
               {null}
-              <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
+              <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{item.name}</div>
+              <div style={{ fontSize: '9px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
             </div>
           </div>
         ))}
@@ -3707,7 +3705,7 @@ export default function CustomerHomePage() {
                       <div style={{ padding: '8px 10px 10px' }}>
                         <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: '#fff' }}>
+                        <div style={{ fontSize: 9, color: '#fff' }}>
                           {p.is_timesale && p.sale_price
                             ? `${Number(p.sale_price).toLocaleString()}원`
                             : `${Number(p.retail_price).toLocaleString()}원`}

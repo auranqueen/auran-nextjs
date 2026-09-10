@@ -795,7 +795,7 @@ export default function SeasonRecommendSection({
                 >
                   {p.name}
                 </div>
-                <div style={{ fontSize: 12, color: '#c9a96e' }}>₩{displayPrice(p).toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: '#c9a96e' }}>₩{displayPrice(p).toLocaleString()}</div>
               </button>
             )
           })}
