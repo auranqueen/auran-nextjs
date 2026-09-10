@@ -237,6 +237,15 @@ export default function OwnerHomeV3({
   const fmtWon = (n: number) => `₩${Math.max(0, Math.floor(n)).toLocaleString()}`
   const fmtPct = (p: number) => (p === 0 ? '0%' : `${p > 0 ? '+' : ''}${p}%`)
 
+  async function switchRole(role: string) {
+    const res = await fetch('/api/profile/active-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    if (res.ok && role === 'customer') window.location.href = '/'
+  }
+
   return (
     <div data-theme="light" style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 1100, margin: '0 auto', paddingBottom: 24, width: '100%' }}>
       <style>{`
@@ -268,48 +277,65 @@ export default function OwnerHomeV3({
               </span>
             </div>
           </div>
-          {salonId ? (
-            <a
-              href={`/salons/${salonId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="owner-v3-card"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                flexShrink: 0,
-                padding: '8px 12px',
-                background: '#F5F1FA',
-                border: '1px solid #E1D8F0',
-                borderRadius: 12,
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
-              <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {salonId ? (
+              <a
+                href={`/salons/${salonId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="owner-v3-card"
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  background: storeThumbnailUrl ? `url(${storeThumbnailUrl}) center/cover` : '#E1D8F0',
-                  border: '1px solid #E1D8F0',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 16,
-                  overflow: 'hidden',
+                  gap: 10,
+                  flexShrink: 0,
+                  padding: '8px 12px',
+                  background: '#F5F1FA',
+                  border: '1px solid #E1D8F0',
+                  borderRadius: 12,
+                  textDecoration: 'none',
+                  color: 'inherit',
                 }}
               >
-                {!storeThumbnailUrl ? '🏪' : null}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#3A3540', whiteSpace: 'nowrap' }}>내 스토어 보기</div>
-              </div>
-              <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
-            </a>
-          ) : null}
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    background: storeThumbnailUrl ? `url(${storeThumbnailUrl}) center/cover` : '#E1D8F0',
+                    border: '1px solid #E1D8F0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {!storeThumbnailUrl ? '🏪' : null}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#3A3540', whiteSpace: 'nowrap' }}>내 스토어 보기</div>
+                </div>
+                <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
+              </a>
+            ) : null}
+            <button
+              onClick={() => switchRole('customer')}
+              style={{
+                background: 'rgba(0,0,0,0.05)',
+                border: '1px solid rgba(0,0,0,0.12)',
+                borderRadius: 20,
+                padding: '5px 12px',
+                fontSize: 11,
+                color: 'rgba(0,0,0,0.6)',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              ✦ 고객으로
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>

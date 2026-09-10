@@ -85,6 +85,12 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [clinicalResult, setClinicalResult] = useState('')
   const [certifications, setCertifications] = useState('')
   const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState<{
+    concern_tags?: string[]
+    hormone_timing?: string[]
+    caution_tags?: string[]
+    owner_analysis?: string
+  } | null>(null)
   const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
 
   const [ptInput, setPtInput] = useState('')
@@ -187,6 +193,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       }
       setSkinConcerns(data.skin_concerns || [])
       setHormoneStages(data.hormone_tags || [])
+      setHormoneTiming(data.hormone_timing || [])
       setStepTags(data.step_tags || [])
       setSkinTypes(data.skin_types || [])
       setSeasonTags(data.season_tags || [])
@@ -298,6 +305,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     skin_concerns: skinConcerns.length ? skinConcerns : [],
     concern_tags: skinConcerns.length ? skinConcerns : [],
     hormone_tags: hormoneStages.length ? hormoneStages : [],
+    hormone_timing: hormoneTiming.length ? hormoneTiming : [],
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
     season_tags: seasonTags.length ? seasonTags : [],
@@ -792,15 +800,119 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                     const f = e.target.files?.[0]
                     if (!f) return
                     setIngredientAnalyzeLoading(true)
+                    setAiSuggestion(null)
                     try {
                       const base64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(',')[1]); r.readAsDataURL(f) })
-                      const resp = await fetch('/api/analyze-ingredients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64 }) })
+                      const mediaType = f.type && f.type.startsWith('image/') ? f.type : 'image/jpeg'
+                      const resp = await fetch('/api/analyze-ingredients', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          messages: [{
+                            role: 'user',
+                            content: [
+                              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+                              { type: 'text', text: '이 전성분표를 분석해줘' },
+                            ],
+                          }],
+                          systemPrompt: `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
+20년 경력 피부 전문가(맑원장) 기준으로 분석해.
+전성분 또는 제품명을 분석해서 아래 JSON 형식으로만 반환해. 설명 없이 JSON만.
+
+{
+  "concern_tags": [],
+  "skin_tags": [],
+  "hormone_timing": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+
+concern_tags 선택값 (해당하는 것만):
+여드름·트러블 | 모공 | 건조·수분부족 | 탄력 저하 | 주름 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클
+
+skin_tags 선택값 (해당하는 것만):
+건성 | 지성 | 복합성 | 민감성 | 탄력 | 미백 | 수분 | 트러블 | 모공 | 홍조 | 재생 | 장벽강화
+
+hormone_timing 선택값 (DB 저장값 그대로 사용):
+달빛기 | 황금기 | 만개기 | 물들기
+- 달빛기(생리기 1~5일): 레티놀/AHA/BHA/강한향료/알코올 포함 → 제외. 진정·보습 위주 → 포함
+- 황금기(여포기 6~13일): 활성 성분(비타민C/나이아신아마이드/펩타이드) → 우선 포함
+- 만개기(배란기 14~16일): 미백·브라이트닝·가벼운 제형 → 우선 포함
+- 물들기(황체기 17~28일): 보습·장벽강화·진정 성분 위주 → 포함
+
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 갱년기추천 | 남성추천 | 민감성주의 | 레티놀함유 | AHA함유 | BHA함유 | 알코올함유 | 향료함유
+
+owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
+예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
+예시: "달빛기엔 잠시 쉬어가고, 황금기부터 다시 써보세요"
+예시: "갱년기 피부에 콜라겐 펩타이드가 특히 도움돼요"
+
+주의사항:
+- 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석
+- 확실하지 않은 건 caution_tags에 넣지 말 것
+- owner_analysis 무조건 1문장 50자 이내`,
+                        }),
+                      })
                       const data = await resp.json()
-                      if (data.ingredients) setIngredientText(data.ingredients)
+                      if (!resp.ok) throw new Error(data.error || '분석 실패')
+                      setAiSuggestion({
+                        concern_tags: Array.isArray(data.concern_tags) ? data.concern_tags.map(String) : [],
+                        hormone_timing: Array.isArray(data.hormone_timing) ? data.hormone_timing.map(String) : [],
+                        caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
+                        owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
+                      })
                     } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
                   })()
                 }} />
               </div>
+              {aiSuggestion ? (
+                <div style={{ marginTop: 10, padding: 12, borderRadius: 8, background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.25)' }}>
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>AI 제안 — 칩을 눌러 반영 (자동 저장 안 됨)</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>피부 고민 (skin_concerns)</div>
+                    {(aiSuggestion.concern_tags || []).length === 0 ? (
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>제안 없음</div>
+                    ) : (
+                      <div>
+                        {(aiSuggestion.concern_tags || []).map(t => (
+                          <span
+                            key={`ai-c-${t}`}
+                            style={S.tag(skinConcerns.includes(t))}
+                            onClick={() => setSkinConcerns(prev => prev.includes(t) ? prev : [...prev, t])}
+                          >{t}{skinConcerns.includes(t) ? ' ✓' : ' +'}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>호르몬 단계 추천매칭 (hormone_timing)</div>
+                    {(aiSuggestion.hormone_timing || []).length === 0 ? (
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>제안 없음</div>
+                    ) : (
+                      <div>
+                        {(aiSuggestion.hormone_timing || []).map(t => (
+                          <span
+                            key={`ai-h-${t}`}
+                            style={S.goldTag(hormoneTiming.includes(t))}
+                            onClick={() => setHormoneTiming(prev => prev.includes(t) ? prev : [...prev, t])}
+                          >{t}{hormoneTiming.includes(t) ? ' ✓' : ' +'}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {(aiSuggestion.caution_tags || []).length > 0 ? (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+                      caution (참고): {(aiSuggestion.caution_tags || []).join(', ')}
+                    </div>
+                  ) : null}
+                  {aiSuggestion.owner_analysis ? (
+                    <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.55)', lineHeight: 1.5 }}>
+                      {aiSuggestion.owner_analysis}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             <div style={S.f}><span style={S.lbl}>CLINICAL RESULT</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={clinicalResult} onChange={e => setClinicalResult(e.target.value)} placeholder="보습력 98% 향상..." /></div>
             <div><span style={S.lbl}>CERTIFICATIONS</span><input style={S.inp} value={certifications} onChange={e => setCertifications(e.target.value)} placeholder="ISO 9001, 피부과 테스트 완료" /></div>
@@ -833,7 +945,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
           <div style={S.sec}>
             <div style={S.secTitle}>태그 / 호르몬 단계</div>
             {[
-              { label: '피부 고민', items: ['보습', '진정', '미백', '탄력', '모공', '각질', '트러블'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+              { label: '피부 고민', items: ['여드름·트러블', '모공', '건조·수분부족', '탄력 저하', '주름', '피지·블랙헤드', '색소침착·기미잡티', '민감·홍조', '눈가·다크서클'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
               { label: '호르몬 단계', items: ['전단계', '달빛기', '황금기', '만개기', '물들기'], arr: hormoneStages, set: setHormoneStages, style: S.goldTag },
               { label: '피부 타입', items: ['건성', '지성', '복합성', '민감성', '중성', '여드름', '홍조', '특정'], arr: skinTypes, set: setSkinTypes, style: S.tag },
               { label: '계절', items: ['전계절', '봄', '여름', '가을', '겨울', '시술후'], arr: seasonTags, set: setSeasonTags, style: S.tag },
@@ -843,6 +955,13 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                 <div>{items.map(t => <span key={t} style={style(arr.includes(t))} onClick={() => toggleArr(arr, t, set)}>{t}</span>)}</div>
               </div>
             ))}
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid rgba(255,255,255,0.1)' }}>
+              <span style={S.lbl}>호르몬 단계 (추천 매칭용)</span>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>hormone_timing에 저장 — 홈 화면 추천 점수에 직접 반영됩니다</div>
+              <div>{['전단계', '달빛기', '황금기', '만개기', '물들기'].map(t => (
+                <span key={t} style={S.goldTag(hormoneTiming.includes(t))} onClick={() => toggleArr(hormoneTiming, t, setHormoneTiming)}>{t}</span>
+              ))}</div>
+            </div>
             <div style={S.f}>
               <span style={S.lbl}>루틴 단계</span>
               <div>{['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩', ...stepTags.filter(t => !['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩'].includes(t))].map(t => (

@@ -247,7 +247,7 @@ export default function MyTrackPage() {
               />
             </>)}
             {section('2. 피부고민', '복수 선택 가능', <>
-              {chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => { setSkinConcerns((p) => {
+              {chipRow(['여드름·트러블', '모공', '건조·수분부족', '탄력 저하', '주름', '피지·블랙헤드', '색소침착·기미잡티', '민감·홍조', '눈가·다크서클'], skinConcerns, (v) => { setSkinConcerns((p) => {
                 const next = toggleArr(p, v)
                 void persist({ skin_concerns: next })
                 return next
