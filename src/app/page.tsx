@@ -435,6 +435,7 @@ export default function CustomerHomePage() {
   const [hormonePhase, setHormonePhase] = useState<string>('')
   const [userGender, setUserGender] = useState<string | null>(null)
   const [userHca, setUserHca] = useState<boolean | null>(null)
+  const [profileReady, setProfileReady] = useState(false)
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -619,125 +620,129 @@ export default function CustomerHomePage() {
   }, [homeEditSheet])
 
   const loadMotivationProfile = useCallback(async () => {
-    const supabase = createClient()
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-  const user = session?.user
-    if (!user) return
+    try {
+      const supabase = createClient()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const user = session?.user
+      if (!user) return
 
-    const [profileRes, hcRes, tipRes, rulesRes] = await Promise.all([
-      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url, gender, hormone_cycle_applicable, birth_date').eq('auth_id', user.id).maybeSingle(),
-      supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
-      supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
-      supabase.from('safety_rules').select('condition_type, condition_value, rule_type, rule_value').eq('is_active', true),
-    ])
-    const rules = rulesRes.data
-    if (rules) setSafetyRules(rules)
+      const [profileRes, hcRes, tipRes, rulesRes] = await Promise.all([
+        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url, gender, hormone_cycle_applicable, birth_date').eq('auth_id', user.id).maybeSingle(),
+        supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
+        supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
+        supabase.from('safety_rules').select('condition_type, condition_value, rule_type, rule_value').eq('is_active', true),
+      ])
+      const rules = rulesRes.data
+      if (rules) setSafetyRules(rules)
 
-    const profile = profileRes.data
-    let nameForHormoneLine = '고객'
-    if (profile) {
-      setMotivationProfile(profile)
-      setUserGender((profile as any).gender ?? null)
-      setUserHca(
-        (profile as any).hormone_cycle_applicable === true ? true :
-        (profile as any).hormone_cycle_applicable === false ? false :
-        null
-      )
-      setOnboardingDone((profile as any).onboarding_done === true)
-      const displayName = (profile as { full_name?: string | null }).full_name || '고객'
-      nameForHormoneLine = displayName
-      setUserName(displayName)
-      setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
-      setProfileCreatedAt((profile as any).created_at != null ? String((profile as any).created_at) : null)
-      if ((profile as any)?.roles) setMyRoles((profile as any).roles)
-      if ((profile as any)?.active_role) setActiveRole((profile as any).active_role)
-    } else {
-      setProfileCycleType(null)
-      setProfileCreatedAt(null)
-    }
+      const profile = profileRes.data
+      let nameForHormoneLine = '고객'
+      if (profile) {
+        setMotivationProfile(profile)
+        setUserGender((profile as any).gender ?? null)
+        setUserHca(
+          (profile as any).hormone_cycle_applicable === true ? true :
+          (profile as any).hormone_cycle_applicable === false ? false :
+          null
+        )
+        setOnboardingDone((profile as any).onboarding_done === true)
+        const displayName = (profile as { full_name?: string | null }).full_name || '고객'
+        nameForHormoneLine = displayName
+        setUserName(displayName)
+        setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
+        setProfileCreatedAt((profile as any).created_at != null ? String((profile as any).created_at) : null)
+        if ((profile as any)?.roles) setMyRoles((profile as any).roles)
+        if ((profile as any)?.active_role) setActiveRole((profile as any).active_role)
+      } else {
+        setProfileCycleType(null)
+        setProfileCreatedAt(null)
+      }
 
-    const hc = hcRes.data
-    if (hc) {
-      setHormoneCycle(hc)
-      // hormone_daily_tips 오늘 케어팁 조회
-      ;(async () => {
-        try {
-          const track = (hc as any)?.track || 'general'
-          const calc = calcHormoneBriefing(hc)
-          const cycleDay = calc?.cycleDay || 1
-          let query = supabase
-            .from('hormone_daily_tips')
-            .select('title, message, has_bath')
-            .eq('track', track)
-          if (track === 'pregnant') {
-            const trimester = (hc as any)?.pregnancy_start_date
-              ? (() => {
-                  const weeks = Math.floor((Date.now() - new Date((hc as any).pregnancy_start_date).getTime()) / (7 * 86400000))
-                  return weeks < 13 ? 1 : weeks < 28 ? 2 : 3
-                })()
-              : 1
-            const tipIdx = (cycleDay % 4) + 1
-            query = query.eq('cycle_day', tipIdx).eq('trimester', trimester)
-          } else {
-            query = query.eq('cycle_day', cycleDay).is('trimester', null)
+      const hc = hcRes.data
+      if (hc) {
+        setHormoneCycle(hc)
+        // hormone_daily_tips 오늘 케어팁 조회
+        ;(async () => {
+          try {
+            const track = (hc as any)?.track || 'general'
+            const calc = calcHormoneBriefing(hc)
+            const cycleDay = calc?.cycleDay || 1
+            let query = supabase
+              .from('hormone_daily_tips')
+              .select('title, message, has_bath')
+              .eq('track', track)
+            if (track === 'pregnant') {
+              const trimester = (hc as any)?.pregnancy_start_date
+                ? (() => {
+                    const weeks = Math.floor((Date.now() - new Date((hc as any).pregnancy_start_date).getTime()) / (7 * 86400000))
+                    return weeks < 13 ? 1 : weeks < 28 ? 2 : 3
+                  })()
+                : 1
+              const tipIdx = (cycleDay % 4) + 1
+              query = query.eq('cycle_day', tipIdx).eq('trimester', trimester)
+            } else {
+              query = query.eq('cycle_day', cycleDay).is('trimester', null)
+            }
+            const { data: tip } = await query.maybeSingle()
+            if (tip) setDailyCareTip(tip)
+          } catch (e) {
+            console.warn('dailyCareTip 조회 실패:', e)
           }
-          const { data: tip } = await query.maybeSingle()
-          if (tip) setDailyCareTip(tip)
-        } catch (e) {
-          console.warn('dailyCareTip 조회 실패:', e)
+        })()
+        // 달빛기 생리 기록 안내 팝업 (general 트랙 여성 전용)
+        if (
+          (hc as any)?.track === 'general' &&
+          (hc as any)?.last_period_date &&
+          (hc as any)?.expected_period_date
+        ) {
+          const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+          const expected = new Date((hc as any).expected_period_date)
+          const todayDate = new Date(today)
+          const diffDays = Math.floor((todayDate.getTime() - expected.getTime()) / 86400000)
+          if (diffDays >= -1 && diffDays <= 2) {
+            const todayKey = `auran_dalbit_popup_${today}`
+            if (!localStorage.getItem(todayKey)) {
+              setShowDalbitPopup(true)
+            }
+          }
         }
-      })()
-      // 달빛기 생리 기록 안내 팝업 (general 트랙 여성 전용)
-      if (
-        (hc as any)?.track === 'general' &&
-        (hc as any)?.last_period_date &&
-        (hc as any)?.expected_period_date
-      ) {
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
-        const expected = new Date((hc as any).expected_period_date)
-        const todayDate = new Date(today)
-        const diffDays = Math.floor((todayDate.getTime() - expected.getTime()) / 86400000)
-        if (diffDays >= -1 && diffDays <= 2) {
-          const todayKey = `auran_dalbit_popup_${today}`
-          if (!localStorage.getItem(todayKey)) {
-            setShowDalbitPopup(true)
+        if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
+          if (!localStorage.getItem('auran_period_popup_skip')) {
+            setShowPeriodPopup(true)
+          }
+        }
+        if (
+          (hc as any)?.track === 'menopause_peri' &&
+          !(hc as any)?.menopause_reason
+        ) {
+          setShowTrackPopup(true)
+        }
+        setHormoneTrack(String((hc as any).track || 'general'))
+        const calc = calcHormoneBriefing(hc)
+        setHormonePhase(calc.phase)
+        setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
+        setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
+        if (isPeriodTrack(String((hc as any).track || 'general'))) {
+          const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
+          if (lp && !Number.isNaN(lp.getTime())) {
+            const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
+            if (gap >= 45) setPeriodQuietNotice('생리 기록을 확인해보세요')
           }
         }
       }
-      if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
-        if (!localStorage.getItem('auran_period_popup_skip')) {
-          setShowPeriodPopup(true)
-        }
-      }
-      if (
-        (hc as any)?.track === 'menopause_peri' &&
-        !(hc as any)?.menopause_reason
-      ) {
-        setShowTrackPopup(true)
-      }
-      setHormoneTrack(String((hc as any).track || 'general'))
-      const calc = calcHormoneBriefing(hc)
-      setHormonePhase(calc.phase)
-      setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
-      setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
-      if (isPeriodTrack(String((hc as any).track || 'general'))) {
-        const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
-        if (lp && !Number.isNaN(lp.getTime())) {
-          const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
-          if (gap >= 45) setPeriodQuietNotice('생리 기록을 확인해보세요')
-        }
-      }
-    }
 
-    const tip = tipRes.data
-    if (tip) {
-      const isOn = (tip as any)?.is_active !== false
-      const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
-      setPeriodTipEnabled(isOn && !!t)
-      if (t) {
-        setPeriodTipText(t)
-        setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
+      const tip = tipRes.data
+      if (tip) {
+        const isOn = (tip as any)?.is_active !== false
+        const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
+        setPeriodTipEnabled(isOn && !!t)
+        if (t) {
+          setPeriodTipText(t)
+          setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
+        }
       }
+    } finally {
+      setProfileReady(true)
     }
   }, [])
 
@@ -2438,7 +2443,19 @@ export default function CustomerHomePage() {
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        {userGender === 'male' ? (
+        {!profileReady ? (
+          <div
+            style={{
+              background: 'rgba(123,94,167,0.06)',
+              border: '0.5px solid rgba(123,94,167,0.15)',
+              borderRadius: 14,
+              padding: '18px 16px',
+              margin: '0 0 12px',
+              minHeight: 72,
+            }}
+            aria-hidden
+          />
+        ) : userGender === 'male' ? (
           <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: '18px 16px', margin: '0 0 12px' }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>💪</div>
             <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>
