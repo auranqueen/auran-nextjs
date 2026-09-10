@@ -59,7 +59,7 @@ export function scoreProduct(
 
   // DB/AI/템플릿 전부 달빛기|황금기|만개기|물들기 — 변환 없이 비교
   const pHormone = parseHormoneTiming(p.hormone_timing)
-  if (opts.hormonePhase && pHormone.includes(opts.hormonePhase)) {
+  if (pHormone.includes(opts.hormonePhase ?? '') || pHormone.includes('전단계')) {
     score += 3
     reasons.push(`+3 ${opts.hormonePhase}`)
   } else if (pHormone.length > 0) {

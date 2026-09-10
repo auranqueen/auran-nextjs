@@ -187,6 +187,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       }
       setSkinConcerns(data.skin_concerns || [])
       setHormoneStages(data.hormone_tags || [])
+      setHormoneTiming(data.hormone_timing || [])
       setStepTags(data.step_tags || [])
       setSkinTypes(data.skin_types || [])
       setSeasonTags(data.season_tags || [])
@@ -298,6 +299,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     skin_concerns: skinConcerns.length ? skinConcerns : [],
     concern_tags: skinConcerns.length ? skinConcerns : [],
     hormone_tags: hormoneStages.length ? hormoneStages : [],
+    hormone_timing: hormoneTiming.length ? hormoneTiming : [],
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
     season_tags: seasonTags.length ? seasonTags : [],
@@ -843,6 +845,13 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                 <div>{items.map(t => <span key={t} style={style(arr.includes(t))} onClick={() => toggleArr(arr, t, set)}>{t}</span>)}</div>
               </div>
             ))}
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '0.5px solid rgba(255,255,255,0.1)' }}>
+              <span style={S.lbl}>호르몬 단계 (추천 매칭용)</span>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>hormone_timing에 저장 — 홈 화면 추천 점수에 직접 반영됩니다</div>
+              <div>{['전단계', '달빛기', '황금기', '만개기', '물들기'].map(t => (
+                <span key={t} style={S.goldTag(hormoneTiming.includes(t))} onClick={() => toggleArr(hormoneTiming, t, setHormoneTiming)}>{t}</span>
+              ))}</div>
+            </div>
             <div style={S.f}>
               <span style={S.lbl}>루틴 단계</span>
               <div>{['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩', ...stepTags.filter(t => !['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩'].includes(t))].map(t => (

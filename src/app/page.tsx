@@ -1599,7 +1599,7 @@ export default function CustomerHomePage() {
               return s ? [s] : []
             }
           })
-          if (pHormone.includes(hormonePhase ?? '')) score += 3
+          if (pHormone.includes(hormonePhase ?? '') || (hormoneTrack === 'general' && pHormone.includes('전단계'))) score += 3
           else if (pHormone.length > 0) score += 1
           // skin_type score
           if ((p.tag ?? '').includes(userSkinType) || (p.quiz_match ?? '').includes(userSkinType)) score += 2
