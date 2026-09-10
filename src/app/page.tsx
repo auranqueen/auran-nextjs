@@ -436,6 +436,7 @@ export default function CustomerHomePage() {
   const [userGender, setUserGender] = useState<string | null>(null)
   const [userHca, setUserHca] = useState<boolean | null>(null)
   const [profileReady, setProfileReady] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -1173,21 +1174,25 @@ export default function CustomerHomePage() {
   useEffect(() => {
     if (!mounted) return
     const run = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const uid = session?.user?.id || ''
-      setMyUserId(uid)
-      if (!uid) {
-        setUnreadCount(0)
-        return
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        const uid = session?.user?.id || ''
+        setMyUserId(uid)
+        if (!uid) {
+          setUnreadCount(0)
+          return
+        }
+        const { data: unreadRows } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('is_read', false)
+        setUnreadCount((unreadRows || []).length)
+      } finally {
+        setSessionChecked(true)
       }
-      const { data: unreadRows } = await supabase
-        .from('notifications')
-        .select('id')
-        .eq('user_id', uid)
-        .eq('is_read', false)
-      setUnreadCount((unreadRows || []).length)
     }
     void run()
   }, [notificationOpen, mounted])
@@ -2443,7 +2448,7 @@ export default function CustomerHomePage() {
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        {!profileReady ? (
+        {!profileReady || !sessionChecked ? (
           <div
             style={{
               background: 'rgba(123,94,167,0.06)',
@@ -2455,6 +2460,33 @@ export default function CustomerHomePage() {
             }}
             aria-hidden
           />
+        ) : !myUserId ? (
+          <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: '18px 16px', margin: '0 0 12px' }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>✨</div>
+            <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>
+              오늘 피부에 맞는 팁을 준비해 두었어요
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.5)', marginBottom: 12 }}>
+              로그인하면 나만의 케어 루틴을 바로 볼 수 있어요
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/login')}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: '0.5px solid rgba(123,94,167,0.45)',
+                background: 'rgba(123,94,167,0.22)',
+                color: '#e8dff5',
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              로그인 / 가입하기
+            </button>
+          </div>
         ) : userGender === 'male' ? (
           <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: '18px 16px', margin: '0 0 12px' }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>💪</div>
