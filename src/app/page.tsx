@@ -3437,19 +3437,9 @@ export default function CustomerHomePage() {
                     />
                   ) : (item.icon || '🧴')}
                   <div style={{
-                    position: 'absolute', top: 6, left: 6, zIndex: 1,
-                    background: 'rgba(0,0,0,0.55)', padding: '2px 6px', borderRadius: 6,
-                    fontSize: 9, color: '#fff',
-                  }}>{countdown}</div>
-                  <div style={{
-                    position: 'absolute', top: 6, right: 6, zIndex: 1,
-                    background: 'rgba(0,0,0,0.55)', padding: '2px 6px', borderRadius: 6,
-                    fontSize: 9, color: '#fff',
-                  }}>{current}/{target}명</div>
-                  <div style={{
                     position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1,
                     background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0))',
-                    padding: 7, paddingRight: 32,
+                    padding: 7,
                   }}>
                     <div style={{
                       fontSize: 11, color: '#fff',
@@ -3459,26 +3449,44 @@ export default function CustomerHomePage() {
                       {(salePrice as any)?.toLocaleString?.() ?? salePrice}원{discPct ? ` (-${discPct}%)` : ''}
                     </div>
                   </div>
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShareTarget({ id: String(pid), name: item.product?.name || '', thumb: item.product?.thumb_img })
-                      setShareSheetOpen(true)
-                    }}
-                    style={{
-                      position: 'absolute', right: 6, bottom: 6, zIndex: 2,
-                      width: 24, height: 24, borderRadius: '50%',
-                      background: 'rgba(0,0,0,0.55)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, cursor: 'pointer',
-                    }}
-                  >📤</div>
                 </div>
-                <div style={{ fontSize: 9, color: 'rgba(120,160,255,0.8)', marginTop: 6, lineHeight: 1.4 }}>
-                  {pickGroupbuyHook(
-                    String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
-                    remaining
-                  )}
+                <div style={{ marginTop: 6 }}>
+                  <div style={{
+                    height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.12)',
+                    overflow: 'hidden', marginBottom: 6,
+                  }}>
+                    <div style={{
+                      width: `${target > 0 ? Math.min(100, (current / target) * 100) : 0}%`,
+                      height: '100%', background: '#7F77DD',
+                    }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+                    <span style={{ fontSize: 12 }}>⏱</span>
+                    <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#E07060', fontWeight: 600 }}>{countdown}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <div style={{ fontSize: 9, color: 'rgba(120,160,255,0.8)', flex: 1, minWidth: 0, lineHeight: 1.4 }}>
+                      {pickGroupbuyHook(
+                        String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
+                        remaining
+                      )}
+                    </div>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShareTarget({ id: String(pid), name: item.product?.name || '', thumb: item.product?.thumb_img })
+                        setShareSheetOpen(true)
+                      }}
+                      style={{
+                        width: 26, height: 26, flexShrink: 0,
+                        border: '0.5px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(255,255,255,0.08)',
+                        borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, cursor: 'pointer',
+                      }}
+                    >📤</div>
+                  </div>
                 </div>
               </div>
               )
