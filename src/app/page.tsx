@@ -2371,10 +2371,32 @@ export default function CustomerHomePage() {
       {/* ── 인사말 ── */}
       <div style={{
         padding: '14px 20px 0',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
+        <div
+          onClick={() => router.push(myUserId ? '/my' : '/login')}
+          style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        >
+          {myUserId ? (
+            <>
+              <Avatar
+                url={(motivationProfile as any)?.avatar_url ?? null}
+                name={userName || '·'}
+                size={40}
+              />
+              <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
+            </>
+          ) : (
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #7B5EA7, #C9A96E)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, lineHeight: 1,
+            }}>🌙</div>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
           {dailyCareTip && (
@@ -2420,28 +2442,6 @@ export default function CustomerHomePage() {
                 </>
               )}
             </div>
-          )}
-        </div>
-        <div
-          onClick={() => router.push(myUserId ? '/my' : '/login')}
-          style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-        >
-          {myUserId ? (
-            <>
-              <Avatar
-                url={(motivationProfile as any)?.avatar_url ?? null}
-                name={userName || '·'}
-                size={40}
-              />
-              <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
-            </>
-          ) : (
-            <div style={{
-              width: 40, height: 40, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7B5EA7, #C9A96E)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, lineHeight: 1,
-            }}>🌙</div>
           )}
         </div>
       </div>

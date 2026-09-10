@@ -41,6 +41,7 @@ export default function HormoneCard({
   onRefreshCycle,
 }: HormoneCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [phaseDetailsOpen, setPhaseDetailsOpen] = useState(false)
   const phaseIdx = PHASE_ORDER.indexOf(currentPhase)
   const showPhaseOrder = phaseIdx >= 0
 
@@ -68,6 +69,28 @@ export default function HormoneCard({
         {showEditChrome ? (
           <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>✏️</span>
         ) : null}
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation()
+            setPhaseDetailsOpen(o => !o)
+          }}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 0,
+            marginBottom: 8,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <span style={{ fontSize: 10, color: 'rgba(196, 170, 230, 0.75)', letterSpacing: '0.04em' }}>호르몬 페이즈</span>
+          <span style={{ fontSize: 12, color: '#9B7FCC', lineHeight: 1 }}>{phaseDetailsOpen ? '∧' : '∨'}</span>
+        </button>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -133,55 +156,59 @@ export default function HormoneCard({
                 {PHASE_DESC[currentPhase]}
               </div>
             ) : null}
-            {showPhaseOrder ? (
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {PHASE_ORDER.map((p, i) => (
-                    <div
-                      key={p}
-                      style={{
-                        flex: 1,
-                        height: 3,
-                        borderRadius: 2,
-                        background: i < phaseIdx ? 'rgba(123,94,167,0.35)' : i === phaseIdx ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
-                      }}
-                    />
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                  {PHASE_ORDER.map((p) => (
-                    <span key={p} style={{ fontSize: 9, color: p === currentPhase ? '#9B7FCC' : 'rgba(255,255,255,0.22)' }}>
-                      {p}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {phaseDetailsOpen ? (
+              <>
+                {showPhaseOrder ? (
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {PHASE_ORDER.map((p, i) => (
+                        <div
+                          key={p}
+                          style={{
+                            flex: 1,
+                            height: 3,
+                            borderRadius: 2,
+                            background: i < phaseIdx ? 'rgba(123,94,167,0.35)' : i === phaseIdx ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                      {PHASE_ORDER.map((p) => (
+                        <span key={p} style={{ fontSize: 9, color: p === currentPhase ? '#9B7FCC' : 'rgba(255,255,255,0.22)' }}>
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setSheetOpen(true)
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: 10,
+                    marginTop: 8,
+                    border: 'none',
+                    borderTop: '0.5px solid rgba(255,255,255,0.06)',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>페이즈 설명 + 추천 보기</span>
+                  <span style={{ fontSize: 14, color: '#9B7FCC' }}>{sheetOpen ? '∧' : '∨'}</span>
+                </button>
+              </>
             ) : null}
-            <button
-              type="button"
-              onClick={e => {
-                e.stopPropagation()
-                setSheetOpen(true)
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: 10,
-                marginTop: 8,
-                border: 'none',
-                borderTop: '0.5px solid rgba(255,255,255,0.06)',
-                background: 'transparent',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>페이즈 설명 + 추천 보기</span>
-              <span style={{ fontSize: 14, color: '#9B7FCC' }}>{sheetOpen ? '∧' : '∨'}</span>
-            </button>
           </div>
-          {showPhaseOrder ? (
+          {phaseDetailsOpen && showPhaseOrder ? (
             <div style={{ fontSize: 11, color: 'rgba(123,94,167,0.7)', lineHeight: 1.2, textAlign: 'center', whiteSpace: 'pre-line', flexShrink: 0 }}>
               {currentPhase.split('').join('\n')}
             </div>
