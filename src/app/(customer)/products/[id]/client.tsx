@@ -1157,6 +1157,38 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       <div style={{ display: 'flex', alignItems: 'center', padding: '20px 18px 14px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
           <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
+        </div>
+        <div
+          onClick={() => router.back()}
+          style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
+        >AURAN</div>
+        <div style={{ flex: 1 }} />
+      </div>
+
+      {/* 갤러리 */}
+      <div style={{ position: 'relative', background: '#0f0c08' }}>
+        <div style={{ height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#1e1810,#131008)', position: 'relative' }}>
+          {discount > 0 && (
+            <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
+          )}
+          <div style={{ position: 'absolute', top: 14, right: 14, background: '#2a1f0e', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
+            피부 매칭 {matchPct}
+          </div>
+          {activeThumb === 99 ? (
+            <video src={product.video_url} controls muted playsInline preload="metadata"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            activeMainImageUrl ? (
+              <div style={{ position: 'absolute', inset: 0 }}>
+                <img src={activeMainImageUrl} alt={name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ) : (
+              <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
+            )
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', background: '#0f0c08' }}>
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
             <div style={{ fontSize: 9, color: '#7B5EA7', padding: '4px 8px', border: '1px solid #7B5EA7', borderRadius: '12px' }}>공유</div>
             {shareOpen ? (
@@ -1226,7 +1258,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     style={{
                       width: '100%', padding: '14px',
                       background: '#FEE500', borderRadius: 12, border: 'none',
-                      fontSize: 14, color: '#191919', cursor: 'pointer',
+                      fontSize: 11, color: '#191919', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     }}
                   >
@@ -1247,7 +1279,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       width: '100%', padding: '14px',
                       background: 'rgba(123,94,167,0.15)', borderRadius: 12,
                       border: '0.5px solid rgba(123,94,167,0.4)',
-                      fontSize: 14, color: '#c4a8ff', cursor: 'pointer',
+                      fontSize: 11, color: '#c4a8ff', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     }}
                   >
@@ -1259,35 +1291,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           </div>
         ) : null}
           </div>
-        </div>
-        <div
-          onClick={() => router.back()}
-          style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
-        >AURAN</div>
-        <div style={{ flex: 1 }} />
-      </div>
-
-      {/* 갤러리 */}
-      <div style={{ position: 'relative', background: '#0f0c08' }}>
-        <div style={{ height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#1e1810,#131008)', position: 'relative' }}>
-          {discount > 0 && (
-            <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
-          )}
-          <div style={{ position: 'absolute', top: 14, right: 14, background: '#2a1f0e', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
-            피부 매칭 {matchPct}
-          </div>
-          {activeThumb === 99 ? (
-            <video src={product.video_url} controls muted playsInline preload="metadata"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            activeMainImageUrl ? (
-              <div style={{ position: 'absolute', inset: 0 }}>
-                <img src={activeMainImageUrl} alt={name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            ) : (
-              <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
-            )
-          )}
         </div>
 
         {/* 썸네일 스트립 */}
@@ -1373,7 +1376,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {/* 제품 기본 정보 */}
       <div style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 12, color: '#888' }}>{brand}</span>
+          <span style={{ fontSize: 10, color: '#888' }}>{brand}</span>
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {repurchaseRate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {activeUsers}명 사용중</span>
         </div>
@@ -1679,7 +1682,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'name', label: '상품명 수정', currentValue: name }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
-            fontSize: 15, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
+            fontSize: 13, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
             outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
@@ -1696,7 +1699,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'description', label: '상품 설명 수정', currentValue: seoDesc }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
-            fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10,
+            fontSize: 10, color: '#888', lineHeight: 1.6, marginBottom: 10,
             outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
@@ -1722,13 +1725,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           {discount > 0 ? (
-            <div style={{ background: '#c02030', color: '#fff', fontSize: 11, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
+            <div style={{ background: '#c02030', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
           ) : null}
-          <div style={{ fontSize: 21, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
+          <div style={{ fontSize: 15, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
             {hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}
           </div>
           {discount > 0 && product.retail_price > price ? (
-            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{Number(product.retail_price).toLocaleString()}원</div>
+            <div style={{ fontSize: 11, color: '#555', textDecoration: 'line-through' }}>{Number(product.retail_price).toLocaleString()}원</div>
           ) : null}
         </div>
         {(String(product.unit_type || '').trim() &&
@@ -2122,7 +2125,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       borderRadius: 20,
                       padding: '6px 14px',
                       color: likedReviewIds.has(rv.id) ? GOLD : 'rgba(255,255,255,0.6)',
-                      fontSize: 12,
+                      fontSize: 10,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
                     }}
@@ -2471,11 +2474,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {/* 수량 */}
       <div style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0d0b09', borderTop: '1px solid #1a1610' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, overflow: 'hidden' }}>
-          <div onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 18, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>−</div>
-          <div style={{ fontSize: 18 }}>{qty}</div>
-          <div onClick={() => setQty(q => q + 1)} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 18, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>+</div>
+          <div onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>−</div>
+          <div style={{ fontSize: 14 }}>{qty}</div>
+          <div onClick={() => setQty(q => q + 1)} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>+</div>
         </div>
-        <div style={{ fontSize: 20, color: GOLD, flexShrink: 0, whiteSpace: 'nowrap' }}>{total}</div>
+        <div style={{ fontSize: 15, color: GOLD, flexShrink: 0, whiteSpace: 'nowrap' }}>{total}</div>
       </div>
 
       {/* 3버튼 */}
@@ -2488,7 +2491,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             style={{
               width: 'auto', padding: '6px 12px', borderRadius: 12,
               border: 'none', background: '#2D1B5E',
-              color: '#C9A96E', fontSize: 12, cursor: 'pointer',
+              color: '#C9A96E', fontSize: 10, cursor: 'pointer',
               letterSpacing: -0.2, marginBottom: 6,
             }}
           >
@@ -2505,7 +2508,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               width: 'auto', padding: '5px 10px', borderRadius: 12,
               border: '0.5px solid #AFA9EC',
               background: 'transparent',
-              color: '#534AB7', fontSize: 12, cursor: 'pointer',
+              color: '#534AB7', fontSize: 10, cursor: 'pointer',
               letterSpacing: -0.2, marginBottom: 6,
             }}
           >
@@ -2531,18 +2534,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             })
             setCartToast('🛍️ 장바구니에 담겼어요!')
           }}
-          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🛍️ 담기
         </button>
         <button
           type="button"
           onClick={() => setGiftSheetOpen(true)}
-          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
         </button>
-        <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
+        <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
         </div>
       </div>
 
@@ -2994,7 +2997,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 18, textAlign: 'center' }}>로그인 후 이 페이지에서 결제를 이어갈게요</div>
             <button type="button"
               onClick={() => void supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined } })}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: 'none', background: '#FEE500', color: '#191600', fontSize: 15, cursor: 'pointer', marginBottom: 10 }}>
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: 'none', background: '#FEE500', color: '#191600', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}>
               카카오로 로그인
             </button>
             <button type="button"
