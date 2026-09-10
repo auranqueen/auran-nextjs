@@ -20,6 +20,7 @@ import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
 import CheckinTracker from '@/components/CheckinTracker'
+import ShareBottomSheet from '@/components/ShareBottomSheet'
 
 const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRecommendSheet'), { ssr: false })
 
@@ -460,6 +461,8 @@ export default function CustomerHomePage() {
     { h: 5, m: 12, s: 8 },
   ])
   const [groupTimers, setGroupTimers] = useState<{ h: number; m: number; s: number }[]>([])
+  const [shareSheetOpen, setShareSheetOpen] = useState(false)
+  const [shareTarget, setShareTarget] = useState<{ id: string; name: string; thumb?: string } | null>(null)
 
   // Supabase 데이터
   const [concerns, setConcerns] = useState<any[]>([])
@@ -3395,72 +3398,105 @@ export default function CustomerHomePage() {
 
         {/* 공동구매 */}
         {saleTab === 'group' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <>
+          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto' }}>
             {groupBuyList.slice(0, 3).map((item: any, i: number) => {
               const current = Number(item.current_count ?? item.joined_count ?? item.participants ?? 127)
               const target = Number(item.target_count ?? item.goal_count ?? item.max_participants ?? 200)
-              const pct = target > 0 ? Math.min(100, Math.max(0, Math.round((current / target) * 100))) : 0
               const remaining = Math.max(0, target - current)
               const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
               const salePrice = item.group_price ?? item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
+              const pid = item.product_id || item.id
+              const countdown = `${pad(groupTimers[i]?.h || 0)}:${pad(groupTimers[i]?.m || 0)}:${pad(groupTimers[i]?.s || 0)}`
               return (
-              <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
-                <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
-                  <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
-                </div>
-                <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '120px', height: '120px', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
+              <div
+                key={i}
+                onClick={() => { logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }}
+                style={{ width: 150, flexShrink: 0, cursor: 'pointer' }}
+              >
+                <div style={{
+                  aspectRatio: '1/1',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  position: 'relative',
+                  background: item.product?.thumb_img
+                    ? undefined
+                    : 'linear-gradient(135deg,#1a1510,#2a2015)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 26,
+                }}>
+                  {item.product?.thumb_img ? (
+                    <img
+                      src={item.product.thumb_img}
+                      alt={item.product?.name || ''}
+                      loading="lazy"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (item.icon || '🧴')}
+                  <div style={{
+                    position: 'absolute', top: 6, left: 6, zIndex: 1,
+                    background: 'rgba(0,0,0,0.55)', padding: '2px 6px', borderRadius: 6,
+                    fontSize: 9, color: '#fff',
+                  }}>{countdown}</div>
+                  <div style={{
+                    position: 'absolute', top: 6, right: 6, zIndex: 1,
+                    background: 'rgba(0,0,0,0.55)', padding: '2px 6px', borderRadius: 6,
+                    fontSize: 9, color: '#fff',
+                  }}>{current}/{target}명</div>
+                  <div style={{
+                    position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 1,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0))',
+                    padding: 7, paddingRight: 32,
+                  }}>
+                    <div style={{
+                      fontSize: 11, color: '#fff',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{item.product?.name}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: '#fff' }}>
+                      {(salePrice as any)?.toLocaleString?.() ?? salePrice}원{discPct ? ` (-${discPct}%)` : ''}
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
-                    <div style={{ fontSize: '11px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
-                    <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>
-                      {pickGroupbuyHook(
-                        String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
-                        remaining
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
-                      <span style={{ fontSize: '9px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
-                      </span>
-                      <span style={{ fontSize: '9px', color: 'rgba(120,160,255,0.9)', whiteSpace: 'nowrap' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
-                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
-                      {[groupTimers[i]?.h, groupTimers[i]?.m, groupTimers[i]?.s].map((v, ti) => (
-                        <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                          {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
-                          <span style={{
-                            background: 'rgba(220,60,40,0.15)',
-                            border: '1px solid rgba(220,60,40,0.28)',
-                            borderRadius: '5px', padding: '2px 6px',
-                            fontSize: '11px', color: '#E07060', fontFamily: 'monospace',
-                          }}>{pad(v || 0)}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShareTarget({ id: String(pid), name: item.product?.name || '', thumb: item.product?.thumb_img })
+                      setShareSheetOpen(true)
+                    }}
+                    style={{
+                      position: 'absolute', right: 6, bottom: 6, zIndex: 2,
+                      width: 24, height: 24, borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.55)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, cursor: 'pointer',
+                    }}
+                  >📤</div>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div onClick={(e) => {
-                    e.stopPropagation()
-                    const pid = item.product_id || item.id
-                    logProductNav({ ...(item.product || {}), id: pid })
-                    router.push(`/products/${pid}`)
-                  }} style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
-                  <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
+                <div style={{ fontSize: 9, color: 'rgba(120,160,255,0.8)', marginTop: 6, lineHeight: 1.4 }}>
+                  {pickGroupbuyHook(
+                    String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
+                    remaining
+                  )}
                 </div>
               </div>
               )
             })}
           </div>
+          <ShareBottomSheet
+            open={shareSheetOpen}
+            onClose={() => setShareSheetOpen(false)}
+            cardDomId="groupbuy-share-card"
+            payload={{
+              link: `https://auran.kr/products/${shareTarget?.id ?? ''}`,
+              title: `${shareTarget?.name ?? ''} 공동구매`,
+              description: '같이 사면 더 저렴해요! 지금 참여해보세요',
+              imageUrl: shareTarget?.thumb ?? null,
+              buttonTitle: '공동구매 참여하기',
+            }}
+          />
+          </>
         )}
       </div>
 
