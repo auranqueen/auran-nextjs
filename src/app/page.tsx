@@ -20,7 +20,7 @@ import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
 import CheckinTracker from '@/components/CheckinTracker'
-import ShareBottomSheet from '@/components/ShareBottomSheet'
+import ShareLinkSheet from '@/components/ShareLinkSheet'
 
 const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRecommendSheet'), { ssr: false })
 
@@ -3484,10 +3484,9 @@ export default function CustomerHomePage() {
               )
             })}
           </div>
-          <ShareBottomSheet
+          <ShareLinkSheet
             open={shareSheetOpen}
             onClose={() => setShareSheetOpen(false)}
-            cardDomId="groupbuy-share-card"
             payload={{
               link: `https://auran.kr/products/${shareTarget?.id ?? ''}`,
               title: `${shareTarget?.name ?? ''} 공동구매`,
