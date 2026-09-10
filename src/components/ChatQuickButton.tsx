@@ -1,11 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ChatQuickButton() {
   const router = useRouter()
-  const pathname = usePathname() || ''
   const supabase = createClient()
   const [loggedIn, setLoggedIn] = useState(false)
 
@@ -24,7 +23,7 @@ export default function ChatQuickButton() {
       style={{
         position: 'fixed',
         right: 16,
-        bottom: pathname.startsWith('/products/') ? 280 : 208,
+        bottom: 208,
         zIndex: 999,
         width: 52,
         height: 52,
