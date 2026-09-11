@@ -316,12 +316,6 @@ export default function StoreDecorationPage() {
     setAvatarUploading(true)
     try {
       const compressed = await compressImage(file, 'avatar')
-      const mime = (compressed.type || '').toLowerCase()
-      const fname = (compressed.name || '').toLowerCase()
-      if (mime.includes('heic') || mime.includes('heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
-        setToast('JPG 또는 PNG 사진으로 올려주세요')
-        return
-      }
       const url = await uploadFile(compressed, 'avatar')
       if (!url) return
       setAvatarUrl(url)

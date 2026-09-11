@@ -216,11 +216,6 @@ export default function MyProfilePage() {
       // Supabase 대시보드에서 avatars 버킷 생성 필요
       file = await compressImage(file, 'avatar')
       const mime = (file.type || '').toLowerCase()
-      const fname = (file.name || '').toLowerCase()
-      if (mime.includes('heic') || mime.includes('heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
-        alert('JPG 또는 PNG 사진으로 올려주세요.')
-        return
-      }
       const ext = mime.includes('png') ? 'png' : 'jpg'
       const filePath = `avatars/${authId}_${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })

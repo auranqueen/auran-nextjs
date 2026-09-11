@@ -31,6 +31,20 @@ export async function compressImage(
   file: File,
   ruleKey: ImageRuleKey
 ): Promise<File> {
+  const mime = (file.type || '').toLowerCase()
+  const fname = (file.name || '').toLowerCase()
+  if (mime.includes('image/heic') || mime.includes('image/heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
+    try {
+      const heic2any = (await import('heic2any')).default
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 })
+      const blob = (Array.isArray(converted) ? converted[0] : converted) as Blob
+      const base = file.name.replace(/\.[^.]+$/, '') || 'image'
+      file = new File([blob], `${base}.jpg`, { type: 'image/jpeg' })
+    } catch {
+      // 변환 실패 시 원본 file을 기존 압축 로직에 전달
+    }
+  }
+
   const rule = IMAGE_RULES[ruleKey]
   const asPng = (file.type || '').toLowerCase() === 'image/png'
   try {
