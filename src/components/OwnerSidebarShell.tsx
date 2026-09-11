@@ -109,18 +109,16 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
     return <>{children}</>
   }
 
-  if (!isPC) {
-    return (
+  return (
+    <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      {!isPC ? (
       <>
         <div style={{ paddingBottom: 'calc(66px + env(safe-area-inset-bottom, 0px))' }}>
           {children}
         </div>
         <DashboardBottomNav role="owner" />
       </>
-    )
-  }
-
-  return (
+      ) : (
     <div data-theme="light" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <aside
         style={{
@@ -201,6 +199,8 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
         })}
       </aside>
       <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  )}
     </div>
   )
 }
