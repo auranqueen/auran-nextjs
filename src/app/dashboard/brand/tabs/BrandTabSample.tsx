@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
+import { companyShowsGradeUi, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -10,7 +12,7 @@ const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
 const GREEN = 'rgba(76,175,80,0.8)'
-const GRADES = ['메디슈티컬', '프리미엄전문점', '전문점', '취급점', '아레테클럽']
+const ARETE_SEND_KEY = 'arete'
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending:   { label: '대기중',   color: 'rgba(255,193,7,0.8)' },
   sent:      { label: '발송완료', color: GREEN },
@@ -53,8 +55,12 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [productName, setProductName] = useState('')
   const [desc, setDesc] = useState('')
-  const [targetGrades, setTargetGrades] = useState<string[]>(['메디슈티컬', '프리미엄전문점'])
+  const [targetGrades, setTargetGrades] = useState<string[]>([])
   const [autoWelcome, setAutoWelcome] = useState(false)
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [areteEnabled, setAreteEnabled] = useState(false)
+  const [gradeNames, setGradeNames] = useState<string[]>([])
+  const [policyReady, setPolicyReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedSample, setSelectedSample] = useState<string | null>(null)
   const [sendGrade, setSendGrade] = useState<string | null>(null)
@@ -63,12 +69,51 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
   const [ownersLoading, setOwnersLoading] = useState(false)
   const [orenMsg, setOrenMsg] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  const clubLabel = getMembershipClubLabel(companyId)
+  const showGradeUi = policyReady && companyShowsGradeUi(gradeNames)
+  const showAreteChip = policyReady && areteEnabled
+  const canPickByGrade = showGradeUi || showAreteChip
   useEffect(() => {
     if (!brandId) { setCompanyBrandIds([]); return }
     let cancelled = false
     void (async () => {
       const ids = await resolveCompanyBrandIds(supabase, brandId)
       if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
+  useEffect(() => {
+    if (!brandId) {
+      setCompanyId(null)
+      setAreteEnabled(false)
+      setGradeNames([])
+      setPolicyReady(false)
+      return
+    }
+    let cancelled = false
+    setPolicyReady(false)
+    void (async () => {
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const cid = (brandRow as { company_id?: string | null } | null)?.company_id
+        ? String((brandRow as { company_id: string }).company_id)
+        : null
+      if (cancelled) return
+      if (!cid) {
+        setCompanyId(null)
+        setAreteEnabled(false)
+        setGradeNames([])
+        setPolicyReady(true)
+        return
+      }
+      const [{ data: companyRow }, names] = await Promise.all([
+        supabase.from('brand_companies').select('arete_enabled').eq('id', cid).maybeSingle(),
+        fetchCompanyTierNames(supabase, cid),
+      ])
+      if (cancelled) return
+      setCompanyId(cid)
+      setAreteEnabled(Boolean((companyRow as { arete_enabled?: boolean } | null)?.arete_enabled))
+      setGradeNames(names)
+      setPolicyReady(true)
     })()
     return () => { cancelled = true }
   }, [brandId, supabase])
@@ -93,12 +138,23 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
     setLoading(false)
   }, [companyBrandIds])
   useEffect(() => { void fetchData() }, [fetchData])
-  const loadOwnersByGrade = async (grade: string) => {
-    if (!brandId) return
-    setSendGrade(grade)
-    setOwnersLoading(true)
-    setTargetOwners([])
-    setSelectedOwnerIds([])
+  const mapProfilesToOwners = (
+    profiles: { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[],
+    trackByAuth: Record<string, string | null>,
+  ): TargetOwner[] =>
+    profiles.map((p) => ({
+      id: p.id,
+      name: p.full_name || '원장님',
+      salon_name: p.owner_store_name || '-',
+      origin_track: p.auth_id ? (trackByAuth[String(p.auth_id)] || null) : null,
+    }))
+  const loadLinkedOwnerProfiles = async () => {
+    if (!brandId) {
+      return {
+        profiles: [] as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[],
+        trackByAuth: {} as Record<string, string | null>,
+      }
+    }
     const { data: activeLinks } = await supabase
       .from('brand_owner_links')
       .select('owner_id')
@@ -107,21 +163,15 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
     const linkedUserIds = Array.from(
       new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
     )
-    if (linkedUserIds.length === 0) {
-      setOwnersLoading(false)
-      return
-    }
+    if (linkedUserIds.length === 0) return { profiles: [], trackByAuth: {} }
     const { data: userRows } = await supabase
       .from('users')
       .select('id, auth_id, origin_track')
       .in('id', linkedUserIds)
       .eq('role', 'owner')
     const users = (userRows || []) as { id: string; auth_id?: string | null; origin_track?: string | null }[]
-    const authIds = Array.from(new Set(users.map(u => String(u.auth_id || '')).filter(Boolean)))
-    if (authIds.length === 0) {
-      setOwnersLoading(false)
-      return
-    }
+    const authIds = Array.from(new Set(users.map((u) => String(u.auth_id || '')).filter(Boolean)))
+    if (authIds.length === 0) return { profiles: [], trackByAuth: {} }
     const trackByAuth: Record<string, string | null> = {}
     for (const u of users) {
       if (u.auth_id) trackByAuth[String(u.auth_id)] = u.origin_track || null
@@ -130,44 +180,68 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
       .from('profiles')
       .select('id, full_name, owner_store_name, auth_id')
       .in('auth_id', authIds)
-    const allProfiles = (profiles || []) as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[]
-    let filtered: typeof allProfiles = []
-    if (grade === '아레테클럽') {
-      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      const areteCompanyId = (brandRow as { company_id?: string | null } | null)?.company_id
-      const { data: areteRows } = areteCompanyId
+    return {
+      profiles: (profiles || []) as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[],
+      trackByAuth,
+    }
+  }
+  const applyOwnerList = (mapped: TargetOwner[], gradeKey: string | null) => {
+    setSendGrade(gradeKey)
+    setTargetOwners(mapped)
+    setSelectedOwnerIds(mapped.map((o) => o.id))
+    setOwnersLoading(false)
+  }
+  const loadAllLinkedOwners = async () => {
+    if (!brandId) return
+    setSendGrade('selected')
+    setOwnersLoading(true)
+    setTargetOwners([])
+    setSelectedOwnerIds([])
+    const { profiles, trackByAuth } = await loadLinkedOwnerProfiles()
+    applyOwnerList(mapProfilesToOwners(profiles, trackByAuth), 'selected')
+  }
+  const loadOwnersByGrade = async (grade: string) => {
+    if (!brandId) return
+    setSendGrade(grade)
+    setOwnersLoading(true)
+    setTargetOwners([])
+    setSelectedOwnerIds([])
+    const { profiles: allProfiles, trackByAuth } = await loadLinkedOwnerProfiles()
+    if (allProfiles.length === 0) {
+      setOwnersLoading(false)
+      return
+    }
+    let filtered = allProfiles
+    if (grade === ARETE_SEND_KEY) {
+      const { data: areteRows } = companyId
         ? await supabase
             .from('brand_arete_members')
             .select('owner_id')
-            .eq('company_id', areteCompanyId)
+            .eq('company_id', companyId)
             .eq('status', 'active')
         : { data: [] }
       const areteIds = new Set((areteRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
-      filtered = allProfiles.filter(p => areteIds.has(p.id))
+      filtered = allProfiles.filter((p) => areteIds.has(p.id))
     } else {
-      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
-      const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
       const { data: gradeRows } = companyId
         ? await supabase
             .from('brand_owner_grades')
             .select('owner_id, grade')
             .eq('company_id', companyId)
             .eq('grade', grade)
-            .in('owner_id', allProfiles.map(p => p.id))
+            .in('owner_id', allProfiles.map((p) => p.id))
         : { data: [] }
       const gradeIds = new Set((gradeRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
-      filtered = allProfiles.filter(p => gradeIds.has(p.id))
+      filtered = allProfiles.filter((p) => gradeIds.has(p.id))
     }
-    const mapped: TargetOwner[] = filtered.map(p => ({
-      id: p.id,
-      name: p.full_name || '원장님',
-      salon_name: p.owner_store_name || '-',
-      origin_track: p.auth_id ? (trackByAuth[String(p.auth_id)] || null) : null,
-    }))
-    setTargetOwners(mapped)
-    setSelectedOwnerIds(mapped.map(o => o.id))
-    setOwnersLoading(false)
+    applyOwnerList(mapProfilesToOwners(filtered, trackByAuth), grade)
   }
+  useEffect(() => {
+    if (!policyReady || !brandId) return
+    if (canPickByGrade) return
+    void loadAllLinkedOwners()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [policyReady, brandId, canPickByGrade])
   const toggleOwner = (id: string) => {
     setSelectedOwnerIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -203,7 +277,7 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
     if (!error && data) {
       setSamples(prev => [data as Sample, ...prev])
       setProductName(''); setDesc('')
-      setTargetGrades(['메디슈티컬', '프리미엄전문점'])
+      setTargetGrades([])
       setAutoWelcome(false); setShowForm(false)
       showToast('샘플 등록 완료!')
     } else {
@@ -318,15 +392,25 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
               style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }} />
             <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="설명 (선택)"
               style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }} />
-            <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>발송 대상 등급</div>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-              {GRADES.map(g => (
-                <button key={g} type="button" onClick={() => toggleGrade(g)}
-                  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${targetGrades.includes(g) ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: targetGrades.includes(g) ? 'rgba(123,94,167,0.2)' : 'transparent', color: targetGrades.includes(g) ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
-                  {g}
-                </button>
-              ))}
-            </div>
+            {canPickByGrade ? (
+              <>
+                <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>발송 대상 등급</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {showGradeUi && gradeNames.map((g) => (
+                    <button key={g} type="button" onClick={() => toggleGrade(g)}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${targetGrades.includes(g) ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: targetGrades.includes(g) ? 'rgba(123,94,167,0.2)' : 'transparent', color: targetGrades.includes(g) ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                      {g}
+                    </button>
+                  ))}
+                  {showAreteChip ? (
+                    <button type="button" onClick={() => toggleGrade(clubLabel)}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${targetGrades.includes(clubLabel) ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: targetGrades.includes(clubLabel) ? 'rgba(123,94,167,0.2)' : 'transparent', color: targetGrades.includes(clubLabel) ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                      {clubLabel}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <div onClick={() => setAutoWelcome(v => !v)}
                 style={{ width: 32, height: 18, borderRadius: 9, background: autoWelcome ? PURPLE : 'rgba(255,255,255,0.1)', position: 'relative', cursor: 'pointer', transition: 'background .2s', flexShrink: 0 }}>
@@ -386,19 +470,31 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
       </div>
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📨 발송 대상 · 오렌톡 메시지</div>
-        <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>등급 선택</div>
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-          {GRADES.map(g => (
-            <button key={g} type="button" onClick={() => void loadOwnersByGrade(g)}
-              style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${sendGrade === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: sendGrade === g ? 'rgba(123,94,167,0.2)' : 'transparent', color: sendGrade === g ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
-              {g}
-            </button>
-          ))}
-        </div>
+        {policyReady && canPickByGrade ? (
+          <>
+            <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>등급 선택</div>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+              {showGradeUi && gradeNames.map((g) => (
+                <button key={g} type="button" onClick={() => void loadOwnersByGrade(g)}
+                  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${sendGrade === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: sendGrade === g ? 'rgba(123,94,167,0.2)' : 'transparent', color: sendGrade === g ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                  {g}
+                </button>
+              ))}
+              {showAreteChip ? (
+                <button type="button" onClick={() => void loadOwnersByGrade(ARETE_SEND_KEY)}
+                  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${sendGrade === ARETE_SEND_KEY ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: sendGrade === ARETE_SEND_KEY ? 'rgba(123,94,167,0.2)' : 'transparent', color: sendGrade === ARETE_SEND_KEY ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                  {clubLabel}
+                </button>
+              ) : null}
+            </div>
+          </>
+        ) : policyReady ? (
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>발송 대상 원장님</div>
+        ) : null}
         {ownersLoading ? (
           <div style={{ fontSize: 12, color: SUB, padding: 8 }}>원장님 불러오는 중...</div>
         ) : sendGrade && targetOwners.length === 0 ? (
-          <div style={{ fontSize: 12, color: SUB, padding: 8 }}>해당 등급 원장님이 없어요</div>
+          <div style={{ fontSize: 12, color: SUB, padding: 8 }}>{canPickByGrade ? '해당 등급 원장님이 없어요' : '연결된 원장님이 없어요'}</div>
         ) : targetOwners.length > 0 ? (
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: SUB, marginBottom: 6, cursor: 'pointer' }}>
@@ -420,7 +516,7 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 11, color: SUB, marginBottom: 10 }}>등급을 선택하면 원장님 목록이 나와요</div>
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 10 }}>{canPickByGrade ? '등급을 선택하면 원장님 목록이 나와요' : '연결된 원장님이 없어요'}</div>
         )}
         <textarea
           value={orenMsg}

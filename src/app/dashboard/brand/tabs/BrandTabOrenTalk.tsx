@@ -8,16 +8,9 @@ import { fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
-const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
-const LEGACY_TARGET_LABELS: Record<string, string> = {
-  medi: '메디슈티컬',
-  premium: '프리미엄전문점',
-  spec: '전문점',
-  auth: '취급점',
-}
 interface MsgRow {
   id: string
   message_type: string
@@ -45,10 +38,11 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
   const supabase = createClient()
   const clubLabel = getMembershipClubLabel(companyId)
   const [tierNames, setTierNames] = useState<string[]>([])
+  const [areteEnabled, setAreteEnabled] = useState(false)
   const TARGETS = [
     { key: 'all', label: '전체 원장님' },
     ...tierNames.map((g) => ({ key: g, label: g })),
-    { key: 'arete', label: clubLabel },
+    ...(areteEnabled ? [{ key: 'arete', label: clubLabel }] : []),
   ]
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [subTab, setSubTab] = useState<'history' | 'chat'>(initialSub === 'history' ? 'history' : 'chat')
@@ -67,14 +61,22 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
   ])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   useEffect(() => {
-    if (!companyId) { setTierNames([]); return }
+    if (!companyId) { setTierNames([]); setAreteEnabled(false); return }
     let cancelled = false
     void (async () => {
-      const names = await fetchCompanyTierNames(supabase, companyId)
-      if (!cancelled) setTierNames(names)
+      const [names, { data: companyRow }] = await Promise.all([
+        fetchCompanyTierNames(supabase, companyId),
+        supabase.from('brand_companies').select('arete_enabled').eq('id', companyId).maybeSingle(),
+      ])
+      if (cancelled) return
+      setTierNames(names)
+      setAreteEnabled(Boolean((companyRow as { arete_enabled?: boolean } | null)?.arete_enabled))
     })()
     return () => { cancelled = true }
   }, [companyId, supabase])
+  useEffect(() => {
+    if (target === 'arete' && !areteEnabled) setTarget('all')
+  }, [areteEnabled, target])
   useEffect(() => {
     if (!brandId) { setCompanyBrandIds([]); return }
     let cancelled = false
@@ -86,7 +88,6 @@ export default function BrandTabOrenTalk({ myBrands, brandId, companyId, staffId
   }, [brandId, supabase])
   const targetLabelOf = (key: string) =>
     TARGETS.find((t) => t.key === key)?.label
-    || LEGACY_TARGET_LABELS[key]
     || (key === 'arete' ? clubLabel : key)
   const fetchHistory = useCallback(async () => {
     if (!companyBrandIds.length) return

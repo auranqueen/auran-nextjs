@@ -16,19 +16,13 @@ import {
   getGradeChipShortLabel,
   getMembershipClubLabel,
 } from '@/lib/brand/companyMembershipTemp'
-import { defaultTierName, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
+import { defaultTierName, fetchCompanyTierNames, tierChipColor } from '@/lib/brand/fetchCompanyTierNames'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
-const GRADE_COLORS: Record<string, string> = {
-  '메디슈티컬': '#E53935',
-  '프리미엄전문점': '#C9A96E',
-  '전문점': '#9C7FD4',
-  '취급점': '#64B5F6',
-}
 export default function BrandTabOwners({ brandId, brandName, authId, staffId = null }: Props) {
   const supabase = createClient()
   const [owners, setOwners] = useState<OwnerRow[]>([])
@@ -689,9 +683,11 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
                   <span style={{ fontSize: 13, color: TEXT }}>{o.name}</span>
-                  <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${GRADE_COLORS[o.grade] || PURPLE}22`, color: GRADE_COLORS[o.grade] || PURPLE, border: `0.5px solid ${GRADE_COLORS[o.grade] || PURPLE}55` }}>
+                  {o.grade ? (
+                  <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${tierChipColor(o.grade, gradeOptions, PURPLE)}22`, color: tierChipColor(o.grade, gradeOptions, PURPLE), border: `0.5px solid ${tierChipColor(o.grade, gradeOptions, PURPLE)}55` }}>
                     {o.grade}
                   </span>
+                  ) : null}
                   {o.arete && (
                     <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(201,169,110,0.1)', color: GOLD, border: '0.5px solid rgba(201,169,110,0.3)' }}>
                       {clubLabel}

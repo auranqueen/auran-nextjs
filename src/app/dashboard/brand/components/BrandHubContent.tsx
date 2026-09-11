@@ -55,7 +55,6 @@ export default function BrandHubContent({
   const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
   const bypassPerm = isCEO || staffRole === 'ceo' || userRole === 'admin'
   const [companyId, setCompanyId] = useState<string | null>(null)
-  const [tierEnabled, setTierEnabled] = useState(false)
   const [areteEnabled, setAreteEnabled] = useState(false)
   const SB_SECTIONS: NavSection[] = useMemo(() => [
     {
@@ -79,9 +78,7 @@ export default function BrandHubContent({
       label: '제품·파트너',
       items: [
         { key: 'products', label: '제품 관리', icon: 'ti-package', requiredModule: 'product_manage' },
-        ...(tierEnabled
-          ? [{ key: 'tierPackages', label: '등급 관리', icon: 'ti-medal', requiredModule: 'tier_view' as const }]
-          : []),
+        { key: 'tierPackages', label: '등급 관리', icon: 'ti-medal', requiredModule: 'tier_view' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store', requiredModule: 'owners_view' },
         ...(areteEnabled
           ? [{ key: 'arete', label: getMembershipClubManageLabel(companyId), icon: 'ti-crown', requiredModule: 'product_manage' as const }]
@@ -97,7 +94,7 @@ export default function BrandHubContent({
         { key: 'staff', label: '관리자계정', icon: 'ti-users', requiredModule: 'staff_manage' },
       ],
     },
-  ], [tierEnabled, areteEnabled, bypassPerm, companyId])
+  ], [areteEnabled, bypassPerm, companyId])
   const canSeeModule = (required: string | readonly string[] | null | undefined) => {
     if (bypassPerm) return true
     if (required == null) return true
@@ -131,7 +128,6 @@ export default function BrandHubContent({
   useEffect(() => {
     if (!brandId) {
       setCompanyId(null)
-      setTierEnabled(false)
       setAreteEnabled(false)
       return
     }
@@ -146,18 +142,16 @@ export default function BrandHubContent({
       if (cancelled) return
       if (!cid) {
         setCompanyId(null)
-        setTierEnabled(false)
         setAreteEnabled(false)
         return
       }
       setCompanyId(cid)
       const { data: companyRow } = await supabase
         .from('brand_companies')
-        .select('tier_enabled, arete_enabled')
+        .select('arete_enabled')
         .eq('id', cid)
         .maybeSingle()
       if (cancelled) return
-      setTierEnabled(Boolean(companyRow?.tier_enabled))
       setAreteEnabled(Boolean(companyRow?.arete_enabled))
     })()
     return () => { cancelled = true }
@@ -282,9 +276,9 @@ export default function BrandHubContent({
               { type: 'warn', text: '삭제 전에 해당 제품 주문 내역을 먼저 확인하세요.' },
             ]},
             owners: { title: '원장님 현황', items: [
-              { type: 'flow', text: '등급은 메디슈티컬·프리미엄전문점·전문점·취급점 4단계로 설정할 수 있어요.' },
-              { type: 'flow', text: '아레테클럽 ON하면 매월 100만원 결제 + 50만P 지급이 자동으로 시작돼요.' },
-              { type: 'warn', text: '아레테 ON 전에 원장님 동의를 꼭 확인하세요.' },
+              { type: 'flow', text: '연결된 원장님 목록에서 살롱 정보와 발주 현황을 확인할 수 있어요.' },
+              { type: 'flow', text: '등급을 운영하려면 등급 관리에서 단계를 등록한 뒤, 여기서 원장님에게 지정할 수 있어요.' },
+              { type: 'warn', text: '멤버십 클럽을 켜기 전에 원장님 동의를 꼭 확인하세요.' },
             ]},
             expand: { title: '입점 확장', items: [
               { type: 'flow', text: '레퍼럴 링크를 복사해서 신규 원장님께 공유하세요.' },

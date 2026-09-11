@@ -1,6 +1,8 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { companyShowsGradeUi, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -15,12 +17,13 @@ const EVT_TYPES = [
   { key: 'lucky',    icon: '⭐', label: '럭키 증정',     desc: '발주 원장님 추첨 서프라이즈' },
   { key: 'welcome',  icon: '💜', label: '웰컴 선물',     desc: '30일 미발주 원장님 귀환' },
   { key: 'feedback', icon: '📝', label: '피드백 리워드', desc: '후기 남기면 증정 — 데이터 확보' },
-  { key: 'sample',   icon: '🎁', label: '샘플 배포',     desc: '등급별 무료 발송' },
+  { key: 'sample',   icon: '🎁', label: '샘플 배포',     desc: '무료 샘플 발송' },
   { key: 'bundle',   icon: '🎀', label: '번들 구성',     desc: '정상+임박 세트 — 객단가 UP' },
 ] as const
 type EvtKey = typeof EVT_TYPES[number]['key']
 const PROMOS = ['10+10 증정', '10+5 증정', '5+5 증정', '5+3 증정', '3+3 증정'] as const
-const GRADES = ['전체 원장님', '메디슈티컬', '프리미엄전문점', '전문점', '아레테클럽', '30일 미발주'] as const
+const FIXED_TARGET_ALL = '전체 원장님'
+const FIXED_TARGET_LAPSED = '30일 미발주'
 interface LotRow {
   id: string
   lot_number: string
@@ -46,11 +49,22 @@ export default function BrandInventoryMarketing({ brandId, companyBrandIds, init
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [selEvt, setSelEvt] = useState<EvtKey | ''>('')
   const [selPromo, setSelPromo] = useState('10+10 증정')
-  const [selGrades, setSelGrades] = useState<string[]>(['전체 원장님'])
+  const [selGrades, setSelGrades] = useState<string[]>([FIXED_TARGET_ALL])
   const [deadline, setDeadline] = useState('')
   const [msgText, setMsgText] = useState('')
   const [saving, setSaving] = useState(false)
   const [viewMode, setViewMode] = useState<'expiry' | 'normal' | 'bundle'>(initialViewMode || 'expiry')
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [areteEnabled, setAreteEnabled] = useState(false)
+  const [gradeNames, setGradeNames] = useState<string[]>([])
+  const clubLabel = getMembershipClubLabel(companyId)
+  const showGradeUi = companyShowsGradeUi(gradeNames)
+  const targetChips = [
+    FIXED_TARGET_ALL,
+    ...(showGradeUi ? gradeNames : []),
+    ...(areteEnabled ? [clubLabel] : []),
+    FIXED_TARGET_LAPSED,
+  ]
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const defaultDeadline = () => {
     const d = new Date(); d.setDate(d.getDate() + 7)
@@ -80,6 +94,36 @@ export default function BrandInventoryMarketing({ brandId, companyBrandIds, init
     setLoading(false)
   }, [companyBrandIds])
   useEffect(() => { void loadData() }, [loadData])
+  useEffect(() => {
+    const seed = brandId || companyBrandIds[0]
+    if (!seed) {
+      setCompanyId(null)
+      setAreteEnabled(false)
+      setGradeNames([])
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', seed).maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      if (cancelled) return
+      if (!cid) {
+        setCompanyId(null)
+        setAreteEnabled(false)
+        setGradeNames([])
+        return
+      }
+      const [{ data: companyRow }, names] = await Promise.all([
+        supabase.from('brand_companies').select('arete_enabled').eq('id', cid).maybeSingle(),
+        fetchCompanyTierNames(supabase, cid),
+      ])
+      if (cancelled) return
+      setCompanyId(cid)
+      setAreteEnabled(Boolean((companyRow as { arete_enabled?: boolean } | null)?.arete_enabled))
+      setGradeNames(names)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, companyBrandIds, supabase])
   const emergencyLots = lots.filter(l => l.days !== null && l.days <= 30)
   const urgentLots = lots.filter(l => l.days !== null && l.days > 30 && l.days <= 90)
   const promoLots = lots.filter(l => l.days !== null && l.days > 90 && l.days <= 180)
@@ -110,14 +154,14 @@ export default function BrandInventoryMarketing({ brandId, companyBrandIds, init
       welcome:  `💜 보고 싶었어요!\n\n최근 발주가 없으신 원장님께\n${lot.product_name} 샘플을 선물로 보내드려요.\n\n언제든 다시 함께해요 :)`,
       feedback: `📝 후기 남기고 선물 받으세요!\n\n${lot.product_name} 사용 경험을 알려주시면\n추가 증정해 드립니다.\n\n원장님 의견이 브랜드를 만들어요 💜`,
       sample:   `🎁 무료 샘플 발송 안내\n\n${lot.product_name} 샘플을 발송해 드립니다.\n품질 보장 — 써보시고 알려주세요 💜`,
-      bundle:   `🎀 프리미엄 번들 구성!\n\n${lot.product_name} 포함 특별 세트를 구성했어요.\n아레테클럽 전용 구성입니다 💜`,
+      bundle:   `🎀 프리미엄 번들 구성!\n\n${lot.product_name} 포함 특별 세트를 구성했어요.\n원장님께 드리는 세트 구성입니다 💜`,
     }
     return m[evt] || ''
   }
   const openPopup = (lot: LotRow) => {
     setPopup({ open: true, lot })
     setStep(1); setSelEvt(''); setSelPromo('10+10 증정')
-    setSelGrades(['전체 원장님']); setDeadline(defaultDeadline()); setMsgText('')
+    setSelGrades([FIXED_TARGET_ALL]); setDeadline(defaultDeadline()); setMsgText('')
   }
   const closePopup = () => setPopup({ open: false, lot: null })
   const selEvent = (key: EvtKey) => {
@@ -234,7 +278,7 @@ export default function BrandInventoryMarketing({ brandId, companyBrandIds, init
       )}
       {viewMode === 'bundle' && (
         <div style={CARD}>
-          <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>🎀 아레테클럽 번들 패키지 구성</div>
+          <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>🎀 번들 패키지 구성</div>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 12, lineHeight: 1.6 }}>정상 재고 위주 · 여유 있는 임박 로트(D-90 이상) 선택적 포함 가능</div>
           {lots.map(lot => (
             <div key={lot.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
@@ -304,7 +348,7 @@ export default function BrandInventoryMarketing({ brandId, companyBrandIds, init
                 </div>
                 <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>발송 대상</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5, marginBottom: 12 }}>
-                  {GRADES.map(g => (
+                  {targetChips.map(g => (
                     <button key={g} type="button" onClick={() => toggleGrade(g)}
                       style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${selGrades.includes(g) ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: selGrades.includes(g) ? 'rgba(123,94,167,0.2)' : 'transparent', color: selGrades.includes(g) ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
                       {g}

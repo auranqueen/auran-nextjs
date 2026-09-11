@@ -27,3 +27,21 @@ export async function fetchCompanyTierNames(
 export function defaultTierName(tierNames: string[]): string {
   return tierNames[0] || ''
 }
+
+/** Highest-price grade first → first palette color (Civasan 메디슈티컬 = red). */
+const TIER_CHIP_COLORS = ['#E53935', '#C9A96E', '#9C7FD4', '#64B5F6', '#81C784', '#FF8A65'] as const
+
+export function companyShowsGradeUi(tierNames: string[]): boolean {
+  return tierNames.length > 0
+}
+
+export function tierChipColor(
+  name: string,
+  namesAscendingByPrice: string[],
+  fallback = '#7B5EA7',
+): string {
+  const i = namesAscendingByPrice.indexOf(name)
+  if (i < 0) return fallback
+  const fromHighest = namesAscendingByPrice.length - 1 - i
+  return TIER_CHIP_COLORS[fromHighest % TIER_CHIP_COLORS.length]
+}

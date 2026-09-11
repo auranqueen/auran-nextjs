@@ -5,6 +5,7 @@ import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
 import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
 import BrandShippedOrderReport from '../components/BrandShippedOrderReport'
+import { getMembershipClubLabel } from '@/lib/brand/companyMembershipTemp'
 import type { CSSProperties } from 'react'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -19,6 +20,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
   const [reportOpen, setReportOpen] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyBrands, setCompanyBrands] = useState<{ id: string; name: string }[]>([])
+  const [areteEnabled, setAreteEnabled] = useState(false)
 
   useEffect(() => {
     const resolve = async () => {
@@ -26,6 +28,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
       if (!seedId) {
         setCompanyId(null)
         setCompanyBrands([])
+        setAreteEnabled(false)
         return
       }
       const { data } = await supabase.from('brands').select('company_id').eq('id', seedId).maybeSingle()
@@ -33,10 +36,15 @@ export default function BrandTabOrders({ myBrands }: Props) {
       setCompanyId(cid)
       if (!cid) {
         setCompanyBrands(myBrands)
+        setAreteEnabled(false)
         return
       }
-      const { data: rows } = await supabase.from('brands').select('id, name').eq('company_id', cid).order('name')
+      const [{ data: rows }, { data: companyRow }] = await Promise.all([
+        supabase.from('brands').select('id, name').eq('company_id', cid).order('name'),
+        supabase.from('brand_companies').select('arete_enabled').eq('id', cid).maybeSingle(),
+      ])
       setCompanyBrands(rows && rows.length > 0 ? (rows as { id: string; name: string }[]) : myBrands)
+      setAreteEnabled(Boolean((companyRow as { arete_enabled?: boolean } | null)?.arete_enabled))
     }
     void resolve()
   }, [myBrands, supabase])
@@ -75,12 +83,14 @@ export default function BrandTabOrders({ myBrands }: Props) {
         ) : null}
       </div>
       <BrandLogisticsClosingReview brandId={hubBrandId} brandName={brandName} />
+      {areteEnabled ? (
       <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 {getMembershipClubLabel(companyId)} 포인트 현황</div>
         <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>
-          💡 아레테 포인트 + 발주 적립 포인트 → 해당 브랜드 제품 구매 시 통합 사용
+          💡 클럽 포인트 + 발주 적립 포인트 → 해당 브랜드 제품 구매 시 통합 사용
         </div>
       </div>
+      ) : null}
     </div>
   )
 }

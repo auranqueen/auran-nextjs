@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { companyShowsGradeUi, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 const RED = '#E53935'
 const PURPLE = '#7B5EA7'
 const DARK_INPUT = {
@@ -68,7 +69,6 @@ const EMPTY_DRAFT = {
   end_at: '',
 }
 type Props = { companyId: string | null; staffId: string | null; isCEO: boolean }
-const BROADCAST_GRADE_OPTIONS = ['취급점', '전문점', '프리미엄전문점'] as const
 export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Props) {
   const supabase = createClient()
   const [brands, setBrands] = useState<BrandOpt[]>([])
@@ -84,12 +84,16 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
   const [broadcastAll, setBroadcastAll] = useState(true)
   const [broadcastGrades, setBroadcastGrades] = useState<string[]>([])
   const [broadcasting, setBroadcasting] = useState(false)
+  const [gradeNames, setGradeNames] = useState<string[]>([])
+  const showGradeUi = companyShowsGradeUi(gradeNames)
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
   }
   const load = useCallback(async () => {
     if (!companyId) return
+    const names = await fetchCompanyTierNames(supabase, companyId)
+    setGradeNames(names)
     const { data: brandRows } = await supabase.from('brands').select('id, name').eq('company_id', companyId)
     setBrands((brandRows || []) as BrandOpt[])
     const brandIds = (brandRows || []).map((b: { id: string }) => b.id)
@@ -375,7 +379,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                   >
                     전체 원장
                   </button>
-                  {BROADCAST_GRADE_OPTIONS.map((g) => (
+                  {showGradeUi && gradeNames.map((g) => (
                     <button
                       key={g}
                       type="button"
@@ -422,18 +426,22 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
             rows={3}
             style={{ ...DARK_INPUT, width: '100%', marginBottom: 8, resize: 'vertical' }}
           />
+          {showGradeUi ? (
           <div style={{ marginBottom: 8 }}>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>노출 대상</p>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6, color: 'rgba(255,255,255,0.7)' }}>
               <input
                 type="checkbox"
                 checked={draft.target_grades.length === 0}
-                onChange={(e) => setDraft((prev) => ({ ...prev, target_grades: e.target.checked ? [] : ['취급점'] }))}
+                onChange={(e) => setDraft((prev) => ({
+                  ...prev,
+                  target_grades: e.target.checked ? [] : (gradeNames[0] ? [gradeNames[0]] : []),
+                }))}
               />
               전체 등급
             </label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 24, opacity: draft.target_grades.length === 0 ? 0.4 : 1, pointerEvents: draft.target_grades.length === 0 ? 'none' : 'auto' }}>
-              {['취급점', '전문점', '프리미엄전문점', '메디슈티컬'].map((g) => (
+              {gradeNames.map((g) => (
                 <label key={g} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
                   <input
                     type="checkbox"
@@ -450,6 +458,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
               ))}
             </div>
           </div>
+          ) : null}
           <input
             type="file"
             accept="image/*"

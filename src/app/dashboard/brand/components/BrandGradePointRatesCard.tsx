@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
+import { fetchCompanyTierNames, tierChipColor } from '@/lib/brand/fetchCompanyTierNames'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -10,9 +10,6 @@ const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const GREEN = 'rgba(76,175,80,0.8)'
-const GRADE_COLORS: Record<string, string> = {
-  '메디슈티컬': '#E53935', '프리미엄전문점': '#C9A96E', '전문점': '#9C7FD4', '취급점': '#64B5F6',
-}
 const inp: CSSProperties = {
   width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)',
   border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none',
@@ -110,7 +107,7 @@ export default function BrandGradePointRatesCard({ companyId }: Props) {
           <div style={{ fontSize: 12, color: SUB, padding: '8px 0' }}>등록된 등급 패키지가 없어요. 위에서 등급을 먼저 추가해 주세요.</div>
         ) : (
           grades.map((grade) => {
-            const color = GRADE_COLORS[grade] || GOLD
+            const color = tierChipColor(grade, grades, GOLD)
             const editing = editingGrade === grade
             const configured = Object.prototype.hasOwnProperty.call(rates, grade)
             return (
