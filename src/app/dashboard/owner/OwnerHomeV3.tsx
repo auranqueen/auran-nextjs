@@ -398,7 +398,7 @@ export default function OwnerHomeV3({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
           {[
             { href: '/dashboard/owner/bookings', icon: '📅', label: '예약 관리' },
-            { href: '/dashboard/owner/brand-orders', icon: '📦', label: '발주하기' },
+            { href: profile?.origin_track === 'A' ? '/dashboard/owner/brand-orders' : '/dashboard/owner/hq-stock-orders', icon: '📦', label: '발주하기' },
             { href: '/dashboard/owner/charts-v2', icon: '📋', label: '시술차트' },
             { href: '/dashboard/owner/store-decoration', icon: '✨', label: '스토어 꾸미기' },
           ].map((item) => (
