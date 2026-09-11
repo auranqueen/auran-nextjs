@@ -20,6 +20,14 @@ export default function OwnerBrandChatPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<OwnerBrandChatMessage[]>([])
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
+  const [isPC, setIsPC] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => setIsPC(window.innerWidth >= 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     void (async () => {
@@ -102,8 +110,9 @@ export default function OwnerBrandChatPage() {
       <h1 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 14px' }}>브랜드 상담</h1>
       <div style={{ display: 'flex', gap: 12, height: 'calc(100vh - 100px)', minHeight: 420 }}>
         <div style={{
-          width: 260, flexShrink: 0, overflowY: 'auto', background: BG,
+          width: isPC ? 260 : '100%', flexShrink: 0, overflowY: 'auto', background: BG,
           border: `1px solid ${BORDER}`, borderRadius: 12, padding: 8,
+          display: (isPC || !selectedId) ? undefined : 'none',
         }}>
           {channels.length === 0 ? (
             <div style={{ padding: 16, color: TEXT_SUB, fontSize: 12, textAlign: 'center' }}>연결된 브랜드사가 없어요</div>
@@ -151,13 +160,35 @@ export default function OwnerBrandChatPage() {
             )
           })}
         </div>
-        <BrandChatThreadLite
-          channel={selected}
-          messages={messages}
-          onSend={onSend}
-          onSendAttachment={onSendAttachment}
-          ownerProfileId={ownerProfileId}
-        />
+        <div style={{
+          flex: 1, minWidth: 0, minHeight: 0, display: (isPC || selectedId) ? 'flex' : 'none', flexDirection: 'column',
+        }}>
+          {!isPC && selectedId ? (
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'transparent',
+                border: 'none',
+                color: TEXT,
+                fontSize: 22,
+                lineHeight: 1,
+                cursor: 'pointer',
+                padding: '0 8px 8px 0',
+              }}
+            >
+              ‹
+            </button>
+          ) : null}
+          <BrandChatThreadLite
+            channel={selected}
+            messages={messages}
+            onSend={onSend}
+            onSendAttachment={onSendAttachment}
+            ownerProfileId={ownerProfileId}
+          />
+        </div>
       </div>
     </div>
   )
