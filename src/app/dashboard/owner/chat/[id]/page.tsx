@@ -993,7 +993,16 @@ export default function OwnerChatRoomPage() {
           gap: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flex: 1,
+          minWidth: 0,
+          overflowX: 'auto',
+          flexWrap: 'nowrap',
+          WebkitOverflowScrolling: 'touch',
+        }}>
           <button
             type="button"
             aria-label="목록으로"
@@ -1171,7 +1180,16 @@ export default function OwnerChatRoomPage() {
             상담 완료
           </button>
         </div>
-        <div style={{ fontSize: 11, color: '#e8dff5', border: '1px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.2)', borderRadius: 999, padding: '4px 10px' }}>
+        <div style={{
+          flexShrink: 0,
+          fontSize: 11,
+          color: '#e8dff5',
+          border: '1px solid rgba(123,94,167,0.45)',
+          background: 'rgba(123,94,167,0.2)',
+          borderRadius: 999,
+          padding: '4px 10px',
+          whiteSpace: 'nowrap',
+        }}>
           원장
         </div>
       </div>
