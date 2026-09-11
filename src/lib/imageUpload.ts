@@ -62,7 +62,25 @@ export async function compressImage(
     const ext = outType === 'image/png' ? 'png' : 'jpg'
     return new File([compressed], `${base}.${ext}`, { type: outType })
   } catch {
-    return file
+    try {
+      const originalMax = Math.max(rule.maxWidth, rule.maxHeight)
+      const retryMax = Math.min(originalMax, Math.max(300, Math.floor(originalMax / 2)))
+      const compressed = await withTimeout(
+        imageCompression(file, {
+          maxSizeMB: rule.maxSizeMB,
+          maxWidthOrHeight: retryMax,
+          useWebWorker: false,
+          fileType: asPng ? 'image/png' : 'image/jpeg',
+        }),
+        COMPRESS_TIMEOUT_MS,
+      )
+      const outType = compressed.type || (asPng ? 'image/png' : 'image/jpeg')
+      const base = file.name.replace(/\.[^.]+$/, '') || 'image'
+      const ext = outType === 'image/png' ? 'png' : 'jpg'
+      return new File([compressed], `${base}.${ext}`, { type: outType })
+    } catch {
+      return file
+    }
   }
 }
 
