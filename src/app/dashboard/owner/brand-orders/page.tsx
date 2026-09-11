@@ -107,7 +107,7 @@ function displayBrandName(name: string): string {
 
 function brandPillStyle(selected: boolean): CSSProperties {
   return {
-    fontSize: 12,
+    fontSize: 9,
     padding: '5px 14px',
     borderRadius: 20,
     border: `0.5px solid ${selected ? PURPLE : BORDER}`,
@@ -882,10 +882,10 @@ export default function BrandOrdersPage() {
   if (trackAllowed === false) {
     return (
       <div style={{ background: BG, minHeight: '100vh', padding: 24, textAlign: 'center' }}>
-        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 8 }}>
           브랜드 직거래(트랙A) 원장님 전용 메뉴입니다
         </div>
-        <div style={{ fontSize: 13, color: SUB, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 9, color: SUB, lineHeight: 1.6 }}>
           이 발주 화면은 브랜드사 직접 제휴로 가입한 원장님만 이용할 수 있어요.
         </div>
         <DashboardBottomNav role="owner" />
@@ -896,31 +896,31 @@ export default function BrandOrdersPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: totalQty > 0 ? 160 : 80 }}>
       {toast && (
-        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>
+        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 9, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>
           {toast}
         </div>
       )}
 
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
-        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>브랜드 발주</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>브랜드 발주</div>
       </div>
 
       <div style={{ padding: '8px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
+        <span style={{ fontSize: 9, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
           {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
         </span>
         <button
           type="button"
           onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
-          style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: PURPLE, cursor: 'pointer' }}
+          style={{ background: 'none', border: 'none', padding: 0, fontSize: 9, color: PURPLE, cursor: 'pointer' }}
         >
           월청구서
         </button>
         <button
           type="button"
           onClick={() => router.push('/dashboard/owner/delivery-history')}
-          style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: PURPLE, cursor: 'pointer' }}
+          style={{ background: 'none', border: 'none', padding: 0, fontSize: 9, color: PURPLE, cursor: 'pointer' }}
         >
           배송이력 보기
         </button>
@@ -936,17 +936,17 @@ export default function BrandOrdersPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: '#8A7E72', fontWeight: 500 }}>이번 달 발주 현황</div>
-            <div style={{ fontSize: 12, color: '#B4A99A' }}>{new Date().getMonth() + 1}월</div>
+            <div style={{ fontSize: 11, color: '#8A7E72', fontWeight: 500 }}>이번 달 발주 현황</div>
+            <div style={{ fontSize: 9, color: '#B4A99A' }}>{new Date().getMonth() + 1}월</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: unpaidAmount > 0 ? 10 : 12 }}>
             <div style={{ background: '#FBF7EE', border: '1px solid #EFE3C8', borderRadius: 12, padding: 12 }}>
-              <div style={{ fontSize: 12, color: '#B08A46', marginBottom: 6 }}>발주 건수</div>
-              <div style={{ fontSize: 22, fontWeight: 600, color: '#8A6A2E' }}>{monthlyOrderCount}건</div>
+              <div style={{ fontSize: 9, color: '#B08A46', marginBottom: 6 }}>발주 건수</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#8A6A2E' }}>{monthlyOrderCount}건</div>
             </div>
             <div style={{ background: '#F5F1FA', border: '1px solid #E1D8F0', borderRadius: 12, padding: 12 }}>
-              <div style={{ fontSize: 12, color: '#7B5EA7', marginBottom: 6 }}>발주 금액</div>
-              <div style={{ fontSize: 22, fontWeight: 600, color: '#5A4380' }}>{monthlyOrderAmount.toLocaleString()}원</div>
+              <div style={{ fontSize: 9, color: '#7B5EA7', marginBottom: 6 }}>발주 금액</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#5A4380' }}>{monthlyOrderAmount.toLocaleString()}원</div>
             </div>
           </div>
           {unpaidAmount > 0 && (
@@ -962,8 +962,8 @@ export default function BrandOrdersPage() {
                 marginBottom: 12,
               }}
             >
-              <div style={{ fontSize: 13, color: '#C0724E', fontWeight: 500 }}>결제대기</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#A85B38' }}>{unpaidAmount.toLocaleString()}원</div>
+              <div style={{ fontSize: 9, color: '#C0724E', fontWeight: 500 }}>결제대기</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#A85B38' }}>{unpaidAmount.toLocaleString()}원</div>
             </div>
           )}
           <button
@@ -976,7 +976,7 @@ export default function BrandOrdersPage() {
               border: 'none',
               borderRadius: 999,
               padding: 13,
-              fontSize: 14,
+              fontSize: 11,
               fontWeight: 600,
               cursor: 'pointer',
             }}
@@ -1032,7 +1032,7 @@ export default function BrandOrdersPage() {
             border: `0.5px solid ${BORDER}`,
             background: LIGHT,
             color: TEXT,
-            fontSize: 13,
+            fontSize: 9,
             outline: 'none',
           }}
         />
@@ -1041,7 +1041,7 @@ export default function BrandOrdersPage() {
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
         {(['shop', 'orders', 'samples'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
-            style={{ flex: 1, padding: '10px', fontSize: 13, border: 'none', background: 'none', color: tab === t ? PURPLE : SUB, borderBottom: tab === t ? `2px solid ${PURPLE}` : '2px solid transparent', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '10px', fontSize: 9, border: 'none', background: 'none', color: tab === t ? PURPLE : SUB, borderBottom: tab === t ? `2px solid ${PURPLE}` : '2px solid transparent', cursor: 'pointer' }}>
             {t === 'shop' ? '브랜드 제품' : t === 'orders' ? `발주 내역 (${orders.length})` : '샘플'}
           </button>
         ))}
@@ -1050,18 +1050,18 @@ export default function BrandOrdersPage() {
       {tab === 'shop' && (
         <div style={{ padding: '0 16px' }}>
           {Object.keys(brandGroups).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>
+            <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 9 }}>
               {searchQuery.trim() ? (
                 '검색 결과가 없습니다.'
               ) : brandFilter === 'all' ? (
                 <>
                   연결된 브랜드 제품이 없어요.<br />
-                  <span style={{ fontSize: 12 }}>브랜드사 제휴 연결(active) 후 이용할 수 있어요</span>
+                  <span style={{ fontSize: 9 }}>브랜드사 제휴 연결(active) 후 이용할 수 있어요</span>
                 </>
               ) : (
                 <>
                   이 브랜드에 등록된 제품이 없어요.<br />
-                  <span style={{ fontSize: 12 }}>다른 브랜드를 선택하거나 전체를 눌러보세요</span>
+                  <span style={{ fontSize: 9 }}>다른 브랜드를 선택하거나 전체를 눌러보세요</span>
                 </>
               )}
             </div>
@@ -1069,7 +1069,7 @@ export default function BrandOrdersPage() {
             Object.entries(brandGroups).map(([brandName, prods]) => (
               <div key={brandName} style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{brandName}</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: TEXT }}>{brandName}</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${productGridCols}, 1fr)`, gap: 8 }}>
                   {prods.map((prod) => {
@@ -1116,7 +1116,7 @@ export default function BrandOrdersPage() {
         >
           <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 520, maxHeight: '80vh', overflowY: 'auto', padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>전체 발주 확인</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>전체 발주 확인</div>
               <button type="button" onClick={() => setShowPopup(false)}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: SUB, lineHeight: 1 }}>✕</button>
             </div>
@@ -1133,53 +1133,53 @@ export default function BrandOrdersPage() {
               return (
                 <div key={`${item.product.id}-${item.promo.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: TEXT, marginBottom: 2 }}>{item.product.name}</div>
-                    <div style={{ fontSize: 11, color: SUB }}>₩{line.unit_price.toLocaleString()} × {lineQty} = ₩{line.line_amount.toLocaleString()}</div>
-                    {line.promo && <div style={{ fontSize: 11, color: PURPLE }}>{line.promo} × {item.sets}세트 → +{cartLineBonus(line.bonus, item.sets)}개 증정</div>}
+                    <div style={{ fontSize: 9, color: TEXT, marginBottom: 2 }}>{item.product.name}</div>
+                    <div style={{ fontSize: 9, color: SUB }}>₩{line.unit_price.toLocaleString()} × {lineQty} = ₩{line.line_amount.toLocaleString()}</div>
+                    {line.promo && <div style={{ fontSize: 9, color: PURPLE }}>{line.promo} × {item.sets}세트 → +{cartLineBonus(line.bonus, item.sets)}개 증정</div>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <button type="button" onClick={() => changeSet(item.product.id, item.promo.id, -1)}
-                      style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
-                    <span style={{ fontSize: 14, fontWeight: 500, minWidth: 20, textAlign: 'center', color: TEXT }}>{item.sets}</span>
+                      style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 11, cursor: 'pointer', color: TEXT }}>−</button>
+                    <span style={{ fontSize: 11, fontWeight: 500, minWidth: 20, textAlign: 'center', color: TEXT }}>{item.sets}</span>
                     <button type="button" onClick={() => changeSet(item.product.id, item.promo.id, 1)}
-                      style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
+                      style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer' }}>+</button>
                   </div>
                 </div>
               )
             })}
 
             <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
                 <span>브랜드</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? `${cartBrandCount}개 브랜드` : (popupCart[0]?.product.brand_name || '-')}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
                 <span>등급</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? '브랜드별' : activeGrade}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
                 <span>적립율</span><span style={{ color: SUB }}>{cartBrandCount > 1 ? '브랜드별' : `${gradePointRate(activeGrade, gradeRateMap)}%`}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>
               </div>
               {popupRewardUsable > 0 && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 9, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
                   <input type="checkbox" checked={usePointsReward} onChange={(e) => setUsePointsReward(e.target.checked)} />
                   일반적립금으로 결제할게요 (누적잔액 {popupRewardBalanceTotal.toLocaleString()}P)
                 </label>
               )}
               {popupRewardApplied > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 500 }}>
                   <span>최종 결제금액</span>
                   <span>{popupFinalAfterReward.toLocaleString()}원</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#1E6B40' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: '#1E6B40' }}>
                 <span>적립 예정</span><span>{popupPointsEarned}T</span>
               </div>
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>요청사항 (선택)</div>
+              <div style={{ fontSize: 9, color: SUB, marginBottom: 6 }}>요청사항 (선택)</div>
               <textarea
                 value={ownerNote}
                 onChange={(e) => setOwnerNote(e.target.value)}
@@ -1191,7 +1191,7 @@ export default function BrandOrdersPage() {
                   padding: '8px 10px',
                   borderRadius: 8,
                   border: `1px solid ${BORDER}`,
-                  fontSize: 13,
+                  fontSize: 9,
                   resize: 'vertical',
                   color: TEXT,
                 }}
@@ -1199,7 +1199,7 @@ export default function BrandOrdersPage() {
             </div>
 
             <button type="button" onClick={() => void submitOrder()} disabled={sending}
-              style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: sending ? `${PURPLE}80` : PURPLE, color: '#fff', fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer', fontWeight: 500 }}>
+              style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: sending ? `${PURPLE}80` : PURPLE, color: '#fff', fontSize: 11, cursor: sending ? 'not-allowed' : 'pointer', fontWeight: 500 }}>
               {sending ? '발주 요청 중...' : '전체 발주하기'}
             </button>
           </div>
@@ -1212,54 +1212,54 @@ export default function BrandOrdersPage() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: '#1A1A2E' }}>반품·교환 신청</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E' }}>반품·교환 신청</div>
               <button type="button" onClick={() => setReturnPopup({ open: false, order: null })}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888', lineHeight: 1 }}>✕</button>
             </div>
-            <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+            <div style={{ fontSize: 9, color: '#888', marginBottom: 8 }}>
               {returnPopup.order.brand_name}
             </div>
             <div style={{ background: '#F8F7FC', borderRadius: 10, padding: 12, marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A2E', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#1A1A2E', marginBottom: 8 }}>
                 이 발주건 전체를 반품 신청합니다
               </div>
               {returnPopup.order.items.map((i, idx) => {
                 const giftSku = isGiftReturnLine(i)
                 const bonus = Math.trunc(Number(i.bonus) || 0)
                 return (
-                  <div key={`${i.product_id || i.name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#1A1A2E', padding: '4px 0' }}>
+                  <div key={`${i.product_id || i.name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, color: '#1A1A2E', padding: '4px 0' }}>
                     <span style={{ flex: 1 }}>{i.name} · {i.qty}개</span>
                     {giftSku && (
-                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>증정</span>
+                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>증정</span>
                     )}
                     {bonus > 0 && (
-                      <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>+{bonus} 증정</span>
+                      <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: 'rgba(123,94,167,0.12)', color: '#7B5EA7' }}>+{bonus} 증정</span>
                     )}
                   </div>
                 )
               })}
-              <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+              <div style={{ fontSize: 9, color: '#888', marginTop: 8 }}>
                 합계 {returnSnapshotQty(snapshotReturnItems(returnPopup.order.items))}개 (구매+증정 포함)
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               {(['return', 'exchange'] as const).map((t) => (
                 <button key={t} type="button" onClick={() => setReturnType(t)}
-                  style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1px solid ${returnType === t ? '#E53935' : '#eee'}`, background: returnType === t ? 'rgba(229,57,53,0.06)' : '#fff', color: returnType === t ? '#E53935' : '#888', fontSize: 13, cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1px solid ${returnType === t ? '#E53935' : '#eee'}`, background: returnType === t ? 'rgba(229,57,53,0.06)' : '#fff', color: returnType === t ? '#E53935' : '#888', fontSize: 11, cursor: 'pointer' }}>
                   {t === 'return' ? '반품' : '교환'}
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>사유 선택 (필수)</div>
+            <div style={{ fontSize: 9, color: '#666', marginBottom: 6 }}>사유 선택 (필수)</div>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 12 }}>
               {['제품 불량·파손', '오배송', '수량 오류', '유통기한 임박', '단순 변심', '배송 중 파손'].map((r) => (
                 <button key={r} type="button" onClick={() => setReturnReason(r)}
-                  style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: `0.5px solid ${returnReason === r ? '#7B5EA7' : '#eee'}`, background: returnReason === r ? 'rgba(123,94,167,0.08)' : '#fff', color: returnReason === r ? '#7B5EA7' : '#888', cursor: 'pointer' }}>
+                  style={{ fontSize: 9, padding: '4px 10px', borderRadius: 20, border: `0.5px solid ${returnReason === r ? '#7B5EA7' : '#eee'}`, background: returnReason === r ? 'rgba(123,94,167,0.08)' : '#fff', color: returnReason === r ? '#7B5EA7' : '#888', cursor: 'pointer' }}>
                   {r}
                 </button>
               ))}
             </div>
-              <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>사진 첨부 (최대 5장, 선택)</div>
+              <div style={{ fontSize: 9, color: '#666', marginBottom: 6 }}>사진 첨부 (최대 5장, 선택)</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 14 }}>
                 {returnPhotos.map((url, i) => (
                   <div key={url} style={{ position: 'relative', width: 64, height: 64 }}>
@@ -1268,7 +1268,7 @@ export default function BrandOrdersPage() {
                     <button
                       type="button"
                       onClick={() => setReturnPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#E53935', color: '#fff', fontSize: 12, cursor: 'pointer', lineHeight: '20px', padding: 0 }}
+                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#E53935', color: '#fff', fontSize: 9, cursor: 'pointer', lineHeight: '20px', padding: 0 }}
                     >
                       ✕
                     </button>
@@ -1288,11 +1288,11 @@ export default function BrandOrdersPage() {
                   </label>
                 )}
               </div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>상세 내용</div>
+            <div style={{ fontSize: 9, color: '#666', marginBottom: 6 }}>상세 내용</div>
             <textarea value={returnDetail} onChange={(e) => setReturnDetail(e.target.value)} placeholder="구체적인 상황을 입력해주세요"
-              style={{ width: '100%', minHeight: 60, border: '1px solid #eee', borderRadius: 8, padding: '8px 10px', fontSize: 12, resize: 'none', outline: 'none', marginBottom: 14, color: '#333' }} />
+              style={{ width: '100%', minHeight: 60, border: '1px solid #eee', borderRadius: 8, padding: '8px 10px', fontSize: 9, resize: 'none', outline: 'none', marginBottom: 14, color: '#333' }} />
             <button type="button" onClick={() => void submitReturn()} disabled={returnSaving}
-              style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: returnSaving ? 'rgba(123,94,167,0.4)' : '#7B5EA7', color: '#fff', fontSize: 14, cursor: returnSaving ? 'not-allowed' : 'pointer' }}>
+              style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: returnSaving ? 'rgba(123,94,167,0.4)' : '#7B5EA7', color: '#fff', fontSize: 11, cursor: returnSaving ? 'not-allowed' : 'pointer' }}>
               {returnSaving ? '신청 중...' : '반품·교환 신청하기'}
             </button>
           </div>
@@ -1314,7 +1314,7 @@ export default function BrandOrdersPage() {
             borderRadius: 999,
             background: PURPLE,
             color: '#fff',
-            fontSize: 15,
+            fontSize: 11,
             fontWeight: 600,
             cursor: 'pointer',
           }}

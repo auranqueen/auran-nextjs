@@ -57,7 +57,7 @@ export default function BrandOrderProductCard({
           return { order: acc.order + orderQty, bonus: acc.bonus + bonusQty }
         }, { order: 0, bonus: 0 })
         return (
-          <div style={{ flexBasis: '100%', fontSize: 11, padding: '4px 8px', borderRadius: 8, background: '#fbeef2', color: '#c96a86' }}>
+          <div style={{ flexBasis: '100%', fontSize: 8, padding: '4px 8px', borderRadius: 8, background: '#fbeef2', color: '#c96a86' }}>
             ✨ {totals.order}개 주문 → 총 {totals.order + totals.bonus}개 받아요{totals.bonus > 0 ? ` (증정 ${totals.bonus}개 포함)` : ''}
           </div>
         )
@@ -68,10 +68,10 @@ export default function BrandOrderProductCard({
           : <span style={{ fontSize: 26 }}>🧴</span>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.4, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{prod.name}</div>
+        <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{prod.name}</div>
         {priced
-          ? <div style={{ fontSize: 12, color: '#c9a96e', marginBottom: 4 }}>₩{prod.supply_price.toLocaleString()}</div>
-          : <div style={{ fontSize: 10, color: '#C0392B', marginBottom: 4 }}>가격 미설정</div>}
+          ? <div style={{ fontSize: 9, color: '#c9a96e', marginBottom: 4 }}>₩{prod.supply_price.toLocaleString()}</div>
+          : <div style={{ fontSize: 9, color: '#C0392B', marginBottom: 4 }}>가격 미설정</div>}
         {outOfStock ? (
           <div style={{ fontSize: 10, color: '#c9822a', marginBottom: 4 }}>품절, 조금만 기다려주세요 🙏</div>
         ) : stock !== undefined ? (
@@ -79,7 +79,7 @@ export default function BrandOrderProductCard({
         ) : null}
         {!priced || outOfStock ? (
           <button type="button" disabled
-            style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, color: SUB, fontSize: 11, cursor: 'not-allowed' }}>
+            style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, color: SUB, fontSize: 8, cursor: 'not-allowed' }}>
             {outOfStock ? '품절' : '발주 불가'}
           </button>
         ) : brandPromos.length === 0 ? (
@@ -90,19 +90,19 @@ export default function BrandOrderProductCard({
               const sets = setsByPromoId[promo.id] || 0
               return (
                 <div key={promo.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, background: sets > 0 ? '#f1ecf7' : 'transparent', borderRadius: 8, padding: '4px 6px' }}>
-                  <span style={{ fontSize: 11, color: '#7b5ea7', background: '#ffffff', border: '1px solid #d9cdea', borderRadius: 8, padding: '2px 8px', minWidth: 0 }}>{promoLabel(promo)}</span>
+                  <span style={{ fontSize: 8, color: '#7b5ea7', background: '#ffffff', border: '1px solid #d9cdea', borderRadius: 8, padding: '2px 8px', minWidth: 0 }}>{promoLabel(promo)}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                     <button
                       type="button"
                       onClick={() => onChangeSet(prod.id, promo.id, -1)}
                       disabled={sets <= 0}
-                      style={{ width: 22, height: 22, borderRadius: 8, border: '1px solid #eee', background: '#f0f0f0', fontSize: 13, cursor: sets <= 0 ? 'default' : 'pointer', color: TEXT, lineHeight: 1 }}
+                      style={{ width: 22, height: 22, borderRadius: 8, border: '1px solid #eee', background: '#f0f0f0', fontSize: 8, cursor: sets <= 0 ? 'default' : 'pointer', color: TEXT, lineHeight: 1 }}
                     >−</button>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: TEXT, minWidth: 14, textAlign: 'center' }}>{sets}</span>
+                    <span style={{ fontSize: 8, fontWeight: 500, color: TEXT, minWidth: 14, textAlign: 'center' }}>{sets}</span>
                     <button
                       type="button"
                       onClick={() => onChangeSet(prod.id, promo.id, 1)}
-                      style={{ width: 22, height: 22, borderRadius: 8, border: 'none', background: '#7b5ea7', color: '#fff', fontSize: 13, cursor: 'pointer', lineHeight: 1 }}
+                      style={{ width: 22, height: 22, borderRadius: 8, border: 'none', background: '#7b5ea7', color: '#fff', fontSize: 8, cursor: 'pointer', lineHeight: 1 }}
                     >+</button>
                   </div>
                 </div>

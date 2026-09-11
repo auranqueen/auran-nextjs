@@ -433,8 +433,8 @@ function HqStockOrdersContent() {
   if (!trackAllowed) {
     return (
       <div style={{ background: BG, minHeight: '100vh', padding: 24, color: TEXT }}>
-        <div style={{ fontSize: 16, marginBottom: 8 }}>본사 재고발주</div>
-        <div style={{ fontSize: 13, color: SUB }}>트랙B 원장님만 이용할 수 있어요.</div>
+        <div style={{ fontSize: 13, marginBottom: 8 }}>본사 재고발주</div>
+        <div style={{ fontSize: 9, color: SUB }}>트랙B 원장님만 이용할 수 있어요.</div>
         <DashboardBottomNav role="owner" />
       </div>
     )
@@ -451,21 +451,21 @@ function HqStockOrdersContent() {
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: 96 }}>
       {toast && (
-        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
+        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 9, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
           {toast}
         </div>
       )}
       <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT }}>←</button>
-        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>본사 재고발주</div>
-        <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ marginLeft: 'auto', fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
+        <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>본사 재고발주</div>
+        <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ marginLeft: 'auto', fontSize: 9, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
       </div>
       <div style={{ padding: '0 16px 12px' }}>
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="제품명 검색"
-          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' }}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 9, boxSizing: 'border-box' }}
         />
       </div>
       {isSearching ? (
@@ -484,7 +484,7 @@ function HqStockOrdersContent() {
                     margin: idx === 0 ? '0 16px 10px' : '16px 16px 10px',
                     paddingTop: idx === 0 ? 0 : 12,
                     borderTop: idx === 0 ? 'none' : `1px solid ${BORDER}`,
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: TEXT,
                   }}
@@ -499,7 +499,7 @@ function HqStockOrdersContent() {
         })
       )}
       {emptyMessage && (
-        <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 9 }}>
           {isSearching ? '검색 결과가 없어요' : '발주 가능 제품이 없어요'}
         </div>
       )}
@@ -508,7 +508,7 @@ function HqStockOrdersContent() {
           <button
             type="button"
             onClick={() => setShowPopup(true)}
-            style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}
+            style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer' }}
           >
             장바구니 {cart.length} · ₩{cartTotal.toLocaleString()}
           </button>
@@ -522,7 +522,7 @@ function HqStockOrdersContent() {
         >
           <div style={{ width: '100%', maxHeight: '70vh', overflowY: 'auto', background: '#fff', borderRadius: '16px 16px 0 0', padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>발주 확인</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>발주 확인</div>
               <button type="button" onClick={() => setShowPopup(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: SUB, cursor: 'pointer' }}>✕</button>
             </div>
             {cart.map((item) => {
@@ -530,21 +530,21 @@ function HqStockOrdersContent() {
               return (
                 <div key={item.product.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: TEXT }}>{item.product.name}</div>
-                    <div style={{ fontSize: 11, color: SUB }}>
+                    <div style={{ fontSize: 9, color: TEXT }}>{item.product.name}</div>
+                    <div style={{ fontSize: 9, color: SUB }}>
                       ₩{line.line_amount.toLocaleString()}
                       {line.bonus > 0 ? ` · 🎁 +${line.bonus}개` : ''}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button type="button" onClick={() => changeQty(item.product.id, -QTY_STEP)} style={qtyBtn}>−</button>
-                    <span style={{ fontSize: 13, width: 28, textAlign: 'center' }}>{item.qty}</span>
+                    <span style={{ fontSize: 9, width: 28, textAlign: 'center' }}>{item.qty}</span>
                     <button type="button" onClick={() => changeQty(item.product.id, QTY_STEP)} style={qtyBtn}>+</button>
                   </div>
                 </div>
               )
             })}
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '14px 0', fontSize: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '14px 0', fontSize: 11 }}>
               <span style={{ color: SUB }}>합계</span>
               <span style={{ fontWeight: 600, color: PURPLE }}>₩{cartTotal.toLocaleString()}</span>
             </div>
@@ -553,7 +553,7 @@ function HqStockOrdersContent() {
               type="button"
               disabled={sending}
               onClick={() => void submitOrder()}
-              style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: sending ? `${PURPLE}88` : PURPLE, color: '#fff', fontSize: 14, cursor: sending ? 'wait' : 'pointer' }}
+              style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: sending ? `${PURPLE}88` : PURPLE, color: '#fff', fontSize: 11, cursor: sending ? 'wait' : 'pointer' }}
             >
               {sending ? '처리 중…' : '결제하기'}
             </button>
@@ -566,7 +566,7 @@ function HqStockOrdersContent() {
 }
 function pillStyle(selected: boolean): CSSProperties {
   return {
-    fontSize: 12,
+    fontSize: 9,
     padding: '5px 14px',
     borderRadius: 20,
     border: `0.5px solid ${selected ? PURPLE : BORDER}`,
