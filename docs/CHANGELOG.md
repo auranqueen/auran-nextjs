@@ -3,6 +3,39 @@
 
 ---
 
+## 2026-09-11
+### fix: 원장 대시보드·상담톡·재고발주 UI
+- `hq-stock-orders`: 상품목록 `grid`를 `repeat(auto-fit, minmax(140px, 1fr))`로 변경 — 좁은 화면에서 열 수 자동 축소
+- `OwnerHomeV3`: 「발주하기」타일 href를 트랙 분기 — A→`/dashboard/owner/brand-orders`, B·기타→`/dashboard/owner/hq-stock-orders`
+- `owner/chat/[id]`: 헤더 왼쪽 액션열 `overflowX:auto` + 「원장」뱃지 `flexShrink:0` — 좁은 화면 뱃지 겹침 해소
+- `owner/chat` 헤더·`OwnerSidebarShell`(대시보드 셸): 상단 `safe-area-inset` 여백 (노치 기기)
+
+### fix/feat: 이미지 업로드 (HEIC·압축 경로 통일)
+- `heic2any`: HEIC/HEIF → JPG 자동 변환 (차단 대신 변환)
+- 압축 웹워커 hang·실패 시 원본 업로드 방지(2차 축소 재시도), 경로 확장자를 압축 후 MIME 기준 교체
+- 상세이미지 업로드를 `uploadToStorage` 압축 경로로 통일 + 경고문구 (오렌몰/브랜드사 공통)
+- (09-10 연계) 프로필 아바타 업로드 `try/finally`로 무한 로딩 방지
+
+---
+
+## 2026-09-10
+### feat/fix: 호르몬·피부고민 파이프라인
+- edit-v2: `hormone_timing` UI 완성 + `전단계` 포함; `concern_tags` 동기화
+- 홈/멤버십: `전단계` 매칭 로직; 프로필 로딩·`sessionChecked` 전 호르몬/게스트 카드 조기렌더 레이스 수정
+- 피부고민 어휘 9개 표준 통일 (마이페이지 트랙 / 제품등록 edit-v2 / AI 분석 프롬프트)
+- 옛 상품등록폼(v1) 제거, `/admin/products/edit` → edit-v2 리다이렉트
+
+### ui: 고객홈·상품상세·공동구매
+- 홈: 인사말 아바타 좌측+13px, `HormoneCard` 접기 UI; 상품명·가격 타이포 통일; 타임세일 탭 숨김(공동구매만)
+- 공동구매: 가로스크롤 정사각 카드 + 공유; `ShareLinkSheet` 경량화(html2canvas 제외); 오버레이·참여율바 재배치
+- 상품상세: 공유버튼 갤러리 하단·폰트 축소; FAB 위치/상담칩 정리 후 상품상세에서만 FAB 숨김 원복; 공유 버튼 💌 통일
+- 고객문의 이메일 `queen7176@naver.com` 통일
+
+### fix: 원장홈
+- `OwnerHomeV3` 헤더에 「✦ 고객으로」복귀 버튼 (`active-role` API + `res.ok` 시 `/`)
+
+---
+
 ## 2026-09-09
 ### ui: 홈 인사·케어팁·스킨 접기 + 맑원장 카드 제거
 - `HormoneCard`: 메인 인사(`hormoneMainLine`) 13px 유지, 서브(페이즈/`hormoneSubLine`) 12px→10px
