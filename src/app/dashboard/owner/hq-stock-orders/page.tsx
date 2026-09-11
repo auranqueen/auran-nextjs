@@ -24,7 +24,13 @@ interface Product {
   thumb_img: string | null
   brand_name: string
   brand_id: string
+  company_id: string
+  company_name: string
   supply_price: number
+}
+interface CompanyGroup {
+  id: string
+  name: string
 }
 interface CartItem {
   product: Product
@@ -38,6 +44,7 @@ function HqStockOrdersContent() {
   const [loading, setLoading] = useState(true)
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const [products, setProducts] = useState<Product[]>([])
+  const [companies, setCompanies] = useState<CompanyGroup[]>([])
   const [promoRules, setPromoRules] = useState<SupplyPromoRow[]>([])
   const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [cart, setCart] = useState<CartItem[]>([])
@@ -46,7 +53,8 @@ function HqStockOrdersContent() {
   const [toast, setToast] = useState('')
   const [ownerName, setOwnerName] = useState('')
   const [salonName, setSalonName] = useState('')
-  const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
+  /** 회사별 브랜드칩 필터 (companyId → 'all' | brandId) */
+  const [brandFilterByCompany, setBrandFilterByCompany] = useState<Record<string, 'all' | string>>({})
   const [searchQuery, setSearchQuery] = useState('')
   const [primaryCompanyId, setPrimaryCompanyId] = useState<string | null>(null)
   const showToast = (t: string) => {
@@ -68,6 +76,7 @@ function HqStockOrdersContent() {
     if (String(userRow?.origin_track || '') !== 'B') {
       setTrackAllowed(false)
       setProducts([])
+      setCompanies([])
       setPrimaryCompanyId(null)
       setLoading(false)
       return
@@ -80,21 +89,108 @@ function HqStockOrdersContent() {
       .maybeSingle()
     setOwnerName(String(profile?.full_name || userRow?.name || '원장님'))
     setSalonName(String(profile?.owner_store_name || userRow?.salon_name || ''))
+    const profileId = profile?.id ? String(profile.id) : null
+    if (!profileId) {
+      setProducts([])
+      setCompanies([])
+      setPrimaryCompanyId(null)
+      setPromoRules([])
+      setStockMap({})
+      setLoading(false)
+      return
+    }
+    // 1) paid 등급 먼저 → companyIds
+    const { data: gradeRows } = await supabase
+      .from('brand_owner_grades')
+      .select('company_id, grade, tier_package_id, payment_status')
+      .eq('owner_id', profileId)
+      .eq('origin_track', 'B')
+      .eq('payment_status', 'paid')
+    const companyIds = Array.from(
+      new Set((gradeRows || []).map((g: any) => String(g.company_id || '')).filter(Boolean)),
+    )
+    setPrimaryCompanyId(companyIds[0] || null)
+    if (companyIds.length === 0) {
+      setProducts([])
+      setCompanies([])
+      setPromoRules([])
+      setStockMap({})
+      setLoading(false)
+      return
+    }
+    // 2) 회사명 조인
+    const { data: companyRows } = await supabase
+      .from('brand_companies')
+      .select('id, name')
+      .in('id', companyIds)
+    const companyNameById: Record<string, string> = {}
+    for (const c of (companyRows || []) as any[]) {
+      companyNameById[String(c.id)] = String(c.name || '')
+    }
+    // 3) 해당 회사들의 brands
+    const { data: brandRows } = await supabase
+      .from('brands')
+      .select('id, name, company_id')
+      .in('company_id', companyIds)
+    const brandMeta: Record<string, { name: string; company_id: string }> = {}
+    const brandIds: string[] = []
+    for (const b of (brandRows || []) as any[]) {
+      const id = String(b.id || '')
+      const cid = String(b.company_id || '')
+      if (!id || !cid) continue
+      brandIds.push(id)
+      brandMeta[id] = { name: String(b.name || ''), company_id: cid }
+    }
+    if (brandIds.length === 0) {
+      setProducts([])
+      setCompanies(
+        companyIds.map((id) => ({ id, name: companyNameById[id] || id })),
+      )
+      setPromoRules([])
+      setStockMap({})
+      setLoading(false)
+      return
+    }
+    // 4) 그 브랜드들의 active 상품만
     const { data: rows } = await supabase
       .from('brand_products')
-      .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
+      .select('id, name, thumb_img, brand_id, supply_price')
       .eq('status', 'active')
+      .in('brand_id', brandIds)
       .order('created_at', { ascending: false })
       .limit(200)
-    const productList = (rows || []).map((p: any) => ({
-      id: p.id,
-      name: p.name || '',
-      thumb_img: p.thumb_img || null,
-      brand_id: p.brand_id,
-      brand_name: p.brands?.name || '',
-      supply_price: Math.trunc(Number(p.supply_price) || 0),
-    }))
+    const productList: Product[] = (rows || [])
+      .map((p: any) => {
+        const brandId = String(p.brand_id || '')
+        const meta = brandMeta[brandId]
+        if (!meta) return null
+        const companyId = meta.company_id
+        return {
+          id: p.id,
+          name: p.name || '',
+          thumb_img: p.thumb_img || null,
+          brand_id: brandId,
+          brand_name: meta.name,
+          company_id: companyId,
+          company_name: companyNameById[companyId] || companyId,
+          supply_price: Math.trunc(Number(p.supply_price) || 0),
+        } satisfies Product
+      })
+      .filter((p): p is Product => p != null)
     setProducts(productList)
+    // 상품이 있는 회사만 UI에 노출 (paid 순서 유지)
+    const productCompanyIds = new Set(productList.map((p) => p.company_id))
+    const companyList = companyIds
+      .filter((id) => productCompanyIds.has(id))
+      .map((id) => ({ id, name: companyNameById[id] || id }))
+    setCompanies(companyList)
+    setBrandFilterByCompany((prev) => {
+      const next: Record<string, 'all' | string> = {}
+      for (const c of companyList) {
+        next[c.id] = prev[c.id] ?? 'all'
+      }
+      return next
+    })
     const prodIds = productList.map((p) => p.id)
     if (prodIds.length > 0) {
       const { data: invRows } = await supabase
@@ -109,55 +205,27 @@ function HqStockOrdersContent() {
     } else {
       setStockMap({})
     }
-    const profileId = profile?.id ? String(profile.id) : null
-    if (profileId) {
-      const brandIds = Array.from(new Set(productList.map((p) => p.brand_id).filter(Boolean)))
-      if (brandIds.length > 0) {
-        const { data: brandRows } = await supabase
-          .from('brands')
-          .select('id, company_id')
-          .in('id', brandIds)
-        const companyIds = Array.from(
-          new Set((brandRows || []).map((b: any) => String(b.company_id || '')).filter(Boolean)),
-        )
-        setPrimaryCompanyId(companyIds[0] || null)
-        if (companyIds.length > 0) {
-          const { data: gradeRows } = await supabase
-            .from('brand_owner_grades')
-            .select('company_id, grade, tier_package_id, payment_status')
-            .eq('owner_id', profileId)
-            .eq('origin_track', 'B')
-            .eq('payment_status', 'paid')
-            .in('company_id', companyIds)
-          const tierPackageIds = Array.from(
-            new Set((gradeRows || []).map((g: any) => String(g.tier_package_id || '')).filter(Boolean)),
-          )
-          if (tierPackageIds.length > 0) {
-            const { data: ruleRows } = await supabase
-              .from('brand_tier_promo_rules')
-              .select('id, brand_id, min_qty, bonus_qty')
-              .in('tier_package_id', tierPackageIds)
-              .eq('is_active', true)
-            setPromoRules(
-              (ruleRows || []).map((r: any) => ({
-                id: String(r.id),
-                brand_id: String(r.brand_id),
-                qty: Math.trunc(Number(r.min_qty) || 0),
-                bonus_qty: Math.trunc(Number(r.bonus_qty) || 0),
-                bonus: null,
-                condition: null,
-                title: null,
-              })),
-            )
-          } else {
-            setPromoRules([])
-          }
-        } else {
-          setPromoRules([])
-        }
-      } else {
-        setPromoRules([])
-      }
+    // 프로모: paid 등급의 tier_package
+    const tierPackageIds = Array.from(
+      new Set((gradeRows || []).map((g: any) => String(g.tier_package_id || '')).filter(Boolean)),
+    )
+    if (tierPackageIds.length > 0) {
+      const { data: ruleRows } = await supabase
+        .from('brand_tier_promo_rules')
+        .select('id, brand_id, min_qty, bonus_qty')
+        .in('tier_package_id', tierPackageIds)
+        .eq('is_active', true)
+      setPromoRules(
+        (ruleRows || []).map((r: any) => ({
+          id: String(r.id),
+          brand_id: String(r.brand_id),
+          qty: Math.trunc(Number(r.min_qty) || 0),
+          bonus_qty: Math.trunc(Number(r.bonus_qty) || 0),
+          bonus: null,
+          condition: null,
+          title: null,
+        })),
+      )
     } else {
       setPromoRules([])
     }
@@ -173,19 +241,30 @@ function HqStockOrdersContent() {
       setShowPopup(false)
     }
   }, [searchParams])
-  const brandNames = useMemo(() => {
-    const m: Record<string, string> = {}
-    for (const p of products) m[p.brand_id] = p.brand_name || p.brand_id
+  const isSearching = searchQuery.trim().length > 0
+  const brandsByCompany = useMemo(() => {
+    const m: Record<string, { id: string; name: string }[]> = {}
+    for (const p of products) {
+      if (!m[p.company_id]) m[p.company_id] = []
+      if (!m[p.company_id].some((b) => b.id === p.brand_id)) {
+        m[p.company_id].push({ id: p.brand_id, name: p.brand_name || p.brand_id })
+      }
+    }
     return m
   }, [products])
-  const filtered = useMemo(() => {
+  const searchFiltered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return []
+    return products.filter((p) => p.name.toLowerCase().includes(q))
+  }, [products, searchQuery])
+  const productsForCompany = (companyId: string) => {
+    const filter = brandFilterByCompany[companyId] ?? 'all'
     return products.filter((p) => {
-      if (brandFilter !== 'all' && p.brand_id !== brandFilter) return false
-      const q = searchQuery.trim().toLowerCase()
-      if (q && !p.name.toLowerCase().includes(q)) return false
+      if (p.company_id !== companyId) return false
+      if (filter !== 'all' && p.brand_id !== filter) return false
       return true
     })
-  }, [products, brandFilter, searchQuery])
+  }
   const changeQty = (id: string, delta: number) => {
     setCart((prev) =>
       prev
@@ -295,6 +374,55 @@ function HqStockOrdersContent() {
       setSending(false)
     }
   }
+  const renderProductGrid = (list: Product[]) => (
+    <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+      {list.map((prod) => {
+        const item = cart.find((c) => c.product.id === prod.id)
+        const setsByPromoId: Record<string, number> = {}
+        for (const p of promoRules.filter((r) => r.brand_id === prod.brand_id)) {
+          const unit = Math.max(1, Math.trunc(p.qty ?? 1))
+          setsByPromoId[p.id] = item && item.selectedPromo?.id === p.id
+            ? Math.max(0, Math.round(item.qty / unit))
+            : 0
+        }
+        return (
+          <BrandOrderProductCard
+            key={prod.id}
+            prod={prod}
+            supplyPromos={promoRules.filter((r) => r.brand_id === prod.brand_id)}
+            setsByPromoId={setsByPromoId}
+            onChangeSet={changeSet}
+            stock={stockMap[prod.id]}
+          />
+        )
+      })}
+    </div>
+  )
+  const renderBrandChips = (companyId: string, brands: { id: string; name: string }[]) => {
+    if (brands.length <= 1) return null
+    const selected = brandFilterByCompany[companyId] ?? 'all'
+    return (
+      <div style={{ padding: '0 16px 12px', display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
+        <button
+          type="button"
+          onClick={() => setBrandFilterByCompany((prev) => ({ ...prev, [companyId]: 'all' }))}
+          style={{ ...pillStyle(selected === 'all'), flexShrink: 0 }}
+        >
+          전체
+        </button>
+        {brands.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => setBrandFilterByCompany((prev) => ({ ...prev, [companyId]: b.id }))}
+            style={{ ...pillStyle(selected === b.id), flexShrink: 0 }}
+          >
+            {b.name}
+          </button>
+        ))}
+      </div>
+    )
+  }
   if (loading || trackAllowed === null) {
     return (
       <div style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB }}>
@@ -311,6 +439,15 @@ function HqStockOrdersContent() {
       </div>
     )
   }
+  const showCompanyHeaders = companies.length >= 2
+  let emptyMessage = false
+  if (isSearching) {
+    emptyMessage = searchFiltered.length === 0
+  } else if (companies.length === 0) {
+    emptyMessage = true
+  } else {
+    emptyMessage = companies.every((c) => productsForCompany(c.id).length === 0)
+  }
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: 96 }}>
       {toast && (
@@ -323,52 +460,48 @@ function HqStockOrdersContent() {
         <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>본사 재고발주</div>
         <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ marginLeft: 'auto', fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
       </div>
-      <div style={{ padding: '0 16px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={() => setBrandFilter('all')}
-          style={pillStyle(brandFilter === 'all')}
-        >
-          전체
-        </button>
-        {Object.entries(brandNames).map(([id, name]) => (
-          <button key={id} type="button" onClick={() => setBrandFilter(id)} style={pillStyle(brandFilter === id)}>
-            {name}
-          </button>
-        ))}
-      </div>
       <div style={{ padding: '0 16px 12px' }}>
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="제품 검색"
+          placeholder="제품명 검색"
           style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' }}
         />
       </div>
-      <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
-        {filtered.map((prod) => {
-          const item = cart.find((c) => c.product.id === prod.id)
-          const setsByPromoId: Record<string, number> = {}
-          for (const p of promoRules.filter((r) => r.brand_id === prod.brand_id)) {
-            const unit = Math.max(1, Math.trunc(p.qty ?? 1))
-            setsByPromoId[p.id] = item && item.selectedPromo?.id === p.id
-              ? Math.max(0, Math.round(item.qty / unit))
-              : 0
-          }
+      {isSearching ? (
+        <>
+          {renderProductGrid(searchFiltered)}
+        </>
+      ) : (
+        companies.map((company, idx) => {
+          const brands = brandsByCompany[company.id] || []
+          const list = productsForCompany(company.id)
           return (
-          <BrandOrderProductCard
-            key={prod.id}
-            prod={prod}
-            supplyPromos={promoRules.filter((r) => r.brand_id === prod.brand_id)}
-            setsByPromoId={setsByPromoId}
-            onChangeSet={changeSet}
-            stock={stockMap[prod.id]}
-          />
+            <div key={company.id} style={{ marginBottom: 8 }}>
+              {showCompanyHeaders && (
+                <div
+                  style={{
+                    margin: idx === 0 ? '0 16px 10px' : '16px 16px 10px',
+                    paddingTop: idx === 0 ? 0 : 12,
+                    borderTop: idx === 0 ? 'none' : `1px solid ${BORDER}`,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: TEXT,
+                  }}
+                >
+                  {company.name}
+                </div>
+              )}
+              {renderBrandChips(company.id, brands)}
+              {renderProductGrid(list)}
+            </div>
           )
-        })}
-      </div>
-      {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>발주 가능 제품이 없어요</div>
+        })
+      )}
+      {emptyMessage && (
+        <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>
+          {isSearching ? '검색 결과가 없어요' : '발주 가능 제품이 없어요'}
+        </div>
       )}
       {cart.length > 0 && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 64, padding: '10px 16px', background: 'rgba(255,255,255,0.96)', borderTop: `1px solid ${BORDER}`, zIndex: 50 }}>
