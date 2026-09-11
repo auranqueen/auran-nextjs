@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
       full_name: name,
       role: 'owner',
       active_role: 'owner',
+      roles: ['owner', 'customer'],
       owner_store_name: storeName,
       has_offline_store: true,
     },

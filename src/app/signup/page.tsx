@@ -226,6 +226,8 @@ function SignupForm() {
             email: authEmail,
             full_name: form.name,
             role: 'owner',
+            roles: ['owner', 'customer'],
+            active_role: 'owner',
             owner_store_name: form.storeName || undefined,
             has_offline_store: hasOfflineStore,
             store_type: hasOfflineStore ? (storeType || null) : null,

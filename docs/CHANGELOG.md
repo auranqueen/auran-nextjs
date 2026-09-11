@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-11
+### fix: 원장 가입 시 profiles.roles에 owner 포함
+- `owner-signup-v2`: profiles upsert에 `roles: ['owner', 'customer']`
+- 구 가입 `/signup?role=owner`: `roles` + `active_role: 'owner'` 추가
+- `POST /api/profile/active-role`이 roles 미설정 시 `['customer']`만 허용해 「고객으로」이후 원장 복귀가 403 나던 경로 차단
+
 ### fix: 원장 이메일 로그인 시 active_role을 owner로 복구
 - `login/page.tsx` `submitLogin`: `users.role`이 `owner`/`salon`이면 이동 전에 `POST /api/profile/active-role` `{ role: 'owner' }`
 - 「고객으로」전환 후 다시 원장 로그인해도 미들웨어가 `active_role=customer`로 `/`에 가두지 않도록
