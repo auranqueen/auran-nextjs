@@ -345,7 +345,7 @@ function HqStockOrdersContent() {
           style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' }}
         />
       </div>
-      <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+      <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
         {filtered.map((prod) => {
           const item = cart.find((c) => c.product.id === prod.id)
           const setsByPromoId: Record<string, number> = {}
