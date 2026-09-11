@@ -262,7 +262,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
+    const url = await uploadToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
     setDetailImages(prev => [...prev, url])
   }, [brandId, name, retailPrice, isFlashSale])
 
@@ -749,6 +749,10 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             />
             <div style={{ marginTop: 10 }}>
               <span style={S.lbl}>상세 이미지</span>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '4px 0 8px', display: 'flex', alignItems: 'flex-start', gap: 4, lineHeight: 1.4 }}>
+                <span aria-hidden>⚠</span>
+                세로로 아주 긴 이미지는 안 열릴 수 있어요. 여러 장으로 나눠서 올려주세요.
+              </div>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.25)' }} onClick={() => detailFileRef.current?.click()}>
                 + 상세 이미지 업로드 (여러 장 가능)
                 <input ref={detailFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { Array.from(e.target.files || []).forEach(f => void handleDetailImagePick(f)) }} />
