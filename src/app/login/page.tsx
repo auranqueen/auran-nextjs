@@ -77,19 +77,33 @@ function LoginForm() {
 
       if (redirectParam) { setAuthChecked(true); return }
       const { data: { session: earlySession } } = await supabase.auth.getSession()
-      if (earlySession?.user && params.get('role')) {
-        const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+      if (earlySession?.user) {
+        let dbRole: string | null = null
+        try {
+          const roleRes = await fetch('/api/auth/role-status', { method: 'GET', credentials: 'same-origin' })
+          const roleJson = await roleRes.json().catch(() => ({}))
+          if (roleJson?.ok) {
+            dbRole = roleJson.role ?? null
+          } else if (earlySession.user.id) {
+            const { data: row } = await supabase.from('users').select('role').eq('auth_id', earlySession.user.id).maybeSingle()
+            dbRole = (row as { role?: string } | null)?.role ?? null
+          }
+        } catch {}
         const fromParam = normalizePosition(params.get('role'))
-        router.replace(redirectParam || positionToDashboardPath(stored || fromParam || 'customer'))
+        const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+        const finalPosition = normalizePosition(dbRole) || fromParam || stored || 'customer'
+        if (dbRole) {
+          try { localStorage.setItem(POSITION_STORAGE_KEY, finalPosition) } catch {}
+        }
+        if (params.get('role')) {
+          router.replace(redirectParam || positionToDashboardPath(finalPosition))
+          return
+        }
+        router.replace(positionToDashboardPath(finalPosition))
         return
       }
       if (params.get('role')) { setAuthChecked(true); return }
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { setAuthChecked(true); return }
-
-      const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-      router.replace(positionToDashboardPath(stored || 'customer'))
+      setAuthChecked(true)
     })()
   }, [params, redirectParam, router])
 

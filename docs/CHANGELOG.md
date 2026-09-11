@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-11
+### fix: 로그인 기존세션 분기 — users.role 우선
+- `login/page.tsx`: 이미 세션이 있는 채 `/login` 진입 시 `auran_position`(localStorage)을 맹신하지 않고 `/api/auth/role-status`(`users.role`)를 최우선
+- 우선순위: DB role > URL `?role=` > localStorage > customer. DB를 읽으면 localStorage도 동기화
+- 원장 계정이 고객홈(`/`)으로 떨어지던 경로 차단 (세션 유지 상태에서 `/login?role=owner` 포함)
+
 ### feat: 원장 브랜드상담 모바일 화면전환
 - `owner/brand-chat`: 모바일에서 채널목록↔스레드 화면전환 (`isPC` 768px 기준)
 - PC는 기존 그대로(왼쪽 260px 채널목록 + 오른쪽 스레드 나란히)
