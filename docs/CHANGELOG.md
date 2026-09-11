@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-11
+### feat: 원장 브랜드상담 모바일 화면전환
+- `owner/brand-chat`: 모바일에서 채널목록↔스레드 화면전환 (`isPC` 768px 기준)
+- PC는 기존 그대로(왼쪽 260px 채널목록 + 오른쪽 스레드 나란히)
+- 모바일: 미선택 시 목록만 전체너비, 선택 시 스레드만 + ‹ 뒤로가기(`setSelectedId(null)`)
+
 ### fix: 원장 대시보드·상담톡·재고발주 UI
 - `hq-stock-orders`: 상품목록 `grid`를 `repeat(auto-fit, minmax(140px, 1fr))`로 변경 — 좁은 화면에서 열 수 자동 축소
 - `OwnerHomeV3`: 「발주하기」타일 href를 트랙 분기 — A→`/dashboard/owner/brand-orders`, B·기타→`/dashboard/owner/hq-stock-orders`
