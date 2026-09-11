@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-11
+### fix: 원장 이메일 로그인 시 active_role을 owner로 복구
+- `login/page.tsx` `submitLogin`: `users.role`이 `owner`/`salon`이면 이동 전에 `POST /api/profile/active-role` `{ role: 'owner' }`
+- 「고객으로」전환 후 다시 원장 로그인해도 미들웨어가 `active_role=customer`로 `/`에 가두지 않도록
+- 호출 실패는 try/catch로 무시, 로그인 흐름은 계속
+
 ### fix: 로그인 기존세션 분기 — users.role 우선
 - `login/page.tsx`: 이미 세션이 있는 채 `/login` 진입 시 `auran_position`(localStorage)을 맹신하지 않고 `/api/auth/role-status`(`users.role`)를 최우선
 - 우선순위: DB role > URL `?role=` > localStorage > customer. DB를 읽으면 localStorage도 동기화

@@ -187,6 +187,15 @@ function LoginForm() {
       const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
       const safeReturnUrl = returnUrlParam && returnUrlParam.startsWith('/') ? returnUrlParam : null
       fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: lookupEmail, role: effectiveRole || role || 'customer', provider: 'email', status: 'success' }) }).catch(() => {})
+      if (effectiveRole === 'owner' || effectiveRole === 'salon') {
+        try {
+          await fetch('/api/profile/active-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'owner' }),
+          })
+        } catch {}
+      }
       router.replace(safeReturnUrl || safeRedirect || dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
