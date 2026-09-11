@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-11
+### fix: HQ 재고발주 생성 시 없는 컬럼 insert 제거
+- `POST /api/hq-stock-orders/create`: `hq_stock_orders` insert에서 `owner_name`/`salon_name` 제거
+- 운영 테이블에 해당 컬럼이 없어 발주 생성이 500 나던 경로 차단 (`profile_id`로 원장 식별)
+
 ### fix: 원장 가입 시 profiles.roles에 owner 포함
 - `owner-signup-v2`: profiles upsert에 `roles: ['owner', 'customer']`
 - 구 가입 `/signup?role=owner`: `roles` + `active_role: 'owner'` 추가

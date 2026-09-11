@@ -87,8 +87,6 @@ export async function POST(req: NextRequest) {
       items: flatItems,
       subtotal: clientSubtotal,
       final_amount: clientFinalAmount,
-      owner_name: ownerName,
-      salon_name: salonName,
     })
     .select('id, final_amount, status')
     .single()
