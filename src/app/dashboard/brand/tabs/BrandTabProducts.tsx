@@ -48,7 +48,7 @@ function badge(p: Row) {
   const s = String(p.status || '')
   if (s === 'active') return { t: '판매중', bg: 'rgba(76,175,80,0.15)', color: '#4CAF50' }
   if (s === 'hidden' || s === 'discontinued') return { t: '숨김', bg: 'rgba(255,255,255,0.07)', color: SUB }
-  return { t: '승인 대기', bg: 'rgba(255,193,7,0.15)', color: '#FFC107' }
+  return { t: '임시저장', bg: 'rgba(255,193,7,0.15)', color: '#FFC107' }
 }
 
 export default function BrandTabProducts({
@@ -218,7 +218,7 @@ export default function BrandTabProducts({
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {(
           [
-            { key: 'pending', label: '승인 대기' },
+            { key: 'pending', label: '임시저장' },
             { key: 'active', label: '판매중' },
             { key: 'hidden', label: '숨김' },
           ] as const

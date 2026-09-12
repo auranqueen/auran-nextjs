@@ -18,18 +18,28 @@ interface BrandProductFormV2Props {
   productId?: string
   onSaved?: (savedBrandId: string) => void
   onClose?: () => void
+  onOpenDraft?: (productId: string) => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, staffId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, staffId, productId: propProductId, onSaved, onClose, onOpenDraft }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
+  const ensureInflightRef = useRef<Promise<string | null> | null>(null)
   const [loading, setLoading] = useState(!!editId)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [tmpSavedAt, setTmpSavedAt] = useState<string | null>(null)
   const [showDraftPicker, setShowDraftPicker] = useState(false)
-  const [draftList, setDraftList] = useState<{ id: string; name: string; created_at: string }[]>([])
+  const [draftList, setDraftList] = useState<{
+    id: string
+    name: string
+    created_at: string
+    supply_price?: number | null
+    consumer_price?: number | null
+    thumb_img?: string | null
+    images?: string[] | null
+  }[]>([])
 
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
@@ -318,16 +328,23 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
 
   const ensureWorkingProduct = useCallback(async () => {
     if (workingIdRef.current) return workingIdRef.current
+    if (ensureInflightRef.current) return ensureInflightRef.current
     if (!brandId) { alert('브랜드 정보가 없습니다'); return null }
-    try {
-      await persistViaApi('pending')
-      const now = new Date()
-      setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
-      return workingIdRef.current
-    } catch (e) {
-      alert(e instanceof Error ? e.message : '임시 저장 실패')
-      return null
-    }
+    const inflight = (async () => {
+      try {
+        await persistViaApi('pending')
+        const now = new Date()
+        setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
+        return workingIdRef.current
+      } catch (e) {
+        alert(e instanceof Error ? e.message : '임시 저장 실패')
+        return null
+      } finally {
+        ensureInflightRef.current = null
+      }
+    })()
+    ensureInflightRef.current = inflight
+    return inflight
   }, [brandId, persistViaApi])
 
   const onSave = async () => {
@@ -364,13 +381,35 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   }
 
   const loadDrafts = async () => {
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('company_id')
+      .eq('id', brandId)
+      .maybeSingle()
+    const companyId = brandRow?.company_id ? String(brandRow.company_id) : ''
+    if (!companyId) {
+      setDraftList([])
+      setShowDraftPicker(true)
+      return
+    }
+    const { data: siblingBrands } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('company_id', companyId)
+    const brandIds = (siblingBrands || []).map((b: { id: string }) => String(b.id)).filter(Boolean)
+    if (brandIds.length === 0) {
+      setDraftList([])
+      setShowDraftPicker(true)
+      return
+    }
     const { data } = await supabase
       .from('brand_products')
-      .select('id, name, created_at')
+      .select('id, name, created_at, supply_price, consumer_price, thumb_img, images')
       .eq('status', 'pending')
+      .in('brand_id', brandIds)
       .order('created_at', { ascending: false })
       .limit(20)
-    setDraftList(data || [])
+    setDraftList((data || []) as typeof draftList)
     setShowDraftPicker(true)
   }
 
@@ -519,28 +558,75 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
             </div>
           )}
           {showDraftPicker && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDraftPicker(false)}>
-              <div style={{ background: '#1a1714', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 14, width: 'min(480px, 90vw)', maxHeight: '70vh', overflowY: 'auto', padding: 20 }} onClick={e => e.stopPropagation()}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setShowDraftPicker(false)}>
+              <div
+                style={{
+                  background: '#1a1714',
+                  border: '0.5px solid rgba(255,255,255,0.12)',
+                  borderRadius: 14,
+                  width: 'min(480px, 90vw)',
+                  maxHeight: 'min(70vh, 520px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 12px', borderBottom: '0.5px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
                   <span style={{ fontSize: 14, color: '#e8e4dc' }}>임시저장 목록</span>
                   <button type="button" onClick={() => setShowDraftPicker(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
                 </div>
-                {draftList.length === 0 && (
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '24px 0' }}>임시저장된 상품이 없어요</div>
-                )}
-                {draftList.map(d => (
-                  <div key={d.id}
-                    onClick={() => { window.location.href = `/admin/products/edit-v2?id=${d.id}` }}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 8, cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(123,94,167,0.12)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
-                    <div>
-                      <div style={{ fontSize: 13, color: '#e8e4dc', marginBottom: 3 }}>{d.name || '이름 없음'}</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{new Date(d.created_at).toLocaleDateString('ko-KR')} 임시저장</div>
-                    </div>
-                    <span style={{ fontSize: 12, color: '#c4a7e7', flexShrink: 0 }}>이어서 작업 →</span>
-                  </div>
-                ))}
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 20px' }}>
+                  {draftList.length === 0 ? (
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '24px 0' }}>임시저장된 상품이 없어요</div>
+                  ) : draftList.map(d => {
+                    const noPrice = !(Number(d.supply_price) > 0 || Number(d.consumer_price) > 0)
+                    const noImage = !d.thumb_img && !(Array.isArray(d.images) && d.images.length > 0)
+                    const gaps = [
+                      noPrice ? '가격 미입력' : null,
+                      noImage ? '이미지 미등록' : null,
+                    ].filter(Boolean) as string[]
+                    return (
+                      <div
+                        key={d.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setShowDraftPicker(false)
+                          onOpenDraft?.(d.id)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setShowDraftPicker(false)
+                            onOpenDraft?.(d.id)
+                          }
+                        }}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 8, cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(123,94,167,0.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      >
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 13, color: '#e8e4dc', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name || '이름 없음'}</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: gaps.length ? 4 : 0 }}>
+                            {new Date(d.created_at).toLocaleDateString('ko-KR')} 임시저장
+                          </div>
+                          {gaps.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {gaps.map((g) => (
+                                <span key={g} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(255,193,7,0.12)', color: '#FFC107' }}>{g}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 12, color: '#c4a7e7', flexShrink: 0, marginLeft: 8 }}>이어서 작업 →</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div style={{ padding: '10px 20px 14px', borderTop: '0.5px solid rgba(255,255,255,0.08)', fontSize: 11, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>
+                  임시저장한 제품은 살롱에 보이지 않습니다
+                </div>
               </div>
             </div>
           )}

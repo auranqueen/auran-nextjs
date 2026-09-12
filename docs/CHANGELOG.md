@@ -4,6 +4,13 @@
 ---
 
 ## 2026-09-12
+### fix: 브랜드 제품 임시저장 껍데기·목록 UX
+- `ensureWorkingProduct`: in-flight Promise ref로 동시 insert 차단 (상세 이미지 다중 업로드 레이스)
+- `BrandProductMediaSection`: 상세 이미지 `for...of`+`await` 순차 업로드
+- `loadDrafts`: 같은 `company_id` 브랜드만 (`brand_id IN`)
+- 임시저장 팝업: 어드민 URL 제거 → `onOpenDraft`→`setEditProduct`; 헤더/하단 고정·목록만 스크롤; 가격·이미지 미입력 표시; 살롱 비노출 안내
+- 제품 탭/뱃지 라벨 「승인 대기」→「임시저장」(`status=pending` 값 유지)
+
 ### fix: 브랜드허브 「함께 쓰기 좋은 제품」컴퍼니 격리
 - `BrandProductFormV2`: PT 검색을 오렌몰 `products` → 같은 `company_id`의 `brand_products`로 전환(편집 중 본인 제외, ilike+limit 5 유지)
 - 선택값을 `perfect_together`로 저장·재진입 복원 (`buildSaveBody` + `/api/brand/brand-products/save`)

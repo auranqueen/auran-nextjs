@@ -135,7 +135,15 @@ export default function BrandProductMediaSection({
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.25)' }} onClick={() => detailFileRef.current?.click()}>
             + 상세 이미지 업로드 (여러 장 가능)
             <input ref={detailFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
-              onChange={e => { Array.from(e.target.files || []).forEach(file => void uploadDetailImage(file)) }} />
+              onChange={e => {
+                const files = Array.from(e.target.files || [])
+                e.target.value = ''
+                void (async () => {
+                  for (const file of files) {
+                    await uploadDetailImage(file)
+                  }
+                })()
+              }} />
           </div>
           {detailImages.length > 0 && (
             <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
