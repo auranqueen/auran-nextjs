@@ -19,6 +19,10 @@
 - `line_amount`는 기존 `supply_price × qty` (`buildOrderLineItem` 미수정). 확인창 `promo_applied`는 빈 라벨이라 null
 - 카드 마운트의 `setsByPromoId`는 `line.promo.id` 순회라 `__unit__` 키 추가 불필요
 
+### fix: 단가 수량 담김이 카드 하이라이트·배너에 반영
+- `BrandOrderProductCard.tsx`: `inCart`에 `setsByPromoId['__unit__'] > 0` 포함. 배너 `order` 초기값에 `__unit__` 수량 가산(bonus 0). 스타일·문구 형식 미변경
+- 프로모 카드는 `__unit__`을 담지 않으므로 하이라이트·배너 숫자는 기존과 동일
+
 ### feat: 브랜드사 등급 패키지 추가/삭제
 - `POST /api/brand/tier-packages/save`: `id` 없으면 insert, 있으면 update. `company_id`는 세션 소속 회사만. **`commission_rate` insert/update/select 금지** (트랙B 전용값)
 - `POST /api/brand/tier-packages/delete` 신규: 배정(`brand_owner_grades`) 또는 주문(`brand_tier_orders`) 있으면 `is_active=false`, 없으면 구성품·프로모 삭제 후 hard delete

@@ -34,7 +34,7 @@ export default function BrandOrderProductCard({
   const priced = hasValidSupplyPrice(prod.supply_price)
   const outOfStock = stock !== undefined && stock <= 0
   const brandPromos = promosForBrand(supplyPromos, prod.brand_id)
-  const inCart = brandPromos.some((p) => (setsByPromoId[p.id] || 0) > 0)
+  const inCart = brandPromos.some((p) => (setsByPromoId[p.id] || 0) > 0) || (setsByPromoId['__unit__'] || 0) > 0
   const interactive = priced && !outOfStock
   return (
     <div style={{
@@ -55,7 +55,7 @@ export default function BrandOrderProductCard({
           const orderQty = Math.max(1, Math.trunc(p.qty ?? 1)) * sets
           const bonusQty = Math.trunc(p.bonus_qty ?? 0) * sets
           return { order: acc.order + orderQty, bonus: acc.bonus + bonusQty }
-        }, { order: 0, bonus: 0 })
+        }, { order: setsByPromoId['__unit__'] || 0, bonus: 0 })
         return (
           <div style={{ flexBasis: '100%', fontSize: 8, padding: '4px 8px', borderRadius: 8, background: '#fbeef2', color: '#c96a86' }}>
             ✨ {totals.order}개 주문 → 총 {totals.order + totals.bonus}개 받아요{totals.bonus > 0 ? ` (증정 ${totals.bonus}개 포함)` : ''}
