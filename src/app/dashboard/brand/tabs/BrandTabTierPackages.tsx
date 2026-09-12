@@ -59,6 +59,11 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
   const [editingKitId, setEditingKitId] = useState<string | null>(null)
   const [editKitDraft, setEditKitDraft] = useState<KitDraft>(EMPTY_KIT_DRAFT)
   const [kitSaving, setKitSaving] = useState(false)
+  const [showAddPkg, setShowAddPkg] = useState(false)
+  const [addPkgName, setAddPkgName] = useState('')
+  const [addPkgPrice, setAddPkgPrice] = useState('')
+  const [addPkgSaving, setAddPkgSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(''), 2500)
@@ -164,13 +169,73 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
       })
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) {
-        showToast(json?.error === 'invalid_price' ? '가격이 올바르지 않아요' : '저장에 실패했어요')
+        showToast(json?.error === 'invalid_price' ? '가격이 올바르지 않아요' : json?.error === 'duplicate_tier_name' ? '같은 이름의 등급이 이미 있어요' : '저장에 실패했어요')
         return
       }
       showToast('저장했어요')
       await load()
     } finally {
       setSavingId(null)
+    }
+  }
+  const createPackage = async () => {
+    if (!companyId) return
+    const tierName = addPkgName.trim()
+    const price = Math.trunc(Number(addPkgPrice.replace(/,/g, '')))
+    if (!tierName) {
+      showToast('등급명을 입력해 주세요')
+      return
+    }
+    if (!Number.isFinite(price) || price < 1000) {
+      showToast('가격은 1,000원 이상이어야 해요')
+      return
+    }
+    setAddPkgSaving(true)
+    try {
+      const res = await fetch('/api/brand/tier-packages/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ company_id: companyId, tier_name: tierName, price }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok) {
+        showToast(json?.error === 'invalid_price' ? '가격이 올바르지 않아요' : json?.error === 'duplicate_tier_name' ? '같은 이름의 등급이 이미 있어요' : '추가에 실패했어요')
+        return
+      }
+      setAddPkgName('')
+      setAddPkgPrice('')
+      setShowAddPkg(false)
+      showToast('등급을 추가했어요')
+      await load()
+    } finally {
+      setAddPkgSaving(false)
+    }
+  }
+  const deletePackage = async (pkg: TierPackage) => {
+    if (!companyId) return
+    if (!window.confirm(`"${pkg.tier_name}" 등급을 삭제할까요? 원장님에게 배정된 등급은 삭제 대신 숨김 처리돼요.`)) return
+    setDeletingId(pkg.id)
+    try {
+      const res = await fetch('/api/brand/tier-packages/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id: pkg.id }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok) {
+        showToast('삭제에 실패했어요')
+        return
+      }
+      if (json.action === 'deactivated') {
+        showToast('원장님에게 배정되어 있어 숨김 처리했어요')
+      } else {
+        showToast('삭제했어요')
+      }
+      await load()
+    } finally {
+      setDeletingId(null)
     }
   }
   const toggleExpand = (id: string) => {
@@ -332,11 +397,63 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
       {sub === 'price' && (
         <>
         <BrandGradePointRatesCard companyId={companyId} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => setShowAddPkg((v) => !v)}
+            style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${PURPLE}`, background: showAddPkg ? 'rgba(123,94,167,0.15)' : 'transparent', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}
+          >
+            {showAddPkg ? '닫기' : '+ 등급 추가'}
+          </button>
+        </div>
+        {showAddPkg ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginBottom: 14, padding: 12, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <label style={{ flex: '1 1 140px', minWidth: 120 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>등급명</div>
+              <input
+                type="text"
+                value={addPkgName}
+                onChange={(e) => setAddPkgName(e.target.value)}
+                placeholder="등급 이름"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13 }}
+              />
+            </label>
+            <label style={{ flex: '1 1 140px', minWidth: 120 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>가격(이상, 원)</div>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={addPkgPrice}
+                onChange={(e) => setAddPkgPrice(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="1000000"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={addPkgSaving}
+              onClick={() => void createPackage()}
+              style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', fontSize: 12, fontWeight: 600, cursor: addPkgSaving ? 'not-allowed' : 'pointer', opacity: addPkgSaving ? 0.7 : 1 }}
+            >
+              {addPkgSaving ? '추가 중…' : '등록'}
+            </button>
+          </div>
+        ) : null}
         {loading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
-        ) : rows.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>등록된 등급 패키지가 없어요</div>
-        ) : (
+        ) : rows.length === 0 && !showAddPkg ? (
+          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>아직 등록된 등급이 없어요</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 12, lineHeight: 1.6 }}>등급을 운영하려면 추가할 수 있어요. 쓰지 않아도 괜찮아요.</div>
+            <button
+              type="button"
+              onClick={() => setShowAddPkg(true)}
+              style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${PURPLE}`, background: 'transparent', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}
+            >
+              + 등급 추가
+            </button>
+          </div>
+        ) : rows.length === 0 ? null : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {rows.map((pkg) => {
               const draft = drafts[pkg.id] || { tier_name: '', price: '0' }
@@ -355,9 +472,11 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
                     overflow: 'hidden',
                   }}
                 >
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => toggleExpand(pkg.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(pkg.id) } }}
                     style={{
                       width: '100%',
                       display: 'flex',
@@ -371,13 +490,26 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
                     }}
                   >
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>{pkg.tier_name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>{pkg.tier_name}</div>
+                        {pkg.is_active === false ? (
+                          <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>숨김</span>
+                        ) : null}
+                      </div>
                       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
                         {Math.trunc(Number(pkg.price)).toLocaleString()}원 이상
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      disabled={deletingId === pkg.id}
+                      onClick={(e) => { e.stopPropagation(); void deletePackage(pkg) }}
+                      style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: deletingId === pkg.id ? 'not-allowed' : 'pointer', fontSize: 12 }}
+                    >
+                      {deletingId === pkg.id ? '처리 중…' : '삭제'}
+                    </button>
                     <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{expanded ? '▲' : '▼'}</span>
-                  </button>
+                  </div>
                   {expanded && (
                     <div style={{ padding: '0 16px 16px' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginBottom: 14 }}>

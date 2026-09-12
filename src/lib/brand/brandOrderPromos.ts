@@ -1,9 +1,8 @@
-/** 등급별 적립율(%) — 프로모는 supply_promos, 적립은 기존 값 유지 */
+/** 등급별 적립율(%) — 맵에 없는 등급·빈 값은 0 (취급점 폴백 없음) */
 export const GRADE_POINT_RATES: Record<string, number> = {
   '메디슈티컬': 3,
   '프리미엄전문점': 2,
   '전문점': 1.5,
-  '취급점': 1,
 }
 
 export type SupplyPromoRow = {
@@ -61,17 +60,19 @@ export function promoBonus(row: SupplyPromoRow | null): number {
   return parseInt(parts[1] || '0', 10) || 0
 }
 
-export function gradePointRate(grade: string, rateMap?: Record<string, number> | null): number {
-  if (rateMap && rateMap[grade] != null && Number.isFinite(Number(rateMap[grade]))) {
-    return Number(rateMap[grade])
+export function gradePointRate(grade: string | null | undefined, rateMap?: Record<string, number> | null): number {
+  const key = typeof grade === 'string' ? grade.trim() : ''
+  if (!key) return 0
+  if (rateMap && rateMap[key] != null && Number.isFinite(Number(rateMap[key]))) {
+    return Number(rateMap[key])
   }
-  return GRADE_POINT_RATES[grade] ?? 1
+  return GRADE_POINT_RATES[key] ?? 0
 }
 
 /** 발주 금액 기준 적립 T (표시용 %는 gradePointRate 유지) */
 export function calcPointsEarned(
   totalAmount: number,
-  grade: string,
+  grade: string | null | undefined,
   rateMap?: Record<string, number> | null,
 ): number {
   return Math.floor(totalAmount * gradePointRate(grade, rateMap) / 100)

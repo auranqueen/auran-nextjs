@@ -103,7 +103,7 @@ export default function CampaignQuickOrderModal({ campaignId, ownerProfileId, on
   const [selectedSets, setSelectedSets] = useState(1)
   const [areteBalance, setAreteBalance] = useState(0)
   const [rewardBalance, setRewardBalance] = useState(0)
-  const [grade, setGrade] = useState('취급점')
+  const [grade, setGrade] = useState<string | null>(null)
   const [rateMap, setRateMap] = useState<Record<string, number> | null>(null)
   const [usePoints, setUsePoints] = useState(true)
   const [usePointsReward, setUsePointsReward] = useState(true)
@@ -181,7 +181,8 @@ export default function CampaignQuickOrderModal({ campaignId, ownerProfileId, on
         ])
         setAreteBalance(Math.trunc(Number(arete?.balance) || 0))
         setRewardBalance(Math.trunc(Number(reward?.balance) || 0))
-        setGrade(String(gradeRow?.grade || '취급점'))
+        const rawGrade = String(gradeRow?.grade || '').trim()
+        setGrade(rawGrade || null)
         const rMap: Record<string, number> = {}
         for (const r of (rateRows || []) as { grade: string; rate: number }[]) {
           rMap[r.grade] = Number(r.rate)

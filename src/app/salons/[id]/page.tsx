@@ -26,11 +26,12 @@ const TEXT_SUB = 'rgba(255,255,255,0.55)'
 const BORDER = 'rgba(255,255,255,0.08)'
 const CARD = 'rgba(255,255,255,0.05)'
 const SURFACE = 'rgba(255,255,255,0.08)'
-const GRADE_COLORS: Record<string, string> = {
-  '메디슈티컬': '#E53935',
-  '프리미엄전문점': '#C9A96E',
-  '전문점': '#9C7FD4',
-  '취급점': '#64B5F6',
+const GRADE_CHIP_PALETTE = ['#E53935', '#C9A96E', '#9C7FD4', '#64B5F6'] as const
+
+function gradeChipColorByOrder(grade: string, orderedUniqueGrades: string[]): string {
+  const i = orderedUniqueGrades.indexOf(grade)
+  if (i < 0) return PURPLE
+  return GRADE_CHIP_PALETTE[i % GRADE_CHIP_PALETTE.length]
 }
 
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
@@ -258,6 +259,10 @@ export default function SalonHomePage() {
   const [showStory, setShowStory] = useState(false)
   const [certLightbox, setCertLightbox] = useState<{ url: string; label: string } | null>(null)
   const [brandAuthItems, setBrandAuthItems] = useState<{ brandId: string; brandName: string; grade: string; arete: boolean }[]>([])
+  const gradeColorOrder = useMemo(
+    () => Array.from(new Set(brandAuthItems.map((i) => i.grade).filter(Boolean))),
+    [brandAuthItems],
+  )
   const bannerTouchX = useRef(0)
 
   useEffect(() => {
@@ -317,7 +322,7 @@ export default function SalonHomePage() {
           for (const r of gradeRows || []) {
             const cid = String((r as { company_id?: string | null }).company_id || '')
             if (!cid) continue
-            const grade = String((r as { grade?: string | null }).grade || '취급점')
+            const grade = String((r as { grade?: string | null }).grade || '').trim()
             for (const b of brandsByCompany[cid] || []) {
               byBrand[b.id] = {
                 brandId: b.id,
@@ -1382,7 +1387,7 @@ export default function SalonHomePage() {
                     <div key={item.brandId} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 13, color: TEXT, minWidth: 72 }}>{item.brandName}</span>
                       {item.grade ? (
-                        <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 12, background: `${GRADE_COLORS[item.grade] || PURPLE}22`, color: GRADE_COLORS[item.grade] || PURPLE, border: `0.5px solid ${GRADE_COLORS[item.grade] || PURPLE}66` }}>
+                        <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 12, background: `${gradeChipColorByOrder(item.grade, gradeColorOrder)}22`, color: gradeChipColorByOrder(item.grade, gradeColorOrder), border: `0.5px solid ${gradeChipColorByOrder(item.grade, gradeColorOrder)}66` }}>
                           {item.grade}
                         </span>
                       ) : null}

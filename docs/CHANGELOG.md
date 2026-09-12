@@ -3,6 +3,25 @@
 
 ---
 
+## 2026-09-12
+### fix: 취급점 폴백 제거 — 등급 없으면 혜택 없음
+- 시바산이 취급점 등급을 폐지했는데, 매칭 실패 시 `'취급점'`으로 가격·적립이 계산되던 경로를 제거
+- `brand-orders/page.tsx`: `DEFAULT_GRADE = '취급점'` 삭제. `gradeForBrand` 미스·빈 grade는 `null`. 등급 없으면 등급 프로모 `[]`, 적립율 0, 헤더/확인창 등급 뱃지 숨김. 발주 payload의 `grade`는 optional
+- `CampaignQuickOrderModal.tsx`: 초기값·`gradeRow` 폴백을 `null`로. 적립만 0, 캠페인 발주는 그대로
+- `salons/[id]/page.tsx`: 빈 등급은 뱃지 숨김. `GRADE_COLORS` 이름 키 대신 등장 순번 팔레트
+- `brandOrderPromos.ts`: `GRADE_POINT_RATES`에서 `'취급점'` 삭제. `gradePointRate`/`calcPointsEarned`는 빈·미지 등급이면 **0** (`?? 1` 제거)
+- `companyMembershipTemp.ts`: 시바산 3단계(메디슈티컬/프리미엄전문점/전문점). `getDefaultOwnerGrade` 시바산/`!companyId` → `null`. 오렌톡 `'취급점'` 타깃 제거. 칩 축약에서 취급점 키만 삭제
+- `BrandOrdersPromoSettings.tsx`는 허브 미마운트 — 이번 범위 아님. 단가 발주 UI는 추가하지 않음(등급 없으면 카드 「옵션 없음」)
+
+### feat: 브랜드사 등급 패키지 추가/삭제
+- `POST /api/brand/tier-packages/save`: `id` 없으면 insert, 있으면 update. `company_id`는 세션 소속 회사만. **`commission_rate` insert/update/select 금지** (트랙B 전용값)
+- `POST /api/brand/tier-packages/delete` 신규: 배정(`brand_owner_grades`) 또는 주문(`brand_tier_orders`) 있으면 `is_active=false`, 없으면 구성품·프로모 삭제 후 hard delete
+- `BrandTabTierPackages.tsx`: 추가 폼·삭제. 빈 목록은 등록을 강요하지 않음
+- `BrandGradePointRatesCard.tsx`: 패키지 없을 때 안내 문구만 중립화
+- 마이그레이션 `195_brand_tier_packages_insert_defaults.sql`: `commission_rate DEFAULT 0` (파일만, DB는 미실행). DEFAULT 없으면 신규 insert가 실패할 수 있음
+
+---
+
 ## 2026-09-11
 ### fix: HQ 재고발주 생성 시 없는 컬럼 insert 제거
 - `POST /api/hq-stock-orders/create`: `hq_stock_orders` insert에서 `owner_name`/`salon_name` 제거

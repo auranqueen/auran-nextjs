@@ -104,7 +104,7 @@ export default function BrandGradePointRatesCard({ companyId }: Props) {
         {loading ? (
           <div style={{ fontSize: 12, color: SUB, padding: '8px 0' }}>불러오는 중…</div>
         ) : grades.length === 0 ? (
-          <div style={{ fontSize: 12, color: SUB, padding: '8px 0' }}>등록된 등급 패키지가 없어요. 위에서 등급을 먼저 추가해 주세요.</div>
+          <div style={{ fontSize: 12, color: SUB, padding: '8px 0' }}>등급을 등록하면 적립율을 설정할 수 있어요.</div>
         ) : (
           grades.map((grade) => {
             const color = tierChipColor(grade, grades, GOLD)

@@ -24,7 +24,6 @@ import { billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
 
 const BG = '#ffffff'
 const LIGHT = '#f8f7fc'
-const DEFAULT_GRADE = '취급점'
 
 interface Product {
   id: string
@@ -80,16 +79,17 @@ function isGiftReturnLine(i: { unit_price?: number | null; line_amount?: number 
   return Math.trunc(Number(i.unit_price) || 0) === 0 && Math.trunc(Number(i.line_amount) || 0) === 0
 }
 
-function gradeForBrand(gradeByBrandId: Record<string, string>, brandId: string | null | undefined): string {
-  if (!brandId) return DEFAULT_GRADE
-  return gradeByBrandId[brandId] || DEFAULT_GRADE
+function gradeForBrand(gradeByBrandId: Record<string, string>, brandId: string | null | undefined): string | null {
+  if (!brandId) return null
+  return gradeByBrandId[brandId] || null
 }
 
 function promosForBrandGrade(
   promos: SupplyPromoRow[],
   brandId: string,
-  grade: string,
+  grade: string | null,
 ): SupplyPromoRow[] {
+  if (!grade) return []
   return promos
     .filter((p) => p.brand_id === brandId && (p.condition || '') === grade)
     .sort((a, b) => (a.qty ?? 0) - (b.qty ?? 0))
@@ -325,8 +325,8 @@ export default function BrandOrdersPage() {
           .in('company_id', companyIdsForGrade)
         for (const row of gradeRows || []) {
           const cid = String((row as { company_id: string }).company_id)
-          const g = String((row as { grade?: string }).grade || DEFAULT_GRADE)
-          gradeByCompanyOuter[cid] = g
+          const g = String((row as { grade?: string }).grade || '').trim()
+          if (g) gradeByCompanyOuter[cid] = g
           const tpid = (row as { tier_package_id?: string | null }).tier_package_id
           if (tpid) tierPackageByCompany[cid] = String(tpid)
         }
@@ -751,7 +751,7 @@ export default function BrandOrdersPage() {
         profile_id: ownerProfileId,
         owner_name: ownerName,
         salon_name: salonName,
-        grade: orderGrade,
+        grade: orderGrade || undefined,
         items,
         total_qty: totalItems,
         total_amount: totalAmount,
@@ -907,9 +907,11 @@ export default function BrandOrdersPage() {
       </div>
 
       <div style={{ padding: '8px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 9, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
-          {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
-        </span>
+        {headerGrade ? (
+          <span style={{ fontSize: 9, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
+            {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
+          </span>
+        ) : null}
         <button
           type="button"
           onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
@@ -1152,9 +1154,11 @@ export default function BrandOrdersPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
                 <span>브랜드</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? `${cartBrandCount}개 브랜드` : (popupCart[0]?.product.brand_name || '-')}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
-                <span>등급</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? '브랜드별' : activeGrade}</span>
-              </div>
+              {cartBrandCount > 1 || activeGrade ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
+                  <span>등급</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? '브랜드별' : activeGrade}</span>
+                </div>
+              ) : null}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: SUB, marginBottom: 4 }}>
                 <span>적립율</span><span style={{ color: SUB }}>{cartBrandCount > 1 ? '브랜드별' : `${gradePointRate(activeGrade, gradeRateMap)}%`}</span>
               </div>
