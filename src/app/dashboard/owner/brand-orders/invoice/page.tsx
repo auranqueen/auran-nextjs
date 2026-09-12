@@ -11,8 +11,8 @@ import {
   type InvoiceLineRow,
 } from '@/lib/brand/brandBilling'
 import { billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
+import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 
-const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 const INVOICE_PAY_API = '/api/payments/brand-self/civasan/invoice/create'
 const SYNC_API = '/api/owner/brand-billing-invoice/sync'
 
@@ -65,6 +65,7 @@ function BrandOrdersInvoiceContent() {
   const [invoice, setInvoice] = useState<BillingInvoice | null>(null)
   const [payappActive, setPayappActive] = useState(false)
   const [companyName, setCompanyName] = useState('')
+  const [noLinkedCompany, setNoLinkedCompany] = useState(false)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalStep, setModalStep] = useState<'form' | 'success'>('form')
@@ -81,37 +82,68 @@ function BrandOrdersInvoiceContent() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setNoLinkedCompany(false)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.replace('/login?role=owner')
       return
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-    if (!profile?.id) {
+    const ownerIds = await resolveOwnerIds(supabase, user.id)
+    if (!ownerIds?.profileId || !ownerIds.userId) {
       showToast('프로필을 불러올 수 없어요')
       setLoading(false)
       return
     }
+    const profileId = ownerIds.profileId
 
     const [y, m] = ym.split('-').map(Number)
     const billingMonth = `${y}-${String(m).padStart(2, '0')}-01`
     const { startIso, endIso } = billingCycleRange(new Date(y, m - 1, 1))
 
-    // 진입 브랜드(시바산) → 소속 컴퍼니 찾기
-    const { data: entryBrand } = await supabase
-      .from('brands')
-      .select('id, company_id')
-      .eq('id', CIVASAN_BRAND_ID)
-      .maybeSingle()
+    // 원장 연결 브랜드 → company_id (발주 목록 headerCompanyId와 동일 계열)
+    const { data: linkRows } = await supabase
+      .from('brand_owner_links')
+      .select('brand_id')
+      .eq('owner_id', ownerIds.userId)
+      .eq('status', 'active')
 
-    const companyId = entryBrand?.company_id ? String(entryBrand.company_id) : null
+    const linkedBrandIds = Array.from(
+      new Set((linkRows || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
+    )
+
+    let companyId: string | null = null
+    if (linkedBrandIds.length > 0) {
+      const { data: brandRows } = await supabase
+        .from('brands')
+        .select('id, company_id')
+        .in('id', linkedBrandIds)
+      const byId = new Map(
+        (brandRows || []).map((b: { id: string; company_id?: string | null }) => [
+          String(b.id),
+          b.company_id ? String(b.company_id) : '',
+        ]),
+      )
+      for (const bid of linkedBrandIds) {
+        const cid = byId.get(bid) || ''
+        if (cid) {
+          companyId = cid
+          break
+        }
+      }
+    }
+
     if (!companyId) {
-      showToast('회사 정보를 찾을 수 없어요')
+      setNoLinkedCompany(true)
+      setCompanyName('')
+      setPayappActive(false)
+      setLines([])
+      setTotalAmount(0)
+      setPointsTotal(0)
+      setPointsUsedTotal(0)
+      setPointsUsedRewardTotal(0)
+      setPouchTier(null)
+      setInvoice(null)
       setLoading(false)
       return
     }
@@ -132,27 +164,41 @@ function BrandOrdersInvoiceContent() {
 
     const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
 
-    const { data: orderRows } = await supabase
-      .from('brand_orders')
-      .select('id, created_at, items, total_amount, points_earned, points_used, points_used_reward')
-      .eq('profile_id', profile.id)
-      .in('brand_id', brandIds)
-      .gte('created_at', startIso)
-      .lt('created_at', endIso)
-      .order('created_at', { ascending: true })
+    let orderRows: {
+      id: string
+      created_at: string
+      items: { name?: string; qty?: number; unit_price?: number; line_amount?: number }[] | null
+      total_amount: number
+      points_earned: number
+      points_used?: number
+      points_used_reward?: number
+    }[] = []
+    if (brandIds.length) {
+      const { data } = await supabase
+        .from('brand_orders')
+        .select('id, created_at, items, total_amount, points_earned, points_used, points_used_reward')
+        .eq('profile_id', profileId)
+        .in('brand_id', brandIds)
+        .gte('created_at', startIso)
+        .lt('created_at', endIso)
+        .order('created_at', { ascending: true })
+      orderRows = (data || []) as typeof orderRows
+    }
 
-    const orders = orderRows || []
+    const orders = orderRows
     const expanded = expandOrderItemsToLines(orders)
     const sumAmount = orders.reduce((s, o) => s + Math.trunc(Number(o.total_amount) || 0), 0)
     const sumPoints = orders.reduce((s, o) => s + Math.trunc(Number(o.points_earned) || 0), 0)
     const sumUsed = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used?: number }).points_used) || 0), 0)
     const sumUsedReward = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0), 0)
     const netAmount = Math.max(0, sumAmount - sumUsed - sumUsedReward)
-    const { data: samplePouchRows } = await supabase
-      .from('brand_products')
-      .select('id')
-      .eq('is_sample_pouch', true)
-      .in('brand_id', brandIds)
+    const { data: samplePouchRows } = brandIds.length
+      ? await supabase
+          .from('brand_products')
+          .select('id')
+          .eq('is_sample_pouch', true)
+          .in('brand_id', brandIds)
+      : { data: [] as { id: string }[] }
     const samplePouchIds = new Set((samplePouchRows || []).map((r: { id: string }) => String(r.id)))
     const samplePouchAmount = orders.reduce((s, o) => {
       const items = Array.isArray((o as { items?: unknown[] }).items) ? (o as { items: { product_id?: string; qty?: number; unit_price?: number; line_amount?: number }[] }).items : []
@@ -192,7 +238,7 @@ function BrandOrdersInvoiceContent() {
       const { data: existing } = await supabase
         .from('brand_billing_invoices')
         .select('id, company_id, total_amount, points_total, pouch_tier, status, paid_at, billing_month')
-        .eq('owner_id', profile.id)
+        .eq('owner_id', profileId)
         .eq('company_id', companyId)
         .eq('billing_month', billingMonth)
         .maybeSingle()
@@ -288,11 +334,17 @@ function BrandOrdersInvoiceContent() {
           onChange={(e) => setYm(e.target.value)}
           style={{ padding: '8px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, color: TEXT }}
         />
-        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>{companyName} · {cycleLabel}</div>
+        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>
+          {noLinkedCompany ? '연결 회사 없음' : `${companyName} · ${cycleLabel}`}
+        </div>
       </div>
 
       <div style={{ padding: '0 16px' }}>
-        {lines.length === 0 ? (
+        {noLinkedCompany ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: SUB, fontSize: 14 }}>
+            연결된 브랜드 회사가 없어요
+          </div>
+        ) : lines.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: SUB, fontSize: 14 }}>이 청구 기간 발주 내역이 없어요</div>
         ) : (
           <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>

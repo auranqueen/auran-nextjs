@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-12
+### fix: 월 청구서 시바산 브랜드 ID 하드코딩 제거
+- `brand-orders/invoice`: `CIVASAN_BRAND_ID` 제거 → `brand_owner_links`(active) 연결 브랜드의 `company_id`로 조회
+- 연결 회사 없으면 안내 문구. 결제 API(`civasan/invoice/create`) 경로는 유지(이미 company 범용)
+
 ### fix: ensure 임시행을 정식 저장이 이어받음 + 상세 이미지 파일명 충돌
 - `onWorkingProductCreated` → 부모 `editProduct`/`productId`로 working id 공유 (리마운트 후에도 같은 행 update)
 - ensure가 내려준 id와 `workingIdRef`가 같으면 편집 로드 effect 스킵 (작성 중 state 덮어쓰기 방지)
