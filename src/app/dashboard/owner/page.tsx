@@ -335,10 +335,6 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       }
     }
 
-    const BRAND_SELF_API_BY_COMPANY: Record<string, string> = {
-      'c1a78c33-4001-4de9-b22d-e94cf815cf33': '/api/payments/brand-self/civasan/create',
-    }
-
     const selfTierBrands: SelfTierBrand[] = []
 
     // ── 웨이브4-A (Track A only — B와 혼입 금지)
@@ -347,7 +343,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         new Set(
           ((selfBrandRows as any[]) || [])
             .map((b) => (b.company_id ? String(b.company_id) : ''))
-            .filter((cid) => cid && BRAND_SELF_API_BY_COMPANY[cid]),
+            .filter((cid) => cid),
         ),
       )
       if (companyIds.length) {
@@ -383,8 +379,6 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         }
         for (const c of (companyRows as any[]) || []) {
           const cid = String(c.id)
-          const createApiPath = BRAND_SELF_API_BY_COMPANY[cid]
-          if (!createApiPath) continue
           const packages = (pkgsByCompany[cid] || [])
             .map((p) => ({
               id: String(p.id),
@@ -403,7 +397,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
           selfTierBrands.push({
             brandId: cid,
             brandName: String(c.name || '회사'),
-            createApiPath,
+            createApiPath: '/api/payments/brand-self/civasan/create',
             payappActive: Boolean(c.payapp_active),
             packages,
             ownedGrade: isPaid ? owned?.grade || null : null,

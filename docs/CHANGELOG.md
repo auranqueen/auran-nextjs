@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-12
+### fix: 등급 셀프결제 회사 화이트리스트 제거
+- `owner/page.tsx`: `BRAND_SELF_API_BY_COMPANY` 제거. Track A + 연결 회사 + active 등급 패키지 있으면 카드 노출
+- `createApiPath`는 타입용 고정 경로 유지(실제 결제는 `tier-cart-create`). 시바산은 기존과 동일
+
 ### fix: 월 청구서 시바산 브랜드 ID 하드코딩 제거
 - `brand-orders/invoice`: `CIVASAN_BRAND_ID` 제거 → `brand_owner_links`(active) 연결 브랜드의 `company_id`로 조회
 - 연결 회사 없으면 안내 문구. 결제 API(`civasan/invoice/create`) 경로는 유지(이미 company 범용)
