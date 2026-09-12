@@ -83,7 +83,25 @@ export default function BrandOrderProductCard({
             {outOfStock ? '품절' : '발주 불가'}
           </button>
         ) : brandPromos.length === 0 ? (
-          <div style={{ fontSize: 10, color: SUB }}>옵션 없음</div>
+          (() => {
+            const unitSets = setsByPromoId['__unit__'] || 0
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => onChangeSet(prod.id, '__unit__', -1)}
+                  disabled={unitSets <= 0}
+                  style={{ width: 22, height: 22, borderRadius: 8, border: '1px solid #eee', background: '#f0f0f0', fontSize: 8, cursor: unitSets <= 0 ? 'default' : 'pointer', color: TEXT, lineHeight: 1 }}
+                >−</button>
+                <span style={{ fontSize: 8, fontWeight: 500, color: TEXT, minWidth: 14, textAlign: 'center' }}>{unitSets}</span>
+                <button
+                  type="button"
+                  onClick={() => onChangeSet(prod.id, '__unit__', 1)}
+                  style={{ width: 22, height: 22, borderRadius: 8, border: 'none', background: '#7b5ea7', color: '#fff', fontSize: 8, cursor: 'pointer', lineHeight: 1 }}
+                >+</button>
+              </div>
+            )
+          })()
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {brandPromos.map((promo) => {

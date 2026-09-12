@@ -13,6 +13,12 @@
 - `companyMembershipTemp.ts`: 시바산 3단계(메디슈티컬/프리미엄전문점/전문점). `getDefaultOwnerGrade` 시바산/`!companyId` → `null`. 오렌톡 `'취급점'` 타깃 제거. 칩 축약에서 취급점 키만 삭제
 - `BrandOrdersPromoSettings.tsx`는 허브 미마운트 — 이번 범위 아님. 단가 발주 UI는 추가하지 않음(등급 없으면 카드 「옵션 없음」)
 
+### feat: 프로모 없는 제품도 단가 수량 발주
+- `BrandOrderProductCard.tsx`: 프로모 0개일 때 「옵션 없음」 대신 `__unit__` 단가 +/- (칩 없음). 프로모가 있는 카드는 미변경
+- `brand-orders/page.tsx` `changeSet`: `promoId === '__unit__'`이면 qty 1·라벨 없는 가상 프로모로 카트 적재. 기존 프로모 경로 유지
+- `line_amount`는 기존 `supply_price × qty` (`buildOrderLineItem` 미수정). 확인창 `promo_applied`는 빈 라벨이라 null
+- 카드 마운트의 `setsByPromoId`는 `line.promo.id` 순회라 `__unit__` 키 추가 불필요
+
 ### feat: 브랜드사 등급 패키지 추가/삭제
 - `POST /api/brand/tier-packages/save`: `id` 없으면 insert, 있으면 update. `company_id`는 세션 소속 회사만. **`commission_rate` insert/update/select 금지** (트랙B 전용값)
 - `POST /api/brand/tier-packages/delete` 신규: 배정(`brand_owner_grades`) 또는 주문(`brand_tier_orders`) 있으면 `is_active=false`, 없으면 구성품·프로모 삭제 후 hard delete

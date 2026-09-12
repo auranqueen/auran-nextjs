@@ -569,7 +569,19 @@ export default function BrandOrdersPage() {
 
   const changeSet = (productId: string, promoId: string, delta: number) => {
     const full = products.find((p) => p.id === productId)
-    const promo = supplyPromos.find((p) => p.id === promoId)
+    const promo = promoId === '__unit__'
+      ? (full
+          ? {
+              id: '__unit__',
+              brand_id: full.brand_id,
+              qty: 1,
+              bonus_qty: null,
+              bonus: null,
+              condition: null,
+              title: null,
+            } satisfies SupplyPromoRow
+          : undefined)
+      : supplyPromos.find((p) => p.id === promoId)
     if (delta > 0) {
       if (!full || !promo) return
       if (!hasValidSupplyPrice(full.supply_price)) {
