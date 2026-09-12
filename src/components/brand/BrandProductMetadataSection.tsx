@@ -113,6 +113,7 @@ export default function BrandProductMetadataSection(props: Props) {
 
       <div style={S.sec}>
         <div style={S.secTitle}>함께 쓰기 좋은 제품</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>같은 회사 브랜드 제품만 검색·저장됩니다</div>
         <div style={{ position: 'relative', marginBottom: 8 }}>
           <input style={S.inp} value={props.ptInput} onChange={e => props.setPtInput(e.target.value)} placeholder="제품명 검색..." />
           {props.ptResults.length > 0 && (
@@ -135,7 +136,7 @@ export default function BrandProductMetadataSection(props: Props) {
             <button type="button" onClick={() => props.setPtSelected(prev => prev.filter(item => item.id !== product.id))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 16 }}>×</button>
           </div>
         ))}
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>최대 3개</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>최대 3개 · 저장 시 함께 반영</div>
       </div>
 
       <div style={S.sec}>

@@ -32,6 +32,7 @@ type Body = {
   skin_type?: string[]
   is_sample_pouch?: boolean
   origin_country?: string
+  perfect_together?: string[]
 }
 
 async function assertBrandAccess(
@@ -142,6 +143,9 @@ export async function POST(req: NextRequest) {
     skin_concern: stringArrayOrEmpty(body.skin_concern),
     skin_type: stringArrayOrEmpty(body.skin_type),
     is_sample_pouch: Boolean(body.is_sample_pouch),
+    perfect_together: Array.isArray(body.perfect_together)
+      ? body.perfect_together.map((x) => String(x).trim()).filter(Boolean).slice(0, 3)
+      : [],
     updated_at: now,
   }
 

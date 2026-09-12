@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-12
+### fix: 브랜드허브 「함께 쓰기 좋은 제품」컴퍼니 격리
+- `BrandProductFormV2`: PT 검색을 오렌몰 `products` → 같은 `company_id`의 `brand_products`로 전환(편집 중 본인 제외, ilike+limit 5 유지)
+- 선택값을 `perfect_together`로 저장·재진입 복원 (`buildSaveBody` + `/api/brand/brand-products/save`)
+- 마이그레이션 `196_brand_products_perfect_together.sql` (파일만, DB 미실행)
+- 임시저장 「이어서 작업」`/admin/products/edit-v2` 링크는 허브 전용 편집 URL이 없어 **미수정**(모달 `productId`만 존재)
+
 ### fix: 취급점 폴백 제거 — 등급 없으면 혜택 없음
 - 시바산이 취급점 등급을 폐지했는데, 매칭 실패 시 `'취급점'`으로 가격·적립이 계산되던 경로를 제거
 - `brand-orders/page.tsx`: `DEFAULT_GRADE = '취급점'` 삭제. `gradeForBrand` 미스·빈 grade는 `null`. 등급 없으면 등급 프로모 `[]`, 적립율 0, 헤더/확인창 등급 뱃지 숨김. 발주 payload의 `grade`는 optional

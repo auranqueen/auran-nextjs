@@ -107,7 +107,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   useEffect(() => {
     if (!editId) return
     setLoading(true)
-    supabase.from('brand_products').select('*').eq('id', editId).single().then(({ data }) => {
+    supabase.from('brand_products').select('*').eq('id', editId).single().then(async ({ data }) => {
       if (!data) {
         setLoading(false)
         return
@@ -146,6 +146,18 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       setIsActive(data.status === 'active')
       setIsSamplePouch(data.is_sample_pouch ?? false)
       workingIdRef.current = editId
+
+      const ptIds = Array.isArray((data as { perfect_together?: unknown }).perfect_together)
+        ? ((data as { perfect_together: unknown[] }).perfect_together).map((x) => String(x)).filter(Boolean)
+        : []
+      if (ptIds.length > 0) {
+        const { data: pts } = await supabase.from('brand_products').select('id,name').in('id', ptIds)
+        const byId = new Map((pts || []).map((p: { id: string; name: string }) => [p.id, p.name || '']))
+        setPtSelected(ptIds.map((id) => ({ id, name: byId.get(id) || id })).filter((p) => byId.has(p.id)))
+      } else {
+        setPtSelected([])
+      }
+
       setLoading(false)
     })
   }, [editId, supabase])
@@ -156,10 +168,40 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       return
     }
     const t = setTimeout(() => {
-      supabase.from('products').select('id,name').ilike('name', `%${ptInput}%`).limit(5).then(({ data }) => setPtResults(data || []))
+      void (async () => {
+        const { data: brandRow } = await supabase
+          .from('brands')
+          .select('company_id')
+          .eq('id', brandId)
+          .maybeSingle()
+        const companyId = brandRow?.company_id ? String(brandRow.company_id) : ''
+        if (!companyId) {
+          setPtResults([])
+          return
+        }
+        const { data: siblingBrands } = await supabase
+          .from('brands')
+          .select('id')
+          .eq('company_id', companyId)
+        const brandIds = (siblingBrands || []).map((b: { id: string }) => String(b.id)).filter(Boolean)
+        if (brandIds.length === 0) {
+          setPtResults([])
+          return
+        }
+        const selfId = editId || workingIdRef.current || null
+        let q = supabase
+          .from('brand_products')
+          .select('id,name')
+          .in('brand_id', brandIds)
+          .ilike('name', `%${ptInput.trim()}%`)
+          .limit(5)
+        if (selfId) q = q.neq('id', selfId)
+        const { data } = await q
+        setPtResults((data || []) as { id: string; name: string }[])
+      })()
     }, 300)
     return () => clearTimeout(t)
-  }, [ptInput, supabase])
+  }, [ptInput, supabase, brandId, editId])
 
   const brandOptions = useMemo(() => {
     if (myBrands.some((brand) => brand.id === propBrandId)) {
@@ -226,6 +268,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       skin_type: skinTypes,
       is_sample_pouch: isSamplePouch,
       status: statusOverride ?? (isActive ? 'active' : 'hidden'),
+      perfect_together: ptSelected.map((p) => p.id).slice(0, 3),
     }
   }, [
     editId,
@@ -257,6 +300,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     skinTypes,
     isSamplePouch,
     isActive,
+    ptSelected,
   ])
 
   const persistViaApi = useCallback(async (statusOverride?: string) => {
