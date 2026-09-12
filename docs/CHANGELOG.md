@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-12
+### feat(rls): 원장 SELECT에 company 스코프 적용
+- 마이그레이션 `197_owner_rls_company_scope.sql` (레포 기록용 · DB는 운영자 직접 실행)
+- `brand_products` / `brand_tier_packages` / `brand_tier_promo_rules` / `supply_promos` / `brand_grade_point_rates` 원장 SELECT를 A(active link→company) · B(tier_contract 회사) 스코프로 교체
+- `supply_promos`·`brand_grade_point_rates`의 `USING(true)` 제거. 브랜드 허브용 SELECT 정책 추가
+- `brands` / `brand_companies` 정책은 비로그인 고객 읽기 때문에 미변경
 ### fix(security): 원장·파트너 대시보드에 서버 role 가드 추가
 - `dashboard/owner/page.tsx`: `users.role`이 `owner`/`salon`/`admin`이 아니면 `/`로 redirect. 민감 props 조립 전에 실행
 - `dashboard/partner`: 서버 `page.tsx`에서 `partner`/`admin`만 통과 후 클라이언트 렌더. 클라이언트 load에도 role 재확인
