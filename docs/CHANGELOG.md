@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-12
+### feat: 원장 가입은 초대·추천 링크만 허용, 즉시 활성화
+- `owner-signup-v2`: `company_id` 또는 유효 `ref`(referredBy) 필수. 없으면 가입 거부
+- `company_id`는 `brand_companies` 실재 검증. 통과 시 `users`/`salons` status=`active`
+- `brand_owner_links`는 기존 `auto_approve_owner_invite` 유지. `origin_track` 판정 변경 없음
+
 ### fix: 등급 셀프결제 회사 화이트리스트 제거
 - `owner/page.tsx`: `BRAND_SELF_API_BY_COMPANY` 제거. Track A + 연결 회사 + active 등급 패키지 있으면 카드 노출
 - `createApiPath`는 타입용 고정 경로 유지(실제 결제는 `tier-cart-create`). 시바산은 기존과 동일

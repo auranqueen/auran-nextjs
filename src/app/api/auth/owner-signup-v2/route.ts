@@ -79,6 +79,36 @@ export async function POST(req: NextRequest) {
   let authUserId: string | null = null
   let publicUserId: string | null = null
 
+  if (companyId) {
+    const { data: companyExists } = await svc
+      .from('brand_companies')
+      .select('id')
+      .eq('id', companyId)
+      .maybeSingle()
+    if (!companyExists?.id) {
+      return NextResponse.json(
+        { ok: false, error: '유효하지 않은 초대 링크예요', stage: 'validate' },
+        { status: 400 },
+      )
+    }
+  }
+
+  let referredBy: string | null = null
+  if (ref) {
+    try {
+      referredBy = await resolveReferrerId(svc, ref)
+    } catch {
+      referredBy = null
+    }
+  }
+
+  if (!companyId && !referredBy) {
+    return NextResponse.json(
+      { ok: false, error: '브랜드사 초대 링크 또는 추천 링크로 가입해 주세요', stage: 'validate' },
+      { status: 400 },
+    )
+  }
+
   const rollbackAuth = async () => {
     if (!authUserId) return
     try {
@@ -114,15 +144,6 @@ export async function POST(req: NextRequest) {
   }
   authUserId = authData.user.id
 
-  let referredBy: string | null = null
-  if (ref) {
-    try {
-      referredBy = await resolveReferrerId(svc, ref)
-    } catch {
-      referredBy = null
-    }
-  }
-
   let originTrack: 'A' | 'B' = 'B'
   if (companyId) {
     originTrack = 'A'
@@ -143,7 +164,7 @@ export async function POST(req: NextRequest) {
       name,
       phone: cleanPhone,
       role: 'owner',
-      status: 'pending',
+      status: 'active',
       referred_by: referredBy,
       origin_track: originTrack,
       referral_code: genReferralCode(),
@@ -188,7 +209,7 @@ export async function POST(req: NextRequest) {
     area: area || null,
     address: fullAddress,
     phone: phone || null,
-    status: 'pending',
+    status: 'active',
   })
 
   if (salonError) {
