@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-12
+### fix: ensure 임시행을 정식 저장이 이어받음 + 상세 이미지 파일명 충돌
+- `onWorkingProductCreated` → 부모 `editProduct`/`productId`로 working id 공유 (리마운트 후에도 같은 행 update)
+- ensure가 내려준 id와 `workingIdRef`가 같으면 편집 로드 effect 스킵 (작성 중 state 덮어쓰기 방지)
+- 이름 기본값 `신규 상품` → `작성 중인 제품`
+- 상세 이미지 경로에 index+random 추가 (`Date.now()` 단독 + `upsert:true` 시 동일 URL N번 append 방지)
+
 ### fix: 브랜드 제품 임시저장 껍데기·목록 UX
 - `ensureWorkingProduct`: in-flight Promise ref로 동시 insert 차단 (상세 이미지 다중 업로드 레이스)
 - `BrandProductMediaSection`: 상세 이미지 `for...of`+`await` 순차 업로드

@@ -59,11 +59,13 @@ export default function BrandProductMediaSection({
     setVideoUrl(url)
   }
 
-  const uploadDetailImage = async (file: File) => {
+  const uploadDetailImage = async (file: File, index = 0) => {
     const productId = await ensureWorkingProduct()
     if (!productId) return
     const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadToStorage(file, `edit/${productId}/detail-${Date.now()}.${ext}`)
+    // Date.now()만 쓰면 같은 ms + upsert:true → 동일 URL이 N번 append되어 첫 장이 중복처럼 보임
+    const uniq = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`
+    const url = await uploadToStorage(file, `edit/${productId}/detail-${uniq}.${ext}`)
     setDetailImages(prev => [...prev, url])
   }
 
@@ -139,8 +141,8 @@ export default function BrandProductMediaSection({
                 const files = Array.from(e.target.files || [])
                 e.target.value = ''
                 void (async () => {
-                  for (const file of files) {
-                    await uploadDetailImage(file)
+                  for (let i = 0; i < files.length; i++) {
+                    await uploadDetailImage(files[i], i)
                   }
                 })()
               }} />

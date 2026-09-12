@@ -19,9 +19,10 @@ interface BrandProductFormV2Props {
   onSaved?: (savedBrandId: string) => void
   onClose?: () => void
   onOpenDraft?: (productId: string) => void
+  onWorkingProductCreated?: (productId: string) => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, staffId, productId: propProductId, onSaved, onClose, onOpenDraft }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, staffId, productId: propProductId, onSaved, onClose, onOpenDraft, onWorkingProductCreated }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
@@ -116,6 +117,8 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
 
   useEffect(() => {
     if (!editId) return
+    // ensure가 만든 행을 부모가 productId로 내려준 경우 — 로컬 작성 중 state를 DB로 덮지 않음
+    if (workingIdRef.current === editId) return
     setLoading(true)
     supabase.from('brand_products').select('*').eq('id', editId).single().then(async ({ data }) => {
       if (!data) {
@@ -254,7 +257,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       id: editId || workingIdRef.current || undefined,
       brand_id: brandId,
       staff_id: staffId ?? null,
-      name: name.trim().slice(0, 100) || '신규 상품',
+      name: name.trim().slice(0, 100) || '작성 중인 제품',
       supply_price: Math.max(0, Math.trunc(Number(supplyPrice) || 0)),
       consumer_price: Math.max(0, Math.trunc(Number(consumerPrice) || 0)),
       description: shortDesc.trim() || null,
@@ -333,9 +336,11 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     const inflight = (async () => {
       try {
         await persistViaApi('pending')
+        const id = workingIdRef.current
+        if (id) onWorkingProductCreated?.(id)
         const now = new Date()
         setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
-        return workingIdRef.current
+        return id
       } catch (e) {
         alert(e instanceof Error ? e.message : '임시 저장 실패')
         return null
@@ -345,7 +350,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     })()
     ensureInflightRef.current = inflight
     return inflight
-  }, [brandId, persistViaApi])
+  }, [brandId, persistViaApi, onWorkingProductCreated])
 
   const onSave = async () => {
     setMsg('')

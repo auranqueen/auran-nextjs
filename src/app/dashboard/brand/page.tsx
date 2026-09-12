@@ -464,6 +464,7 @@ export default function BrandDashboardPage() {
               staffId={pinAuth?.id ?? null}
               productId={editProduct?.id}
               onOpenDraft={(id) => setEditProduct({ id })}
+              onWorkingProductCreated={(id) => setEditProduct({ id })}
               onClose={() => {
                 setFormOpen(false)
                 setEditProduct(null)
