@@ -14,6 +14,11 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
   const { data: profile } = await supabase.from('users').select('*').eq('auth_id', user.id).single()
   if (!profile) redirect('/login?role=owner')
 
+  const role = String((profile as { role?: string }).role || '')
+  if (role !== 'owner' && role !== 'salon' && role !== 'admin') {
+    redirect('/')
+  }
+
   if (!searchParams?.v || searchParams?.v === '3') {
     const now = new Date()
     const y = now.getFullYear()

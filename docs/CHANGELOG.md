@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-12
+### fix(security): 원장·파트너 대시보드에 서버 role 가드 추가
+- `dashboard/owner/page.tsx`: `users.role`이 `owner`/`salon`/`admin`이 아니면 `/`로 redirect. 민감 props 조립 전에 실행
+- `dashboard/partner`: 서버 `page.tsx`에서 `partner`/`admin`만 통과 후 클라이언트 렌더. 클라이언트 load에도 role 재확인
+- middleware RSC 스킵은 soft auth·logi·prefetch 영향으로 미변경. `/dashboard/owner` 하위는 서버 SC가 루트뿐이라 추가 가드 불필요
+
 ### feat: 원장 가입은 초대·추천 링크만 허용, 즉시 활성화
 - `owner-signup-v2`: `company_id` 또는 유효 `ref`(referredBy) 필수. 없으면 가입 거부
 - `company_id`는 `brand_companies` 실재 검증. 통과 시 `users`/`salons` status=`active`
