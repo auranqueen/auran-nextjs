@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-09-14
+### fix(security): 브랜드 허브 PIN 검증을 서버로 이전, 브라우저 PIN 평문 차단
+- 신규 `POST /api/brand/staff/pin-verify`: 로그인 세션의 회사 소속 확인 후 서버에서 `brand_staff.pin` 비교. 일치 시 서버가 `brand_pin_sessions` 토큰 발급. 3회 실패 잠금·근무시간 거부도 서버 판단
+- `BrandPinGate`: 직원 목록 SELECT에서 `pin` 제거. `handlePin` 클라이언트 문자열 비교 삭제 → pin-verify 호출. 네트워크 실패 시 진입 불가
+- `BrandInventoryStaff` / `BrandInventoryEmergency`: `pin` 컬럼 SELECT 제거. 비상출고 PIN은 동일 API(`purpose=emergency`)
+- PIN 해시 전환·다른 `/api/brand/*` 세션 강제·허브 `load()` 선행 fetch는 이번 범위 밖
+
+---
+
 ## 2026-09-12
 ### feat(rls): 원장 SELECT에 company 스코프 적용
 - 마이그레이션 `197_owner_rls_company_scope.sql` (레포 기록용 · DB는 운영자 직접 실행)

@@ -30,7 +30,6 @@ interface StaffRow {
   name: string
   username: string | null
   role: string
-  pin: string | null
   is_active: boolean
   created_at: string
   permissions?: string[]
@@ -93,7 +92,7 @@ export default function BrandInventoryStaff({
     setLoading(true)
     const { data: staffData } = await supabase
       .from('brand_staff')
-      .select('id, name, username, role, pin, is_active, created_at')
+      .select('id, name, username, role, is_active, created_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
     const { data: permData } = await supabase
@@ -172,7 +171,7 @@ export default function BrandInventoryStaff({
     }
     const { error } = await supabase.from('brand_staff').update({ pin: editPin }).eq('id', id)
     if (!error) {
-      setStaff(prev => prev.map(st => st.id === id ? { ...st, pin: editPin } : st))
+      setStaff(prev => prev.map(st => st.id === id ? { ...st } : st))
       setEditPinId(null); setEditPin('')
       showToast(`${name} PIN 변경 완료`)
     }

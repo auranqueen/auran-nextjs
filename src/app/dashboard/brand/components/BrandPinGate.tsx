@@ -11,7 +11,6 @@ interface StaffRow {
   name: string
   username: string | null
   role: string
-  pin: string | null
   is_active: boolean
 }
 const ROLE_MAP: Record<string, { label: string; color: string; pin: number }> = {
@@ -66,7 +65,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     setLoading(true)
     const { data } = await supabase
       .from('brand_staff')
-      .select('id, name, username, role, pin, is_active')
+      .select('id, name, username, role, is_active')
       .eq('company_id', companyIdProp)
       .eq('is_active', true)
       .order('created_at')
@@ -97,94 +96,69 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
   const handlePin = async () => {
     if (!selected || !brandId) return
     if (locked) { setError('PIN이 잠겼어요. 대표에게 문의하세요'); return }
-    if (pin !== selected.pin) {
-      const next = failCount + 1
-      setFailCount(next)
-      setPin('')
-      if (next >= 3) {
-        setLocked(true)
-        setError('PIN 3회 오류 — 잠금 처리됨. 대표에게 문의하세요')
-        await supabase.from('brand_access_logs').insert({
-          brand_id: brandId,
-          staff_id: selected.id,
-          staff_name: selected.name,
-          action_type: 'pin_fail_locked',
-          module: 'auth',
-          target_desc: `PIN 3회 오류 잠금 — ${selected.name} ${ROLE_MAP[selected.role]?.label}`,
-        })
-        await supabase.from('brand_messages').insert({
-          brand_id: brandId,
-          message_type: 'auto_order',
-          target_type: 'all',
-          title: `🔒 PIN 잠금 발생`,
-          body: `${selected.name} ${ROLE_MAP[selected.role]?.label}의 PIN이 3회 오류로 잠겼습니다. 확인이 필요합니다.`,
-          send_count: 1,
-        })
-      } else {
-        setError(`PIN이 틀렸어요 (${next}/3)`)
-      }
-      return
-    }
     setChecking(true)
     try {
-      if (companyIdProp) {
-        const res = await fetch('/api/brand/staff/pin-attempt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ company_id: companyIdProp, staff_id: selected.id }),
-        })
-        const json = await res.json().catch(() => null)
-        if (json && json.ok === false && json.error === 'after_hours') {
-          const start = json.work_hours_start || '--:--'
-          const end = json.work_hours_end || '--:--'
-          setError(`🌙 지금은 근무시간이 아니에요 (${start}~${end})`)
-          setPin('')
-          setChecking(false)
-          return
-        }
+      const res = await fetch('/api/brand/staff/pin-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          company_id: companyIdProp,
+          brand_id: brandId,
+          staff_id: selected.id,
+          pin,
+          purpose: 'login',
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (json?.error === 'after_hours') {
+        const start = json.work_hours_start || '--:--'
+        const end = json.work_hours_end || '--:--'
+        setError(`🌙 지금은 근무시간이 아니에요 (${start}~${end})`)
+        setPin('')
+        return
       }
+      if (json?.error === 'locked' || json?.locked) {
+        setLocked(true)
+        setFailCount(Number(json?.fail_count) || 3)
+        setError('PIN 3회 오류 — 잠금 처리됨. 대표에게 문의하세요')
+        setPin('')
+        return
+      }
+      if (!json?.ok) {
+        const n = Number(json?.fail_count)
+        const next = Number.isFinite(n) && n > 0 ? n : failCount + 1
+        setFailCount(next)
+        setPin('')
+        setError(`PIN이 틀렸어요 (${next}/3)`)
+        return
+      }
+      // Brand Hub에서는 물류 역할(ops_*) 진입시 물류 허브로 자동 이동
+      if (hub === 'brand' && (selected.role === 'ops_manager' || selected.role === 'ops_staff')) {
+        setOpsBlocked(true)
+        setError('')
+        setPin('')
+        router.replace(logiHref)
+        return
+      }
+      const { data: permData } = await supabase
+        .from('brand_staff_permissions')
+        .select('module')
+        .eq('staff_id', selected.id)
+        .eq('company_id', companyIdProp)
+      const permissions = (permData || []).map((p: { module: string }) => p.module)
+      const token = typeof json.session_token === 'string' ? json.session_token : ''
+      if (token) sessionStorage.setItem('brand_pin_token', token)
+      sessionStorage.setItem('brand_staff_id', selected.id)
+      sessionStorage.setItem('brand_staff_name', selected.name)
+      sessionStorage.setItem('brand_staff_role', selected.role)
+      onAuth({ id: selected.id, name: selected.name, role: selected.role, permissions })
     } catch {
-      /* network fail — allow existing login path */
-    }
-    // Brand Hub에서는 물류 역할(ops_*) 진입시 물류 허브로 자동 이동
-    if (hub === 'brand' && (selected.role === 'ops_manager' || selected.role === 'ops_staff')) {
-      setOpsBlocked(true)
-      setError('')
+      setError('확인에 실패했어요. 다시 시도해주세요')
       setPin('')
+    } finally {
       setChecking(false)
-      router.replace(logiHref)
-      return
     }
-    const { data: permData } = await supabase
-      .from('brand_staff_permissions')
-      .select('module')
-      .eq('staff_id', selected.id)
-      .eq('company_id', companyIdProp)
-    const permissions = (permData || []).map((p: { module: string }) => p.module)
-    const token = crypto.randomUUID()
-    const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString()
-    await supabase.from('brand_pin_sessions').insert({
-      brand_id: brandId,
-      staff_id: selected.id,
-      session_token: token,
-      pin_fail_count: 0,
-      is_locked: false,
-      expires_at: expires,
-    })
-    await supabase.from('brand_access_logs').insert({
-      brand_id: brandId,
-      staff_id: selected.id,
-      staff_name: selected.name,
-      action_type: 'login',
-      module: 'auth',
-      target_desc: `PIN 인증 성공 — ${selected.name} ${ROLE_MAP[selected.role]?.label}`,
-    })
-    sessionStorage.setItem('brand_pin_token', token)
-    sessionStorage.setItem('brand_staff_id', selected.id)
-    sessionStorage.setItem('brand_staff_name', selected.name)
-    sessionStorage.setItem('brand_staff_role', selected.role)
-    onAuth({ id: selected.id, name: selected.name, role: selected.role, permissions })
-    setChecking(false)
   }
   const registerBootstrapCeo = async () => {
     if (!brandId) return
@@ -200,7 +174,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     const { data: row, error } = await supabase
       .from('brand_staff')
       .insert({ brand_id: brandId, company_id: companyIdProp, name, role: 'ceo', pin: bootstrapPin, is_active: true })
-      .select()
+      .select('id, name, role')
       .single()
     if (error || !row) {
       setBootstrapError(error?.message || '등록에 실패했어요. 다시 시도해주세요')
@@ -219,11 +193,7 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
     onAuth({ id: String(row.id), name: String(row.name), role: String(row.role), permissions })
     setBootstrapSaving(false)
   }
-  // 저장된 PIN 길이를 우선 (임시 4자리 CEO PIN 등). 없으면 role 기본자리수.
-  const pinLen =
-    selected?.pin && /^\d{4,8}$/.test(selected.pin)
-      ? selected.pin.length
-      : ROLE_MAP[selected?.role || 'staff']?.pin || 4
+  const pinLen = ROLE_MAP[selected?.role || 'staff']?.pin || 4
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f0d14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 14 }}>
       불러오는 중...

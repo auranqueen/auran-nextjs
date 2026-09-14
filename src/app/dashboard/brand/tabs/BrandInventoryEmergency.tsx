@@ -15,7 +15,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   disputed:  { label: '이의제기', color: DANGER, bg: 'rgba(229,57,53,0.1)' },
 }
 interface InventoryRow { id: string; product_name: string; total_stock: number; brand_id: string }
-interface StaffRow { id: string; name: string; pin: string | null }
 interface LogRow {
   id: string
   type: string
@@ -31,7 +30,6 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
   const supabase = createClient()
   const [tab, setTab] = useState<'logistics' | 'hq'>(isHQ ? 'hq' : 'logistics')
   const [inventories, setInventories] = useState<InventoryRow[]>([])
-  const [staffList, setStaffList] = useState<StaffRow[]>([])
   const [emergencyLogs, setEmergencyLogs] = useState<LogRow[]>([])
   const [selReason, setSelReason] = useState('')
   const [selInv, setSelInv] = useState('')
@@ -49,9 +47,8 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
     if (!brandId) return
     setLoading(true)
     const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
-    const [{ data: invData }, { data: staffData }, { data: logData }] = await Promise.all([
+    const [{ data: invData }, { data: logData }] = await Promise.all([
       supabase.from('brand_inventory').select('id, product_name, total_stock, brand_id').in('brand_id', companyBrandIds).order('product_name'),
-      supabase.from('brand_staff').select('id, name, pin').in('brand_id', companyBrandIds).eq('is_active', true),
       supabase.from('brand_stock_logs')
         .select('id, type, qty, memo, staff_name, created_at, hq_status, brand_inventory(product_name)')
         .in('brand_id', companyBrandIds)
@@ -60,32 +57,48 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
         .limit(20),
     ])
     setInventories((invData || []) as InventoryRow[])
-    setStaffList((staffData || []) as StaffRow[])
     setEmergencyLogs((logData || []) as unknown as LogRow[])
     setLoading(false)
   }, [brandId])
   useEffect(() => { void loadData() }, [loadData])
   const pendingCount = emergencyLogs.filter(l => l.hq_status === 'pending').length
   const confirmedCount = emergencyLogs.filter(l => l.hq_status === 'confirmed').length
-  const verifyPin = () => {
-    const staff = staffList.find(s => s.name === staffName && s.pin === pin)
-    return !!staff
-  }
   const submitEmergency = async () => {
     if (!selReason) { showToast('사유를 선택해주세요'); return }
     if (!selInv) { showToast('제품을 선택해주세요'); return }
     if (!staffName.trim()) { showToast('담당자 이름을 입력해주세요'); return }
-    if (pin.length !== 4) { showToast('PIN 4자리를 입력해주세요'); return }
-    if (!verifyPin()) {
-      setPinError(prev => {
-        const next = prev + 1
-        if (next >= 3) showToast('PIN 오류 3회 — 본사 알림 발송됨')
-        else showToast(`PIN이 일치하지 않아요 (${next}/3)`)
-        return next
+    if (pin.length < 4) { showToast('PIN을 입력해주세요'); return }
+    if (!brandId) return
+    let pinJson: { ok?: boolean; error?: string; fail_count?: number; locked?: boolean } = {}
+    try {
+      const pinRes = await fetch('/api/brand/staff/pin-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          brand_id: brandId,
+          staff_name: staffName.trim(),
+          pin,
+          purpose: 'emergency',
+        }),
       })
+      pinJson = await pinRes.json().catch(() => ({}))
+    } catch {
+      showToast('PIN 확인에 실패했어요')
       return
     }
-    if (!brandId) return
+    if (!pinJson?.ok) {
+      const n = Number(pinJson?.fail_count)
+      const next = Number.isFinite(n) && n > 0 ? n : pinError + 1
+      setPinError(next)
+      setPin('')
+      if (pinJson?.error === 'locked' || pinJson?.locked || next >= 3) {
+        showToast('PIN 오류 3회 — 본사 알림 발송됨')
+      } else {
+        showToast(`PIN이 일치하지 않아요 (${next}/3)`)
+      }
+      return
+    }
     setSaving(true)
     const inv = inventories.find(i => i.id === selInv)
     const before = inv?.total_stock || 0
