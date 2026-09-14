@@ -59,7 +59,9 @@ export async function GET() {
     const sid = String(s.id)
     const applied = appliedSet.has(sid)
     const applied_count = countBySession[sid] || 0
-    const { link, asset_url, ...rest } = s
+    const { link, asset_url, zoom_meeting_id, zoom_host_start_url, ...rest } = s
+    void zoom_meeting_id
+    void zoom_host_start_url
     if (applied) {
       return { ...rest, link, asset_url, applied: true, applied_count }
     }

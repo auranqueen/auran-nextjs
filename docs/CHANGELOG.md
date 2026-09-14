@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-14
+### fix(security): 원장 교육 세션 목록에서 Zoom 호스트 URL 제외
+- `GET /api/owner/education/sessions`: `select('*')` 후 `link`/`asset_url`만 빼던 구조분해에 `zoom_meeting_id`·`zoom_host_start_url`을 추가해 rest에서 제거. 신청 후에도 두 필드는 응답에 넣지 않음
+### chore(schema): 198에 운영 DB에 이미 있는 education_sessions.asset_url 기록(SQL 재실행 없음)
+- `198_education_sessions_asset_url.sql`: `ADD COLUMN IF NOT EXISTS asset_url text`. 181 CREATE·이후 ALTER git 기록 없음. 실행 불필요
 ### chore(rls): 197 마이그레이션 파일을 실제 운영DB 상태와 동기화(코드 변경 없음, 문서화 성격)
 - `197_owner_rls_company_scope.sql`: 운영에 이미 있는 `brand_tier_promo_rules` INSERT/UPDATE/DELETE 정책 3개와 롤백 주석 DROP 3줄을 파일에 기록. SQL 재실행 없음
 ### fix(security): 교육 세션 list에서 Zoom 호스트 URL 컬럼 제외
