@@ -4,6 +4,8 @@
 ---
 
 ## 2026-09-14
+### fix(security): 교육 세션 list에서 Zoom 호스트 URL 컬럼 제외
+- `education/sessions/list`: `select('*')`를 명시 컬럼으로 교체. `zoom_meeting_id`·`zoom_host_start_url` 미반환. 화면이 쓰던 필드만
 ### fix(security): 브랜드 허브 list·채팅 API에 PIN 세션 검증
 - list: `points/ledger`, `chat/channels`, `chat/owners`, `archive/list`, `education/sessions/list`, `admin-alerts/list`에 `verifyPinSession` 적용. Zoom 호스트 URL 필드 제외는 하지 않음(PIN만)
 - `chat/messages` GET·POST 모두 PIN 세션 필수. POST `sender_staff_id`는 세션에서만

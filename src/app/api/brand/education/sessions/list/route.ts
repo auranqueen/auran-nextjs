@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   const { data: sessions, error } = await db
     .from('education_sessions')
-    .select('*')
+    .select('id, company_id, title, session_date, start_time, end_time, format, location, link, capacity, created_by_staff_id, created_at, updated_at')
     .eq('company_id', companyId)
     .order('session_date', { ascending: true })
     .order('start_time', { ascending: true })
