@@ -140,7 +140,10 @@ export default function BrandPointsManage({
     setLoading(true)
     try {
       const qs = new URLSearchParams({ company_id: companyId, owner_id: ownerId, track })
-      const res = await fetch(`/api/brand/points/ledger?${qs.toString()}`)
+      const res = await fetch(`/api/brand/points/ledger?${qs.toString()}`, {
+        headers: pinSessionHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json()
       if (json?.ok) {
         setBalance(Math.trunc(Number(json.balance) || 0))

@@ -73,6 +73,7 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
     try {
       const res = await fetch(
         `/api/brand/archive/list?company_id=${encodeURIComponent(companyId)}&category=${encodeURIComponent(category)}`,
+        { headers: pinSessionHeaders(), credentials: 'same-origin' },
       )
       const json = await res.json()
       if (json?.ok) setItems(json.items || [])

@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import dynamic from 'next/dynamic'
 import type { CSSProperties } from 'react'
 const BrandStaffPermissions = dynamic(() => import('./BrandStaffPermissions'), { ssr: false })
@@ -78,7 +79,10 @@ export default function BrandInventoryStaff({
   const loadAlerts = useCallback(async () => {
     if (!companyId) return
     try {
-      const res = await fetch(`/api/brand/admin-alerts/list?company_id=${encodeURIComponent(companyId)}`)
+      const res = await fetch(`/api/brand/admin-alerts/list?company_id=${encodeURIComponent(companyId)}`, {
+        headers: pinSessionHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json()
       if (json?.ok && Array.isArray(json.alerts)) {
         setAlerts(json.alerts.slice(0, 5) as AlertRow[])

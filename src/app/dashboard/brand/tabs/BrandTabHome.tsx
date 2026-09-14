@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import MonthlyOrderAccordion from '../components/MonthlyOrderAccordion'
 import GroupRevenueChart from '../components/GroupRevenueChart'
 import ShopOrderRanking from '../components/ShopOrderRanking'
@@ -96,7 +97,10 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       const chatCompanyId = brandRow?.company_id ? String(brandRow.company_id) : ''
       if (chatCompanyId) {
         try {
-          const res = await window.fetch(`/api/brand/chat/channels?company_id=${encodeURIComponent(chatCompanyId)}`)
+          const res = await window.fetch(`/api/brand/chat/channels?company_id=${encodeURIComponent(chatCompanyId)}`, {
+            headers: pinSessionHeaders(),
+            credentials: 'same-origin',
+          })
           const json = await res.json() as {
             ok?: boolean
             channels?: Array<{

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import BrandChatChannelList, { type BrandChatChannel } from './BrandChatChannelList'
 import BrandChatThread, { type BrandChatMessage } from './BrandChatThread'
 import BrandChatPurchaseHistory from './BrandChatPurchaseHistory'
@@ -37,7 +38,10 @@ export default function BrandChatPanel({ companyId, staffId }: Props) {
   const unreadRef = useRef(0)
 
   const loadChannels = useCallback(async () => {
-    const res = await fetch(`/api/brand/chat/channels?company_id=${encodeURIComponent(companyId)}`)
+    const res = await fetch(`/api/brand/chat/channels?company_id=${encodeURIComponent(companyId)}`, {
+      headers: pinSessionHeaders(),
+      credentials: 'same-origin',
+    })
     const json = await res.json().catch(() => ({}))
     if (!json.ok) return
     const list = (json.channels || []) as BrandChatChannel[]
@@ -48,7 +52,10 @@ export default function BrandChatPanel({ companyId, staffId }: Props) {
   }, [companyId])
 
   const loadMessages = useCallback(async (channelId: string) => {
-    const res = await fetch(`/api/brand/chat/messages?channel_id=${encodeURIComponent(channelId)}`)
+    const res = await fetch(`/api/brand/chat/messages?channel_id=${encodeURIComponent(channelId)}`, {
+      headers: pinSessionHeaders(),
+      credentials: 'same-origin',
+    })
     const json = await res.json().catch(() => ({}))
     if (json.ok) setMessages((json.messages || []) as BrandChatMessage[])
   }, [])
@@ -70,7 +77,7 @@ export default function BrandChatPanel({ companyId, staffId }: Props) {
     if (!selectedId) return
     const res = await fetch('/api/brand/chat/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         channel_id: selectedId,
         staff_id: staffId,
@@ -97,7 +104,7 @@ export default function BrandChatPanel({ companyId, staffId }: Props) {
     if (!url) return
     const res = await fetch('/api/brand/chat/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         channel_id: selectedId,
         staff_id: staffId,

@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-14
+### fix(security): 브랜드 허브 list·채팅 API에 PIN 세션 검증
+- list: `points/ledger`, `chat/channels`, `chat/owners`, `archive/list`, `education/sessions/list`, `admin-alerts/list`에 `verifyPinSession` 적용. Zoom 호스트 URL 필드 제외는 하지 않음(PIN만)
+- `chat/messages` GET·POST 모두 PIN 세션 필수. POST `sender_staff_id`는 세션에서만
+- `education/applications/list`: 쿼리 `staff_id` 무시, 세션 staff + `education_manage` 권한
+- 허브 클라이언트가 해당 GET/POST에 `pinSessionHeaders()` 부착. sessionStorage→httpOnly 전환은 미변경
 ### fix(security): 브랜드 허브 쓰기 API에 PIN 세션 검증
 - 신규 `src/lib/brand/verifyPinSession.ts`: `x-brand-pin-token`(또는 Bearer)을 `brand_pin_sessions`에서 만료·잠금·회사 스코프까지 확인. admin은 PIN 생략
 - 그룹2 쓰기(등급 패키지/프로모/승인·발송/키트/카탈로그/포인트 일괄/세컨드브랜드)부터 PIN 세션 필수

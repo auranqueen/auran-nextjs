@@ -85,6 +85,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
     try {
       const res = await fetch(
         `/api/brand/education/sessions/list?company_id=${encodeURIComponent(companyId)}`,
+        { headers: pinSessionHeaders(), credentials: 'same-origin' },
       )
       const json = await res.json()
       if (json?.ok) setSessions(json.sessions || [])
@@ -105,8 +106,10 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
     setApps([])
     try {
       const qs = new URLSearchParams({ session_id: sessionId })
-      if (staffId) qs.set('staff_id', staffId)
-      const res = await fetch(`/api/brand/education/applications/list?${qs.toString()}`)
+      const res = await fetch(`/api/brand/education/applications/list?${qs.toString()}`, {
+        headers: pinSessionHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json()
       if (json?.ok) setApps(json.applications || [])
       else showToast(json?.error || '신청자 목록 실패')

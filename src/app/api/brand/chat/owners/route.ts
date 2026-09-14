@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { pinSessionDenied } from '@/lib/brand/verifyPinSession'
 
 async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
@@ -50,6 +51,8 @@ export async function GET(req: NextRequest) {
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
+  const denied = await pinSessionDenied(req, supabase, { companyId })
+  if (denied) return denied
 
   const db = tryCreateServiceClient() ?? supabase
   const ownerMap = new Map<string, { owner_id: string; name: string; salon_name: string }>()

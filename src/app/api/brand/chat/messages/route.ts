@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { pinSessionDenied, pinSessionError, verifyPinSession } from '@/lib/brand/verifyPinSession'
 
 async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
@@ -58,6 +59,8 @@ export async function GET(req: NextRequest) {
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
+  const denied = await pinSessionDenied(req, supabase, { companyId: String(ch.company_id) })
+  if (denied) return denied
 
   await db.from('brand_chat_channels').update({ unread_by_brand: 0 }).eq('id', channelId)
 
@@ -83,7 +86,6 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const channelId = typeof body?.channel_id === 'string' ? body.channel_id.trim() : ''
-  const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
   const messageType = typeof body?.message_type === 'string' ? body.message_type.trim() : 'text'
   const text = typeof body?.body === 'string' ? body.body.trim() : ''
@@ -106,6 +108,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
 
+  const pin = await verifyPinSession(req, supabase, { companyId })
+  if (!pin.ok) return pinSessionError(pin)
+
   const db = tryCreateServiceClient() ?? supabase
   const { data: ch } = await db
     .from('brand_chat_channels')
@@ -123,7 +128,7 @@ export async function POST(req: NextRequest) {
     .insert({
       channel_id: channelId,
       sender_type: 'brand',
-      sender_staff_id: staffId || null,
+      sender_staff_id: pin.staffId,
       message_type: messageType || 'text',
       body: text || null,
       attachment_url: attachmentUrl,

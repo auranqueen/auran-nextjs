@@ -61,7 +61,10 @@ export default function BrandChatChannelList({
     setPicking(true)
     setLoadingOwners(true)
     try {
-      const res = await fetch(`/api/brand/chat/owners?company_id=${encodeURIComponent(companyId)}`)
+      const res = await fetch(`/api/brand/chat/owners?company_id=${encodeURIComponent(companyId)}`, {
+        headers: pinSessionHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json().catch(() => ({}))
       setOwners(json.ok ? (json.owners || []) : [])
     } finally {
