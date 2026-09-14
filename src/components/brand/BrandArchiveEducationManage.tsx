@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 
 interface Props {
   companyId: string
@@ -165,7 +166,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
       const url = await uploadEducationAsset(file, path)
       const res = await fetch('/api/brand/education/sessions/attach-file', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           id: sessionId,
           company_id: companyId,
@@ -196,7 +197,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
     try {
       const res = await fetch('/api/brand/education/sessions/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           staff_id: staffId || '',
           company_id: companyId,

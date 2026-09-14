@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { buildEventBanner, parseEventBanner } from '@/lib/brand/brandProductTypes'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import BrandProductPriceSection from './BrandProductPriceSection'
 import BrandProductMediaSection from './BrandProductMediaSection'
 import BrandProductMetadataSection from './BrandProductMetadataSection'
@@ -319,7 +320,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   const persistViaApi = useCallback(async (statusOverride?: string) => {
     const res = await fetch(SAVE_API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'same-origin',
       body: JSON.stringify(buildSaveBody(statusOverride)),
     })

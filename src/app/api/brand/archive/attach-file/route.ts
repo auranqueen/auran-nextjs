@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
+import { assertStaffPermissionFromSession } from '@/lib/brand/assertStaffPermission'
+import { pinSessionError, verifyPinSession } from '@/lib/brand/verifyPinSession'
 
 async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
@@ -40,7 +41,6 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const id = typeof body?.id === 'string' ? body.id.trim() : ''
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
-  const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
   const assetUrl = typeof body?.asset_url === 'string' ? body.asset_url.trim() : ''
 
   if (!id) return NextResponse.json({ ok: false, error: 'missing_id' }, { status: 400 })
@@ -57,7 +57,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
 
-  const staffAllowed = await assertStaffPermission(supabase, staffId || null, companyId, 'marketing_create')
+  const pin = await verifyPinSession(req, supabase, { companyId })
+  if (!pin.ok) return pinSessionError(pin)
+  const staffAllowed = await assertStaffPermissionFromSession(supabase, pin, companyId, 'marketing_create')
   if (!staffAllowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_permission' }, { status: 403 })
   }

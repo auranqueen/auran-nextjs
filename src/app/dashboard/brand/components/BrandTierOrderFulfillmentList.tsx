@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const GREEN = 'rgba(61,184,100,0.9)'
@@ -163,7 +164,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, filter, onToa
     try {
       const res = await fetch('/api/brand/tier-orders/ship', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, order_id: order.id, courier: input.courier, tracking_no: input.no.trim() }),
       })

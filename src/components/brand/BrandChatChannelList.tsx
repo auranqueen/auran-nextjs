@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 
 export type BrandChatChannel = {
   id: string
@@ -74,7 +75,7 @@ export default function BrandChatChannelList({
     try {
       const res = await fetch('/api/brand/chat/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ company_id: companyId, staff_id: staffId, owner_id: ownerId }),
       })
       const json = await res.json().catch(() => ({}))

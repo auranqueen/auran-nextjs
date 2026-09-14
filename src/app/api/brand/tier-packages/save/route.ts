@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { pinSessionDenied } from '@/lib/brand/verifyPinSession'
 
 type Body = {
   company_id?: string
@@ -86,6 +87,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'package_not_found' }, { status: 404 })
     }
 
+    const denied = await pinSessionDenied(req, supabase, { companyId: existingCompanyId })
+    if (denied) return denied
+
     const { data: dup } = await db
       .from('brand_tier_packages')
       .select('id')
@@ -123,6 +127,9 @@ export async function POST(req: NextRequest) {
   if (!companyId) {
     return NextResponse.json({ ok: false, error: 'missing_company_id' }, { status: 400 })
   }
+
+  const denied = await pinSessionDenied(req, supabase, { companyId })
+  if (denied) return denied
 
   const { data: dup } = await db
     .from('brand_tier_packages')

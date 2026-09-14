@@ -1,4 +1,6 @@
 import type { createClient } from '@/lib/supabase/server'
+import type { PinSessionOk } from '@/lib/brand/verifyPinSession'
+
 export async function assertStaffPermission(
   supabase: ReturnType<typeof createClient>,
   staffId: string | null,
@@ -22,4 +24,15 @@ export async function assertStaffPermission(
     .eq('module', module)
     .maybeSingle()
   return Boolean(perm?.module)
+}
+
+/** PIN 세션에서 꺼낸 staff_id만 사용. 클라이언트가 보낸 staff_id는 호출부가 무시해야 한다. */
+export async function assertStaffPermissionFromSession(
+  supabase: ReturnType<typeof createClient>,
+  session: PinSessionOk,
+  companyId: string,
+  module: string,
+): Promise<boolean> {
+  if (session.skipped || session.userRole === 'admin') return true
+  return assertStaffPermission(supabase, session.staffId, companyId, module)
 }

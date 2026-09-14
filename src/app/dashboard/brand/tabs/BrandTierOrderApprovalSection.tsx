@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 type OrderRow = {
@@ -103,7 +104,7 @@ export default function BrandTierOrderApprovalSection({ companyId }: Props) {
     try {
       const res = await fetch('/api/brand/tier-orders/approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, order_id: order.id }),
       })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { pinSessionDenied } from '@/lib/brand/verifyPinSession'
 
 type Body = {
   company_id?: string
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest) {
   if (!existing?.id || !companyId || !allowedCompanyIds.includes(companyId)) {
     return NextResponse.json({ ok: false, error: 'package_not_found' }, { status: 404 })
   }
+
+  const denied = await pinSessionDenied(req, supabase, { companyId })
+  if (denied) return denied
 
   const { count: assignedCount } = await db
     .from('brand_owner_grades')

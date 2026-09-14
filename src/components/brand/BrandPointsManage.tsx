@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 
 type Track = 'REWARD' | 'ARETE'
 
@@ -180,7 +181,7 @@ export default function BrandPointsManage({
     try {
       const res = await fetch('/api/brand/points/adjust', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           company_id: companyId,
           staff_id: staffId,

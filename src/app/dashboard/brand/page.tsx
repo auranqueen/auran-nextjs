@@ -3,6 +3,7 @@
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { createSecondBrand } from '@/lib/brand/createSecondBrand'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -585,7 +586,7 @@ export default function BrandDashboardPage() {
                     try {
                       await fetch('/api/brand/second-brand/connect-owners', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
                         credentials: 'same-origin',
                         body: JSON.stringify({
                           hub_brand_id: currentBrandId,

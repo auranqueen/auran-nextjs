@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { connectTrackAOwnersToSecondBrand } from '@/lib/brand/connectTrackAOwnersToSecondBrand'
+import { pinSessionDenied } from '@/lib/brand/verifyPinSession'
 
 type Body = {
   hub_brand_id?: string
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
   if (!hubOk || !secondOk) {
     return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
   }
+
+  const denied = await pinSessionDenied(req, supabase, { brandId: hubBrandId })
+  if (denied) return denied
 
   const svc = tryCreateServiceClient()
   if (!svc) {

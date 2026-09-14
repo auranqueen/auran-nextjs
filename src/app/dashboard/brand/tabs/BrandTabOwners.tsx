@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import OwnerOrenTalkButton from '../components/OwnerOrenTalkButton'
@@ -257,7 +258,7 @@ export default function BrandTabOwners({ brandId, brandName, authId, staffId = n
       const csv = await file.text()
       const res = await fetch('/api/brand/owner-points/bulk-import', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ brand_id: brandId, csv, dry_run: dryRun }),
       })
       const json = await res.json().catch(() => ({}))

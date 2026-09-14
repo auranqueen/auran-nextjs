@@ -181,6 +181,36 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
       setBootstrapSaving(false)
       return
     }
+    try {
+      const verifyRes = await fetch('/api/brand/staff/pin-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          company_id: companyIdProp,
+          brand_id: brandId,
+          staff_id: row.id,
+          pin: bootstrapPin,
+          purpose: 'login',
+        }),
+      })
+      const json = await verifyRes.json().catch(() => ({}))
+      if (!json?.ok) {
+        setBootstrapError(
+          json?.error === 'after_hours'
+            ? '등록은 됐지만 근무시간이 아니라 바로 들어갈 수 없어요. 근무시간에 PIN으로 들어가 주세요.'
+            : '등록은 됐지만 세션을 만들지 못했어요. PIN으로 다시 들어가 주세요.',
+        )
+        setBootstrapSaving(false)
+        return
+      }
+      const token = typeof json.session_token === 'string' ? json.session_token : ''
+      if (token) sessionStorage.setItem('brand_pin_token', token)
+    } catch {
+      setBootstrapError('등록은 됐지만 세션을 만들지 못했어요. PIN으로 다시 들어가 주세요.')
+      setBootstrapSaving(false)
+      return
+    }
     const { data: permData } = await supabase
       .from('brand_staff_permissions')
       .select('module')

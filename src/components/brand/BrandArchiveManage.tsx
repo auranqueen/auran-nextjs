@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 
 const ProductDetailEditor = dynamic(() => import('@/components/admin/ProductDetailEditor'), { ssr: false })
 
@@ -169,7 +170,7 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
       const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
       const res = await fetch('/api/brand/archive/attach-file', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           id: itemId,
           company_id: companyId,
@@ -200,7 +201,7 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
     try {
       const res = await fetch('/api/brand/archive/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           company_id: companyId,
           staff_id: staffId || '',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { pinSessionDenied } from '@/lib/brand/verifyPinSession'
 import {
   parseCsv,
   pickColumn,
@@ -178,6 +179,9 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     )
   }
+
+  const denied = await pinSessionDenied(req, supabase, { companyId, brandId, allowAdmin: true })
+  if (denied) return denied
 
   const parsed = parseCsv(csvText)
   if (!parsed.rows.length) {

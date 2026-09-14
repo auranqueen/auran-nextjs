@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-14
+### fix(security): 브랜드 허브 쓰기 API에 PIN 세션 검증
+- 신규 `src/lib/brand/verifyPinSession.ts`: `x-brand-pin-token`(또는 Bearer)을 `brand_pin_sessions`에서 만료·잠금·회사 스코프까지 확인. admin은 PIN 생략
+- 그룹2 쓰기(등급 패키지/프로모/승인·발송/키트/카탈로그/포인트 일괄/세컨드브랜드)부터 PIN 세션 필수
+- 그룹1 쓰기: `assertStaffPermissionFromSession`이 세션의 `staff_id`만 사용. 클라이언트가 보낸 `staff_id`는 무시. 브랜드 오너도 모듈 검사는 건너뛰되 PIN 세션은 필요
+- 허브 쓰기 fetch에 `pinSessionHeaders()` 부착. 최초 CEO 부트스트랩도 pin-verify로 토큰 발급
+- list/읽기 API·pin-verify 자체는 미변경. `points/ledger`는 GET이라 이번 범위 밖
 ### fix(security): 브랜드 허브 PIN 전에 제품·정산 메타가 내려가지 않게 조회 분리
 - `dashboard/brand/page.tsx`: 마운트 `load()`는 게이트용 최소 메타만 (브랜드 id/name/slug/company_id, 멤버십, 회사명). `brand_products` `select('*')`와 환영팝업용 정산·담당자 필드는 `pinAuth` 또는 admin 이후에만
 - PIN 전 전역 `brands` 목록 fetch 제거. 담당자 전환/로그아웃 시 제품 rows 비움

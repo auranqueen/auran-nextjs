@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { resolveBrandOriginCountry } from '@/lib/brand/brandOrigin'
-import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
+import { assertStaffPermissionFromSession } from '@/lib/brand/assertStaffPermission'
+import { pinSessionError, verifyPinSession } from '@/lib/brand/verifyPinSession'
 import {
   buildEventBanner,
   stringArrayOrEmpty,
@@ -96,13 +97,22 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: brandForCompany } = await supabase.from('brands').select('company_id, user_id').eq('id', brandId).maybeSingle()
+  const pin = await verifyPinSession(req, supabase, {
+    brandId,
+    companyId: brandForCompany?.company_id ? String(brandForCompany.company_id) : null,
+  })
+  if (!pin.ok) return pinSessionError(pin)
   const isBrandOwner = brandForCompany?.user_id === me.id
   if (!isBrandOwner) {
-    const staffId = typeof body.staff_id === 'string' ? body.staff_id : null
-    if (!staffId || !brandForCompany?.company_id) {
+    if (!brandForCompany?.company_id) {
       return NextResponse.json({ ok: false, error: 'forbidden_no_permission' }, { status: 403 })
     }
-    const hasPermission = await assertStaffPermission(supabase, staffId, brandForCompany.company_id, 'product_manage')
+    const hasPermission = await assertStaffPermissionFromSession(
+      supabase,
+      pin,
+      String(brandForCompany.company_id),
+      'product_manage',
+    )
     if (!hasPermission) {
       return NextResponse.json({ ok: false, error: 'forbidden_no_permission' }, { status: 403 })
     }

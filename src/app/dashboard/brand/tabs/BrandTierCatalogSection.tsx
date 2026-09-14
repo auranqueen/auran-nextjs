@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 type Product = {
@@ -60,7 +61,7 @@ export default function BrandTierCatalogSection({ companyId, myBrands }: Props) 
     try {
       const res = await fetch('/api/brand/tier-catalog-toggle', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, product_id: product.id, is_tier_catalog: next }),
       })

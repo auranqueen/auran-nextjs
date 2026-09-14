@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
 import BrandGradePointRatesCard from '../components/BrandGradePointRatesCard'
@@ -163,7 +164,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     try {
       const res = await fetch('/api/brand/tier-packages/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, id: pkg.id, tier_name: tierName, price }),
       })
@@ -194,7 +195,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     try {
       const res = await fetch('/api/brand/tier-packages/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, tier_name: tierName, price }),
       })
@@ -219,7 +220,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     try {
       const res = await fetch('/api/brand/tier-packages/delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ id: pkg.id }),
       })
@@ -263,7 +264,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     try {
       const res = await fetch('/api/brand/tier-kit-items/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           company_id: companyId,
@@ -307,7 +308,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     try {
       const res = await fetch('/api/brand/tier-kit-items/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           company_id: companyId,
@@ -336,7 +337,7 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
     if (!window.confirm(`"${item.item_name}" 구성품을 삭제할까요?`)) return
     const res = await fetch('/api/brand/tier-kit-items/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'same-origin',
       body: JSON.stringify({ company_id: companyId, id: item.id }),
     })

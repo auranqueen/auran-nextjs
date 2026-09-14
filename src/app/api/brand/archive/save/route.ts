@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
+import { assertStaffPermissionFromSession } from '@/lib/brand/assertStaffPermission'
+import { pinSessionError, verifyPinSession } from '@/lib/brand/verifyPinSession'
 
 async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
-  const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
   const category = typeof body?.category === 'string' ? body.category.trim() : ''
   const source = typeof body?.source === 'string' ? body.source.trim() : ''
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
 
-  const staffAllowed = await assertStaffPermission(supabase, staffId || null, companyId, 'marketing_create')
+  const pin = await verifyPinSession(req, supabase, { companyId })
+  if (!pin.ok) return pinSessionError(pin)
+  const staffAllowed = await assertStaffPermissionFromSession(supabase, pin, companyId, 'marketing_create')
   if (!staffAllowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_permission' }, { status: 403 })
   }
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
       title,
       body_html: bodyHtml || '',
       asset_url: assetUrl,
-      created_by_staff_id: staffId || null,
+      created_by_staff_id: pin.staffId,
     })
     .select('*')
     .single()

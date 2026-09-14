@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 import { companyShowsGradeUi, fetchCompanyTierNames } from '@/lib/brand/fetchCompanyTierNames'
 const RED = '#E53935'
@@ -216,7 +217,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     try {
       const res = await fetch('/api/brand/hq-campaigns/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           company_id: companyId,
@@ -259,7 +260,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     if (!window.confirm('이 캠페인을 삭제할까요?')) return
     const res = await fetch('/api/brand/hq-campaigns/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'same-origin',
       body: JSON.stringify({ company_id: companyId, id, staff_id: staffId }),
     })
@@ -292,7 +293,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     try {
       const res = await fetch('/api/brand/campaigns/broadcast', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           company_id: companyId,

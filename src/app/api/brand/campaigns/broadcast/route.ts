@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
-import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
+import { assertStaffPermissionFromSession } from '@/lib/brand/assertStaffPermission'
+import { pinSessionError, verifyPinSession } from '@/lib/brand/verifyPinSession'
 import { getOrCreateChatChannel } from '@/lib/brand/getOrCreateChatChannel'
 import { resolveOwnersByGrades } from '@/lib/brand/resolveOwnersByGrades'
 
@@ -61,7 +62,6 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
-  const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
   const campaignId = typeof body?.campaign_id === 'string' ? body.campaign_id.trim() : ''
   const targetGrades = normalizeTargetGrades(body?.target_grades)
 
@@ -79,7 +79,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
 
-  const staffAllowed = await assertStaffPermission(supabase, staffId || null, companyId, 'marketing_create')
+  const pin = await verifyPinSession(req, supabase, { companyId })
+  if (!pin.ok) return pinSessionError(pin)
+  const staffAllowed = await assertStaffPermissionFromSession(supabase, pin, companyId, 'marketing_create')
   if (!staffAllowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_permission' }, { status: 403 })
   }
@@ -121,7 +123,7 @@ export async function POST(req: NextRequest) {
       const { error: msgErr } = await db.from('brand_chat_messages').insert({
         channel_id: channelId,
         sender_type: 'brand',
-        sender_staff_id: staffId || null,
+        sender_staff_id: pin.staffId,
         message_type: 'campaign',
         body: msgBody,
         attachment_url: attachmentUrl,

@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { pinSessionHeaders } from '@/lib/brand/pinSessionHeaders'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 type BrandOpt = { id: string; name: string }
@@ -86,7 +87,7 @@ export default function BrandTierPromoRulesSection({ companyId, tierPackageId }:
         const bonusQty = Math.trunc(Number(draft.bonus))
         const res = await fetch('/api/brand/tier-promo-rules/save', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'same-origin',
           body: JSON.stringify({
             company_id: companyId,
@@ -109,7 +110,7 @@ export default function BrandTierPromoRulesSection({ companyId, tierPackageId }:
         if (keptIds.includes(id)) continue
         const delRes = await fetch('/api/brand/tier-promo-rules/delete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'same-origin',
           body: JSON.stringify({ company_id: companyId, id }),
         })
@@ -143,7 +144,7 @@ export default function BrandTierPromoRulesSection({ companyId, tierPackageId }:
     if (target.id) {
       const res = await fetch('/api/brand/tier-promo-rules/delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: pinSessionHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ company_id: companyId, id: target.id }),
       })
