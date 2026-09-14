@@ -95,7 +95,14 @@ function LogiDashboardInner() {
       로딩 중...
     </div>
   )
-  if (!pinAuth && brandId) {
+  if (!pinAuth) {
+    if (!brandId) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#0d1117', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 14 }}>
+          로딩 중...
+        </div>
+      )
+    }
     return (
       <BrandPinGate
         brandId={brandId}

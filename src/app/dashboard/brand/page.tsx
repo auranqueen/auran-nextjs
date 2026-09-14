@@ -75,11 +75,13 @@ export default function BrandDashboardPage() {
   const onSwitchStaff = () => {
     clearPinSessionStorage()
     setPinAuth(null)
+    setRows([])
   }
 
   const onFullLogout = async () => {
     clearPinSessionStorage()
     setPinAuth(null)
+    setRows([])
     await supabase.auth.signOut()
     router.push('/')
   }
@@ -103,7 +105,6 @@ export default function BrandDashboardPage() {
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('active')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
-  const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
@@ -139,7 +140,7 @@ export default function BrandDashboardPage() {
     setUserPk(u.id)
     const { data: brandList } = await supabase
       .from('brands')
-      .select('id,name,slug,company_id,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
+      .select('id,name,slug,company_id')
       .eq('user_id', u.id)
       .order('created_at', { ascending: true })
     const b = brandList?.[0] || null
@@ -213,33 +214,12 @@ export default function BrandDashboardPage() {
       }
     }
 
-    const allBrandIds = finalBrands.map((fb) => fb.id)
-
-    if (allBrandIds.length > 0) {
-      const { data: pr } = await supabase
-        .from('brand_products')
-        .select('*, brands(id,name)')
-        .in('brand_id', allBrandIds)
-        .order('created_at', { ascending: false })
-      setRows((pr || []) as Row[])
-    } else {
-      setRows([])
-    }
-
     setLoading(false)
   }, [router])
 
   useEffect(() => {
     void load()
   }, [load])
-
-  useEffect(() => {
-    supabase
-      .from('brands')
-      .select('id,name,origin_country')
-      .order('name')
-      .then(({ data }) => setBrands((data || []) as { id: string; name: string; origin_country?: string | null }[]))
-  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -290,6 +270,7 @@ export default function BrandDashboardPage() {
 
   const fetchRows = useCallback(async () => {
     if (!userPk) return
+    if (userRole !== 'admin' && !pinAuth) return
 
     const { data: ownedRows } = await supabase
       .from('brands')
@@ -317,7 +298,32 @@ export default function BrandDashboardPage() {
       .order('created_at', { ascending: false })
 
     setRows((pr || []) as Row[])
-  }, [userPk, myBrands, supabase])
+  }, [userPk, userRole, pinAuth, myBrands, supabase])
+
+  const canSeeSensitive = userRole === 'admin' || Boolean(pinAuth)
+
+  useEffect(() => {
+    if (loading || !userPk) return
+    if (!canSeeSensitive) {
+      setRows([])
+      return
+    }
+    void fetchRows()
+  }, [loading, userPk, canSeeSensitive, fetchRows])
+
+  useEffect(() => {
+    if (loading || !currentBrandId || !canSeeSensitive) return
+    void (async () => {
+      const { data } = await supabase
+        .from('brands')
+        .select(
+          'id,name,slug,company_id,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at',
+        )
+        .eq('id', currentBrandId)
+        .maybeSingle()
+      if (data) setBrandRow(data as Record<string, unknown>)
+    })()
+  }, [loading, currentBrandId, canSeeSensitive, supabase])
 
   const approveOne = async (id: string) => {
     setBusyId(id)
