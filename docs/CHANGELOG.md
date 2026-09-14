@@ -4,6 +4,8 @@
 ---
 
 ## 2026-09-14
+### chore(rls): 197 마이그레이션 파일을 실제 운영DB 상태와 동기화(코드 변경 없음, 문서화 성격)
+- `197_owner_rls_company_scope.sql`: 운영에 이미 있는 `brand_tier_promo_rules` INSERT/UPDATE/DELETE 정책 3개와 롤백 주석 DROP 3줄을 파일에 기록. SQL 재실행 없음
 ### fix(security): 교육 세션 list에서 Zoom 호스트 URL 컬럼 제외
 - `education/sessions/list`: `select('*')`를 명시 컬럼으로 교체. `zoom_meeting_id`·`zoom_host_start_url` 미반환. 화면이 쓰던 필드만
 ### fix(security): 브랜드 허브 list·채팅 API에 PIN 세션 검증

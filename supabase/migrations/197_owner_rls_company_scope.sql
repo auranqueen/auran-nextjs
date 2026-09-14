@@ -169,6 +169,88 @@ CREATE POLICY brand_tier_promo_rules_brand_select ON public.brand_tier_promo_rul
     )
   );
 
+-- 브랜드 소유·멤버: 자사 company 프로모 규칙 쓰기 (허브 저장 · 서비스롤 폴백)
+-- 조건 패턴: supply_promos_brand_select (소유자 current_user_id/auth.uid 또는 brand_members)
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_insert ON public.brand_tier_promo_rules;
+CREATE POLICY brand_tier_promo_rules_brand_insert ON public.brand_tier_promo_rules
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (b.user_id = public.current_user_id() OR b.user_id = auth.uid())
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.brand_members bm
+      JOIN public.brands b ON b.id = bm.brand_id
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (
+          bm.user_id = public.current_user_id()
+          OR bm.user_id IN (SELECT id FROM public.users WHERE auth_id = auth.uid())
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_update ON public.brand_tier_promo_rules;
+CREATE POLICY brand_tier_promo_rules_brand_update ON public.brand_tier_promo_rules
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (b.user_id = public.current_user_id() OR b.user_id = auth.uid())
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.brand_members bm
+      JOIN public.brands b ON b.id = bm.brand_id
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (
+          bm.user_id = public.current_user_id()
+          OR bm.user_id IN (SELECT id FROM public.users WHERE auth_id = auth.uid())
+        )
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (b.user_id = public.current_user_id() OR b.user_id = auth.uid())
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.brand_members bm
+      JOIN public.brands b ON b.id = bm.brand_id
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (
+          bm.user_id = public.current_user_id()
+          OR bm.user_id IN (SELECT id FROM public.users WHERE auth_id = auth.uid())
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_delete ON public.brand_tier_promo_rules;
+CREATE POLICY brand_tier_promo_rules_brand_delete ON public.brand_tier_promo_rules
+  FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (b.user_id = public.current_user_id() OR b.user_id = auth.uid())
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.brand_members bm
+      JOIN public.brands b ON b.id = bm.brand_id
+      WHERE b.company_id = brand_tier_promo_rules.company_id
+        AND (
+          bm.user_id = public.current_user_id()
+          OR bm.user_id IN (SELECT id FROM public.users WHERE auth_id = auth.uid())
+        )
+    )
+  );
+
 -- ============================================================
 -- 4) supply_promos — USING(true) 제거, owner + brand SELECT
 -- ============================================================
@@ -341,6 +423,9 @@ CREATE POLICY brand_tier_packages_owner_select ON public.brand_tier_packages
 -- brand_tier_promo_rules
 DROP POLICY IF EXISTS brand_tier_promo_rules_owner_select ON public.brand_tier_promo_rules;
 DROP POLICY IF EXISTS brand_tier_promo_rules_brand_select ON public.brand_tier_promo_rules;
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_insert ON public.brand_tier_promo_rules;
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_update ON public.brand_tier_promo_rules;
+DROP POLICY IF EXISTS brand_tier_promo_rules_brand_delete ON public.brand_tier_promo_rules;
 
 -- supply_promos
 DROP POLICY IF EXISTS supply_promos_owner_select ON public.supply_promos;
