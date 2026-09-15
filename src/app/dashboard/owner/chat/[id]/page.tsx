@@ -63,6 +63,7 @@ export default function OwnerChatRoomPage() {
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
+  const [forbiddenMsg, setForbiddenMsg] = useState('채팅방을 열 수 없어요')
   const [channelTitle, setChannelTitle] = useState('상담')
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [notifSound, setNotifSound] = useState('violet')
@@ -371,9 +372,17 @@ export default function OwnerChatRoomPage() {
         router.replace('/login?role=owner')
         return
       }
-      const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      const { data: urow } = await supabase.from('users').select('id, role').eq('auth_id', user.id).maybeSingle()
       if (!urow?.id) {
         router.replace('/login?role=owner')
+        return
+      }
+      // channel_type='owner' 인박스는 HQ(admin) 전용 — 일반 원장 접근 차단
+      if (urow.role !== 'admin') {
+        if (cancelled) return
+        setForbiddenMsg('이 인박스는 이용할 수 없습니다')
+        setForbidden(true)
+        setLoading(false)
         return
       }
       const uid = String(urow.id)
@@ -388,6 +397,7 @@ export default function OwnerChatRoomPage() {
 
       if (cancelled) return
       if (chErr || !ch) {
+        setForbiddenMsg('채팅방을 열 수 없어요')
         setForbidden(true)
         setLoading(false)
         return
@@ -885,7 +895,7 @@ export default function OwnerChatRoomPage() {
   if (forbidden) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#fff', padding: 24, fontSize: 13 }}>
-        <p style={{ marginBottom: 16 }}>채팅방을 열 수 없어요</p>
+        <p style={{ marginBottom: 16 }}>{forbiddenMsg}</p>
         <button
           type="button"
           onClick={() => router.push('/dashboard/owner')}

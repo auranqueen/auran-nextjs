@@ -3,6 +3,11 @@
 
 ---
 
+## 2026-09-15
+### fix(security): channel_type=owner HQ 인박스를 admin 전용으로 제한
+- `/dashboard/owner/chat/[id]`: `users.role !== 'admin'`이면 채널/메시지 로드 없이 「이 인박스는 이용할 수 없습니다」+「대시보드로」 안내. admin만 기존처럼 전체 `channel_type='owner'` 인박스 유지
+- `/dashboard/owner/chat/redirect`: admin이 아니면 `channel_type='owner'` 최신 채널로 보내지 않고 동일 안내 UI. 채널 생성·salon 상담·admin/owner-chat은 미변경
+
 ## 2026-09-14
 ### fix(security): 원장 교육 세션 목록에서 Zoom 호스트 URL 제외
 - `GET /api/owner/education/sessions`: `select('*')` 후 `link`/`asset_url`만 빼던 구조분해에 `zoom_meeting_id`·`zoom_host_start_url`을 추가해 rest에서 제거. 신청 후에도 두 필드는 응답에 넣지 않음
