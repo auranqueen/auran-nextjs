@@ -4,6 +4,9 @@
 ---
 
 ## 2026-09-16
+### style(owner-bookings): BookingManagePage 잔여 gap:8을 BADGE_GAP으로 통일
+- `BADGE_GAP=10` 추가. 날짜 네비·상태 뱃지 행·추가 모달 날짜/시간 그리드의 `gap:8` 3곳을 교체
+- 기존 `PAGE_PAD`/`CARD_PAD`/`CARD_MARGIN`/`BTN_GAP`·예약 로직·폰트 미변경
 ### style(owner-bookings): BookingManagePage 여백 상수로 답답함 완화
 - `BookingManagePage.tsx` 로컬 `PAGE_PAD=20` / `CARD_PAD=16` / `CARD_MARGIN=14` / `BTN_GAP=12` 도입
 - 헤더·본문·탭 가로·카드 padding/`marginBottom`·버튼 행 gap만 교체. `paddingBottom:88`·예약 로직·폰트·구조·타 화면 미변경

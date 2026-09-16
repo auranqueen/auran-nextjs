@@ -22,6 +22,7 @@ const PAGE_PAD = 20
 const CARD_PAD = 16
 const CARD_MARGIN = 14
 const BTN_GAP = 12
+const BADGE_GAP = 10
 
 type TabKey = 'today' | 'upcoming' | 'past' | 'charts'
 
@@ -584,7 +585,7 @@ export default function BookingManagePage() {
       <div style={{ padding: PAGE_PAD }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           {tab === 'today' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: BADGE_GAP }}>
               <button type="button" onClick={() => setSelectedDate((d) => shiftDate(d, -1))} style={{ border: `1px solid ${BORDER}`, background: BG, borderRadius: 8, width: 32, height: 32, cursor: 'pointer' }}>‹</button>
               <span style={{ fontSize: 14, fontWeight: 500 }}>{tabLabel}</span>
               <button type="button" onClick={() => setSelectedDate((d) => shiftDate(d, 1))} style={{ border: `1px solid ${BORDER}`, background: BG, borderRadius: 8, width: 32, height: 32, cursor: 'pointer' }}>›</button>
@@ -624,7 +625,7 @@ export default function BookingManagePage() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{ fontSize: 13, color: TEXT_SUB, minWidth: 44, paddingTop: 2 }}>{fmtTime(b.booking_time)}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: BADGE_GAP, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 15, fontWeight: 500 }}>{b.displayName}</span>
                       <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: badge.bg, color: badge.color }}>
                         {statusLabel(b.status)}
@@ -684,7 +685,7 @@ export default function BookingManagePage() {
             <input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="고객명 (예: 김민지)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
             <input value={addService} onChange={(e) => setAddService(e.target.value)} placeholder="시술명 (예: 수분집중케어)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
             <input value={addPrice} onChange={(e) => setAddPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="가격 (예: 90000)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: BADGE_GAP, marginBottom: 12 }}>
               <input type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
               <input type="time" value={addTime} onChange={(e) => setAddTime(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
