@@ -17,6 +17,12 @@ const TEXT = '#1A1A2E'
 const TEXT_SUB = '#888888'
 const BORDER = '#ede9f7'
 
+/** 예약관리(BookingManagePage) 전용 여백 — 전역 토큰 아님 */
+const PAGE_PAD = 20
+const CARD_PAD = 16
+const CARD_MARGIN = 14
+const BTN_GAP = 12
+
 type TabKey = 'today' | 'upcoming' | 'past' | 'charts'
 
 type BookingRow = {
@@ -539,7 +545,7 @@ export default function BookingManagePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 88 }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: `0.5px solid ${BORDER}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: `${PAGE_PAD}px ${PAGE_PAD}px`, borderBottom: `0.5px solid ${BORDER}` }}>
         <button type="button" onClick={() => router.push('/dashboard/owner')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE, cursor: 'pointer' }}>
           ←
         </button>
@@ -549,7 +555,7 @@ export default function BookingManagePage() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', margin: '0 16px', borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ display: 'flex', margin: `0 ${PAGE_PAD}px`, borderBottom: `1px solid ${BORDER}` }}>
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -575,7 +581,7 @@ export default function BookingManagePage() {
       {tab === 'charts' ? (
         <ChartsSection />
       ) : (
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: PAGE_PAD }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           {tab === 'today' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -592,7 +598,7 @@ export default function BookingManagePage() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 48, color: TEXT_SUB, fontSize: 13 }}>불러오는 중…</div>
         ) : rows.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 16px', color: TEXT_SUB, fontSize: 13, lineHeight: 1.7 }}>
+          <div style={{ textAlign: 'center', padding: `48px ${PAGE_PAD}px`, color: TEXT_SUB, fontSize: 13, lineHeight: 1.7 }}>
             {tab === 'today' ? '이 날짜에 예약이 없어요 💜' : tab === 'upcoming' ? '다가오는 예약이 없어요' : '지난 예약 내역이 없어요'}
             <br />
             <button type="button" onClick={() => setShowAdd(true)} style={{ marginTop: 12, border: 'none', background: 'transparent', color: PURPLE, fontSize: 13, cursor: 'pointer' }}>
@@ -610,8 +616,8 @@ export default function BookingManagePage() {
                   background: BG,
                   border: `0.5px solid ${BORDER}`,
                   borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 10,
+                  padding: CARD_PAD,
+                  marginBottom: CARD_MARGIN,
                   opacity: done ? 0.72 : 1,
                 }}
               >
@@ -635,7 +641,7 @@ export default function BookingManagePage() {
                   </div>
                 </div>
                 {!done ? (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: BTN_GAP, marginTop: 12, flexWrap: 'wrap' }}>
                     {String(b.status || '').toLowerCase() === 'pending' ? (
                       <>
                         <button type="button" onClick={() => void updateStatus(b.id, 'confirmed')} style={{ flex: 1, minWidth: 72, padding: '8px 0', borderRadius: 8, border: `1px solid ${PURPLE}`, background: PURPLE_LIGHT, color: PURPLE, fontSize: 12, cursor: 'pointer' }}>

@@ -4,6 +4,9 @@
 ---
 
 ## 2026-09-16
+### style(owner-bookings): BookingManagePage 여백 상수로 답답함 완화
+- `BookingManagePage.tsx` 로컬 `PAGE_PAD=20` / `CARD_PAD=16` / `CARD_MARGIN=14` / `BTN_GAP=12` 도입
+- 헤더·본문·탭 가로·카드 padding/`marginBottom`·버튼 행 gap만 교체. `paddingBottom:88`·예약 로직·폰트·구조·타 화면 미변경
 ### style(owner-home): OwnerHomeV3 여백 상수로 답답함 완화
 - `OwnerHomeV3.tsx` 로컬 상수 `PAGE_PAD=20` / `SECTION_GAP=20` / `CARD_PAD=16` / `KPI_GAP=12` 도입
 - 페이지·헤더·본문 padding, 섹션 gap, 카드 padding, KPI 그리드 gap을 상수로 교체(폰트·색·구조·타 화면 미변경)
