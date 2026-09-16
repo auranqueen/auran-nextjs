@@ -4,6 +4,9 @@
 ---
 
 ## 2026-09-16
+### style(owner-home): OwnerHomeV3 여백 상수로 답답함 완화
+- `OwnerHomeV3.tsx` 로컬 상수 `PAGE_PAD=20` / `SECTION_GAP=20` / `CARD_PAD=16` / `KPI_GAP=12` 도입
+- 페이지·헤더·본문 padding, 섹션 gap, 카드 padding, KPI 그리드 gap을 상수로 교체(폰트·색·구조·타 화면 미변경)
 ### fix(owner-chat): 모바일 상담톡 상·하단 UI 겹침 완화
 - `/dashboard/owner/chat/[id]`: 모바일(fixed) 입력바 `paddingBottom`에서 하단탭용 `+64px` 제거 → safe-area만 유지(채팅은 OwnerSidebarShell이 하단탭 미렌더)
 - 카드함·툴패널 모바일 `maxHeight`를 `min(220px, calc(72vh - 120px))`로 제한해 칩 행·입력 행이 밀려 겹치지 않게 함(PC sticky·maxHeight 220 유지)

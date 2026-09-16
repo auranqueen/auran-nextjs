@@ -26,6 +26,12 @@ const GRADE_LABELS: Record<string, string> = {
   empire: 'EMPIRE',
 }
 
+/** 원장 홈(OwnerHomeV3) 전용 여백 — 전역 토큰 아님 */
+const PAGE_PAD = 20
+const SECTION_GAP = 20
+const CARD_PAD = 16
+const KPI_GAP = 12
+
 export type RevenueSlice = {
   current: number
   previous: number
@@ -247,14 +253,14 @@ export default function OwnerHomeV3({
   }
 
   return (
-    <div data-theme="light" style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 1100, margin: '0 auto', paddingBottom: 24, width: '100%' }}>
+    <div data-theme="light" style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 1100, margin: '0 auto', paddingBottom: PAGE_PAD, width: '100%' }}>
       <style>{`
         @media (min-width: 768px) {
           .owner-v3-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
           .owner-v3-card:hover { transform: translateY(-2px); }
         }
       `}</style>
-      <div style={{ background: 'linear-gradient(160deg,#FBF7EE,#F5F1FA)', borderBottom: '1px solid #E1D8F0', padding: '20px 20px 16px' }}>
+      <div style={{ background: 'linear-gradient(160deg,#FBF7EE,#F5F1FA)', borderBottom: '1px solid #E1D8F0', padding: `${PAGE_PAD}px ${PAGE_PAD}px ${PAGE_PAD}px` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 12 }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: '#8A7E72', letterSpacing: '0.2em', marginBottom: 4 }}>CLINIC COMMAND CENTER</div>
@@ -338,13 +344,13 @@ export default function OwnerHomeV3({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: KPI_GAP }}>
           {[
             { l: '이번 달 매출', v: fmtWon(kpiMonth), c: '#8A6A2E', bg: '#FBF7EE', bd: '#EFE3C8' },
             { l: '오늘 예약', v: `${kpiBookings}건`, c: '#8A6A2E', bg: '#FBF7EE', bd: '#EFE3C8' },
             { l: '미답변', v: `${kpiUnanswered}건`, c: '#5A4380', bg: '#F5F1FA', bd: '#E1D8F0' },
           ].map((s) => (
-            <div key={s.l} className="owner-v3-card" style={{ background: s.bg, border: `1px solid ${s.bd}`, borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+            <div key={s.l} className="owner-v3-card" style={{ background: s.bg, border: `1px solid ${s.bd}`, borderRadius: 10, padding: CARD_PAD, textAlign: 'center' }}>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: s.c }}>{s.v}</div>
               <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{s.l}</div>
             </div>
@@ -357,7 +363,7 @@ export default function OwnerHomeV3({
         {pointsReady && areteCompanyId ? (
           <>
           <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: 14 }}>
+            <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: CARD_PAD }}>
               <div style={{ width: 28, height: 28, borderRadius: 9, background: '#c9a96e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
               <div style={{ fontSize: 11, color: '#a8863f', marginBottom: 4 }}>적립포인트</div>
               <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{rewardBalance.toLocaleString()}P</div>
@@ -369,7 +375,7 @@ export default function OwnerHomeV3({
                 내역보기 →
               </button>
             </div>
-            <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #f1ecf7 100%)', border: '1px solid #e2d5f0', borderRadius: 16, padding: 14 }}>
+            <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #f1ecf7 100%)', border: '1px solid #e2d5f0', borderRadius: 16, padding: CARD_PAD }}>
               <div style={{ width: 28, height: 28, borderRadius: 9, background: '#7b5ea7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
               <div style={{ fontSize: 11, color: '#7b5ea7', marginBottom: 4 }}>아레테포인트</div>
               <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{pointBalance.toLocaleString()}P</div>
@@ -409,7 +415,7 @@ export default function OwnerHomeV3({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
-                padding: '14px 14px',
+                padding: CARD_PAD,
                 background: '#fff',
                 border: '1px solid #E8E4F0',
                 borderRadius: 12,
@@ -426,9 +432,9 @@ export default function OwnerHomeV3({
 
       <div
         style={{
-          padding: '18px 18px 0',
+          padding: `${PAGE_PAD}px ${PAGE_PAD}px 0`,
           display: 'grid',
-          gap: 16,
+          gap: SECTION_GAP,
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
         }}
       >
@@ -439,7 +445,7 @@ export default function OwnerHomeV3({
             className="owner-v3-card"
             style={{
               width: '100%',
-              padding: '16px 18px',
+              padding: `${CARD_PAD}px ${PAGE_PAD}px`,
               marginBottom: chatOpen ? 0 : 10,
               background: '#F5F1FA',
               border: '1px solid #E1D8F0',
@@ -510,7 +516,7 @@ export default function OwnerHomeV3({
             className="owner-v3-card"
             style={{
               width: '100%',
-              padding: '16px 18px',
+              padding: `${CARD_PAD}px ${PAGE_PAD}px`,
               marginBottom: brandChatOpen ? 0 : 10,
               marginTop: chatOpen ? 6 : 0,
               background: '#F5F1FA',
@@ -591,7 +597,7 @@ export default function OwnerHomeV3({
             </div>
           )}
 
-          <div style={{ marginBottom: 16, marginTop: chatOpen || brandChatOpen ? 6 : 0 }}>
+          <div style={{ marginBottom: SECTION_GAP, marginTop: chatOpen || brandChatOpen ? 6 : 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
             {todayBookings.length === 0 ? (
               <div className="owner-v3-card" style={{ textAlign: 'center', padding: 20, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>
@@ -636,7 +642,7 @@ export default function OwnerHomeV3({
             )}
           </div>
 
-          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD, marginBottom: SECTION_GAP }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>📈 월별 매출 추이</div>
             {monthlyTrend.length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', padding: 20 }}>매출 데이터가 없습니다</div>
@@ -656,8 +662,8 @@ export default function OwnerHomeV3({
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: SECTION_GAP }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>매출 디테일</div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -696,7 +702,7 @@ export default function OwnerHomeV3({
           />
 
           {profile?.origin_track === 'B' && (
-          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
               모집 원장님 매출 기준 커미션 - 정산 로직 연결 예정
@@ -738,7 +744,7 @@ export default function OwnerHomeV3({
           )}
 
           {brandPost && (
-            <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>브랜드 소식</div>
               {brandPost.brand_name && (
                 <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 4 }}>{brandPost.brand_name}</div>
@@ -765,7 +771,7 @@ export default function OwnerHomeV3({
             </div>
           )}
 
-          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>🏆 인기 시술 TOP3</div>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>최근 30일 기준</div>
             {topServices.length === 0 ? (
@@ -796,7 +802,7 @@ export default function OwnerHomeV3({
             )}
           </div>
 
-          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: CARD_PAD }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>🛍️ 인기 제품 TOP3</div>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>최근 30일 기준</div>
             {topProducts.length === 0 ? (
