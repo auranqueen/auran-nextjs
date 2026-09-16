@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-09-16
+### fix(owner-chat): 모바일 상담톡 상·하단 UI 겹침 완화
+- `/dashboard/owner/chat/[id]`: 모바일(fixed) 입력바 `paddingBottom`에서 하단탭용 `+64px` 제거 → safe-area만 유지(채팅은 OwnerSidebarShell이 하단탭 미렌더)
+- 카드함·툴패널 모바일 `maxHeight`를 `min(220px, calc(72vh - 120px))`로 제한해 칩 행·입력 행이 밀려 겹치지 않게 함(PC sticky·maxHeight 220 유지)
+- 헤더: 등급뱃지·진행바에 `minWidth:0`/`maxWidth`·ellipsis, 「원장」뱃지에 `marginLeft:8`로 좁은 화면 겹침 완화. admin 게이트·조회 로직 미변경
+
 ## 2026-09-15
 ### fix(security): channel_type=owner HQ 인박스를 admin 전용으로 제한
 - `/dashboard/owner/chat/[id]`: `users.role !== 'admin'`이면 채널/메시지 로드 없이 「이 인박스는 이용할 수 없습니다」+「대시보드로」 안내. admin만 기존처럼 전체 `channel_type='owner'` 인박스 유지
