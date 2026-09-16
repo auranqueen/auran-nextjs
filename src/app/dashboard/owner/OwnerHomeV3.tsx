@@ -406,7 +406,7 @@ export default function OwnerHomeV3({
             { href: '/dashboard/owner/bookings', icon: '📅', label: '예약 관리' },
             { href: profile?.origin_track === 'A' ? '/dashboard/owner/brand-orders' : '/dashboard/owner/hq-stock-orders', icon: '📦', label: '발주하기' },
             { href: '/dashboard/owner/charts-v2', icon: '📋', label: '시술차트' },
-            { href: '/dashboard/owner/store-decoration', icon: '✨', label: '스토어 꾸미기' },
+            { href: '/dashboard/owner/store-decoration', icon: '✨', label: '스토어' },
           ].map((item) => (
             <Link
               key={item.href}
@@ -421,10 +421,14 @@ export default function OwnerHomeV3({
                 borderRadius: 12,
                 textDecoration: 'none',
                 color: '#3A3540',
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
-              <span style={{ fontSize: 18 }}>{item.icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+                {item.label}
+              </span>
             </Link>
           ))}
         </div>

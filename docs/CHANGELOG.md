@@ -4,6 +4,9 @@
 ---
 
 ## 2026-09-16
+### fix(owner-home): 퀵메뉴 라벨 한 줄 유지(nowrap) · 「스토어」축약
+- `OwnerHomeV3` 2×2 퀵메뉴: 라벨 `whiteSpace:nowrap` + `ellipsis`, 링크 `minWidth:0`/`overflow:hidden`
+- 「스토어 꾸미기」→「스토어」만 축약. 나머지 라벨·fontSize·2열 grid·경로 미변경
 ### style(owner-bookings): BookingManagePage 잔여 gap:8을 BADGE_GAP으로 통일
 - `BADGE_GAP=10` 추가. 날짜 네비·상태 뱃지 행·추가 모달 날짜/시간 그리드의 `gap:8` 3곳을 교체
 - 기존 `PAGE_PAD`/`CARD_PAD`/`CARD_MARGIN`/`BTN_GAP`·예약 로직·폰트 미변경
