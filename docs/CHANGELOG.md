@@ -24,6 +24,12 @@
 - admin 전용 RLS 이후 일반 고객 UPDATE가 막혀 조회수가 안 오르던 상태 복구. sessionStorage 1회·에러 시 미반영은 유지. RPC 반환값으로 화면 조회수 표시
 ### chore(rls): magazines RLS를 마이그레이션 200으로 기록
 - `200_magazines_rls_rebuild.sql`: 운영에 이미 반영된 C2를 레포에 기록. SQL 재실행 없음
+### fix(security): gift_items RLS 재구성
+- ALL(true) `"어드민 전체"` 제거. SELECT `"전체 조회 가능"`은 유지(결제완료 또또 읽기)
+- 신규 `gift_items_admin_write` ALL: `users.role='admin'` 또는 JWT `app_metadata.role='super_admin'`
+- 고객 당첨은 `gift_items`에 쓰지 않음. SQL Editor 직접실행 완료
+### chore(rls): gift_items RLS를 마이그레이션 201로 기록
+- `201_gift_items_rls_rebuild.sql`: 운영에 이미 반영된 C3를 레포에 기록. SQL 재실행 없음
 
 ## 2026-09-16
 ### fix(owner-home): 퀵메뉴 라벨 한 줄 유지(nowrap) · 「스토어」축약
