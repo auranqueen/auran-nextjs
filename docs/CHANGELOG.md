@@ -14,6 +14,13 @@
 ### chore(rls): external_customers RLS를 마이그레이션 199로 기록
 - `199_external_customers_rls_rebuild.sql`: 운영 DB에 SQL Editor로 이미 반영된 C1 정책을 레포에 기록. SQL 재실행 없음
 - 재해복구/신규 환경 구축 시에도 admin 전용 ALL + chat_channels 경유 원장 SELECT + 본인 SELECT 상태가 유지되도록 함
+### fix(security): magazines RLS 재구성
+- roles:public(비로그인 포함)으로 무조건 열려 있던 `"magazines 삭제"`/`"생성"`/`"수정"` 제거. `"magazines 읽기"` SELECT는 유지
+- 신규 `magazines_admin_write` ALL: `users.role='admin'` 또는 JWT `app_metadata.role='super_admin'`
+- 조회수: `increment_magazine_view_count` RPC 신설(SECURITY DEFINER, 발행된 글만 +1). 앱은 아직 클라이언트 UPDATE — RPC 전환은 후속
+- 이미지 업로드(`storage.objects`)는 별개라 이번 범위 아님. SQL Editor 직접실행 완료
+### chore(rls): magazines RLS를 마이그레이션 200으로 기록
+- `200_magazines_rls_rebuild.sql`: 운영에 이미 반영된 C2를 레포에 기록. SQL 재실행 없음
 
 ## 2026-09-16
 ### fix(owner-home): 퀵메뉴 라벨 한 줄 유지(nowrap) · 「스토어」축약
