@@ -79,15 +79,14 @@ export default function MagazineDetailClient() {
       const sessKey = `magazine_view_${rowId || id}`
       const already = typeof sessionStorage !== 'undefined' && sessionStorage.getItem(sessKey)
       if (!already && rowId) {
-        const vc = Number((data as any).view_count || 0) + 1
-        const { error: upErr } = await supabase.from('magazines' as any).update({ view_count: vc } as any).eq('id', rowId)
+        const { data: newCount, error: upErr } = await supabase.rpc('increment_magazine_view_count', { p_id: rowId })
         if (!upErr) {
           try {
             sessionStorage.setItem(sessKey, '1')
           } catch {
             /* ignore */
           }
-          nextRow = { ...(data as any), view_count: vc }
+          nextRow = { ...(data as any), view_count: newCount ?? (data as any).view_count }
         }
       }
       setRow(nextRow)

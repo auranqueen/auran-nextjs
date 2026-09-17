@@ -19,6 +19,9 @@
 - 신규 `magazines_admin_write` ALL: `users.role='admin'` 또는 JWT `app_metadata.role='super_admin'`
 - 조회수: `increment_magazine_view_count` RPC 신설(SECURITY DEFINER, 발행된 글만 +1). 앱은 아직 클라이언트 UPDATE — RPC 전환은 후속
 - 이미지 업로드(`storage.objects`)는 별개라 이번 범위 아님. SQL Editor 직접실행 완료
+### fix(magazine): 조회수 증가를 increment_magazine_view_count RPC로 전환
+- `MagazineDetailClient.tsx`: 클라이언트 `magazines.update({ view_count })` 제거 → `rpc('increment_magazine_view_count', { p_id })` (200번 함수)
+- admin 전용 RLS 이후 일반 고객 UPDATE가 막혀 조회수가 안 오르던 상태 복구. sessionStorage 1회·에러 시 미반영은 유지. RPC 반환값으로 화면 조회수 표시
 ### chore(rls): magazines RLS를 마이그레이션 200으로 기록
 - `200_magazines_rls_rebuild.sql`: 운영에 이미 반영된 C2를 레포에 기록. SQL 재실행 없음
 
