@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-09-17
+### fix(security): external_customers RLS 완전 재구성
+- `admin_all`(qual true) 및 `admin_all_external_customers`(role owner 포함 무조건 ALL) 제거. SQL Editor 직접실행 완료
+- 신규: `external_customers_admin_all` ALL(role=admin만), `external_customers_owner_via_bookings_select` SELECT(`chat_channels.external_customer_id`+`owner_id` 경유), `external_customers_self_select` SELECT(`auran_user_id` = auth.uid() 또는 current_user_id())
+- 라이브 확인: 정책 3개만 남음. `admin_all` / `admin_all_external_customers` 소멸
+- `bookings.external_customer_id` EXISTS는 컬럼 부재로 정책에서 제외
+- 부수발견 — `bookings.external_customer_id`, `external_customers.owner_id` 컬럼이 실제로 존재하지 않아 CustomerPopup/BookingManagePage/charts-v2의 관련 기능이 이미 깨져있었을 가능성 있음(별도 후속 조사 필요, 이번 RLS수정과 무관)
+- 앱 코드 미변경. 트랙A/B 주문 정책 미변경
+
 ## 2026-09-16
 ### fix(owner-home): 퀵메뉴 라벨 한 줄 유지(nowrap) · 「스토어」축약
 - `OwnerHomeV3` 2×2 퀵메뉴: 라벨 `whiteSpace:nowrap` + `ellipsis`, 링크 `minWidth:0`/`overflow:hidden`
