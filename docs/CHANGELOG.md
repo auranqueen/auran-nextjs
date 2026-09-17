@@ -11,6 +11,9 @@
 - `bookings.external_customer_id` EXISTS는 컬럼 부재로 정책에서 제외
 - 부수발견 — `bookings.external_customer_id`, `external_customers.owner_id` 컬럼이 실제로 존재하지 않아 CustomerPopup/BookingManagePage/charts-v2의 관련 기능이 이미 깨져있었을 가능성 있음(별도 후속 조사 필요, 이번 RLS수정과 무관)
 - 앱 코드 미변경. 트랙A/B 주문 정책 미변경
+### chore(rls): external_customers RLS를 마이그레이션 199로 기록
+- `199_external_customers_rls_rebuild.sql`: 운영 DB에 SQL Editor로 이미 반영된 C1 정책을 레포에 기록. SQL 재실행 없음
+- 재해복구/신규 환경 구축 시에도 admin 전용 ALL + chat_channels 경유 원장 SELECT + 본인 SELECT 상태가 유지되도록 함
 
 ## 2026-09-16
 ### fix(owner-home): 퀵메뉴 라벨 한 줄 유지(nowrap) · 「스토어」축약
