@@ -10,6 +10,13 @@
 - 앱에 이 테이블 쓰기 코드 없음. SQL Editor 직접실행 완료
 ### chore(rls): help_tooltips RLS를 마이그레이션 202로 기록
 - `202_help_tooltips_rls_rebuild.sql`: 운영에 이미 반영된 C4를 레포에 기록. SQL 재실행 없음
+### fix(security): orders SELECT true 구멍 제거 + 001 누락 정책 보완
+- 1차: `orders_owner_select`(owner_id = current_user_id()), `orders_referrer_select`(referrer_user_id = auth.uid()) 신설. `"결제완료 페이지 주문조회"`(qual:true) 제거
+- 긴급후속: `orders_own`(고객본인 SELECT), `admin_all_orders`(admin ALL) 운영에 추가. 001 파일에는 있었으나 운영 DB에 한 번도 실행되지 않았던 누락
+- 기존 유지: `users_update_own_orders`, `service_role_orders_update`, `"주문 생성 허용"`(INSERT)
+- 최종 정책 7개. 결제완료 비로그인 조회는 서버API+토큰이 후속. 트랙A `brand_product_orders`에 미복사. SQL Editor 직접실행 완료
+### chore(rls): orders RLS를 마이그레이션 203으로 기록
+- `203_orders_rls_rebuild.sql`: 운영에 이미 반영된 1차+2차를 레포에 기록. SQL 재실행 없음
 
 ## 2026-09-17
 ### fix(security): external_customers RLS 완전 재구성
