@@ -129,7 +129,7 @@ export default function CommunityPostDetailPage() {
     setLikeCount(Number(p.likes || 0))
 
     try {
-      await supabase.from('posts').update({ views: (p.views || 0) + 1 }).eq('id', postId)
+      await supabase.rpc('increment_post_views', { p_id: postId })
     } catch {
       // ignore
     }
@@ -238,7 +238,6 @@ export default function CommunityPostDetailPage() {
           } else {
             await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
           }
-          await supabase.from('posts').update({ likes: newLikes }).eq('id', postId)
           setPost((p) => (p ? { ...p, likes: newLikes } : p))
         } catch {
           // ignore

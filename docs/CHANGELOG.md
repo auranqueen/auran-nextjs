@@ -4,6 +4,16 @@
 ---
 
 ## 2026-09-19
+### fix(security): posts UPDATE true 구멍 제거 + 조회수/좋아요 카운터 분리
+- `authenticated_update_posts`(USING true / WITH CHECK true) 제거. SQL Editor 직접실행 완료
+- 조회수: `increment_post_views` RPC (SECURITY DEFINER, `posts.views + 1`)
+- 좋아요: `sync_posts_likes_count` 트리거 — `post_likes` INSERT/DELETE 후 `posts.likes`를 COUNT로 동기화
+- 트랙A `oren_scene_posts` / `brand_posts`에 미복사
+### chore(rls): posts 카운터 RLS를 마이그레이션 204로 기록
+- `204_posts_views_likes_rpc.sql`: 운영에 이미 반영된 RPC·트리거·구멍 정책 제거를 레포에 기록. SQL 재실행 없음
+### fix(community): 조회수 RPC 전환 + likes 직접 UPDATE 제거
+- `community/[id]/page.tsx`: `posts.update({ views })` → `rpc('increment_post_views', { p_id })`
+- 같은 파일 `posts.update({ likes })` 제거. `post_likes` insert/delete는 유지(트리거가 `posts.likes` 갱신)
 ### fix(security): help_tooltips RLS 재구성
 - ALL(true) `"어드민만 수정 가능"`(이름은 admin전용, 실제 qual:true) 제거. SELECT `"누구나 조회 가능"`은 유지(홈·`/my` `period_start` 안내)
 - 신규 `help_tooltips_admin_write` ALL: `users.role='admin'` 또는 JWT `app_metadata.role='super_admin'`
