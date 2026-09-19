@@ -3,6 +3,14 @@
 
 ---
 
+## 2026-09-19
+### fix(security): help_tooltips RLS 재구성
+- ALL(true) `"어드민만 수정 가능"`(이름은 admin전용, 실제 qual:true) 제거. SELECT `"누구나 조회 가능"`은 유지(홈·`/my` `period_start` 안내)
+- 신규 `help_tooltips_admin_write` ALL: `users.role='admin'` 또는 JWT `app_metadata.role='super_admin'`
+- 앱에 이 테이블 쓰기 코드 없음. SQL Editor 직접실행 완료
+### chore(rls): help_tooltips RLS를 마이그레이션 202로 기록
+- `202_help_tooltips_rls_rebuild.sql`: 운영에 이미 반영된 C4를 레포에 기록. SQL 재실행 없음
+
 ## 2026-09-17
 ### fix(security): external_customers RLS 완전 재구성
 - `admin_all`(qual true) 및 `admin_all_external_customers`(role owner 포함 무조건 ALL) 제거. SQL Editor 직접실행 완료
