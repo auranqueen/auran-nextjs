@@ -1,6 +1,8 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-20
+- 어드민 홈 통계카드가 탭 열릴 때마다 브라우저에서 DB를 7번 두드리던 걸 서버가 한 번에 처리하도록 바꿨어. 로딩 빨라지고 네트워크 쌓이는 거 줄어듦.
+
 - 토스트 차감할 때 500 에러 나던 거 수정 — source_type에 허용 안 된 값('admin_manual') 넣고 있었고, 'admin'으로 바꿔서 해결
 
 - user_role enum 확인함 (customer/partner/owner/brand/admin 5개) — super_admin 없어서 API 권한체크에서 제거함

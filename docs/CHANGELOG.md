@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: AdminStatCards 브라우저 Supabase 직접호출 7건 제거 → /api/admin/stat-cards 서버API 1건으로 전환
 - fix: toast_transactions source_type 체크 제약 위반 수정 (admin_manual → admin)
 - fix: point-transaction API super_admin 조건 제거 — user_role enum 확인 결과 admin이 최고 권한
 - fix: point-transaction API profiles.auth_id 조회 수정 (id → auth_id)

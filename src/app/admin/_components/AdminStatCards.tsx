@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function AdminStatCards() {
   const [open, setOpen] = useState<string | null>(null)
@@ -9,41 +8,9 @@ export default function AdminStatCards() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now)
-    const dayStart = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
-
-    Promise.all([
-      supabase.from('hormone_cycle').select('track').not('track', 'is', null),
-      supabase.from('reviews').select('id,images,video_url,is_rebuy').gte('created_at', monthStart),
-      supabase.from('toast_transactions').select('amount,transaction_type').gte('created_at', dayStart),
-      fetch('/api/admin/external-customers-stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      }),
-      supabase.from('orders').select('customer_id,status').gte('ordered_at', monthStart),
-      supabase.from('user_behavior_logs').select('id,metadata,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(50),
-      supabase.from('visitor_logs').select('ip,referrer,user_agent,page,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(100),
-      supabase.from('visitor_logs').select('id', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().slice(0, 10) + 'T00:00:00+09:00').lt('created_at', dayStart),
-    ]).then(async ([hormone, reviews, toast, external, orders, visits, todayVisitors, yesterdayResult]) => {
-      const statsRes = external as Response
-      const stats = statsRes.ok
-        ? ((await statsRes.json()) as { total: number; joined: number; pct: number })
-        : { total: 0, joined: 0, pct: 0 }
-      setData({
-        hormone: hormone.data ?? [],
-        reviews: reviews.data ?? [],
-        toast: toast.data ?? [],
-        external: stats,
-        orders: orders.data ?? [],
-        visits: visits.data ?? [],
-        todayVisitors: todayVisitors.data ?? [],
-        yesterdayCount: yesterdayResult.count ?? 0,
-      })
-      setLoading(false)
-    })
+    fetch('/api/admin/stat-cards', { method: 'POST' })
+      .then(r => r.json())
+      .then(json => { setData(json); setLoading(false) })
   }, [])
 
   if (loading) return <div style={{ padding: '12px 0', fontSize: 12, color: 'var(--text3)' }}>통계 불러오는 중...</div>
