@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-20
+### external-customers-stats 성능 개선
+- 문제: AdminStatCards가 브라우저에서 external_customers 전체 행 SELECT → RLS 행마다 체크 → 고객 100명 이상 시 500 에러
+- 수정 1: route.ts 권한 체크에 super_admin도 통과 추가
+- 수정 2: AdminStatCards 브라우저 SELECT 제거 → fetch 교체
+- 결과: 서버에서 count 2회만 → RLS 부담 없음
 ### fix(admin): /admin 통계 카드가 조회 실패 시 화면을 깨지 않게
 - `AdminStatCards`: `orders` select를 없는 컬럼 `user_id`에서 `customer_id`+`ordered_at`으로 수정 (400 원인)
 - 조회 실패 시 `data: null`을 `[]`로 정규화. `null.length` 클라이언트 예외 제거

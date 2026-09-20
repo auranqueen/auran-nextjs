@@ -19,17 +19,24 @@ export default function AdminStatCards() {
       supabase.from('hormone_cycle').select('track').not('track', 'is', null),
       supabase.from('reviews').select('id,images,video_url,is_rebuy').gte('created_at', monthStart),
       supabase.from('toast_transactions').select('amount,transaction_type').gte('created_at', dayStart),
-      supabase.from('external_customers').select('id,total_amount,auran_joined,auran_user_id'),
+      fetch('/api/admin/external-customers-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }),
       supabase.from('orders').select('customer_id,status').gte('ordered_at', monthStart),
       supabase.from('user_behavior_logs').select('id,metadata,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(50),
       supabase.from('visitor_logs').select('ip,referrer,user_agent,page,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(100),
       supabase.from('visitor_logs').select('id', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().slice(0, 10) + 'T00:00:00+09:00').lt('created_at', dayStart),
-    ]).then(([hormone, reviews, toast, external, orders, visits, todayVisitors, yesterdayResult]) => {
+    ]).then(async ([hormone, reviews, toast, external, orders, visits, todayVisitors, yesterdayResult]) => {
+      const statsRes = external as Response
+      const stats = statsRes.ok
+        ? ((await statsRes.json()) as { total: number; joined: number; pct: number })
+        : { total: 0, joined: 0, pct: 0 }
       setData({
         hormone: hormone.data ?? [],
         reviews: reviews.data ?? [],
         toast: toast.data ?? [],
-        external: external.data ?? [],
+        external: stats,
         orders: orders.data ?? [],
         visits: visits.data ?? [],
         todayVisitors: todayVisitors.data ?? [],
@@ -44,7 +51,7 @@ export default function AdminStatCards() {
   const hormone = data.hormone ?? []
   const reviews = data.reviews ?? []
   const toast = data.toast ?? []
-  const external = data.external ?? []
+  const stats = data.external ?? { total: 0, joined: 0, pct: 0 }
   const orders = data.orders ?? []
   const visits = data.visits ?? []
 
@@ -73,9 +80,9 @@ export default function AdminStatCards() {
   const todayUsed = toast.filter((t: any) => t.amount < 0).reduce((a: number, b: any) => a + Math.abs(b.amount), 0)
 
   // 외부고객
-  const totalExternal = external.length
-  const joinedExternal = external.filter((r: any) => r.auran_joined && r.auran_user_id).length
-  const joinedPct = totalExternal > 0 ? Math.round(joinedExternal / totalExternal * 100) : 0
+  const totalExternal = stats.total
+  const joinedExternal = stats.joined
+  const joinedPct = stats.pct
 
   // 재구매율
   const confirmedOrders = orders.filter((r: any) => r.status === '구매확정')
