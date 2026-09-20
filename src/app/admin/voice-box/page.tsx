@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 // ===== [고객의 목소리 함] 어드민 목록 페이지 =====
 // 버그(🔴)/아이디어(💡)/칭찬(💜) 수신함
@@ -10,14 +9,14 @@ export default function VoiceBoxPage() {
   const [items, setItems] = useState<any[] | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-    void (async () => {
-      const { data } = await supabase
-        .from('voice_box')
-        .select('*, profiles(full_name)')
-        .order('created_at', { ascending: false })
-      setItems(data || [])
-    })()
+    fetch('/api/admin/voice-box', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
+      .then(json => setItems(json.items || []))
+      .catch(() => setItems([]))
   }, [])
 
   const unreadBug = items?.filter(i => i.type === 'bug' && !i.is_read).length || 0
@@ -95,15 +94,19 @@ function VoiceBoxItem({ item }: { item: any }) {
 function ResolveButton({ id, isRead, isResolved }: { id: string, isRead: boolean, isResolved: boolean }) {
   const [read, setRead] = useState(isRead)
   const [resolved, setResolved] = useState(isResolved)
-  const supabase = createClient()
 
   return (
     <>
       <button
-        onClick={async () => {
-          await supabase.from('voice_box').update({ is_read: !read }).eq('id', id)
-          setRead(r => !r)
-        }}
+          onClick={async () => {
+            const res = await fetch('/api/admin/voice-box', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update_read', id, is_read: !read }),
+            })
+            if (!res.ok) return
+            setRead(r => !r)
+          }}
         style={{
           fontSize: 11, padding: '4px 10px', borderRadius: 20,
           border: '1px solid #eee', cursor: 'pointer',
@@ -113,10 +116,15 @@ function ResolveButton({ id, isRead, isResolved }: { id: string, isRead: boolean
         {read ? '읽음 ✓' : '읽음 처리'}
       </button>
       <button
-        onClick={async () => {
-          await supabase.from('voice_box').update({ is_resolved: !resolved }).eq('id', id)
-          setResolved(r => !r)
-        }}
+          onClick={async () => {
+            const res = await fetch('/api/admin/voice-box', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update_resolved', id, is_resolved: !resolved }),
+            })
+            if (!res.ok) return
+            setResolved(r => !r)
+          }}
         style={{
           fontSize: 11, padding: '4px 10px', borderRadius: 20,
           border: '1px solid #eee', cursor: 'pointer',

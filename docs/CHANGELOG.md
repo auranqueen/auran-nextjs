@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/voice-box 브라우저 Supabase 직접호출 3건 제거 → /api/admin/voice-box 서버API 전환
 - fix: admin/skinstar toggle/delete fetch 실패 예외처리 추가
 - perf: admin/skinstar 브라우저 Supabase 직접호출 4건 제거 → /api/admin/skinstar-videos 서버API 전환
 - fix: admin/owner-chat fetch 실패 예외처리 추가
