@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type Tab = 'partner' | 'owner'
 
@@ -13,7 +12,6 @@ function monthBounds() {
 }
 
 export default function AdminCommissionsPage() {
-  const supabase = createClient()
   const [tab, setTab] = useState<Tab>('partner')
   const [loading, setLoading] = useState(true)
   const [partnerRows, setPartnerRows] = useState<any[]>([])
@@ -34,54 +32,20 @@ export default function AdminCommissionsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      let pq = supabase.from('partner_commissions' as any).select('*').order('created_at', { ascending: false }).limit(500)
-      let oq = supabase.from('owner_commissions' as any).select('*').order('created_at', { ascending: false }).limit(500)
-      if (statusFilter) {
-        pq = pq.eq('status', statusFilter)
-        oq = oq.eq('status', statusFilter)
-      }
-      if (df) {
-        pq = pq.gte('created_at', new Date(df).toISOString())
-        oq = oq.gte('created_at', new Date(df).toISOString())
-      }
-      if (dt) {
-        const e = new Date(dt)
-        e.setHours(23, 59, 59, 999)
-        pq = pq.lte('created_at', e.toISOString())
-        oq = oq.lte('created_at', e.toISOString())
-      }
-      const [{ data: pr }, { data: or }] = await Promise.all([pq, oq])
-      const pl = (pr as any[]) || []
-      const ol = (or as any[]) || []
-      setPartnerRows(pl)
-      setOwnerRows(ol)
-
-      const userIds = Array.from(
-        new Set([
-          ...pl.map((r) => String(r.partner_id || '')).filter(Boolean),
-          ...ol.map((r) => String(r.owner_id || '')).filter(Boolean),
-        ])
-      )
-      const pids = Array.from(
-        new Set([...pl.map((r) => String(r.product_id || '')), ...ol.map((r) => String(r.product_id || ''))].filter(Boolean))
-      )
-
+      const res = await fetch('/api/admin/commissions-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusFilter, df, dt }),
+      })
+      if (!res.ok) throw new Error('failed')
+      const json = await res.json()
+      setPartnerRows(json.partnerRows || [])
+      setOwnerRows(json.ownerRows || [])
       const nm: Record<string, string> = {}
-      if (userIds.length) {
-        const { data: users } = await supabase.from('users').select('id,name').in('id', userIds)
-        ;((users as any[]) || []).forEach((u) => {
-          nm[String(u.id)] = String(u.name || u.id).slice(0, 20)
-        })
-      }
+      ;(json.users || []).forEach((u: any) => { nm[String(u.id)] = String(u.name || u.id).slice(0, 20) })
       setNameMap(nm)
-
       const pm: Record<string, string> = {}
-      if (pids.length) {
-        const { data: prods } = await supabase.from('products').select('id,name').in('id', pids)
-        ;((prods as any[]) || []).forEach((p) => {
-          pm[String(p.id)] = String(p.name || '')
-        })
-      }
+      ;(json.products || []).forEach((p: any) => { pm[String(p.id)] = String(p.name || '') })
       setProductMap(pm)
     } finally {
       setLoading(false)
@@ -93,91 +57,49 @@ export default function AdminCommissionsPage() {
   }, [load])
 
   const updatePartner = async (id: string, status: string) => {
-    await supabase.from('partner_commissions' as any).update({ status } as any).eq('id', id)
+    const res = await fetch('/api/admin/commissions/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'partner', id, status }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
     setToast('상태가 반영됐어요')
     void load()
   }
 
   const updateOwner = async (id: string, status: string) => {
-    await supabase.from('owner_commissions' as any).update({ status } as any).eq('id', id)
+    const res = await fetch('/api/admin/commissions/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'owner', id, status }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
     setToast('상태가 반영됐어요')
     void load()
   }
 
   const runPartnerMonthSettlement = async () => {
-    const { start, end } = monthBounds()
-    const { data: rows } = await supabase
-      .from('partner_commissions' as any)
-      .select('*')
-      .eq('status', 'confirmed')
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
-    const list = (rows as any[]) || []
-    if (!list.length) {
-      setToast('이번 달 확정 커미션이 없어요')
-      return
-    }
-    const byPartner: Record<string, any[]> = {}
-    for (const r of list) {
-      const k = String(r.partner_id || '')
-      if (!k) continue
-      if (!byPartner[k]) byPartner[k] = []
-      byPartner[k].push(r)
-    }
-    for (const pid of Object.keys(byPartner)) {
-      const chunk = byPartner[pid]
-      const sum = chunk.reduce((a, r) => a + Number(r.commission_amount || 0), 0)
-      await supabase.from('partner_settlements' as any).insert({
-        partner_id: pid,
-        period_start: start.toISOString().slice(0, 10),
-        period_end: end.toISOString().slice(0, 10),
-        total_commission: sum,
-        settlement_amount: sum,
-        net_amount: sum,
-        status: 'paid',
-      } as any)
-      const ids = chunk.map((r) => r.id)
-      await supabase.from('partner_commissions' as any).update({ status: 'paid' } as any).in('id', ids)
-    }
+    const res = await fetch('/api/admin/commissions/settle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'partner' }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+    const json = await res.json()
+    if (json.empty) { setToast('이번 달 확정 커미션이 없어요'); return }
     setToast('이달 파트너 정산 처리됐어요')
     void load()
   }
 
   const runOwnerMonthSettlement = async () => {
-    const { start, end } = monthBounds()
-    const { data: rows } = await supabase
-      .from('owner_commissions' as any)
-      .select('*')
-      .eq('status', 'confirmed')
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
-    const list = (rows as any[]) || []
-    if (!list.length) {
-      setToast('이번 달 확정 커미션이 없어요')
-      return
-    }
-    const byOwner: Record<string, any[]> = {}
-    for (const r of list) {
-      const k = String(r.owner_id || '')
-      if (!k) continue
-      if (!byOwner[k]) byOwner[k] = []
-      byOwner[k].push(r)
-    }
-    for (const oid of Object.keys(byOwner)) {
-      const chunk = byOwner[oid]
-      const sum = chunk.reduce((a, r) => a + Number(r.commission_amount || 0), 0)
-      await supabase.from('owner_settlements' as any).insert({
-        owner_id: oid,
-        period_start: start.toISOString().slice(0, 10),
-        period_end: end.toISOString().slice(0, 10),
-        total_commission: sum,
-        settlement_amount: sum,
-        net_amount: sum,
-        status: 'paid',
-      } as any)
-      const ids = chunk.map((r) => r.id)
-      await supabase.from('owner_commissions' as any).update({ status: 'paid' } as any).in('id', ids)
-    }
+    const res = await fetch('/api/admin/commissions/settle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'owner' }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+    const json = await res.json()
+    if (json.empty) { setToast('이번 달 확정 커미션이 없어요'); return }
     setToast('이달 원장 정산 처리됐어요')
     void load()
   }
