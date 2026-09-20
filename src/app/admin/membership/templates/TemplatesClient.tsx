@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const C = {
   purple: '#7B5EA7', purpleSoft: '#F1ECF8', gold: '#C9A96E', goldDark: '#A07F4A', goldSoft: '#F6EFE3',
@@ -21,7 +20,6 @@ const field: React.CSSProperties = {
 }
 
 export default function TemplatesClient({ initialTemplates, productMap }: { initialTemplates: Template[]; productMap: Record<string, string> }) {
-  const supabase = createClient()
   const [templates, setTemplates] = useState<Template[]>(initialTemplates)
   const [names, setNames] = useState<Record<string, string>>(productMap)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -36,8 +34,12 @@ export default function TemplatesClient({ initialTemplates, productMap }: { init
   const search = async (q: string) => {
     setQuery(q)
     if (q.trim().length < 1) { setResults([]); return }
-    const { data } = await supabase.from('products').select('id,name').ilike('name', `%${q.trim()}%`).limit(8)
-    setResults((data ?? []) as any)
+    const res = await fetch('/api/admin/bundle-templates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'search', q }),
+    })
+    const json = await res.json()
+    setResults((json.results ?? []) as any)
   }
 
   const addProduct = (p: { id: string; name: string }) => {
@@ -51,30 +53,37 @@ export default function TemplatesClient({ initialTemplates, productMap }: { init
   const save = async () => {
     if (!draft) return
     setSaving(true)
-    const { error } = await supabase.from('bundle_templates').update({
-      theme_name: draft.theme_name, target_phase: draft.target_phase, product_ids: draft.product_ids,
-      usage_guide: draft.usage_guide, owner_tip: draft.owner_tip, is_active: draft.is_active, updated_at: new Date().toISOString(),
-    }).eq('id', draft.id)
+    const res = await fetch('/api/admin/bundle-templates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save', draft }),
+    })
     setSaving(false)
-    if (error) { alert('저장 실패: ' + error.message); return }
+    const json = await res.json()
+    if (!res.ok || json.error) { alert('저장 실패: ' + (json.error || '')); return }
     setTemplates((ts) => ts.map((t) => (t.id === draft.id ? { ...draft } : t)))
     cancel()
   }
 
   const addNew = async () => {
     const order = templates.length ? Math.max(...templates.map((t) => t.display_order)) + 1 : 1
-    const { data, error } = await supabase.from('bundle_templates')
-      .insert({ theme_name: '새 리추얼', target_phase: null, product_ids: [], display_order: order })
-      .select('id,theme_name,target_phase,product_ids,usage_guide,owner_tip,is_active,display_order').single()
-    if (error || !data) { alert('추가 실패: ' + (error?.message ?? '')); return }
-    setTemplates((ts) => [...ts, data as Template])
-    startEdit(data as Template)
+    const res = await fetch('/api/admin/bundle-templates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addNew', order }),
+    })
+    const json = await res.json()
+    if (!res.ok || json.error) { alert('추가 실패: ' + (json.error ?? '')); return }
+    setTemplates((ts) => [...ts, json.data as Template])
+    startEdit(json.data as Template)
   }
 
   const remove = async (id: string) => {
     if (!confirm('이 리추얼 템플릿을 삭제할까요?')) return
-    const { error } = await supabase.from('bundle_templates').delete().eq('id', id)
-    if (error) { alert('삭제 실패: ' + error.message); return }
+    const res = await fetch('/api/admin/bundle-templates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
+    const json = await res.json()
+    if (!res.ok || json.error) { alert('삭제 실패: ' + (json.error || '')); return }
     setTemplates((ts) => ts.filter((t) => t.id !== id))
     if (editingId === id) cancel()
   }
