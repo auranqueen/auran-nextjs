@@ -11,8 +11,10 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
   const { owner_id, report_id, reason, warning_count } = body
   if (!owner_id) return NextResponse.json({ error: 'missing owner_id' }, { status: 400 })
-  await svc.from('owner_warnings').insert({ owner_id, report_id, reason })
-  await svc.from('profiles').update({ owner_warning_count: warning_count }).eq('id', owner_id)
+  const { error: warnErr } = await svc.from('owner_warnings').insert({ owner_id, report_id, reason })
+  if (warnErr) return NextResponse.json({ error: warnErr.message }, { status: 500 })
+  const { error: profileErr } = await svc.from('profiles').update({ owner_warning_count: warning_count }).eq('id', owner_id)
+  if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
   const { data: u } = await svc.from('users').select('id').eq('id', owner_id).maybeSingle()
   if (u?.id) {
     await svc.from('notifications').insert({
