@@ -1,12 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const CONCERNS = ['수분','장벽','탄력','미백','기미/색소','모공','민감성']
 const MONTHS = Array.from({length:12},(_,i)=>i+1)
 
 export default function MappingClient({ rows, products }: { rows: any[], products: any[] }) {
-  const supabase = createClient()
   const [list, setList] = useState(rows)
   const [form, setForm] = useState({
     month: 4, concern_tag: '수분',
@@ -24,26 +22,36 @@ export default function MappingClient({ rows, products }: { rows: any[], product
   const add = async () => {
     if (!form.product_id) return setMsg('제품을 선택해주세요')
     setSaving(true)
-    const { data, error } = await supabase
-      .from('season_product_mapping')
-      .insert({ ...form, is_active: true })
-      .select('*, products(name, category)')
-      .single()
+    const res = await fetch('/api/admin/mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'insert', form }),
+    })
     setSaving(false)
-    if (error) return setMsg(error.message)
-    setList([...list, data])
+    const json = await res.json()
+    if (!res.ok || json.error) return setMsg(json.error || '추가 실패')
+    setList([...list, json.data])
     setMsg('추가됐어요 ✦')
     setProdSearch('')
   }
 
   const remove = async (id: string) => {
-    await supabase.from('season_product_mapping').delete().eq('id', id)
+    const res = await fetch('/api/admin/mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
+    if (!res.ok) return
     setList(list.filter(r => r.id !== id))
   }
 
   const toggle = async (id: string, cur: boolean) => {
-    await supabase.from('season_product_mapping')
-      .update({ is_active: !cur }).eq('id', id)
+    const res = await fetch('/api/admin/mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle', id, is_active: !cur }),
+    })
+    if (!res.ok) return
     setList(list.map(r => r.id === id ? { ...r, is_active: !cur } : r))
   }
 
