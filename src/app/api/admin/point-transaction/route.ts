@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   const { data: profile } = await supabase.from('profiles').select('role').eq('auth_id', user.id).single()
-  if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return NextResponse.json({ error: 'Admin only' }, { status: 403 })
+  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Admin only' }, { status: 403 })
   const { user_id, amount, reason } = await request.json()
   if (!user_id || typeof amount !== 'number' || amount <= 0) return NextResponse.json({ error: 'INVALID_PARAMS' }, { status: 400 })
   const { data: target } = await supabase.from('users').select('id, points').eq('id', user_id).single()

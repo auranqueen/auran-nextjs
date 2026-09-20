@@ -1,6 +1,8 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-20
+- user_role enum 확인함 (customer/partner/owner/brand/admin 5개) — super_admin 없어서 API 권한체크에서 제거함
+
 - point_history 403 버그 수정 완료 — 어드민이 포인트 지급할 때 RLS에 막혀서 403 뜨던 문제. 브라우저에서 직접 DB insert 하던 방식을 서버 API(/api/admin/point-transaction)로 바꾸고, 권한 체크할 때 profiles 테이블을 auth_id로 조회하도록 수정함.
 
 **토스트 보안 구멍 완전히 닫힘 (205번).** 누구나 남의 계정에 토스트를 넣을 수 있던 구멍 정책을 드디어 삭제했어. 화면 3곳을 서버API로 바꾼 다음에 안전하게 제거한 거야. 이제 토스트 적립은 서버API 또는 본인만 가능해.
