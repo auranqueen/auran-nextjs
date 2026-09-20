@@ -10,11 +10,9 @@ export default function AdminOwnerChatPage() {
 
   useEffect(() => {
     fetch('/api/admin/owner-chat-init', { method: 'POST' })
-      .then(r => r.json())
-      .then(json => {
-        setMyId(json.myId || null)
-        setOwners(json.owners || [])
-      })
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
+      .then(json => { setMyId(json.myId || null); setOwners(json.owners || []) })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -24,8 +22,9 @@ export default function AdminOwnerChatPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ selected }),
     })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
       .then(json => setMessages(json.messages || []))
+      .catch(() => {})
   }, [selected])
 
   return (
