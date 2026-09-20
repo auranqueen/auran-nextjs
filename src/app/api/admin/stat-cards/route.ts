@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-export async function POST() {
+export async function POST(req: Request) {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const svc = tryCreateServiceClient() ?? supabase
+  const { data: profile } = await svc.from('profiles').select('role').eq('auth_id', user.id).maybeSingle()
+  if ((profile as any)?.role !== 'admin') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now)
@@ -20,7 +26,7 @@ export async function POST() {
       svc.from('visitor_logs').select('ip,referrer,user_agent,page,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(100),
       svc.from('visitor_logs').select('id', { count: 'exact', head: true }).gte('created_at', yesterdayStartIso).lt('created_at', dayStart),
       svc.from('external_customers').select('id', { count: 'exact', head: true }),
-      svc.from('external_customers').select('id', { count: 'exact', head: true }).not('user_id', 'is', null),
+      svc.from('external_customers').select('id', { count: 'exact', head: true }).not('auran_user_id', 'is', null),
     ])
   return NextResponse.json({
     hormone: hormone.data ?? [],

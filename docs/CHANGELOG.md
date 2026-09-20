@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: /api/admin/stat-cards 어드민 인증 체크 추가, external_customers 컬럼명 auran_user_id 수정, fetch .catch 추가
 - perf: AdminStatCards 브라우저 Supabase 직접호출 7건 제거 → /api/admin/stat-cards 서버API 1건으로 전환
 - fix: toast_transactions source_type 체크 제약 위반 수정 (admin_manual → admin)
 - fix: point-transaction API super_admin 조건 제거 — user_role enum 확인 결과 admin이 최고 권한

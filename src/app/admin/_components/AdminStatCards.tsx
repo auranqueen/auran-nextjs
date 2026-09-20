@@ -11,6 +11,7 @@ export default function AdminStatCards() {
     fetch('/api/admin/stat-cards', { method: 'POST' })
       .then(r => r.json())
       .then(json => { setData(json); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   if (loading) return <div style={{ padding: '12px 0', fontSize: 12, color: 'var(--text3)' }}>통계 불러오는 중...</div>
