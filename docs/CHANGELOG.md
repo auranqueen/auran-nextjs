@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-20
+### 205: toast_transactions 서비스 insert 구멍 정책 제거
+- "서비스 insert"(with_check:true, 누구나 타인 user_id로 insert 가능) 완전 제거
+- 대체: chat-award/order-completion/wallet-grant 서버API (커밋 f1acb8f2, 4705fb3f)
+- 남은 정책: 본인 insert / 본인 조회 / 어드민 전체 조회
 ### toast 타인적립 화면 3곳 + API 1개 수정
 - chat-award API: admin/super_admin 채널 검증 스킵 추가
 - chat/[id]/page.tsx: sendToastGift 브라우저 insert 제거 → /api/toast/chat-award fetch
