@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: admin/mapping 추가 네트워크 실패 처리 + 삭제·토글 실패 알림 추가
 - perf: admin/mapping 브라우저 Supabase 직접호출 3건 제거 → /api/admin/mapping 서버API 전환
 - perf: admin/voice-box 브라우저 Supabase 직접호출 3건 제거 → /api/admin/voice-box 서버API 전환
 - fix: admin/skinstar toggle/delete fetch 실패 예외처리 추가

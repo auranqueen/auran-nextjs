@@ -22,17 +22,22 @@ export default function MappingClient({ rows, products }: { rows: any[], product
   const add = async () => {
     if (!form.product_id) return setMsg('제품을 선택해주세요')
     setSaving(true)
-    const res = await fetch('/api/admin/mapping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'insert', form }),
-    })
-    setSaving(false)
-    const json = await res.json()
-    if (!res.ok || json.error) return setMsg(json.error || '추가 실패')
-    setList([...list, json.data])
-    setMsg('추가됐어요 ✦')
-    setProdSearch('')
+    try {
+      const res = await fetch('/api/admin/mapping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'insert', form }),
+      })
+      setSaving(false)
+      const json = await res.json()
+      if (!res.ok || json.error) return setMsg(json.error || '추가 실패')
+      setList([...list, json.data])
+      setMsg('추가됐어요 ✦')
+      setProdSearch('')
+    } catch {
+      setSaving(false)
+      setMsg('네트워크 오류')
+    }
   }
 
   const remove = async (id: string) => {
@@ -41,7 +46,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', id }),
     })
-    if (!res.ok) return
+    if (!res.ok) { alert('삭제 실패'); return }
     setList(list.filter(r => r.id !== id))
   }
 
@@ -51,7 +56,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle', id, is_active: !cur }),
     })
-    if (!res.ok) return
+    if (!res.ok) { alert('처리 실패'); return }
     setList(list.map(r => r.id === id ? { ...r, is_active: !cur } : r))
   }
 
