@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/live 브라우저 Supabase 직접호출 5건 제거 → /api/admin/live-data 서버API 전환
 - perf: admin/commissions 브라우저 Supabase 직접호출 제거 → /api/admin/commissions-data, /api/admin/commissions/update-status, /api/admin/commissions/settle 서버API 전환
 - fix: /api/admin/owners/warn insert·update 실패 무시 버그 수정
 - perf: admin/owners 브라우저 Supabase 직접호출 제거 → /api/admin/owners-data, /api/admin/owners/warn, /api/admin/owners/suspend 서버API 전환

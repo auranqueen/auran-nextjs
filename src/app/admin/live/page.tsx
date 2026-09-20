@@ -1,10 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLivePage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
@@ -19,38 +17,31 @@ export default function AdminLivePage() {
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const [o, l] = await Promise.all([
-        supabase.from('orders').select('id,order_no,status,final_amount,ordered_at').order('ordered_at', { ascending: false }).limit(12),
-        supabase.from('login_logs').select('*').order('created_at', { ascending: false }).limit(12),
-      ])
-      setOrders(o.data || [])
-      setLogs(l.data || [])
-      const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-      const dayStartIso = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
       try {
-        const [skinRes, clicksRes, purchRes] = await Promise.all([
-          supabase.from('skin_cycle_analysis').select('auth_id, checkin_condition, hormone_stage').eq('record_date', kstYmd),
-          supabase.from('user_behavior_logs').select('id').eq('action_type', 'product_click').gte('created_at', dayStartIso),
-          supabase.from('user_behavior_logs').select('id, metadata').eq('action_type', 'purchase').gte('created_at', dayStartIso),
-        ])
-        const skinToday = skinRes.error ? [] : (skinRes.data || [])
-        const behClicks = clicksRes.error ? [] : (clicksRes.data || [])
-        const behPurch = purchRes.error ? [] : (purchRes.data || [])
-        const checkinTodayUsers = new Set((skinToday as any[]).map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
+        const res = await fetch('/api/admin/live-data', { method: 'POST' })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        setOrders(json.orders || [])
+        setLogs(json.logs || [])
+        const skinToday = (json.skin || []) as any[]
+        const behClicks = (json.clicks || []) as any[]
+        const behPurch = (json.purchases || []) as any[]
+        const checkinTodayUsers = new Set(skinToday.map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
         const goldenTodayUsers = new Set(
-          (skinToday as any[])
+          skinToday
             .filter((r: any) => String(r.hormone_stage || '').includes('여포'))
             .map((r: any) => String(r.auth_id || ''))
             .filter(Boolean)
         ).size
         const clickCnt = behClicks.length
-        const purchaseCompleteCnt = (behPurch as any[]).filter((r: any) => String((r.metadata as any)?.flow || '') === 'order_complete').length
+        const purchaseCompleteCnt = behPurch.filter((r: any) => String((r.metadata as any)?.flow || '') === 'order_complete').length
         const conversionPct = clickCnt > 0 ? Math.round((purchaseCompleteCnt / clickCnt) * 1000) / 10 : 0
         setKpi({ checkin: checkinTodayUsers, golden: goldenTodayUsers, conversion: conversionPct })
       } catch {
         setKpi({ checkin: 0, golden: 0, conversion: 0 })
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     run()
   }, [tick])
