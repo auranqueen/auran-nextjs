@@ -1,6 +1,8 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-20
+- 토스트 차감할 때 500 에러 나던 거 수정 — source_type에 허용 안 된 값('admin_manual') 넣고 있었고, 'admin'으로 바꿔서 해결
+
 - user_role enum 확인함 (customer/partner/owner/brand/admin 5개) — super_admin 없어서 API 권한체크에서 제거함
 
 - point_history 403 버그 수정 완료 — 어드민이 포인트 지급할 때 RLS에 막혀서 403 뜨던 문제. 브라우저에서 직접 DB insert 하던 방식을 서버 API(/api/admin/point-transaction)로 바꾸고, 권한 체크할 때 profiles 테이블을 auth_id로 조회하도록 수정함.

@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     user_id: targetUserId,
     amount,
     transaction_type: 'adjust',
-    source_type: 'admin_manual',
+    source_type: 'admin',
     note,
     admin_id: adminId,
     status: 'active',

@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: toast_transactions source_type 체크 제약 위반 수정 (admin_manual → admin)
 - fix: point-transaction API super_admin 조건 제거 — user_role enum 확인 결과 admin이 최고 권한
 - fix: point-transaction API profiles.auth_id 조회 수정 (id → auth_id)
 - fix: point_history 403 수정 — 서버 API 전환 완료
