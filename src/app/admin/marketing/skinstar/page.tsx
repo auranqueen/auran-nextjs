@@ -10,8 +10,14 @@ export default function SkinstarVideosPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
-    const { data } = await supabase.from('skinstar_videos').select('*').order('sort_order').order('created_at', { ascending: false })
-    setVideos(data ?? [])
+    const res = await fetch('/api/admin/skinstar-videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+    if (!res.ok) return
+    const json = await res.json()
+    setVideos(json.videos ?? [])
   }
 
   useEffect(() => { load() }, [])
@@ -27,7 +33,12 @@ export default function SkinstarVideosPage() {
       const { error: upErr } = await supabase.storage.from('product-videos').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: urlData } = supabase.storage.from('product-videos').getPublicUrl(path)
-      await supabase.from('skinstar_videos').insert({ video_url: urlData.publicUrl, is_active: true, sort_order: 0 })
+      const insRes = await fetch('/api/admin/skinstar-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'insert', video_url: urlData.publicUrl }),
+      })
+      if (!insRes.ok) throw new Error('DB 저장 실패')
       setMsg('업로드 완료!')
       load()
     } catch (err: any) {
@@ -39,12 +50,20 @@ export default function SkinstarVideosPage() {
   }
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from('skinstar_videos').update({ is_active: !current }).eq('id', id)
+    await fetch('/api/admin/skinstar-videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle', id, is_active: current }),
+    })
     load()
   }
 
   const deleteVideo = async (id: string) => {
-    await supabase.from('skinstar_videos').delete().eq('id', id)
+    await fetch('/api/admin/skinstar-videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
     load()
   }
 
