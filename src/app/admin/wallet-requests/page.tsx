@@ -77,6 +77,16 @@ export default function AdminWalletRequestsPage() {
       const uid = String((cur as { user_id?: string | null }).user_id || '')
       if (!uid) throw new Error('user_id가 없습니다.')
 
+      const grantRes = await fetch('/api/toast/wallet-grant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletRequestId: id }),
+      })
+      if (!grantRes.ok) {
+        console.warn('[wallet-grant] failed', await grantRes.text())
+        return
+      }
+
       const { error: e1 } = await supabase
         .from('payment_intents')
         .update({
@@ -90,29 +100,18 @@ export default function AdminWalletRequestsPage() {
 
       const { data: u, error: uErr } = await supabase
         .from('users')
-        .select('charge_balance, points')
+        .select('charge_balance')
         .eq('id', uid)
         .single()
       if (uErr || !u) throw new Error(uErr?.message || '회원 정보를 불러오지 못했습니다.')
 
       const nextBal = Number((u as { charge_balance?: unknown }).charge_balance || 0) + amount
-      const ptsAdd = Math.floor(amount * 0.05)
-      const nextPts = Number((u as { points?: unknown }).points || 0) + ptsAdd
 
       const { error: e2 } = await supabase
         .from('users')
-        .update({ charge_balance: nextBal, points: nextPts })
+        .update({ charge_balance: nextBal })
         .eq('id', uid)
       if (e2) throw e2
-
-      const { error: e3 } = await supabase.from('toast_transactions').insert({
-        user_id: uid,
-        amount: ptsAdd,
-        transaction_type: 'charge',
-        source_type: 'admin',
-        reference_id: id,
-      } as any)
-      if (e3) throw e3
 
       await load()
     } catch (e: any) {

@@ -836,20 +836,14 @@ export default function OwnerChatRoomPage() {
     if (!channelId || !ownerUserId || !customerUserId || !Number.isFinite(n) || n <= 0 || sending) return
     setSending(true)
     try {
-      const { data: u } = await supabase.from('users').select('points').eq('id', customerUserId).maybeSingle()
-      const cur = Number((u as { points?: number } | null)?.points || 0)
-      const next = cur + n
-      const { error: upErr } = await supabase.from('users').update({ points: next }).eq('id', customerUserId)
-      if (upErr) return
-      {
-        const { error: ttErr } = await supabase.from('toast_transactions').insert({
-          user_id: customerUserId,
-          amount: n,
-          transaction_type: 'gift',
-          source_type: 'gift',
-          reference_id: channelId,
-        } as any)
-        if (ttErr) console.warn('[toast_transactions gift]', ttErr)
+      const res = await fetch('/api/toast/chat-award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelId, customerUserId, amount: n }),
+      })
+      if (!res.ok) {
+        console.warn('[chat-award] failed', await res.text())
+        return
       }
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,

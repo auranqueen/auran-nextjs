@@ -43,6 +43,15 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
   if (!order?.id) return { ok: false, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
   if (String((order as any).status || '') === '구매확정') return { ok: true, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
 
+  const orderRes = await fetch('/api/toast/order-completion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId }),
+  })
+  if (!orderRes.ok) {
+    console.warn('[order-completion] failed', await orderRes.text())
+  }
+
   const nowIso = new Date().toISOString()
   await supabase.from('orders').update({ status: '구매확정', confirmed_at: nowIso } as any).eq('id', orderId)
 
@@ -79,62 +88,9 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
     }
   })
   const buyerAuthId = String((order as any).customer_id || '')
-  if (buyerAuthId && !(order as any).purchase_toast_paid) {
-    const { data: rewardSetting } = await supabase
-      .from('admin_settings')
-      .select('value')
-      .eq('category', 'points_payment')
-      .eq('key', 'purchase_reward_rate')
-      .maybeSingle()
-    const rewardRate = Number((rewardSetting as any)?.value ?? 3) / 100
-    const purchaseToastEarn = Math.floor(Number((order as any).final_amount || 0) * rewardRate)
-    if (purchaseToastEarn > 0) {
-      const { data: buyerRow } = await supabase.from('users').select('id').eq('auth_id', buyerAuthId).maybeSingle()
-      if (buyerRow?.id) {
-        await supabase.from('toast_transactions').insert({
-          user_id: buyerRow.id, amount: purchaseToastEarn, transaction_type: 'earn',
-          source_type: 'order', source_id: orderId, reference_id: orderId,
-        })
-        await addUserPointsByAuth(supabase, buyerAuthId, purchaseToastEarn)
-        await supabase.from('notifications').insert({
-          user_id: buyerRow.id, type: 'toast',
-          title: `${purchaseToastEarn.toLocaleString()}T 적립됐어요 🍞`,
-          body: '구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
-          link_url: '/wallet', is_read: false,
-        })
-      }
-    }
-    await supabase.from('orders').update({ purchase_toast_paid: true }).eq('id', orderId)
-  }
 
   const referrerAuthId = String((order as any).referrer_user_id || '')
   if (referrerAuthId && shareAmount > 0 && !(order as any).share_toast_paid) {
-    await insertPointTx(supabase, {
-      user_id: referrerAuthId,
-      amount: shareAmount,
-      type: 'share_reward',
-      description: '추천 구매확정 보상',
-      order_id: orderId,
-      status: 'confirmed',
-    })
-    await addUserPointsByAuth(supabase, referrerAuthId, shareAmount)
-    {
-      const { data: refRow } = await supabase.from('users').select('id').eq('auth_id', referrerAuthId).maybeSingle()
-      if (refRow?.id) {
-        const { error: ttErr } = await supabase.from('toast_transactions').insert({
-          user_id: refRow.id,
-          amount: shareAmount,
-          transaction_type: 'share_reward',
-          source_type: 'order',
-          reference_id: orderId,
-        } as any)
-        if (ttErr) console.warn('[confirmOrder] toast_transactions share_reward', ttErr)
-      }
-    }
-    await supabase
-      .from('orders')
-      .update({ share_toast_paid: true, share_toast_amount: shareAmount } as any)
-      .eq('id', orderId)
     const { data: me } = await supabase.from('users').select('name').eq('auth_id', buyerAuthId).maybeSingle()
     const buyerName = String((me as any)?.name || '회원')
     const { data: refUser } = await supabase.from('users').select('id').eq('auth_id', referrerAuthId).maybeSingle()

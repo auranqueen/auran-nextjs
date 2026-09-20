@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-20
+### toast 타인적립 화면 3곳 + API 1개 수정
+- chat-award API: admin/super_admin 채널 검증 스킵 추가
+- chat/[id]/page.tsx: sendToastGift 브라우저 insert 제거 → /api/toast/chat-award fetch
+- confirmOrder.ts: 구매적립+추천보상 브라우저 insert 제거 → /api/toast/order-completion fetch (상태 업데이트 전 호출)
+- wallet-requests/page.tsx: toast+points 제거 → /api/toast/wallet-grant fetch (paid 업데이트 전 호출)
+- 기존 "서비스 insert" 구멍 정책 제거는 다음 단계 (205번 마이그레이션)
 ### toast_transactions 타인적립 서버API 신설 (3개)
 - 문제: toast_transactions "서비스 insert" 정책(with_check: true)이 누구나 아무 user_id로 insert 가능한 구멍
 - 신설: /api/toast/chat-award (원장→고객 딸기잼), /api/toast/order-completion (구매확정 적립+추천보상), /api/toast/wallet-grant (충전승인 토스트)

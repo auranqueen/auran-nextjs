@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
     .select('id, role')
     .eq('auth_id', user.id)
     .maybeSingle()
-  if ((me as { role?: string } | null)?.role !== 'owner' || !(me as { id?: string } | null)?.id) {
+  const role = (me as { role?: string } | null)?.role || ''
+  const isAdmin = role === 'admin' || role === 'super_admin'
+  const isOwner = role === 'owner'
+  if ((!isAdmin && !isOwner) || !(me as { id?: string } | null)?.id) {
     return json({ ok: false, error: 'forbidden' }, 401)
   }
 
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
       .eq('id', channelId)
       .maybeSingle()
     if (!ch) return json({ ok: false, error: 'channel_not_found' }, 400)
-    if (String((ch as { owner_id?: string | null }).owner_id || '') !== String((me as { id: string }).id)) {
+    if (!isAdmin && String((ch as { owner_id?: string | null }).owner_id || '') !== String((me as { id: string }).id)) {
       return json({ ok: false, error: 'not_channel_owner' }, 401)
     }
     if (String((ch as { user_id?: string | null }).user_id || '') !== customerUserId) {
