@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-09-20
+### fix(admin): /admin 통계 카드가 조회 실패 시 화면을 깨지 않게
+- `AdminStatCards`: `orders` select를 없는 컬럼 `user_id`에서 `customer_id`+`ordered_at`으로 수정 (400 원인)
+- 조회 실패 시 `data: null`을 `[]`로 정규화. `null.length` 클라이언트 예외 제거
+- `external_customers` 500은 콘솔에 남을 수 있으나 페이지는 렌더됨
+
 ## 2026-09-19
 ### fix(security): posts UPDATE true 구멍 제거 + 조회수/좋아요 카운터 분리
 - `authenticated_update_posts`(USING true / WITH CHECK true) 제거. SQL Editor 직접실행 완료
