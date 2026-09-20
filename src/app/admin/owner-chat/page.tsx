@@ -1,9 +1,7 @@
 'use client'
-import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 
 export default function AdminOwnerChatPage() {
-  const supabase = createClient()
   const [owners, setOwners] = useState<any[]>([])
   const [selected, setSelected] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -11,24 +9,23 @@ export default function AdminOwnerChatPage() {
   const [myId, setMyId] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return
-      supabase.from('users').select('id').eq('auth_id', data.user.id).maybeSingle()
-        .then(({ data: u }) => { if (u?.id) setMyId(u.id) })
-    })
-    supabase.from('users').select('id, name, email').eq('role', 'owner').eq('status', 'active')
-      .then(({ data }) => { if (data) setOwners(data) })
+    fetch('/api/admin/owner-chat-init', { method: 'POST' })
+      .then(r => r.json())
+      .then(json => {
+        setMyId(json.myId || null)
+        setOwners(json.owners || [])
+      })
   }, [])
 
   useEffect(() => {
     if (!selected) return
-    supabase.from('chat_channels').select('id').eq('user_id', selected).maybeSingle()
-      .then(({ data: ch }) => {
-        if (!ch?.id) return
-        supabase.from('consultation_messages').select('*').eq('channel_id', ch.id)
-          .order('created_at', { ascending: true })
-          .then(({ data }) => { if (data) setMessages(data) })
-      })
+    fetch('/api/admin/owner-chat-messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected }),
+    })
+      .then(r => r.json())
+      .then(json => setMessages(json.messages || []))
   }, [selected])
 
   return (
