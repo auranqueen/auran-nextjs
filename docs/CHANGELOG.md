@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: point_history 403 수정 — 서버 API 전환 완료
 ### 205: toast_transactions 서비스 insert 구멍 정책 제거
 - "서비스 insert"(with_check:true, 누구나 타인 user_id로 insert 가능) 완전 제거
 - 대체: chat-award/order-completion/wallet-grant 서버API (커밋 f1acb8f2, 4705fb3f)

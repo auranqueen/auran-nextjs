@@ -217,25 +217,16 @@ export default function AdminMembersPage() {
     }
     setPointSaving(true)
     try {
-      // 현재 포인트 조회 후 업데이트
-      const { data: u, error: uerr } = await supabase.from('users').select('points').eq('id', selected.id).single()
-      if (uerr) throw uerr
-      const nextBalance = Number(u?.points || 0) + amt
+      const res = await fetch('/api/admin/point-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+        body: JSON.stringify({ user_id: selected.id, amount: amt, reason: pointReason })
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.message || '포인트 지급 실패')
+      const nextBalance = result.balance_after
 
       const now = new Date().toISOString()
-      const [h, upd] = await Promise.all([
-        supabase.from('point_history').insert({
-          user_id: selected.id,
-          type: 'admin',
-          amount: amt,
-          balance: nextBalance,
-          description: pointReason,
-          created_at: now,
-        }),
-        supabase.from('users').update({ points: nextBalance }).eq('id', selected.id),
-      ])
-      if (h.error) throw h.error
-      if (upd.error) throw upd.error
 
       setMembers(prev => prev.map(m => (m.id === selected.id ? { ...m, points: nextBalance } : m)))
       setSelected(prev => (prev ? { ...prev, points: nextBalance } : prev))
