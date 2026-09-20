@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type Salon = {
   id: string
@@ -22,7 +21,6 @@ type Owner = {
 }
 
 export default function AdminOwnersPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<Salon[]>([])
   const [owners, setOwners] = useState<Record<string, Owner>>({})
@@ -36,57 +34,34 @@ export default function AdminOwnersPage() {
   const pending = useMemo(() => salons.filter(s => (s.status || '').toLowerCase() === 'pending'), [salons])
 
   useEffect(() => {
-    const run = async () => {
-      setLoading(true)
-      const { data: s } = await supabase
-        .from('salons')
-        .select('id,owner_id,name,area,address,phone,status,created_at')
-        .order('created_at', { ascending: false })
-        .limit(200)
-      const list = (s || []) as Salon[]
-      setSalons(list)
-
-      const ownerIds = Array.from(new Set(list.map(x => x.owner_id).filter(Boolean)))
-      if (ownerIds.length) {
-        const { data: u } = await supabase
-          .from('users')
-          .select('id,name,email,status')
-          .in('id', ownerIds)
+    fetch('/api/admin/owners-data', { method: 'POST' })
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
+      .then(json => {
+        const list = (json.salons || []) as Salon[]
+        setSalons(list)
         const m: Record<string, Owner> = {}
-        ;(u || []).forEach((x: any) => (m[x.id] = x))
+        ;(json.users || []).forEach((x: any) => (m[x.id] = x))
         setOwners(m)
-      } else {
-        setOwners({})
-      }
-
-      const [{ data: op }, { data: reps }, { data: subs }, { data: warns }, { data: setRows }, { data: pTx }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('role', 'owner').order('created_at', { ascending: false }).limit(300),
-        supabase.from('owner_reports').select('*').order('created_at', { ascending: false }).limit(200),
-        supabase.from('owner_subscriptions').select('*').order('created_at', { ascending: false }).limit(300),
-        supabase.from('owner_warnings').select('*').order('created_at', { ascending: false }).limit(300),
-        supabase.from('admin_settings').select('value').eq('category', 'settlement').eq('key', 'owner_settlement_requires_chart').maybeSingle(),
-        supabase.from('point_transactions').select('amount,type').eq('type', 'prescription_commission').limit(500),
-      ])
-      const ownersList = (op as any[]) || []
-      setOwnerProfiles(ownersList)
-      setOwnerReports((reps as any[]) || [])
-      setOwnerSubscriptions((subs as any[]) || [])
-      setOwnerWarnings((warns as any[]) || [])
-      const monthKey = new Date().toISOString().slice(0, 7)
-      const activeSub = ((subs as any[]) || []).filter((x) => String(x.status || '').toLowerCase() === 'active')
-      const subSum = activeSub.reduce((sum, x) => sum + Number(x.price || x.amount || 0), 0)
-      const pCom = ((pTx as any[]) || []).reduce((sum, x) => sum + Number(x.amount || 0), 0)
-      setKpi({
-        monthNew: ownersList.filter((x) => String(x.created_at || '').slice(0, 7) === monthKey).length,
-        total: ownersList.length,
-        activeSub: activeSub.length,
-        subSum,
-        presOrders: ((pTx as any[]) || []).length,
-        presCommission: pCom,
+        const ownersList = json.profiles || []
+        setOwnerProfiles(ownersList)
+        setOwnerReports(json.reports || [])
+        setOwnerSubscriptions(json.subscriptions || [])
+        setOwnerWarnings(json.warnings || [])
+        const monthKey = new Date().toISOString().slice(0, 7)
+        const activeSub = (json.subscriptions || []).filter((x: any) => String(x.status || '').toLowerCase() === 'active')
+        const subSum = activeSub.reduce((sum: number, x: any) => sum + Number(x.price || x.amount || 0), 0)
+        const pCom = (json.pointTransactions || []).reduce((sum: number, x: any) => sum + Number(x.amount || 0), 0)
+        setKpi({
+          monthNew: ownersList.filter((x: any) => String(x.created_at || '').slice(0, 7) === monthKey).length,
+          total: ownersList.length,
+          activeSub: activeSub.length,
+          subSum,
+          presOrders: (json.pointTransactions || []).length,
+          presCommission: pCom,
+        })
+        setLoading(false)
       })
-      setLoading(false)
-    }
-    run()
+      .catch(() => setLoading(false))
   }, [])
 
   const updateStatus = async (salon: Salon, status: string) => {
@@ -109,21 +84,14 @@ export default function AdminOwnersPage() {
   }
 
   const sendWarning = async (report: any) => {
-    await supabase.from('owner_warnings').insert({ owner_id: report.owner_id, report_id: report.id, reason: report.reason } as any)
-    const target = ownerProfiles.find((x) => x.id === report.owner_id)
+    const target = ownerProfiles.find((x: any) => x.id === report.owner_id)
     const next = Number(target?.owner_warning_count || 0) + 1
-    await supabase.from('profiles').update({ owner_warning_count: next } as any).eq('id', report.owner_id)
-    const { data: u } = await supabase.from('users').select('id').eq('id', report.owner_id).maybeSingle()
-    if (u?.id) {
-      await supabase.from('notifications').insert({
-        user_id: u.id,
-        type: 'promo',
-        title: '⚠️ 경고가 발송됐어요',
-        body: `사유: ${report.reason}\n3회 누적 시 자격 정지됩니다`,
-        icon: '⚠️',
-        is_read: false,
-      } as any)
-    }
+    const res = await fetch('/api/admin/owners/warn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_id: report.owner_id, report_id: report.id, reason: report.reason, warning_count: next }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
   }
 
   return (
@@ -206,7 +174,14 @@ export default function AdminOwnersPage() {
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{r.reason}</div>
               <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
                 <button onClick={() => void sendWarning(r)} style={{ border: '1px solid rgba(217,79,79,0.3)', background: 'rgba(217,79,79,0.12)', color: '#ff9d9d', borderRadius: 8, padding: '5px 8px', fontSize: 11 }}>경고 발송</button>
-                <button onClick={async () => { await supabase.from('profiles').update({ owner_is_suspended: true } as any).eq('id', r.owner_id) }} style={{ border: '1px solid rgba(217,79,79,0.3)', background: 'rgba(217,79,79,0.12)', color: '#ff9d9d', borderRadius: 8, padding: '5px 8px', fontSize: 11 }}>자격 정지</button>
+                <button onClick={async () => {
+    const res = await fetch('/api/admin/owners/suspend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_id: r.owner_id }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+  }} style={{ border: '1px solid rgba(217,79,79,0.3)', background: 'rgba(217,79,79,0.12)', color: '#ff9d9d', borderRadius: 8, padding: '5px 8px', fontSize: 11 }}>자격 정지</button>
                 <button style={{ border: '1px solid rgba(217,79,79,0.3)', background: 'rgba(217,79,79,0.12)', color: '#ff9d9d', borderRadius: 8, padding: '5px 8px', fontSize: 11 }}>영구 탈퇴</button>
               </div>
             </div>
