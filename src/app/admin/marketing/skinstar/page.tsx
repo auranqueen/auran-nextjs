@@ -50,20 +50,22 @@ export default function SkinstarVideosPage() {
   }
 
   const toggleActive = async (id: string, current: boolean) => {
-    await fetch('/api/admin/skinstar-videos', {
+    const res = await fetch('/api/admin/skinstar-videos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle', id, is_active: current }),
     })
+    if (!res.ok) { alert('처리 실패'); return }
     load()
   }
 
   const deleteVideo = async (id: string) => {
-    await fetch('/api/admin/skinstar-videos', {
+    const res = await fetch('/api/admin/skinstar-videos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', id }),
     })
+    if (!res.ok) { alert('처리 실패'); return }
     load()
   }
 
