@@ -4,6 +4,11 @@
 ---
 
 ## 2026-09-20
+### toast_transactions 타인적립 서버API 신설 (3개)
+- 문제: toast_transactions "서비스 insert" 정책(with_check: true)이 누구나 아무 user_id로 insert 가능한 구멍
+- 신설: /api/toast/chat-award (원장→고객 딸기잼), /api/toast/order-completion (구매확정 적립+추천보상), /api/toast/wallet-grant (충전승인 토스트)
+- 기존 클라이언트 코드는 다음 단계에서 교체 예정
+- 각 API는 서비스롤 + 권한 검증 + 멱등성 처리 포함
 ### external-customers-stats 성능 개선
 - 문제: AdminStatCards가 브라우저에서 external_customers 전체 행 SELECT → RLS 행마다 체크 → 고객 100명 이상 시 500 에러
 - 수정 1: route.ts 권한 체크에 super_admin도 통과 추가
