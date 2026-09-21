@@ -20,7 +20,7 @@ export default function StoreReviewsAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'list' }),
     })
-    if (!res.ok) { setLoading(false); return }
+    if (!res.ok) { setLoading(false); showToast('목록 불러오기 실패'); return }
     const json = await res.json()
     setItems(json.items || [])
     setLoading(false)
