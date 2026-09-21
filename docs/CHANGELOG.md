@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- feat: admin/anomaly 정지 해제 기능 추가
 - fix: admin/anomaly 정지 버튼 실제 로그인 차단 추가 (Supabase Auth ban)
 - fix: admin/anomaly 정지처리 조건 auth_id → id 수정
 - perf: admin/anomaly 브라우저 Supabase 직접호출 6건 제거 → /api/admin/anomaly-data 서버API 전환

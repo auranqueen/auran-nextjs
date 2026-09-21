@@ -48,6 +48,17 @@ export default function AnomalyPage() {
     alert('정지 처리 완료')
   }
 
+  const unsuspendUser = async (userId: string) => {
+    if (!confirm('이 사용자의 정지를 해제할까요?')) return
+    const res = await fetch('/api/admin/anomaly-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unsuspend', userId }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+    alert('정지 해제 완료')
+  }
+
   const markPaymentChecked = async (id: string) => {
     try {
       const res = await fetch('/api/admin/anomaly-data', {
@@ -113,6 +124,12 @@ export default function AnomalyPage() {
                       style={{ marginTop: 6, fontSize: 11, padding: '6px 10px', borderRadius: 10, background: 'rgba(217,79,79,0.12)', border: '1px solid rgba(217,79,79,0.30)', color: '#d94f4f', fontWeight: 900, cursor: 'pointer' }}
                     >
                       정지
+                    </button>
+                    <button
+                      onClick={() => unsuspendUser(a.user_id)}
+                      style={{ marginTop: 6, fontSize: 11, padding: '6px 10px', borderRadius: 10, background: 'rgba(76,173,126,0.12)', border: '1px solid rgba(76,173,126,0.30)', color: '#4cad7e', fontWeight: 900, cursor: 'pointer' }}
+                    >
+                      해제
                     </button>
                   </div>
                 </div>
