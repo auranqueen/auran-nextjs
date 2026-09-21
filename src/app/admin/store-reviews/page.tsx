@@ -34,7 +34,7 @@ export default function StoreReviewsAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'verify', id, is_verified: !current }),
     })
-    if (!res.ok) return
+    if (!res.ok) { showToast('처리 실패'); return }
     setItems(prev => prev.map(i => i.id === id ? { ...i, is_verified: !current } : i))
     showToast(!current ? '인증 처리됐어요 💜' : '인증 취소됐어요')
   }
