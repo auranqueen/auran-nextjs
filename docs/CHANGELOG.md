@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/store-reviews 브라우저 Supabase 직접호출 2건 제거 → /api/admin/store-reviews-data 서버API 전환
 - perf: admin/companies 브라우저 Supabase 직접호출 3건 제거 → /api/admin/companies-data 서버API 전환
 - perf: admin/skin-concerns 브라우저 Supabase 직접호출 2건 제거 → /api/admin/skin-concerns-data 서버API 전환
 - perf: admin/templates 브라우저 Supabase 직접호출 4건 제거 → /api/admin/bundle-templates 서버API 전환

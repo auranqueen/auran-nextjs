@@ -2,10 +2,8 @@
 // ===== [스토어 구매 후기 어드민] =====
 // store_reviews 목록 + 인증 처리 + 회원 전환 표시
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function StoreReviewsAdminPage() {
-  const supabase = createClient()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
@@ -17,18 +15,26 @@ export default function StoreReviewsAdminPage() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('store_reviews')
-      .select('*, profiles(full_name, hormone_phase, skin_type)')
-      .order('created_at', { ascending: false })
-    setItems(data || [])
+    const res = await fetch('/api/admin/store-reviews-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+    if (!res.ok) { setLoading(false); return }
+    const json = await res.json()
+    setItems(json.items || [])
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
   const handleVerify = async (id: string, current: boolean) => {
-    await supabase.from('store_reviews').update({ is_verified: !current }).eq('id', id)
+    const res = await fetch('/api/admin/store-reviews-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify', id, is_verified: !current }),
+    })
+    if (!res.ok) return
     setItems(prev => prev.map(i => i.id === id ? { ...i, is_verified: !current } : i))
     showToast(!current ? '인증 처리됐어요 💜' : '인증 취소됐어요')
   }
