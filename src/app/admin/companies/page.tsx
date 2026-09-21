@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useState } from 'react'
 
 const ACC = '#7B5EA7'
@@ -36,7 +35,6 @@ const EMPTY_FORM: DetailForm = {
 }
 
 export default function AdminCompaniesPage() {
-  const supabase = createClient()
   const [rows, setRows] = useState<CompanyRow[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
@@ -51,26 +49,16 @@ export default function AdminCompaniesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data: companies } = await supabase
-      .from('brand_companies')
-      .select('id, name, logo_url, payapp_active, payapp_user_id, payapp_key, payapp_linkval, created_at')
-      .order('created_at', { ascending: false })
-
-    const { data: brands } = await supabase.from('brands').select('company_id')
-    const countMap: Record<string, number> = {}
-    for (const b of brands || []) {
-      const cid = (b as { company_id: string | null }).company_id
-      if (!cid) continue
-      countMap[cid] = (countMap[cid] || 0) + 1
-    }
-
-    const merged = (companies || []).map((c) => ({
-      ...(c as Omit<CompanyRow, 'brand_count'>),
-      brand_count: countMap[(c as { id: string }).id] || 0,
-    }))
-    setRows(merged as CompanyRow[])
+    const res = await fetch('/api/admin/companies-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+    if (!res.ok) { setLoading(false); return }
+    const json = await res.json()
+    setRows((json.companies || []) as CompanyRow[])
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -97,22 +85,13 @@ export default function AdminCompaniesPage() {
     if (!detailId) return
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('brand_companies')
-        .update({
-          name: form.name.trim(),
-          logo_url: form.logoUrl.trim() || null,
-          payapp_active: form.payappActive,
-          payapp_user_id: form.payappUserId.trim() || null,
-          payapp_key: form.payappKey.trim() || null,
-          payapp_linkval: form.payappLinkval.trim() || null,
-        })
-        .eq('id', detailId)
-
-      if (error) {
-        showToast('저장 실패: ' + error.message)
-        return
-      }
+      const res = await fetch('/api/admin/companies-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', detailId, form }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) { showToast('저장 실패: ' + (json.error || '')); return }
       showToast('저장됐어요')
       closeDetail()
       await load()
