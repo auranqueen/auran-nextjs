@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     })
   }
   if (action === 'suspend') {
-    const { error } = await svc.from('users').update({ status: 'suspended' }).eq('auth_id', userId)
+    const { error } = await svc.from('users').update({ status: 'suspended' }).eq('id', userId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   }
