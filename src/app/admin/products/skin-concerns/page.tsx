@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const CONCERN_OPTIONS = ['수분부족', '미백·톤업', '모공·각질', '민감·진정', '안티에이징', '자외선차단']
 
@@ -8,12 +7,16 @@ export default function SkinConcernsAdminPage() {
   const [products, setProducts] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
-    supabase.from('products').select('id, name, skin_concerns').order('name').then(({ data }) => {
-      if (data) setProducts(data)
+    fetch('/api/admin/skin-concerns-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
     })
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json() })
+      .then(json => setProducts(json.products || []))
+      .catch(() => {})
   }, [])
 
   const toggleConcern = async (productId: string, concern: string, current: string[]) => {
@@ -22,7 +25,12 @@ export default function SkinConcernsAdminPage() {
       ? current.filter(c => c !== concern)
       : [...(current || []), concern]
 
-    await supabase.from('products').update({ skin_concerns: updated }).eq('id', productId)
+    const res = await fetch('/api/admin/skin-concerns-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', productId, skin_concerns: updated }),
+    })
+    if (!res.ok) { setSaving(null); return }
     setProducts(prev => prev.map(p => p.id === productId ? { ...p, skin_concerns: updated } : p))
     setSaving(null)
   }
