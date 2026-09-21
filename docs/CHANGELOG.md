@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/anomaly 브라우저 Supabase 직접호출 6건 제거 → /api/admin/anomaly-data 서버API 전환
 - fix: admin/store-reviews 목록 로드 실패 토스트 추가
 - fix: admin/store-reviews 인증 실패 시 토스트 알림 추가
 - perf: admin/store-reviews 브라우저 Supabase 직접호출 2건 제거 → /api/admin/store-reviews-data 서버API 전환

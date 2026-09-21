@@ -1,14 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type AbuseRow = { id: string; user_id: string; description?: string | null; amount?: number | null; created_at: string }
 type PaymentErrorRow = { id: string; user_id?: string | null; order_id?: string | null; message?: string | null; created_at: string }
 type PendingBrandRow = { id: string; name: string; status: string; created_at: string }
 
 export default function AnomalyPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [abuse, setAbuse] = useState<AbuseRow[]>([])
   const [paymentErrors, setPaymentErrors] = useState<PaymentErrorRow[]>([])
@@ -17,64 +15,47 @@ export default function AnomalyPage() {
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      // 1) 포인트 이상 적립 감지: point_history에서 큰 적립(임계치) 최근 30일
       try {
-        const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString()
-        const { data } = await supabase
-          .from('point_history')
-          .select('id,user_id,description,amount,created_at')
-          .eq('type', 'earn')
-          .gte('created_at', since)
-          .gt('amount', 5000)
-          .order('created_at', { ascending: false })
-          .limit(50)
-        setAbuse((data || []) as any)
+        const res = await fetch('/api/admin/anomaly-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list' }),
+        })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        setAbuse(json.abuse || [])
+        setPaymentErrors(json.paymentErrors || [])
+        setPendingBrands(json.pendingBrands || [])
       } catch {
         setAbuse([])
-      }
-
-      // 2) 결제 오류 목록: payments 테이블이 있으면 error 상태 조회 (없으면 빈 배열)
-      try {
-        const { data } = await supabase
-          .from('payments')
-          .select('id,user_id,order_id,message,created_at')
-          .eq('status', 'error')
-          .order('created_at', { ascending: false })
-          .limit(50)
-        setPaymentErrors((data || []) as any)
-      } catch {
         setPaymentErrors([])
-      }
-
-      // 3) 입점 신청 대기: brands status=pending
-      try {
-        const { data } = await supabase
-          .from('brands')
-          .select('id,name,status,created_at')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(50)
-        setPendingBrands((data || []) as any)
-      } catch {
         setPendingBrands([])
+      } finally {
+        setLoading(false)
       }
-
-      setLoading(false)
     }
     run()
   }, [])
 
   const suspendUser = async (userId: string) => {
     if (!confirm('이 사용자를 정지 처리할까요?')) return
-    const { error } = await supabase.from('users').update({ status: 'suspended' }).eq('auth_id', userId)
-    if (error) alert(error.message)
-    else alert('정지 처리 완료')
+    const res = await fetch('/api/admin/anomaly-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'suspend', userId }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+    alert('정지 처리 완료')
   }
 
   const markPaymentChecked = async (id: string) => {
     try {
-      const { error } = await supabase.from('payments').update({ status: 'checked' }).eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/admin/anomaly-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'payment_checked', id }),
+      })
+      if (!res.ok) throw new Error('failed')
       setPaymentErrors(prev => prev.filter(x => x.id !== id))
     } catch (e: any) {
       alert(e?.message || '처리 중 오류')
@@ -82,9 +63,13 @@ export default function AnomalyPage() {
   }
 
   const holdBrand = async (id: string) => {
-    const { error } = await supabase.from('brands').update({ status: 'hold' }).eq('id', id)
-    if (error) alert(error.message)
-    else setPendingBrands(prev => prev.filter(x => x.id !== id))
+    const res = await fetch('/api/admin/anomaly-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'hold_brand', id }),
+    })
+    if (!res.ok) { alert('처리 실패'); return }
+    setPendingBrands(prev => prev.filter(x => x.id !== id))
   }
 
   return (
