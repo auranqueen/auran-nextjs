@@ -24,8 +24,12 @@ export async function POST(req: Request) {
     })
   }
   if (action === 'suspend') {
-    const { error } = await svc.from('users').update({ status: 'suspended' }).eq('id', userId)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const { data: u, error: findErr } = await svc.from('users').select('auth_id').eq('id', userId).maybeSingle()
+    if (findErr || !u?.auth_id) return NextResponse.json({ error: 'user not found' }, { status: 404 })
+    const { error: dbErr } = await svc.from('users').update({ status: 'suspended' }).eq('id', userId)
+    if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
+    const { error: authErr } = await svc.auth.admin.updateUserById(u.auth_id, { ban_duration: '876000h' })
+    if (authErr) return NextResponse.json({ error: authErr.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   }
   if (action === 'payment_checked') {
