@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: admin/anomaly unsuspend Auth unban → DB 순서 수정
 - feat: admin/anomaly 정지 해제 기능 추가
 - fix: admin/anomaly 정지 버튼 실제 로그인 차단 추가 (Supabase Auth ban)
 - fix: admin/anomaly 정지처리 조건 auth_id → id 수정
