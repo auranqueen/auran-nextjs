@@ -1,9 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function SkinNoticesClient({ notices: initial }: { notices: any[] }) {
-  const supabase = createClient()
   const [tab, setTab] = useState<'notice'|'tip'>('notice')
   const [notices, setNotices] = useState(initial)
   const [msg, setMsg] = useState('')
@@ -18,37 +16,59 @@ export default function SkinNoticesClient({ notices: initial }: { notices: any[]
   const add = async () => {
     if (!msg.trim()) return
     setSaving(true)
-    const { data, error } = await supabase
-      .from('today_skin_notices')
-      .insert({ message: msg.trim(), type: tab, is_active: true, starts_at: startsAt || null, ends_at: endsAt || null })
-      .select().single()
+    const res = await fetch('/api/admin/skin-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'insert', message: msg.trim(), type: tab, starts_at: startsAt, ends_at: endsAt }),
+    })
     setSaving(false)
-    if (error) return showToast('저장 실패')
-    setNotices([data, ...notices])
+    if (!res.ok) return showToast('저장 실패')
+    const json = await res.json()
+    setNotices([json.data, ...notices])
     setMsg(''); setStartsAt(''); setEndsAt('')
     showToast('추가됐어요 ✦')
   }
 
   const toggle = async (id: string, cur: boolean) => {
-    await supabase.from('today_skin_notices').update({ is_active: !cur }).eq('id', id)
+    const res = await fetch('/api/admin/skin-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle', id, is_active: !cur }),
+    })
+    if (!res.ok) return
     setNotices(notices.map(n => n.id === id ? { ...n, is_active: !cur } : n))
   }
 
   const updateMsg = async (id: string, newMsg: string) => {
-    await supabase.from('today_skin_notices').update({ message: newMsg }).eq('id', id)
+    const res = await fetch('/api/admin/skin-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_msg', id, message: newMsg }),
+    })
+    if (!res.ok) return
     setNotices(notices.map(n => n.id === id ? { ...n, message: newMsg } : n))
     showToast('수정됐어요 ✦')
   }
 
   const updateDates = async (id: string, starts: string, ends: string) => {
-    await supabase.from('today_skin_notices').update({ starts_at: starts || null, ends_at: ends || null }).eq('id', id)
+    const res = await fetch('/api/admin/skin-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_dates', id, starts_at: starts, ends_at: ends }),
+    })
+    if (!res.ok) return
     setNotices(notices.map(n => n.id === id ? { ...n, starts_at: starts || null, ends_at: ends || null } : n))
     showToast('기간 저장됐어요')
   }
 
   const remove = async (id: string) => {
     if (!confirm('삭제할까요?')) return
-    await supabase.from('today_skin_notices').delete().eq('id', id)
+    const res = await fetch('/api/admin/skin-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
+    if (!res.ok) return
     setNotices(notices.filter(n => n.id !== id))
     showToast('삭제됐어요')
   }
