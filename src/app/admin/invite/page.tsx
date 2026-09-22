@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type InviteRow = {
   id: string
@@ -27,7 +26,6 @@ function makeCode(role: string) {
 }
 
 export default function AdminInvitePage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<InviteRow[]>([])
   const [analysisPoint, setAnalysisPoint] = useState(500)
@@ -46,15 +44,15 @@ export default function AdminInvitePage() {
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const { data } = await supabase.from('invite_links').select('*').order('created_at', { ascending: false }).limit(200)
-      const { data: p } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('category', 'points_action')
-        .eq('key', 'ai_analysis_complete')
-        .maybeSingle()
-      setAnalysisPoint(Number(p?.value ?? 500))
-      setRows((data || []) as any)
+      const res = await fetch('/api/admin/invite-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' }),
+      })
+      if (!res.ok) { setLoading(false); return }
+      const json = await res.json()
+      setAnalysisPoint(json.analysisPoint ?? 500)
+      setRows((json.links || []) as any)
       setLoading(false)
     }
     run()
@@ -78,18 +76,6 @@ export default function AdminInvitePage() {
   const generate = async () => {
     const code = makeCode(modalRole)
     const url = `${baseUrl}/join/${modalRole}?ref=${code}`
-
-    const { data: authData } = await supabase.auth.getUser()
-    let createdBy = null
-    if (authData?.user) {
-      const { data: u } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', authData.user.id)
-        .maybeSingle()
-      createdBy = u?.id || null
-    }
-
     const payload = {
       role: modalRole,
       code,
@@ -98,11 +84,15 @@ export default function AdminInvitePage() {
       used_count: 0,
       is_active: true,
       created_at: new Date().toISOString(),
-      created_by: createdBy,
     }
-    const { error } = await supabase.from('invite_links').insert(payload)
-    if (error) {
-      alert(error.message)
+    const res = await fetch('/api/admin/invite-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'generate', payload }),
+    })
+    if (!res.ok) {
+      const j = await res.json()
+      alert(j.error || '생성 실패')
       return
     }
     setModalUrl(url)
