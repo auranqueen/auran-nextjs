@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- fix: admin/skin-notices toggle/수정/삭제 실패 toast 추가
 - perf: admin/skin-notices 브라우저 Supabase 직접호출 5건 제거 → /api/admin/skin-notices 서버API 전환
 - perf: admin/invite 브라우저 Supabase 직접호출 4건 제거 → /api/admin/invite-data 서버API 전환
 - perf: admin/subscriptions 브라우저 Supabase 직접호출 3건 제거 → /api/admin/subscriptions-data 서버API 전환

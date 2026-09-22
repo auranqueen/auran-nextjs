@@ -35,7 +35,7 @@ export default function SkinNoticesClient({ notices: initial }: { notices: any[]
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle', id, is_active: !cur }),
     })
-    if (!res.ok) return
+    if (!res.ok) { showToast('처리 실패'); return }
     setNotices(notices.map(n => n.id === id ? { ...n, is_active: !cur } : n))
   }
 
@@ -45,7 +45,7 @@ export default function SkinNoticesClient({ notices: initial }: { notices: any[]
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_msg', id, message: newMsg }),
     })
-    if (!res.ok) return
+    if (!res.ok) { showToast('수정 실패'); return }
     setNotices(notices.map(n => n.id === id ? { ...n, message: newMsg } : n))
     showToast('수정됐어요 ✦')
   }
@@ -56,7 +56,7 @@ export default function SkinNoticesClient({ notices: initial }: { notices: any[]
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update_dates', id, starts_at: starts, ends_at: ends }),
     })
-    if (!res.ok) return
+    if (!res.ok) { showToast('기간 저장 실패'); return }
     setNotices(notices.map(n => n.id === id ? { ...n, starts_at: starts || null, ends_at: ends || null } : n))
     showToast('기간 저장됐어요')
   }
@@ -68,7 +68,7 @@ export default function SkinNoticesClient({ notices: initial }: { notices: any[]
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', id }),
     })
-    if (!res.ok) return
+    if (!res.ok) { showToast('삭제 실패'); return }
     setNotices(notices.filter(n => n.id !== id))
     showToast('삭제됐어요')
   }
