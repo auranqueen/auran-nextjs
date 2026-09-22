@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type Member = { id: string; name: string; email: string; customer_grade?: string | null; points?: number }
 type MembershipRow = { user_id: string; status: string; shipments_remaining: number; next_shipment_date: string | null; membership_plans: { name: string } | null; users: { name: string; email: string } | null }
@@ -12,7 +11,6 @@ const GRADES = ['PETAL','BLOOM','VELVET','LUMIÈRE','REINE','NOIR','CÉLESTE']
 const C = { bg: '#0a0c0f', card: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', purple: '#7B5EA7', gold: '#C9A96E', text: '#e8e0f5', muted: 'rgba(255,255,255,0.45)' }
 
 export default function MarketingModal({ open, onClose, members }: { open: boolean; onClose: () => void; members: Member[] }) {
-  const supabase = createClient()
   const [tab, setTab] = useState<Tab>('membership')
   const [memberships, setMemberships] = useState<MembershipRow[]>([])
   const [profiles, setProfiles] = useState<ProfileRow[]>([])
@@ -29,28 +27,17 @@ export default function MarketingModal({ open, onClose, members }: { open: boole
     if (!open) return
     const load = async () => {
       setLoading(true)
-      const [{ data: mem }, { data: prof }, { data: items }] = await Promise.all([
-        supabase.from('user_memberships')
-          .select('user_id, status, shipments_remaining, next_shipment_date, membership_plans(name), users!user_memberships_user_id_fkey(name, email)')
-          .eq('status', 'active'),
-        supabase.from('profiles')
-          .select('auth_id, total_purchase_amount, grade')
-          .order('total_purchase_amount', { ascending: false })
-          .limit(100),
-        supabase.from('order_items')
-          .select('product_name, quantity, subtotal')
-          .limit(2000),
-      ])
-      setMemberships((mem as any) || [])
-      // profiles와 users 조인
-      const profWithUsers = await Promise.all(((prof || []) as any[]).map(async (p: any) => {
-        const { data: u } = await supabase.from('users').select('id, name, email').eq('auth_id', p.auth_id).maybeSingle()
-        return { ...p, users: u }
-      }))
-      setProfiles(profWithUsers as any)
-      // 인기제품 집계
+      const res = await fetch('/api/admin/marketing-modal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' }),
+      })
+      if (!res.ok) { setLoading(false); return }
+      const json = await res.json()
+      setMemberships((json.memberships || []) as any)
+      setProfiles((json.profiles || []) as any)
       const map = new Map<string, ProductStat>()
-      for (const item of (items || []) as any[]) {
+      for (const item of (json.orderItems || []) as any[]) {
         const n = item.product_name || '알 수 없음'
         const prev = map.get(n) || { name: n, qty: 0, sales: 0 }
         map.set(n, { name: n, qty: prev.qty + (item.quantity || 1), sales: prev.sales + (item.subtotal || 0) })
@@ -67,7 +54,13 @@ export default function MarketingModal({ open, onClose, members }: { open: boole
     if (!notifyTitle || !notifyBody || selected.size === 0) { setSendMsg('제목·내용·수신자를 입력해주세요'); return }
     setSending(true); setSendMsg('')
     const rows = Array.from(selected).map(uid => ({ user_id: uid, type: 'promo', title: notifyTitle, body: notifyBody, is_read: false }))
-    const { error } = await supabase.from('notifications').insert(rows as any)
+    const res = await fetch('/api/admin/marketing-modal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'notify', rows }),
+    })
+    const json = await res.json()
+    const error = !res.ok ? { message: json.error || '오류' } : null
     setSending(false)
     if (error) { setSendMsg('오류: ' + error.message) } else { setSendMsg(`${rows.length}명에게 발송됐어요 ✓`); setSelected(new Set()); setNotifyTitle(''); setNotifyBody('') }
   }
