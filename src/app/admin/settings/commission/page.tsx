@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type CommissionRow = { role: string; track?: string | null; rate: number }
 type ReferralRow = { level: number; rate: number }
@@ -21,7 +20,6 @@ const DEFAULT_REFERRAL: ReferralRow[] = [
 ]
 
 export default function CommissionSettingsPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [commission, setCommission] = useState<CommissionRow[]>(DEFAULT_COMMISSION)
@@ -45,12 +43,15 @@ export default function CommissionSettingsPage() {
     const run = async () => {
       setLoading(true)
       try {
-        const [c, r] = await Promise.all([
-          supabase.from('commission_settings').select('role,track,rate').order('role'),
-          supabase.from('referral_settings').select('level,rate').order('level'),
-        ])
-        if (c.data?.length) setCommission(c.data as any)
-        if (r.data?.length) setReferral(r.data as any)
+        const res = await fetch('/api/admin/commission-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list' }),
+        })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        if (json.commission?.length) setCommission(json.commission)
+        if (json.referral?.length) setReferral(json.referral)
       } catch {
         // keep defaults
       } finally {
@@ -64,12 +65,15 @@ export default function CommissionSettingsPage() {
     const run = async () => {
       setPLoading(true)
       try {
-        const [prod, pc] = await Promise.all([
-          supabase.from('products').select('id,name,retail_price,status').order('created_at', { ascending: false }).limit(300),
-          supabase.from('product_commissions').select('product_id,base_rate,partner_rate,owner_rate,live_rate').limit(500),
-        ])
-        setProducts((prod.data || []) as any)
-        setPRows(((pc.data || []) as any[]).map(r => ({
+        const res = await fetch('/api/admin/commission-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list_products' }),
+        })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        setProducts((json.products || []) as any)
+        setPRows(((json.pRows || []) as any[]).map(r => ({
           product_id: r.product_id,
           base_rate: Number(r.base_rate || 0),
           partner_rate: Number(r.partner_rate || 0),
@@ -122,12 +126,12 @@ export default function CommissionSettingsPage() {
         updated_at: new Date().toISOString(),
       }))
 
-      const [cRes, rRes] = await Promise.all([
-        supabase.from('commission_settings').upsert(cPayload, { onConflict: 'role,track' }),
-        supabase.from('referral_settings').upsert(rPayload, { onConflict: 'level' }),
-      ])
-      if (cRes.error) throw cRes.error
-      if (rRes.error) throw rRes.error
+      const res = await fetch('/api/admin/commission-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', cPayload, rPayload }),
+      })
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error || 'failed') }
       setToast('✅ 저장 즉시 반영됨')
       setTimeout(() => setToast(''), 2500)
     } catch (e: any) {
@@ -178,7 +182,13 @@ export default function CommissionSettingsPage() {
         live_rate: Number(row.live_rate || 0),
         updated_at: new Date().toISOString(),
       }
-      const { error } = await supabase.from('product_commissions').upsert(payload, { onConflict: 'product_id' })
+      const res = await fetch('/api/admin/commission-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_product', productPayload: payload }),
+      })
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error || 'failed') }
+      const error = null
       if (error) throw error
       setPRows(prev => {
         const idx = prev.findIndex(x => x.product_id === productId)
