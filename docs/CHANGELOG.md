@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/HormoneComment 브라우저 Supabase 직접호출 4건 제거 → /api/admin/hormone-comment 서버API 전환
 - perf: admin/MarketingModal 브라우저 DB 직접호출 최대 103건 제거, N+1 쿼리 해결 → /api/admin/marketing-modal 서버API 전환
 - fix: admin/skin-notices toggle/수정/삭제 실패 toast 추가
 - perf: admin/skin-notices 브라우저 Supabase 직접호출 5건 제거 → /api/admin/skin-notices 서버API 전환

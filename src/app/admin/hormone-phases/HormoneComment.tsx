@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const CARD = '#12151a'
 const BORDER = 'rgba(255,255,255,0.08)'
@@ -32,7 +31,6 @@ type LearningRow = {
 }
 
 export default function HormoneComment() {
-  const supabase = createClient()
   const [activePhase, setActivePhase] = useState<(typeof PHASE_TABS)[number]>('달빛기')
   const [comment, setComment] = useState('')
   const [saving, setSaving] = useState(false)
@@ -52,24 +50,16 @@ export default function HormoneComment() {
     const dbPhase = PHASE_DB[phase]
     const key = commentKey(phase)
     try {
-      const [settingsRes, countRes, listRes] = await Promise.all([
-        supabase.from('admin_settings').select('value').eq('category', 'hormone_comment').eq('key', key).maybeSingle(),
-        supabase
-          .from('hormone_phase_learnings')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'approved')
-          .eq('phase', dbPhase),
-        supabase
-          .from('hormone_phase_learnings')
-          .select('*')
-          .eq('status', 'approved')
-          .eq('phase', dbPhase)
-          .order('created_at', { ascending: false })
-          .limit(20),
-      ])
-      setComment(String(settingsRes.data?.value ?? ''))
-      setApprovedCount(countRes.count ?? 0)
-      setApprovedList((listRes.data as LearningRow[]) || [])
+      const res = await fetch('/api/admin/hormone-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'load', key, dbPhase }),
+      })
+      if (!res.ok) throw new Error('failed')
+      const json = await res.json()
+      setComment(String(json.value ?? ''))
+      setApprovedCount(json.count ?? 0)
+      setApprovedList((json.list as LearningRow[]) || [])
     } finally {
       setLoading(false)
     }
@@ -84,19 +74,12 @@ export default function HormoneComment() {
     setSaving(true)
     try {
       const key = commentKey(activePhase)
-      const { error } = await supabase.from('admin_settings').upsert(
-        {
-          category: 'hormone_comment',
-          key,
-          value: comment,
-          label: `${activePhase} 추천 코멘트`,
-        },
-        { onConflict: 'category,key' }
-      )
-      if (error) {
-        showToast(error.message)
-        return
-      }
+      const res = await fetch('/api/admin/hormone-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', category: 'hormone_comment', key, value: comment, label: `${activePhase} 추천 코멘트` }),
+      })
+      if (!res.ok) { const j = await res.json(); showToast(j.error || '저장 실패'); return }
       showToast('저장됐어요')
     } finally {
       setSaving(false)
