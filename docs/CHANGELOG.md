@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/flash-sale 브라우저 Supabase 직접호출 5건 제거 → /api/admin/flash-sale 서버API 전환
 - fix: admin/anomaly suspend Auth ban → DB 순서 수정
 - fix: admin/anomaly unsuspend Auth unban → DB 순서 수정
 - feat: admin/anomaly 정지 해제 기능 추가

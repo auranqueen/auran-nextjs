@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 function toNum(v: any) {
@@ -10,7 +9,6 @@ function toNum(v: any) {
 }
 
 export default function FlashSaleSettingsPage() {
-  const supabase = createClient()
   const { getSettingNum } = useAdminSettings()
   const [q, setQ] = useState('')
   const [products, setProducts] = useState<any[]>([])
@@ -24,30 +22,27 @@ export default function FlashSaleSettingsPage() {
 
   useEffect(() => {
     const t = setTimeout(async () => {
-      const query = q.trim()
-      let req = supabase
-        .from('products')
-        .select('id,name,retail_price,flash_sale_price,flash_sale_start,flash_sale_end,is_flash_sale')
-        .order('created_at', { ascending: false })
-        .limit(30)
-      if (query) req = req.ilike('name', `%${query}%`)
-      const { data } = await req
-      setProducts(data || [])
+      const res = await fetch('/api/admin/flash-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'search', query: q.trim() }),
+      })
+      if (!res.ok) return
+      const json = await res.json()
+      setProducts(json.products || [])
     }, 250)
     return () => clearTimeout(t)
   }, [q])
 
   const refreshActive = async () => {
-    const now = new Date().toISOString()
-    const { data } = await supabase
-      .from('products')
-      .select('id,name,flash_sale_price,flash_sale_end,is_flash_sale')
-      .eq('is_flash_sale', true)
-      .lt('flash_sale_start', now)
-      .gt('flash_sale_end', now)
-      .order('flash_sale_end', { ascending: true })
-      .limit(50)
-    setActive(data || [])
+    const res = await fetch('/api/admin/flash-sale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'active' }),
+    })
+    if (!res.ok) return
+    const json = await res.json()
+    setActive(json.active || [])
   }
 
   useEffect(() => {
@@ -130,13 +125,16 @@ export default function FlashSaleSettingsPage() {
                       flash_sale_end: new Date(p._end).toISOString(),
                       flash_sale_price: Math.max(0, toNum(p._price)),
                     }
-                    const { error } = await supabase.from('products').update(payload).eq('id', p.id)
+                    const res = await fetch('/api/admin/flash-sale', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'update', id: p.id, payload }),
+                    })
                     setSavingId('')
-                    if (error) setToast(error.message)
-                    else {
-                      setToast('타임세일 등록 완료')
-                      await refreshActive()
-                    }
+                    const json = await res.json()
+                    if (!res.ok || json.error) { setToast(json.error || '등록 실패'); return }
+                    setToast('타임세일 등록 완료')
+                    await refreshActive()
                   }}
                   style={{ height: 36, borderRadius: 8, border: 'none', background: '#c9a84c', color: '#111', fontWeight: 800, padding: '0 12px' }}
                 >
@@ -145,12 +143,15 @@ export default function FlashSaleSettingsPage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    const { error } = await supabase.from('products').update({ is_flash_sale: false }).eq('id', p.id)
-                    if (error) setToast(error.message)
-                    else {
-                      setToast('타임세일 종료 처리 완료')
-                      await refreshActive()
-                    }
+                    const res = await fetch('/api/admin/flash-sale', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'update', id: p.id, payload: { is_flash_sale: false } }),
+                    })
+                    const json = await res.json()
+                    if (!res.ok || json.error) { setToast(json.error || '종료 실패'); return }
+                    setToast('타임세일 종료 처리 완료')
+                    await refreshActive()
                   }}
                   style={{ height: 36, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text3)', fontWeight: 700, padding: '0 12px' }}
                 >
@@ -173,12 +174,15 @@ export default function FlashSaleSettingsPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  const { error } = await supabase.from('products').update({ is_flash_sale: false }).eq('id', p.id)
-                  if (error) setToast(error.message)
-                  else {
-                    setToast('종료 처리 완료')
-                    await refreshActive()
-                  }
+                  const res = await fetch('/api/admin/flash-sale', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update', id: p.id, payload: { is_flash_sale: false } }),
+                  })
+                  const json = await res.json()
+                  if (!res.ok || json.error) { setToast(json.error || '종료 실패'); return }
+                  setToast('종료 처리 완료')
+                  await refreshActive()
                 }}
                 style={{ height: 30, borderRadius: 7, border: '1px solid rgba(217,79,79,0.35)', background: 'rgba(217,79,79,0.12)', color: '#d94f4f', fontWeight: 700, padding: '0 10px' }}
               >
