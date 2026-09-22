@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type Row = {
   action: string
@@ -18,7 +17,6 @@ const DEFAULT_ACTIONS: { action: string; label: string }[] = [
 ]
 
 export default function PointSettingsPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
@@ -34,11 +32,14 @@ export default function PointSettingsPage() {
     const run = async () => {
       setLoading(true)
       try {
-        const { data } = await supabase
-          .from('point_settings')
-          .select('action,points,updated_at')
-          .order('action')
-        setRows((data || []) as Row[])
+        const res = await fetch('/api/admin/point-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list' }),
+        })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        setRows((json.rows || []) as Row[])
       } catch {
         setRows([])
       } finally {
@@ -66,8 +67,12 @@ export default function PointSettingsPage() {
         points: Number(map.get(a.action)?.points ?? 0),
         updated_at: new Date().toISOString(),
       }))
-      const { error } = await supabase.from('point_settings').upsert(payload, { onConflict: 'action' })
-      if (error) throw error
+      const res = await fetch('/api/admin/point-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', payload }),
+      })
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error || 'failed') }
       setToast('✅ 저장 완료')
       setTimeout(() => setToast(''), 2500)
     } catch (e: any) {
