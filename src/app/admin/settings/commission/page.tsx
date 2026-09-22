@@ -188,8 +188,6 @@ export default function CommissionSettingsPage() {
         body: JSON.stringify({ action: 'save_product', productPayload: payload }),
       })
       if (!res.ok) { const j = await res.json(); throw new Error(j.error || 'failed') }
-      const error = null
-      if (error) throw error
       setPRows(prev => {
         const idx = prev.findIndex(x => x.product_id === productId)
         if (idx >= 0) {
