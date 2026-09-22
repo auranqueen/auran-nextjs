@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-20
+- perf: admin/subscriptions 브라우저 Supabase 직접호출 3건 제거 → /api/admin/subscriptions-data 서버API 전환
 - perf: admin/points 브라우저 Supabase 직접호출 2건 제거 → /api/admin/point-settings 서버API 전환
 - fix: admin/commission 죽은 코드 제거
 - perf: admin/commission 브라우저 Supabase 직접호출 7건 제거 → /api/admin/commission-settings 서버API 전환

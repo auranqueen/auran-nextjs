@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type PlanRow = Record<string, unknown> & { id?: string; name?: string | null; slug?: string | null; code?: string | null; mode?: string | null; owner_mode?: string | null; price?: number | null; sort_order?: number | null; is_active?: boolean | null }
 
@@ -19,7 +18,6 @@ type SubRow = Record<string, unknown> & {
 type UserRow = { id: string; name?: string | null; email?: string | null }
 
 export default function AdminSubscriptionsPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [plans, setPlans] = useState<PlanRow[]>([])
   const [subs, setSubs] = useState<SubRow[]>([])
@@ -28,26 +26,22 @@ export default function AdminSubscriptionsPage() {
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const [{ data: planData }, { data: subData }] = await Promise.all([
-        supabase.from('subscription_plans').select('*').order('sort_order', { ascending: true }).limit(200),
-        supabase.from('owner_subscriptions').select('*').order('created_at', { ascending: false }).limit(500),
-      ])
-      const subList = (subData || []) as SubRow[]
-      setPlans((planData || []) as PlanRow[])
-      setSubs(subList)
-
-      const ownerIds = Array.from(new Set(subList.map((s) => String(s.owner_id || '')).filter(Boolean)))
-      if (ownerIds.length) {
-        const { data: urows } = await supabase.from('users').select('id,name,email').in('id', ownerIds)
+      try {
+        const res = await fetch('/api/admin/subscriptions-data', { method: 'POST' })
+        if (!res.ok) throw new Error('failed')
+        const json = await res.json()
+        setPlans((json.plans || []) as PlanRow[])
+        setSubs((json.subs || []) as SubRow[])
         const m: Record<string, UserRow> = {}
-        ;((urows || []) as UserRow[]).forEach((u) => {
-          m[u.id] = u
-        })
+        ;((json.users || []) as UserRow[]).forEach((u) => { m[u.id] = u })
         setUsersById(m)
-      } else {
+      } catch {
+        setPlans([])
+        setSubs([])
         setUsersById({})
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     void run()
   }, [])
