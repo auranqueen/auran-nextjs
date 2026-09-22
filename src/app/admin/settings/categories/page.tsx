@@ -1,5 +1,4 @@
 'use client'
-import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useState } from 'react'
 
 interface CatRow {
@@ -11,7 +10,6 @@ interface CatRow {
 }
 
 export default function CategoryPage() {
-  const supabase = createClient()
   const [rows, setRows] = useState<CatRow[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -23,12 +21,14 @@ export default function CategoryPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('categories')
-      .select('id, name, parent_id, level, sort_order')
-      .order('level', { ascending: true })
-      .order('sort_order', { ascending: true })
-    setRows(data ?? [])
+    const res = await fetch('/api/admin/categories-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+    if (!res.ok) { setLoading(false); return }
+    const json = await res.json()
+    setRows(json.rows ?? [])
     setLoading(false)
   }, [])
 
@@ -48,12 +48,14 @@ export default function CategoryPage() {
   const saveEdit = async (id: string) => {
     if (!editingName.trim()) return
     setSaving(true)
-    await supabase
-      .from('categories')
-      .update({ name: editingName.trim() })
-      .eq('id', id)
+    const res = await fetch('/api/admin/categories-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id, name: editingName }),
+    })
     setEditingId(null)
     setSaving(false)
+    if (!res.ok) return
     await load()
   }
 
@@ -66,12 +68,12 @@ export default function CategoryPage() {
     if (!name) return
     const siblings = rows.filter(r => r.parent_id === parentId)
     const sort_order = siblings.length
-    await supabase.from('categories').insert({
-      name: name.trim(),
-      parent_id: parentId,
-      level: parentLevel + 1,
-      sort_order,
+    const res = await fetch('/api/admin/categories-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'insert', name, parent_id: parentId, level: parentLevel + 1, sort_order }),
     })
+    if (!res.ok) return
     setExpanded(prev => ({ ...prev, [parentId]: true }))
     setAddingParentId('none')
     setAddingName('')
@@ -86,12 +88,12 @@ export default function CategoryPage() {
     const name = addingName.trim()
     if (!name) return
     const roots = rows.filter(r => r.parent_id === null)
-    await supabase.from('categories').insert({
-      name: name.trim(),
-      parent_id: null,
-      level: 1,
-      sort_order: roots.length,
+    const res = await fetch('/api/admin/categories-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'insert', name, parent_id: null, level: 1, sort_order: roots.length }),
     })
+    if (!res.ok) return
     setAddingParentId('none')
     setAddingName('')
     await load()
@@ -104,7 +106,12 @@ export default function CategoryPage() {
       return
     }
     if (!confirm('삭제할까요?')) return
-    await supabase.from('categories').delete().eq('id', id)
+    const res = await fetch('/api/admin/categories-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    })
+    if (!res.ok) return
     await load()
   }
 
