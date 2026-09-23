@@ -1303,3 +1303,7 @@ PC 화면에서 보이는 사이드바 메뉴를 새로 만들었어요. 모바�
 - 왜: PayApp 카드결제엔 PIN 불필요, 충전금 사용시에만 PIN 유지
 - 제거: payGuardBtnRef 선언·클릭 / PaymentAuthGuard JSX
 - 유지: wallet·my 화면의 PaymentAuthGuard (충전시 PIN 유지)
+
+[2026-09-24] checkout 미사용 import 제거 + isPaying 리셋 보완
+- 미사용 import 제거: PaymentAuthGuard, useRef
+- router.push try/catch 추가 — 이동 실패시 버튼 잠김 방지

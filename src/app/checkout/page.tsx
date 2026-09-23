@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -17,7 +17,6 @@ import {
   type OrderLineForCoupon,
 } from '@/lib/coupon/computeDiscount'
 import { fetchUserCouponsWithCoupons } from '@/lib/coupon/fetchUserCouponsWithCoupons'
-import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 
 function toNum(v: any) {
   const n = Number(v)
@@ -489,7 +488,11 @@ function CheckoutPageInner() {
       setIsPaying(false)
       return
     }
-    router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
+    try {
+      router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
+    } catch {
+      setIsPaying(false)
+    }
   }
 
   const onChargeKrw = async (krw: number) => {
