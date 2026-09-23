@@ -1598,6 +1598,25 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           supabaseClient={supabase}
           isSuperAdmin={isSuperAdmin}
         />
+        {/* 이런 분께 추천 — 네이버 SEO 텍스트 노출 (AI카드 밖 고정) */}
+        {((product.concern_tags && product.concern_tags.length > 0) ||
+          (product.skin_tags && (product.skin_tags as string[]).length > 0) ||
+          hormoneTimingLabels.length > 0) && (
+          <div style={{ margin: '0 0 8px 0', padding: '10px 14px', borderRadius: 10, background: 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.1)' }}>
+            <div style={{ fontSize: 11, color: '#9b7db5', fontWeight: 600, marginBottom: 6 }}>이런 분께 추천해요</div>
+            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
+              {product.concern_tags && product.concern_tags.length > 0 && (
+                <div>✓ {product.concern_tags.join(', ')} 고민</div>
+              )}
+              {product.skin_tags && (product.skin_tags as string[]).length > 0 && (
+                <div>✓ {(product.skin_tags as string[]).join(', ')} 피부</div>
+              )}
+              {hormoneTimingLabels.length > 0 && (
+                <div>✓ {hormoneTimingLabels.join('·')} 추천</div>
+              )}
+            </div>
+          </div>
+        )}
         {/* ===== [AI 분석카드] ===== */}
         {/* AI 전성분 분석 결과 + 원장 코멘트 노출 */}
         {/* 조건: ai_tag_status가 있거나 owner_comment 있을 때만 표시 */}
@@ -1669,26 +1688,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                           {tag}
                         </span>
                       ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 이런 분께 추천 — 네이버 SEO 텍스트 노출 */}
-                {((product.concern_tags && product.concern_tags.length > 0) ||
-                  (product.skin_tags && product.skin_tags.length > 0) ||
-                  hormoneTimingLabels.length > 0) && (
-                  <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(123,94,167,0.05)', marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: '#9b7db5', fontWeight: 600, marginBottom: 6 }}>이런 분께 추천해요</div>
-                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
-                      {product.concern_tags && product.concern_tags.length > 0 && (
-                        <div>✓ {product.concern_tags.join(', ')} 고민</div>
-                      )}
-                      {product.skin_tags && product.skin_tags.length > 0 && (
-                        <div>✓ {product.skin_tags.join(', ')} 피부</div>
-                      )}
-                      {hormoneTimingLabels.length > 0 && (
-                        <div>✓ {hormoneTimingLabels.join('·')} 추천</div>
-                      )}
                     </div>
                   </div>
                 )}
