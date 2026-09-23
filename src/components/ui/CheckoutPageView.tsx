@@ -792,7 +792,7 @@ export default function CheckoutPageView({
                   else onPay(true)
                 }}
                 disabled={paying}
-                style={{ display: (generalShortage || rnobelShortage) ? 'none' : undefined, width: '100%', height: 48, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 500, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: (hasEligibleItem && (generalShortage || rnobelShortage)) ? 'none' : undefined, width: '100%', height: 48, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 500, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {paying
                   ? '결제 준비 중...'
