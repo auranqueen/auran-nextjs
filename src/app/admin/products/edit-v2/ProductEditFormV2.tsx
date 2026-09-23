@@ -1150,7 +1150,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
               <div style={{ ...S.secTitle, color: 'rgba(201,169,110,0.6)' }}>
                 {isSuperAdmin ? '슈퍼어드민 전용' : '신체 부위 태그'}
               </div>
-              <div style={S.f}><span style={S.lbl}>의료 / 피부질환 태그</span><input style={S.inp} value={medicalTags} onChange={e => setMedicalTags(e.target.value)} placeholder="아토피, 여드름" /></div>
+              <div style={S.f}><span style={S.lbl}>시술 후 케어</span><input style={S.inp} value={medicalTags} onChange={e => setMedicalTags(e.target.value)} placeholder="아토피, 여드름" /></div>
               <div><span style={S.lbl}>신체 부위 태그</span>
                 <div>{['얼굴', '목', '데콜테', '바디', '두피'].map(t => <span key={t} style={S.tag(bodyPartTags.includes(t))} onClick={() => toggleArr(bodyPartTags, t, setBodyPartTags)}>{t}</span>)}</div>
               </div>
