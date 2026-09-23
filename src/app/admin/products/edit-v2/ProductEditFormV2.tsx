@@ -1147,7 +1147,9 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
 
           {(isSuperAdmin || isBody || isScalp || isDevice) && (
             <div style={{ ...S.sec, borderColor: 'rgba(201,169,110,0.15)' }}>
-              <div style={{ ...S.secTitle, color: 'rgba(201,169,110,0.6)' }}>슈퍼어드민 전용</div>
+              <div style={{ ...S.secTitle, color: 'rgba(201,169,110,0.6)' }}>
+                {isSuperAdmin ? '슈퍼어드민 전용' : '신체 부위 태그'}
+              </div>
               <div style={S.f}><span style={S.lbl}>의료 / 피부질환 태그</span><input style={S.inp} value={medicalTags} onChange={e => setMedicalTags(e.target.value)} placeholder="아토피, 여드름" /></div>
               <div><span style={S.lbl}>신체 부위 태그</span>
                 <div>{['얼굴', '목', '데콜테', '바디', '두피'].map(t => <span key={t} style={S.tag(bodyPartTags.includes(t))} onClick={() => toggleArr(bodyPartTags, t, setBodyPartTags)}>{t}</span>)}</div>
@@ -1188,7 +1190,21 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                     ].map((col, i) => (
                       <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {col.opts.map(c => (
-                          <div key={c.id} onClick={() => { col.set(c.id); col.reset.forEach(r => r('')) }}
+                          <div key={c.id} onClick={() => {
+                            if (col.set === setCatL1) {
+                              const hasTags = skinConcerns.length > 0 || skinTypes.length > 0 || hormoneTiming.length > 0 || skinTags.length > 0 || bodyPartTags.length > 0
+                              if (hasTags && !window.confirm('카테고리를 변경하면 기존 태그가 초기화됩니다.\n계속할까요?')) return
+                              setSkinConcerns([])
+                              setSkinTypes([])
+                              setHormoneStages([])
+                              setHormoneTiming([])
+                              setSeasonTags([])
+                              setBodyPartTags([])
+                              setSkinTags([])
+                            }
+                            col.set(c.id)
+                            col.reset.forEach(r => r(''))
+                          }}
                             style={{ padding: '7px 10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', background: col.val === c.id ? 'rgba(123,94,167,0.3)' : 'rgba(255,255,255,0.04)', color: col.val === c.id ? '#c4a7e7' : 'rgba(255,255,255,0.7)', border: `0.5px solid ${col.val === c.id ? 'rgba(123,94,167,0.5)' : 'rgba(255,255,255,0.06)'}` }}>
                             {c.name}
                           </div>
