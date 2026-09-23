@@ -1307,3 +1307,9 @@ PC 화면에서 보이는 사이드바 메뉴를 새로 만들었어요. 모바�
 [2026-09-24] checkout 미사용 import 제거 + isPaying 리셋 보완
 - 미사용 import 제거: PaymentAuthGuard, useRef
 - router.push try/catch 추가 — 이동 실패시 버튼 잠김 방지
+
+[2026-09-24] 또또복권 중복 결제버튼 제거
+- 파일: src/components/ui/CheckoutPageView.tsx (1곳)
+- 무엇을: 또또 안내 뜰 때 메인 결제버튼 숨김
+- 왜: 「그냥 결제하기」와 「결제하기」가 동시에 보여서 헷갈렸음
+- 조건: generalShortage || rnobelShortage 있을 때만 숨김
