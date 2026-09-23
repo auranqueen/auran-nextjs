@@ -22,7 +22,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
-  const [keywords, setKeywords] = useState('')
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
   const [metaKeywords, setMetaKeywords] = useState('')
@@ -168,10 +167,9 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       }
       setName(data.name || '')
       setShortDesc(data.description || '')
-      setKeywords(data.tag || '')
       setMetaTitle(data.meta_title || '')
       setMetaDescription(data.meta_description || '')
-      setMetaKeywords(data.meta_keywords || '')
+      setMetaKeywords(data.meta_keywords || data.tag || '')
       setBrandId(data.brand_id || '')
       setOrigin(data.category || '')
       setCategoryText(data.category || '')
@@ -280,7 +278,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     brand_id: brandId || null,
     name: name.trim().slice(0, 100) || '신규 상품',
     description: shortDesc.trim() || null,
-    tag: keywords.trim() || null,
+    tag: metaKeywords.trim() || null,
     meta_title: metaTitle.trim() || null,
     meta_description: metaDescription.trim() || null,
     meta_keywords: metaKeywords.trim() || null,
@@ -499,7 +497,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.secTitle}>기본 정보</div>
             <div style={S.f}><span style={S.lbl}>상품명 (최대 100자)</span><input style={S.inp} value={name} onChange={e => setName(e.target.value)} placeholder="상품명" /></div>
             <div style={S.f}><span style={S.lbl}>짧은 설명</span><input style={S.inp} value={shortDesc} onChange={e => setShortDesc(e.target.value)} placeholder="한 줄 설명" /></div>
-            <div style={S.f}><span style={S.lbl}>검색 키워드</span><input style={S.inp} value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="보습, 진정, 마스크팩" /></div>
             <div style={S.row2}>
               <div>
                 <span style={S.lbl}>브랜드</span>
