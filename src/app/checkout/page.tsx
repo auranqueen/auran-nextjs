@@ -59,7 +59,6 @@ function CheckoutPageInner() {
   const [payModal, setPayModal] = useState(false)
   const [earnToast, setEarnToast] = useState(true)
   const [isPaying, setIsPaying] = useState(false)
-  const payGuardBtnRef = useRef<HTMLButtonElement>(null)
   const [gradeDiscount, setGradeDiscount] = useState(0)
   const [gradeName, setGradeName] = useState('')
   const [shippingFee, setShippingFee] = useState(0)
@@ -490,8 +489,7 @@ function CheckoutPageInner() {
       setIsPaying(false)
       return
     }
-    setIsPaying(false)
-    payGuardBtnRef.current?.click()
+    router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
   }
 
   const onChargeKrw = async (krw: number) => {
@@ -639,18 +637,6 @@ function CheckoutPageInner() {
         generalProgress={generalProgress}
         rnobelProgress={rnbAmount > 0 ? rnobelProgress : undefined}
       />
-      <PaymentAuthGuard
-        title="결제 PIN 확인"
-        requirePin
-        onSuccess={() => {
-          if (isPaying) return
-          setIsPaying(true)
-          router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
-          setIsPaying(false)
-        }}
-      >
-        <button type="button" ref={payGuardBtnRef} style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
-      </PaymentAuthGuard>
       {payModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',zIndex:999}}>
           <div style={{width:'100%',background:'#171310',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>

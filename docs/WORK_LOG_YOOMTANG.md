@@ -1295,3 +1295,11 @@ PC 화면에서 보이는 사이드바 메뉴를 새로 만들었어요. 모바�
   PIN 입력창만 흰 배경으로 튀어나와서 이질감 있었음
 - 사용처: checkout · wallet · my 3곳 (원장·브랜드 없음 확인)
 - 다음 작업: checkout PayApp 결제시 PIN 검증 제거 예정
+
+[2026-09-24] checkout PayApp PIN 검증 제거
+- 파일: src/app/checkout/page.tsx 3곳 수정
+- 무엇을: 결제하기 버튼 → PIN 입력창 → PayApp 이동이었던 것을
+  결제하기 버튼 → PayApp 바로 이동으로 단순화
+- 왜: PayApp 카드결제엔 PIN 불필요, 충전금 사용시에만 PIN 유지
+- 제거: payGuardBtnRef 선언·클릭 / PaymentAuthGuard JSX
+- 유지: wallet·my 화면의 PaymentAuthGuard (충전시 PIN 유지)
