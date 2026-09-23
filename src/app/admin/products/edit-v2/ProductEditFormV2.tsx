@@ -103,6 +103,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [hormoneTiming, setHormoneTiming] = useState<string[]>([])
   const [stepTags, setStepTags] = useState<string[]>([])
   const [skinTypes, setSkinTypes] = useState<string[]>([])
+  const [skinTags, setSkinTags] = useState<string[]>([])
   const [seasonTags, setSeasonTags] = useState<string[]>([])
   const [ingredientTags, setIngredientTags] = useState('')
 
@@ -197,6 +198,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setHormoneTiming(data.hormone_timing || [])
       setStepTags(data.step_tags || [])
       setSkinTypes(data.skin_types || [])
+      setSkinTags(data.skin_tags || [])
       setSeasonTags(data.season_tags || [])
       setIngredientTags((data.ingredient_tags || []).join(', '))
       if (data.category_id) setProductCategoryLeafId(data.category_id)
@@ -309,7 +311,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     hormone_timing: hormoneTiming.length ? hormoneTiming : [],
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
-    skin_tags: aiSuggestion?.skin_tags?.length ? aiSuggestion.skin_tags : [],
+    skin_tags: skinTags.length ? skinTags : [],
     season_tags: seasonTags.length ? seasonTags : [],
     ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : [],
     options: JSON.stringify({
@@ -912,6 +914,18 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                       </div>
                     )}
                   </div>
+                  {(aiSuggestion.skin_tags || []).length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>피부 태그 (skin_tags)</div>
+                      {(aiSuggestion.skin_tags || []).map(t => (
+                        <span
+                          key={`ai-s-${t}`}
+                          style={S.tag(skinTags.includes(t))}
+                          onClick={() => setSkinTags(prev => prev.includes(t) ? prev : [...prev, t])}
+                        >{t}{skinTags.includes(t) ? ' ✓' : ' +'}</span>
+                      ))}
+                    </div>
+                  )}
                   {(aiSuggestion.caution_tags || []).length > 0 ? (
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
                       caution (참고): {(aiSuggestion.caution_tags || []).join(', ')}
