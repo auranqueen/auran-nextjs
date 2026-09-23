@@ -89,6 +89,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     concern_tags?: string[]
     hormone_timing?: string[]
     skin_tags?: string[]
+    body_part_tags?: string[]
     caution_tags?: string[]
     owner_analysis?: string
   } | null>(null)
@@ -816,6 +817,108 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                     try {
                       const base64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(',')[1]); r.readAsDataURL(f) })
                       const mediaType = f.type && f.type.startsWith('image/') ? f.type : 'image/jpeg'
+                      const catL2Name = allCategories.find(c => c.id === catL2)?.name || ''
+                      const catL1Name = allCategories.find(c => c.id === catL1)?.name || ''
+                      const productCategory = catL2Name || catL1Name || '스킨케어'
+                      const isBody = productCategory.includes('바디')
+                      const isScalp = productCategory.includes('두피') || productCategory.includes('탈모')
+                      const isHair = catL1Name.includes('헤어') && !isScalp
+                      const isInner = catL1Name.includes('이너')
+                      const isDevice = catL1Name.includes('기기')
+                      const isFace = !isBody && !isScalp && !isHair && !isInner && !isDevice
+                      const dynamicSystemPrompt = `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
+20년 경력 피부 전문가(맑원장) 기준으로 분석해.
+이 제품의 카테고리는 "${productCategory}"야. 반드시 이 카테고리 기준으로만 분석해.
+전성분 또는 제품명을 분석해서 아래 JSON 형식으로만 반환해. 설명 없이 JSON만.
+${isFace ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "hormone_timing": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+concern_tags 선택값 (해당하는 것만):
+여드름·트러블 | 모공 | 건조·수분부족 | 탄력저하 | 주름·노화 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클 | 붓기 | 장벽손상
+skin_tags 선택값 (해당하는 것만):
+건성 | 지성 | 복합성 | 민감성 | 탄력 | 미백 | 수분 | 트러블 | 모공 | 홍조 | 재생 | 장벽강화 | 항노화
+hormone_timing 선택값 (해당하는 것만):
+달빛기 | 황금기 | 만개기 | 물들기
+- 달빛기(생리기 1~5일): 레티놀/AHA/BHA/강한향료/알코올 → 제외. 진정·보습 위주 → 포함
+- 황금기(여포기 6~13일): 활성 성분(비타민C/나이아신아마이드/펩타이드) → 우선 포함
+- 만개기(배란기 14~16일): 미백·브라이트닝·가벼운 제형 → 우선 포함
+- 물들기(황체기 17~28일): 보습·장벽강화·진정 성분 → 포함
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 갱년기추천 | 남성추천 | 민감성주의 | 레티놀함유 | AHA함유 | BHA함유 | 알코올함유 | 향료함유` : ''}
+${isBody ? `{
+  "body_part_tags": [],
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+body_part_tags 선택값 (해당하는 것만):
+전신 | 팔·다리 | 복부 | 가슴·데콜테 | 엉덩이·허벅지 | 발·뒤꿈치 | 목
+concern_tags 선택값 (해당하는 것만):
+건조 | 튼살 | 셀룰라이트 | 미백·태닝 | 각질 | 붓기·순환 | 탄력저하
+skin_tags 선택값 (해당하는 것만):
+건성 | 지성 | 민감성 | 재생 | 장벽강화
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 민감성주의 | 향료함유 | 알코올함유` : ''}
+${isScalp ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+concern_tags 선택값 (해당하는 것만):
+탈모 | 두피가려움 | 지성두피 | 건성두피 | 민감두피 | 비듬 | 두피열감 | 모발손상 | 두피냄새
+skin_tags 선택값 (해당하는 것만):
+가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감두피주의 | 향료함유 | 알코올함유` : ''}
+${isHair ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+concern_tags 선택값 (해당하는 것만):
+손상·끊김 | 건조·푸석 | 볼륨부족 | 컬유지 | 염색손상 | 윤기부족 | 갈라짐
+skin_tags 선택값 (해당하는 것만):
+가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감두피주의 | 향료함유 | 실리콘프리` : ''}
+${isInner ? `{
+  "concern_tags": [],
+  "hormone_timing": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+concern_tags 선택값 (해당하는 것만):
+탄력저하 | 주름·노화 | 붓기 | 피로 | 장건강 | 면역 | 수면 | 갱년기
+hormone_timing 선택값 (해당하는 것만):
+달빛기 | 황금기 | 만개기 | 물들기
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 갱년기추천 | 당뇨주의 | 알레르기주의` : ''}
+${isDevice ? `{
+  "body_part_tags": [],
+  "concern_tags": [],
+  "caution_tags": [],
+  "owner_analysis": ""
+}
+body_part_tags 선택값 (해당하는 것만):
+얼굴 | 목 | 데콜테 | 바디 | 두피
+concern_tags 선택값 (해당하는 것만):
+탄력저하 | 주름·노화 | 붓기 | 리프팅 | 모공 | 혈액순환
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감성주의 | 심장질환주의` : ''}
+owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
+예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
+주의사항:
+- 카테고리에 맞는 태그만 사용할 것
+- 확실하지 않은 건 caution_tags에 넣지 말 것
+- owner_analysis 무조건 1문장 50자 이내
+- 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석`
                       const resp = await fetch('/api/analyze-ingredients', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -827,43 +930,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                               { type: 'text', text: '이 전성분표를 분석해줘' },
                             ],
                           }],
-                          systemPrompt: `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
-20년 경력 피부 전문가(맑원장) 기준으로 분석해.
-전성분 또는 제품명을 분석해서 아래 JSON 형식으로만 반환해. 설명 없이 JSON만.
-
-{
-  "concern_tags": [],
-  "skin_tags": [],
-  "hormone_timing": [],
-  "caution_tags": [],
-  "owner_analysis": ""
-}
-
-concern_tags 선택값 (해당하는 것만):
-여드름·트러블 | 모공 | 건조·수분부족 | 탄력 저하 | 주름 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클
-
-skin_tags 선택값 (해당하는 것만):
-건성 | 지성 | 복합성 | 민감성 | 탄력 | 미백 | 수분 | 트러블 | 모공 | 홍조 | 재생 | 장벽강화
-
-hormone_timing 선택값 (DB 저장값 그대로 사용):
-달빛기 | 황금기 | 만개기 | 물들기
-- 달빛기(생리기 1~5일): 레티놀/AHA/BHA/강한향료/알코올 포함 → 제외. 진정·보습 위주 → 포함
-- 황금기(여포기 6~13일): 활성 성분(비타민C/나이아신아마이드/펩타이드) → 우선 포함
-- 만개기(배란기 14~16일): 미백·브라이트닝·가벼운 제형 → 우선 포함
-- 물들기(황체기 17~28일): 보습·장벽강화·진정 성분 위주 → 포함
-
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 수유중주의 | 갱년기추천 | 남성추천 | 민감성주의 | 레티놀함유 | AHA함유 | BHA함유 | 알코올함유 | 향료함유
-
-owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
-예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
-예시: "달빛기엔 잠시 쉬어가고, 황금기부터 다시 써보세요"
-예시: "갱년기 피부에 콜라겐 펩타이드가 특히 도움돼요"
-
-주의사항:
-- 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석
-- 확실하지 않은 건 caution_tags에 넣지 말 것
-- owner_analysis 무조건 1문장 50자 이내`,
+                          systemPrompt: dynamicSystemPrompt,
                         }),
                       })
                       const data = await resp.json()
@@ -872,6 +939,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                         concern_tags: Array.isArray(data.concern_tags) ? data.concern_tags.map(String) : [],
                         hormone_timing: Array.isArray(data.hormone_timing) ? data.hormone_timing.map(String) : [],
                         skin_tags: Array.isArray(data.skin_tags) ? data.skin_tags.map(String) : [],
+                        body_part_tags: Array.isArray(data.body_part_tags) ? data.body_part_tags.map(String) : [],
                         caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
                         owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
                       })
@@ -939,6 +1007,18 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                       </div>
                     )}
                   </div>
+                  {(aiSuggestion.body_part_tags || []).length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>사용 부위 (body_part_tags)</div>
+                      {(aiSuggestion.body_part_tags || []).map(t => (
+                        <span
+                          key={`ai-b-${t}`}
+                          style={S.tag(bodyPartTags.includes(t))}
+                          onClick={() => setBodyPartTags(prev => prev.includes(t) ? prev : [...prev, t])}
+                        >{t}{bodyPartTags.includes(t) ? ' ✓' : ' +'}</span>
+                      ))}
+                    </div>
+                  )}
                   {(aiSuggestion.skin_tags || []).length > 0 && (
                     <div style={{ marginBottom: 6 }}>
                       <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>피부 태그 (skin_tags)</div>
