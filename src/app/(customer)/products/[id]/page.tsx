@@ -70,5 +70,32 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     }
   }
 
-  return <ProductDetailClient product={product} exclusiveLocked={exclusiveLocked} />
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: (product as any).meta_description || (product as any).description || '',
+    image: (product as any).storage_thumb_url || (product as any).thumb_img || '',
+    brand: {
+      '@type': 'Brand',
+      name: (product as any).brands?.name || 'AURAN',
+    },
+    offers: {
+      '@type': 'Offer',
+      price: (product as any).retail_price || 0,
+      priceCurrency: 'KRW',
+      availability: 'https://schema.org/InStock',
+      url: `https://auran.kr/products/${params.id}`,
+    },
+    keywords: (product as any).meta_keywords || '',
+  }
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ProductDetailClient product={product} exclusiveLocked={exclusiveLocked} />
+    </>
+  )
 }

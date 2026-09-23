@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-23
+- feat: 제품 상세페이지 JSON-LD Product schema 추가 (구글 리치결과)
 - fix: 이런 분께 추천 섹션 AI카드 밖 고정 이동 (네이버 크롤링 상시 노출)
 - feat: 제품 상세페이지 "이런 분께 추천" 텍스트 섹션 추가 (네이버 SEO 크롤링)
 - feat: AI 분석 시 KEY INGREDIENTS·짧은 설명 자동입력 (key_ingredients_description 필드 추가)
