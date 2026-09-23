@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
   "skin_tags": [],
   "hormone_timing": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 
 concern_tags 선택값 (해당하는 것만):
@@ -46,6 +47,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
 주의사항:
 - 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석
 - 확실하지 않은 건 caution_tags에 넣지 말 것
+- key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효능" 형식으로 각 한 줄씩 설명. 예시: "나이아신아마이드: 미백·모공 개선\n세라마이드: 피부 장벽 강화·수분 유지"
 - owner_analysis 무조건 1문장 50자 이내`
 
     const messages = clientMessages || [

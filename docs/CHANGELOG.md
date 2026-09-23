@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-23
+- feat: AI 분석 시 KEY INGREDIENTS·짧은 설명 자동입력 (key_ingredients_description 필드 추가)
 - feat: 검색 키워드 SEO 섹션으로 완전 통합 (keywords state 제거, tag/meta_keywords 동시 저장)
 - feat: AI 분석 완료 시 SEO 검색키워드 자동생성 추가
 - feat: AI 분석 완료 시 SEO meta_title/description 자동생성

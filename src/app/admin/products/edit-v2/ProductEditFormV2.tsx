@@ -94,6 +94,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     body_part_tags?: string[]
     caution_tags?: string[]
     owner_analysis?: string
+    key_ingredients_description?: string
   } | null>(null)
   const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
 
@@ -841,7 +842,8 @@ ${isFace ? `{
   "skin_tags": [],
   "hormone_timing": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 concern_tags 선택값 (해당하는 것만):
 여드름·트러블 | 모공 | 건조·수분부족 | 탄력저하 | 주름·노화 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클 | 붓기 | 장벽손상
@@ -860,7 +862,8 @@ ${isBody ? `{
   "concern_tags": [],
   "skin_tags": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 body_part_tags 선택값 (해당하는 것만):
 전신 | 팔·다리 | 복부 | 가슴·데콜테 | 엉덩이·허벅지 | 발·뒤꿈치 | 목
@@ -874,7 +877,8 @@ ${isScalp ? `{
   "concern_tags": [],
   "skin_tags": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 concern_tags 선택값 (해당하는 것만):
 탈모 | 두피가려움 | 지성두피 | 건성두피 | 민감두피 | 비듬 | 두피열감 | 모발손상 | 두피냄새
@@ -886,7 +890,8 @@ ${isHair ? `{
   "concern_tags": [],
   "skin_tags": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 concern_tags 선택값 (해당하는 것만):
 손상·끊김 | 건조·푸석 | 볼륨부족 | 컬유지 | 염색손상 | 윤기부족 | 갈라짐
@@ -898,7 +903,8 @@ ${isInner ? `{
   "concern_tags": [],
   "hormone_timing": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 concern_tags 선택값 (해당하는 것만):
 탄력저하 | 주름·노화 | 붓기 | 피로 | 장건강 | 면역 | 수면 | 갱년기
@@ -910,7 +916,8 @@ ${isDevice ? `{
   "body_part_tags": [],
   "concern_tags": [],
   "caution_tags": [],
-  "owner_analysis": ""
+  "owner_analysis": "",
+  "key_ingredients_description": ""
 }
 body_part_tags 선택값 (해당하는 것만):
 얼굴 | 목 | 데콜테 | 바디 | 두피
@@ -919,6 +926,7 @@ concern_tags 선택값 (해당하는 것만):
 caution_tags 선택값 (해당하는 것만):
 임산부주의 | 민감성주의 | 심장질환주의` : ''}
 owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
+key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효능" 형식으로 각 한 줄씩 설명
 예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
 주의사항:
 - 카테고리에 맞는 태그만 사용할 것
@@ -948,6 +956,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                         body_part_tags: Array.isArray(data.body_part_tags) ? data.body_part_tags.map(String) : [],
                         caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
                         owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
+                        key_ingredients_description: typeof data.key_ingredients_description === 'string' ? data.key_ingredients_description : '',
                       })
                       // SEO 자동생성 (meta_title/description이 비어있을 때만)
                       if (!metaTitle && !metaDescription) {
@@ -978,6 +987,14 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                         ].filter(Boolean)
                         const autoKeywords = Array.from(new Set(kwParts)).join(', ').slice(0, 200)
                         if (autoKeywords) setMetaKeywords(autoKeywords)
+                      }
+                      // 짧은 설명 자동입력
+                      if (!shortDesc.trim() && data.owner_analysis) {
+                        setShortDesc(data.owner_analysis)
+                      }
+                      // KEY INGREDIENTS 자동입력
+                      if (!keyIngredients.trim() && data.key_ingredients_description) {
+                        setKeyIngredients(data.key_ingredients_description)
                       }
                     } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
                   })()
