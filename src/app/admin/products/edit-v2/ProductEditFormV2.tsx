@@ -23,6 +23,9 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
   const [keywords, setKeywords] = useState('')
+  const [metaTitle, setMetaTitle] = useState('')
+  const [metaDescription, setMetaDescription] = useState('')
+  const [metaKeywords, setMetaKeywords] = useState('')
   const [brandId, setBrandId] = useState('')
   const [brands, setBrands] = useState<any[]>([])
   const [showNewBrand, setShowNewBrand] = useState(false)
@@ -166,6 +169,9 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setName(data.name || '')
       setShortDesc(data.description || '')
       setKeywords(data.tag || '')
+      setMetaTitle(data.meta_title || '')
+      setMetaDescription(data.meta_description || '')
+      setMetaKeywords(data.meta_keywords || '')
       setBrandId(data.brand_id || '')
       setOrigin(data.category || '')
       setCategoryText(data.category || '')
@@ -275,6 +281,9 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     name: name.trim().slice(0, 100) || '신규 상품',
     description: shortDesc.trim() || null,
     tag: keywords.trim() || null,
+    meta_title: metaTitle.trim() || null,
+    meta_description: metaDescription.trim() || null,
+    meta_keywords: metaKeywords.trim() || null,
     category_id: catL5 || catL4 || catL3 || catL2 || catL1 || null,
     category: categoryText.trim() || null,
     ingredient: manufacturer.trim() || null,
@@ -1046,6 +1055,53 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
             </div>
             <div style={S.f}><span style={S.lbl}>CLINICAL RESULT</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={clinicalResult} onChange={e => setClinicalResult(e.target.value)} placeholder="보습력 98% 향상..." /></div>
             <div><span style={S.lbl}>CERTIFICATIONS</span><input style={S.inp} value={certifications} onChange={e => setCertifications(e.target.value)} placeholder="ISO 9001, 피부과 테스트 완료" /></div>
+          </div>
+
+          <div style={S.sec}>
+            <div style={S.secTitle}>검색 노출 (SEO)</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
+              네이버·구글 검색결과에 표시됩니다. 비워두면 제품명이 자동으로 쓰입니다.
+            </div>
+            <div style={S.f}>
+              <span style={S.lbl}>검색 제목</span>
+              <input
+                style={S.inp}
+                value={metaTitle}
+                onChange={e => setMetaTitle(e.target.value)}
+                placeholder="예: 시바산 메쓰크림 | 재생·진정 | 황금기 추천"
+                maxLength={70}
+              />
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{metaTitle.length}/70자</div>
+            </div>
+            <div style={S.f}>
+              <span style={S.lbl}>검색 설명</span>
+              <textarea
+                style={{ ...S.inp, height: 60, resize: 'vertical' as const }}
+                value={metaDescription}
+                onChange={e => setMetaDescription(e.target.value)}
+                placeholder="예: 손상된 피부 재생·진정 크림. 민감성·재생 고민. 황금기·만개기 추천. 시바산 공식."
+                maxLength={160}
+              />
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{metaDescription.length}/160자</div>
+            </div>
+            <div style={S.f}>
+              <span style={S.lbl}>검색 키워드</span>
+              <input
+                style={S.inp}
+                value={metaKeywords}
+                onChange={e => setMetaKeywords(e.target.value)}
+                placeholder="재생크림, 진정크림, 민감성크림, 황금기크림, 시바산"
+              />
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>콤마로 구분</div>
+            </div>
+            {(metaTitle || metaDescription) && (
+              <div style={{ marginTop: 12, padding: 10, borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>네이버 검색결과 미리보기</div>
+                <div style={{ fontSize: 13, color: '#4e9af1', marginBottom: 2 }}>{metaTitle || name || '제목 없음'}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>{metaDescription || '설명 없음'}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>auran.kr</div>
+              </div>
+            )}
           </div>
 
           <div style={S.sec}>
