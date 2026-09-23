@@ -970,6 +970,18 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                         if (autoTitle) setMetaTitle(autoTitle)
                         if (autoDesc) setMetaDescription(autoDesc)
                       }
+                      // SEO 검색키워드 자동생성 (비어있을 때만 — title/desc와 독립)
+                      if (!metaKeywords) {
+                        const kwParts = [
+                          name.trim(),
+                          ...(Array.isArray(data.concern_tags) ? data.concern_tags.slice(0, 3) : []),
+                          ...(Array.isArray(data.skin_tags) ? data.skin_tags.slice(0, 2) : []),
+                          ...(Array.isArray(data.hormone_timing) ? data.hormone_timing.slice(0, 2) : []),
+                          productCategory !== '스킨케어' ? productCategory : '',
+                        ].filter(Boolean)
+                        const autoKeywords = Array.from(new Set(kwParts)).join(', ').slice(0, 200)
+                        if (autoKeywords) setMetaKeywords(autoKeywords)
+                      }
                     } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
                   })()
                 }} />
