@@ -193,7 +193,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
           setPtSelected((pts || []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
         })
       }
-      setSkinConcerns(data.skin_concerns || [])
+      setSkinConcerns(data.concern_tags || data.skin_concerns || [])
       setHormoneStages(data.hormone_tags || [])
       setHormoneTiming(data.hormone_timing || [])
       setStepTags(data.step_tags || [])
