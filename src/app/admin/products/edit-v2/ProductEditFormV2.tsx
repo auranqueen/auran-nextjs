@@ -453,6 +453,15 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const categoryBreadcrumb = useMemo(() => {
     return [catL1, catL2, catL3, catL4, catL5].filter(Boolean).map(id => allCategories.find(c => c.id === id)?.name || '').filter(Boolean).join(' > ')
   }, [allCategories, catL1, catL2, catL3, catL4, catL5])
+  const catL1Name = useMemo(() => allCategories.find(c => c.id === catL1)?.name || '', [allCategories, catL1])
+  const catL2Name = useMemo(() => allCategories.find(c => c.id === catL2)?.name || '', [allCategories, catL2])
+  const productCategory = catL2Name || catL1Name || '스킨케어'
+  const isBody = productCategory.includes('바디')
+  const isScalp = productCategory.includes('두피') || productCategory.includes('탈모')
+  const isHair = catL1Name.includes('헤어') && !isScalp
+  const isInner = catL1Name.includes('이너')
+  const isDevice = catL1Name.includes('기기')
+  const isFace = !isBody && !isScalp && !isHair && !isInner && !isDevice
 
   const ActionBar = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -817,15 +826,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                     try {
                       const base64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(',')[1]); r.readAsDataURL(f) })
                       const mediaType = f.type && f.type.startsWith('image/') ? f.type : 'image/jpeg'
-                      const catL2Name = allCategories.find(c => c.id === catL2)?.name || ''
-                      const catL1Name = allCategories.find(c => c.id === catL1)?.name || ''
-                      const productCategory = catL2Name || catL1Name || '스킨케어'
-                      const isBody = productCategory.includes('바디')
-                      const isScalp = productCategory.includes('두피') || productCategory.includes('탈모')
-                      const isHair = catL1Name.includes('헤어') && !isScalp
-                      const isInner = catL1Name.includes('이너')
-                      const isDevice = catL1Name.includes('기기')
-                      const isFace = !isBody && !isScalp && !isHair && !isInner && !isDevice
                       const dynamicSystemPrompt = `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
 20년 경력 피부 전문가(맑원장) 기준으로 분석해.
 이 제품의 카테고리는 "${productCategory}"야. 반드시 이 카테고리 기준으로만 분석해.
@@ -1074,12 +1074,29 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
 
           <div style={S.sec}>
             <div style={S.secTitle}>태그 / 호르몬 단계</div>
-            {[
-              { label: '피부 고민', items: ['여드름·트러블', '모공', '건조·수분부족', '탄력 저하', '주름', '피지·블랙헤드', '색소침착·기미잡티', '민감·홍조', '눈가·다크서클'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+            {(isFace ? [
+              { label: '피부 고민', items: ['여드름·트러블', '모공', '건조·수분부족', '탄력 저하', '주름·노화', '피지·블랙헤드', '색소침착·기미잡티', '민감·홍조', '눈가·다크서클', '붓기', '장벽손상'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
               { label: '호르몬 단계', items: ['전단계', '달빛기', '황금기', '만개기', '물들기'], arr: hormoneStages, set: setHormoneStages, style: S.goldTag },
               { label: '피부 타입', items: ['건성', '지성', '복합성', '민감성', '중성', '여드름', '홍조', '특정'], arr: skinTypes, set: setSkinTypes, style: S.tag },
               { label: '계절', items: ['전계절', '봄', '여름', '가을', '겨울', '시술후'], arr: seasonTags, set: setSeasonTags, style: S.tag },
-            ].map(({ label, items, arr, set, style }) => (
+            ] : isBody ? [
+              { label: '바디 고민', items: ['건조', '튼살', '셀룰라이트', '미백·태닝', '각질', '붓기·순환', '탄력저하'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+              { label: '피부 타입', items: ['건성', '지성', '민감성', '재생', '장벽강화'], arr: skinTypes, set: setSkinTypes, style: S.tag },
+              { label: '계절', items: ['전계절', '봄', '여름', '가을', '겨울'], arr: seasonTags, set: setSeasonTags, style: S.tag },
+            ] : isScalp ? [
+              { label: '두피 고민', items: ['탈모', '두피가려움', '지성두피', '건성두피', '민감두피', '비듬', '두피열감', '모발손상', '두피냄새'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+              { label: '모발 타입', items: ['가는모발', '굵은모발', '곱슬', '직모', '손상모', '탈색·염색모'], arr: skinTypes, set: setSkinTypes, style: S.tag },
+            ] : isHair ? [
+              { label: '헤어 고민', items: ['손상·끊김', '건조·푸석', '볼륨부족', '컬유지', '염색손상', '윤기부족', '갈라짐'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+              { label: '모발 타입', items: ['가는모발', '굵은모발', '곱슬', '직모', '손상모', '탈색·염색모'], arr: skinTypes, set: setSkinTypes, style: S.tag },
+            ] : isInner ? [
+              { label: '건강 고민', items: ['탄력저하', '주름·노화', '붓기', '피로', '장건강', '면역', '수면', '갱년기'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+              { label: '호르몬 단계', items: ['전단계', '달빛기', '황금기', '만개기', '물들기'], arr: hormoneStages, set: setHormoneStages, style: S.goldTag },
+            ] : isDevice ? [
+              { label: '기기 고민', items: ['탄력저하', '주름·노화', '붓기', '리프팅', '모공', '혈액순환'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+            ] : [
+              { label: '피부 고민', items: ['여드름·트러블', '모공', '건조·수분부족', '탄력 저하', '주름·노화', '피지·블랙헤드', '색소침착·기미잡티', '민감·홍조', '눈가·다크서클'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
+            ]).map(({ label, items, arr, set, style }) => (
               <div key={label} style={S.f}>
                 <span style={S.lbl}>{label}</span>
                 <div>{items.map(t => <span key={t} style={style(arr.includes(t))} onClick={() => toggleArr(arr, t, set)}>{t}</span>)}</div>
@@ -1128,7 +1145,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
             </div>
           </div>
 
-          {isSuperAdmin && (
+          {(isSuperAdmin || isBody || isScalp || isDevice) && (
             <div style={{ ...S.sec, borderColor: 'rgba(201,169,110,0.15)' }}>
               <div style={{ ...S.secTitle, color: 'rgba(201,169,110,0.6)' }}>슈퍼어드민 전용</div>
               <div style={S.f}><span style={S.lbl}>의료 / 피부질환 태그</span><input style={S.inp} value={medicalTags} onChange={e => setMedicalTags(e.target.value)} placeholder="아토피, 여드름" /></div>
