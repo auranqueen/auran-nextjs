@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-23
+- feat: AI 분석 완료 시 SEO meta_title/description 자동생성
 - feat: 제품 상세페이지 generateMetadata SEO 연동 (meta_title/description/keywords DB값 반영)
 - feat: 제품 등록폼 SEO 섹션 추가 (meta_title/description/keywords, 네이버 미리보기)
 - fix: 의료 태그 라벨 → 시술 후 케어로 변경

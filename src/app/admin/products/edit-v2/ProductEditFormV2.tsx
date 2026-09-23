@@ -952,6 +952,24 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                         caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
                         owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
                       })
+                      // SEO 자동생성 (meta_title/description이 비어있을 때만)
+                      if (!metaTitle && !metaDescription) {
+                        const concerns = Array.isArray(data.concern_tags) ? data.concern_tags.slice(0, 3).join('·') : ''
+                        const hormone = Array.isArray(data.hormone_timing) ? data.hormone_timing.slice(0, 2).join('·') : ''
+                        const skinTag = Array.isArray(data.skin_tags) ? data.skin_tags.slice(0, 2).join('·') : ''
+                        const autoTitle = [
+                          name.trim(),
+                          concerns || skinTag ? `${concerns || skinTag} 고민` : '',
+                          hormone ? `${hormone} 추천` : '',
+                        ].filter(Boolean).join(' | ').slice(0, 70)
+                        const autoDesc = [
+                          concerns ? `${concerns} 고민에 추천하는 제품입니다.` : '',
+                          hormone ? `${hormone}에 효과적입니다.` : '',
+                          data.owner_analysis || '',
+                        ].filter(Boolean).join(' ').slice(0, 160)
+                        if (autoTitle) setMetaTitle(autoTitle)
+                        if (autoDesc) setMetaDescription(autoDesc)
+                      }
                     } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
                   })()
                 }} />
