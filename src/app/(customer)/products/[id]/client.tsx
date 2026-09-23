@@ -72,6 +72,7 @@ interface Product {
   owner_comment?: string
   ai_tag_status?: string | null
   concern_tags?: string[] | null
+  skin_tags?: string[] | null
 }
 
 export default function ProductDetailClient({
@@ -977,6 +978,20 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   } catch {
     hormoneMap = {}
   }
+  const hormoneTimingLabels: string[] = (() => {
+    const raw = product.hormone_timing as unknown
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw.map((x) => String(x).trim()).filter(Boolean)
+    const s = String(raw).trim()
+    if (!s) return []
+    try {
+      const j = JSON.parse(s)
+      if (Array.isArray(j)) return j.map((x: unknown) => String(x).trim()).filter(Boolean)
+      return []
+    } catch {
+      return []
+    }
+  })()
   const hormonePhaseKeys = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
   const hormoneLabels = ['달빛기🌙', '황금기🌱', '만개기✨', '물들기🌸']
   const curHormoneKey = hormonePhaseKeys[hormonePhaseIdx] || 'menstrual'
@@ -1654,6 +1669,26 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                           {tag}
                         </span>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 이런 분께 추천 — 네이버 SEO 텍스트 노출 */}
+                {((product.concern_tags && product.concern_tags.length > 0) ||
+                  (product.skin_tags && product.skin_tags.length > 0) ||
+                  hormoneTimingLabels.length > 0) && (
+                  <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(123,94,167,0.05)', marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: '#9b7db5', fontWeight: 600, marginBottom: 6 }}>이런 분께 추천해요</div>
+                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
+                      {product.concern_tags && product.concern_tags.length > 0 && (
+                        <div>✓ {product.concern_tags.join(', ')} 고민</div>
+                      )}
+                      {product.skin_tags && product.skin_tags.length > 0 && (
+                        <div>✓ {product.skin_tags.join(', ')} 피부</div>
+                      )}
+                      {hormoneTimingLabels.length > 0 && (
+                        <div>✓ {hormoneTimingLabels.join('·')} 추천</div>
+                      )}
                     </div>
                   </div>
                 )}
