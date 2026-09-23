@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-23
+- feat: 제품 상세페이지 generateMetadata SEO 연동 (meta_title/description/keywords DB값 반영)
 - feat: 제품 등록폼 SEO 섹션 추가 (meta_title/description/keywords, 네이버 미리보기)
 - fix: 의료 태그 라벨 → 시술 후 케어로 변경
 - feat: 카테고리 대분류 전환 시 태그 초기화 경고 팝업 추가, 섹션 제목 조건부 수정

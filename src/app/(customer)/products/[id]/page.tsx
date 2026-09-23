@@ -7,18 +7,21 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const supabase = createClient()
   const { data: product } = await supabase
     .from('products')
-    .select('name, storage_thumb_url, thumb_img')
+    .select('name, storage_thumb_url, thumb_img, meta_title, meta_description, meta_keywords')
     .eq('id', params.id)
     .maybeSingle()
 
-  const description = '내 피부 주기를 아는 유일한 플랫폼 💜 맑원장이 직접 고른 제품이에요.'
+  const defaultDescription = '내 피부 주기를 아는 유일한 플랫폼 💜 맑원장이 직접 고른 제품이에요.'
+  const description = product?.meta_description || defaultDescription
+  const title = product?.meta_title || `${product?.name || '제품 상세'} · AURAN`
   const imageUrl = product?.storage_thumb_url || product?.thumb_img || ''
 
   return {
-    title: `${product?.name || '제품 상세'} · AURAN`,
+    title,
     description,
+    keywords: product?.meta_keywords || undefined,
     openGraph: {
-      title: product?.name,
+      title: product?.meta_title || product?.name,
       description,
       images: imageUrl ? [{ url: imageUrl }] : [{ url: '/og-image.png' }],
       type: 'website',
@@ -27,7 +30,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     },
     twitter: {
       card: 'summary_large_image',
-      title: product?.name || '제품 상세',
+      title: product?.meta_title || product?.name || '제품 상세',
       description,
       images: imageUrl ? [imageUrl] : ['/og-image.png'],
     },
