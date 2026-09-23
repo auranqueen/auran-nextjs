@@ -88,6 +88,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [aiSuggestion, setAiSuggestion] = useState<{
     concern_tags?: string[]
     hormone_timing?: string[]
+    skin_tags?: string[]
     caution_tags?: string[]
     owner_analysis?: string
   } | null>(null)
@@ -308,6 +309,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     hormone_timing: hormoneTiming.length ? hormoneTiming : [],
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
+    skin_tags: aiSuggestion?.skin_tags?.length ? aiSuggestion.skin_tags : [],
     season_tags: seasonTags.length ? seasonTags : [],
     ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : [],
     options: JSON.stringify({
@@ -798,7 +800,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.f}>
               <span style={S.lbl}>전성분 사진 AI 분석</span>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: ingredientAnalyzeLoading ? '#c4a7e7' : 'rgba(255,255,255,0.25)' }} onClick={() => ingredientPhotoRef.current?.click()}>
-                {ingredientAnalyzeLoading ? 'AI 분석 중...' : '+ 사진 업로드 → AI 자동 분석'}
+                {ingredientAnalyzeLoading
+                  ? 'AI 분석 중...'
+                  : aiSuggestion
+                    ? '✓ 분석 완료 — 아래 제안 반영하기'
+                    : '+ 사진 업로드 → AI 자동 분석'}
                 <input ref={ingredientPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
                   void (async () => {
                     const f = e.target.files?.[0]
@@ -863,6 +869,7 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                       setAiSuggestion({
                         concern_tags: Array.isArray(data.concern_tags) ? data.concern_tags.map(String) : [],
                         hormone_timing: Array.isArray(data.hormone_timing) ? data.hormone_timing.map(String) : [],
+                        skin_tags: Array.isArray(data.skin_tags) ? data.skin_tags.map(String) : [],
                         caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
                         owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
                       })
