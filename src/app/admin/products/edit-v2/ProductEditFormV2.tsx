@@ -804,8 +804,8 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: ingredientAnalyzeLoading ? '#c4a7e7' : 'rgba(255,255,255,0.25)' }} onClick={() => ingredientPhotoRef.current?.click()}>
                 {ingredientAnalyzeLoading
                   ? 'AI 분석 중...'
-                  : aiSuggestion
-                    ? '✓ 분석 완료 — 아래 제안 반영하기'
+                  : (aiSuggestion || skinConcerns.length > 0 || skinTags.length > 0 || hormoneTiming.length > 0)
+                    ? '✓ 분석 완료 — 재분석하려면 사진 업로드'
                     : '+ 사진 업로드 → AI 자동 분석'}
                 <input ref={ingredientPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
                   void (async () => {
@@ -879,6 +879,31 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
                   })()
                 }} />
               </div>
+              {(skinConcerns.length > 0 || skinTags.length > 0 || hormoneTiming.length > 0) && !aiSuggestion && (
+                <div style={{ border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: 12, marginTop: 8, background: 'rgba(124,58,237,0.07)' }}>
+                  <div style={{ fontSize: 12, color: '#a78bfa', marginBottom: 8, fontWeight: 600 }}>
+                    ✓ AI 분석 저장됨
+                  </div>
+                  {skinConcerns.length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>피부 고민 (concern_tags)</div>
+                      <div>{skinConcerns.map(t => <span key={t} style={S.tag(true)}>{t} ✓</span>)}</div>
+                    </div>
+                  )}
+                  {hormoneTiming.length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>호르몬 단계 (hormone_timing)</div>
+                      <div>{hormoneTiming.map(t => <span key={t} style={S.goldTag(true)}>{t} ✓</span>)}</div>
+                    </div>
+                  )}
+                  {skinTags.length > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>피부 태그 (skin_tags)</div>
+                      <div>{skinTags.map(t => <span key={t} style={S.tag(true)}>{t} ✓</span>)}</div>
+                    </div>
+                  )}
+                </div>
+              )}
               {aiSuggestion ? (
                 <div style={{ marginTop: 10, padding: 12, borderRadius: 8, background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.25)' }}>
                   <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>AI 제안 — 칩을 눌러 반영 (자동 저장 안 됨)</div>
