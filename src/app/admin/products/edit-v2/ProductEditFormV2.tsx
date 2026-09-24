@@ -1134,6 +1134,11 @@ key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효�
                 style={S.inp}
                 value={metaKeywords}
                 onChange={e => setMetaKeywords(e.target.value)}
+                onPaste={e => {
+                  e.preventDefault()
+                  const text = e.clipboardData.getData('text/plain')
+                  setMetaKeywords(text)
+                }}
                 placeholder="재생크림, 진정크림, 민감성크림, 황금기크림, 시바산"
               />
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>콤마로 구분</div>
