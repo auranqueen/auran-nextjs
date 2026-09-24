@@ -1,6 +1,8 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-24
+제품 공유 썸네일 description 없앰. 403개 제품 전부 폴백 뜨던 거라 auran.kr로 최소화.
+
 브라우저 탭 title도 og:title이랑 같은 문구로 맞췄다. layout.tsx 루트 메타 정리 완전 완료.
 
 브라우저 탭/SEO용 description도 "맑원장" 빼고 og랑 같은 문구로 맞췄다.

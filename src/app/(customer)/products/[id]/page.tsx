@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .eq('id', params.id)
     .maybeSingle()
 
-  const defaultDescription = '내 피부 주기를 아는 유일한 플랫폼 💜 맑원장이 직접 고른 제품이에요.'
+  const defaultDescription = 'auran.kr'
   const description = product?.meta_description || defaultDescription
   const title = product?.meta_title || `${product?.name || '제품 상세'} · AURAN`
   const imageUrl = product?.storage_thumb_url || product?.thumb_img || ''
