@@ -470,6 +470,106 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const isInner = catL1Name.includes('이너')
   const isDevice = catL1Name.includes('기기')
   const isFace = !isBody && !isScalp && !isHair && !isInner && !isDevice
+  const dynamicSystemPrompt = `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
+20년 경력 피부 전문가(맑원장) 기준으로 분석해.
+이 제품의 카테고리는 "${productCategory}"야. 반드시 이 카테고리 기준으로만 분석해.
+전성분 또는 제품명을 분석해서 아래 JSON 형식으로만 반환해. 설명 없이 JSON만.
+${isFace ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "hormone_timing": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+concern_tags 선택값 (해당하는 것만):
+여드름·트러블 | 모공 | 건조·수분부족 | 탄력저하 | 주름·노화 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클 | 붓기 | 장벽손상
+skin_tags 선택값 (해당하는 것만):
+건성 | 지성 | 복합성 | 민감성 | 탄력 | 미백 | 수분 | 트러블 | 모공 | 홍조 | 재생 | 장벽강화 | 항노화
+hormone_timing 선택값 (해당하는 것만):
+달빛기 | 황금기 | 만개기 | 물들기
+- 달빛기(생리기 1~5일): 레티놀/AHA/BHA/강한향료/알코올 → 제외. 진정·보습 위주 → 포함
+- 황금기(여포기 6~13일): 활성 성분(비타민C/나이아신아마이드/펩타이드) → 우선 포함
+- 만개기(배란기 14~16일): 미백·브라이트닝·가벼운 제형 → 우선 포함
+- 물들기(황체기 17~28일): 보습·장벽강화·진정 성분 → 포함
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 갱년기추천 | 남성추천 | 민감성주의 | 레티놀함유 | AHA함유 | BHA함유 | 알코올함유 | 향료함유` : ''}
+${isBody ? `{
+  "body_part_tags": [],
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+body_part_tags 선택값 (해당하는 것만):
+전신 | 팔·다리 | 복부 | 가슴·데콜테 | 엉덩이·허벅지 | 발·뒤꿈치 | 목
+concern_tags 선택값 (해당하는 것만):
+건조 | 튼살 | 셀룰라이트 | 미백·태닝 | 각질 | 붓기·순환 | 탄력저하
+skin_tags 선택값 (해당하는 것만):
+건성 | 지성 | 민감성 | 재생 | 장벽강화
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 민감성주의 | 향료함유 | 알코올함유` : ''}
+${isScalp ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+concern_tags 선택값 (해당하는 것만):
+탈모 | 두피가려움 | 지성두피 | 건성두피 | 민감두피 | 비듬 | 두피열감 | 모발손상 | 두피냄새
+skin_tags 선택값 (해당하는 것만):
+가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감두피주의 | 향료함유 | 알코올함유` : ''}
+${isHair ? `{
+  "concern_tags": [],
+  "skin_tags": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+concern_tags 선택값 (해당하는 것만):
+손상·끊김 | 건조·푸석 | 볼륨부족 | 컬유지 | 염색손상 | 윤기부족 | 갈라짐
+skin_tags 선택값 (해당하는 것만):
+가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감두피주의 | 향료함유 | 실리콘프리` : ''}
+${isInner ? `{
+  "concern_tags": [],
+  "hormone_timing": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+concern_tags 선택값 (해당하는 것만):
+탄력저하 | 주름·노화 | 붓기 | 피로 | 장건강 | 면역 | 수면 | 갱년기
+hormone_timing 선택값 (해당하는 것만):
+달빛기 | 황금기 | 만개기 | 물들기
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 수유중주의 | 갱년기추천 | 당뇨주의 | 알레르기주의` : ''}
+${isDevice ? `{
+  "body_part_tags": [],
+  "concern_tags": [],
+  "caution_tags": [],
+  "owner_analysis": "",
+  "key_ingredients_description": ""
+}
+body_part_tags 선택값 (해당하는 것만):
+얼굴 | 목 | 데콜테 | 바디 | 두피
+concern_tags 선택값 (해당하는 것만):
+탄력저하 | 주름·노화 | 붓기 | 리프팅 | 모공 | 혈액순환
+caution_tags 선택값 (해당하는 것만):
+임산부주의 | 민감성주의 | 심장질환주의` : ''}
+owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
+key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효능" 형식으로 각 한 줄씩 설명
+예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
+주의사항:
+- 카테고리에 맞는 태그만 사용할 것
+- 확실하지 않은 건 caution_tags에 넣지 말 것
+- owner_analysis 무조건 1문장 50자 이내
+- 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석`
 
   const ActionBar = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -816,6 +916,63 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.secTitle}>성분 정보</div>
             <div style={S.f}><span style={S.lbl}>KEY INGREDIENTS</span><textarea style={{ ...S.inp, height: 80, resize: 'vertical' as const }} value={keyIngredients} onChange={e => setKeyIngredients(e.target.value)} placeholder="주요 성분 설명" /></div>
             <div style={S.f}><span style={S.lbl}>전성분 텍스트</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={ingredientText} onChange={e => setIngredientText(e.target.value)} placeholder="Water, Glycerin..." /></div>
+            {ingredientText.trim() && (
+              <div style={S.f}>
+                <span style={S.lbl}></span>
+                <button
+                  type="button"
+                  disabled={ingredientAnalyzeLoading}
+                  onClick={async () => {
+                    if (!ingredientText.trim()) return
+                    setIngredientAnalyzeLoading(true)
+                    setAiSuggestion(null)
+                    try {
+                      const resp = await fetch('/api/analyze-ingredients', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          messages: [{
+                            role: 'user',
+                            content: [{ type: 'text', text: `전성분: ${ingredientText}` }],
+                          }],
+                          systemPrompt: dynamicSystemPrompt,
+                        }),
+                      })
+                      const data = await resp.json()
+                      if (!resp.ok) throw new Error(data.error || '분석 실패')
+                      setAiSuggestion({
+                        concern_tags: Array.isArray(data.concern_tags) ? data.concern_tags.map(String) : [],
+                        hormone_timing: Array.isArray(data.hormone_timing) ? data.hormone_timing.map(String) : [],
+                        skin_tags: Array.isArray(data.skin_tags) ? data.skin_tags.map(String) : [],
+                        body_part_tags: Array.isArray(data.body_part_tags) ? data.body_part_tags.map(String) : [],
+                        caution_tags: Array.isArray(data.caution_tags) ? data.caution_tags.map(String) : [],
+                        owner_analysis: typeof data.owner_analysis === 'string' ? data.owner_analysis : '',
+                        key_ingredients_description: typeof data.key_ingredients_description === 'string' ? data.key_ingredients_description : '',
+                      })
+                      if (!metaTitle && !metaDescription) {
+                        const concerns = Array.isArray(data.concern_tags) ? data.concern_tags.slice(0, 3).join('·') : ''
+                        const hormone = Array.isArray(data.hormone_timing) ? data.hormone_timing.slice(0, 2).join('·') : ''
+                        const skinTag = Array.isArray(data.skin_tags) ? data.skin_tags.slice(0, 2).join('·') : ''
+                        const autoTitle = [name.trim(), concerns || skinTag ? `${concerns || skinTag} 고민` : '', hormone ? `${hormone} 추천` : ''].filter(Boolean).join(' | ').slice(0, 70)
+                        const autoDesc = [concerns ? `${concerns} 고민에 추천하는 제품입니다.` : '', hormone ? `${hormone}에 효과적입니다.` : '', data.owner_analysis || ''].filter(Boolean).join(' ').slice(0, 160)
+                        if (autoTitle) setMetaTitle(autoTitle)
+                        if (autoDesc) setMetaDescription(autoDesc)
+                      }
+                      if (!metaKeywords) {
+                        const kwParts = [name.trim(), ...(Array.isArray(data.concern_tags) ? data.concern_tags.slice(0, 3) : []), ...(Array.isArray(data.skin_tags) ? data.skin_tags.slice(0, 2) : []), ...(Array.isArray(data.hormone_timing) ? data.hormone_timing.slice(0, 2) : []), productCategory !== '스킨케어' ? productCategory : ''].filter(Boolean)
+                        const autoKeywords = Array.from(new Set(kwParts)).join(', ').slice(0, 200)
+                        if (autoKeywords) setMetaKeywords(autoKeywords)
+                      }
+                      if (!shortDesc.trim() && data.owner_analysis) setShortDesc(data.owner_analysis)
+                      if (!keyIngredients.trim() && data.key_ingredients_description) setKeyIngredients(data.key_ingredients_description)
+                    } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
+                  }}
+                  style={{ fontSize: 12, padding: '6px 14px', borderRadius: 6, background: 'rgba(123,94,167,0.3)', color: '#c4a7e7', border: '0.5px solid rgba(123,94,167,0.5)', cursor: 'pointer' }}
+                >
+                  {ingredientAnalyzeLoading ? 'AI 분석 중...' : '📝 텍스트로 AI 분석'}
+                </button>
+              </div>
+            )}
             <div style={S.f}>
               <span style={S.lbl}>전성분 사진 AI 분석</span>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: ingredientAnalyzeLoading ? '#c4a7e7' : 'rgba(255,255,255,0.25)' }} onClick={() => ingredientPhotoRef.current?.click()}>
@@ -833,106 +990,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                     try {
                       const base64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(',')[1]); r.readAsDataURL(f) })
                       const mediaType = f.type && f.type.startsWith('image/') ? f.type : 'image/jpeg'
-                      const dynamicSystemPrompt = `너는 AURAN 뷰티 플랫폼의 화장품 전성분 분석 전문가야.
-20년 경력 피부 전문가(맑원장) 기준으로 분석해.
-이 제품의 카테고리는 "${productCategory}"야. 반드시 이 카테고리 기준으로만 분석해.
-전성분 또는 제품명을 분석해서 아래 JSON 형식으로만 반환해. 설명 없이 JSON만.
-${isFace ? `{
-  "concern_tags": [],
-  "skin_tags": [],
-  "hormone_timing": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-concern_tags 선택값 (해당하는 것만):
-여드름·트러블 | 모공 | 건조·수분부족 | 탄력저하 | 주름·노화 | 피지·블랙헤드 | 색소침착·기미잡티 | 민감·홍조 | 눈가·다크서클 | 붓기 | 장벽손상
-skin_tags 선택값 (해당하는 것만):
-건성 | 지성 | 복합성 | 민감성 | 탄력 | 미백 | 수분 | 트러블 | 모공 | 홍조 | 재생 | 장벽강화 | 항노화
-hormone_timing 선택값 (해당하는 것만):
-달빛기 | 황금기 | 만개기 | 물들기
-- 달빛기(생리기 1~5일): 레티놀/AHA/BHA/강한향료/알코올 → 제외. 진정·보습 위주 → 포함
-- 황금기(여포기 6~13일): 활성 성분(비타민C/나이아신아마이드/펩타이드) → 우선 포함
-- 만개기(배란기 14~16일): 미백·브라이트닝·가벼운 제형 → 우선 포함
-- 물들기(황체기 17~28일): 보습·장벽강화·진정 성분 → 포함
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 수유중주의 | 갱년기추천 | 남성추천 | 민감성주의 | 레티놀함유 | AHA함유 | BHA함유 | 알코올함유 | 향료함유` : ''}
-${isBody ? `{
-  "body_part_tags": [],
-  "concern_tags": [],
-  "skin_tags": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-body_part_tags 선택값 (해당하는 것만):
-전신 | 팔·다리 | 복부 | 가슴·데콜테 | 엉덩이·허벅지 | 발·뒤꿈치 | 목
-concern_tags 선택값 (해당하는 것만):
-건조 | 튼살 | 셀룰라이트 | 미백·태닝 | 각질 | 붓기·순환 | 탄력저하
-skin_tags 선택값 (해당하는 것만):
-건성 | 지성 | 민감성 | 재생 | 장벽강화
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 수유중주의 | 민감성주의 | 향료함유 | 알코올함유` : ''}
-${isScalp ? `{
-  "concern_tags": [],
-  "skin_tags": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-concern_tags 선택값 (해당하는 것만):
-탈모 | 두피가려움 | 지성두피 | 건성두피 | 민감두피 | 비듬 | 두피열감 | 모발손상 | 두피냄새
-skin_tags 선택값 (해당하는 것만):
-가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 민감두피주의 | 향료함유 | 알코올함유` : ''}
-${isHair ? `{
-  "concern_tags": [],
-  "skin_tags": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-concern_tags 선택값 (해당하는 것만):
-손상·끊김 | 건조·푸석 | 볼륨부족 | 컬유지 | 염색손상 | 윤기부족 | 갈라짐
-skin_tags 선택값 (해당하는 것만):
-가는모발 | 굵은모발 | 곱슬 | 직모 | 손상모 | 탈색·염색모
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 민감두피주의 | 향료함유 | 실리콘프리` : ''}
-${isInner ? `{
-  "concern_tags": [],
-  "hormone_timing": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-concern_tags 선택값 (해당하는 것만):
-탄력저하 | 주름·노화 | 붓기 | 피로 | 장건강 | 면역 | 수면 | 갱년기
-hormone_timing 선택값 (해당하는 것만):
-달빛기 | 황금기 | 만개기 | 물들기
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 수유중주의 | 갱년기추천 | 당뇨주의 | 알레르기주의` : ''}
-${isDevice ? `{
-  "body_part_tags": [],
-  "concern_tags": [],
-  "caution_tags": [],
-  "owner_analysis": "",
-  "key_ingredients_description": ""
-}
-body_part_tags 선택값 (해당하는 것만):
-얼굴 | 목 | 데콜테 | 바디 | 두피
-concern_tags 선택값 (해당하는 것만):
-탄력저하 | 주름·노화 | 붓기 | 리프팅 | 모공 | 혈액순환
-caution_tags 선택값 (해당하는 것만):
-임산부주의 | 민감성주의 | 심장질환주의` : ''}
-owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이내)
-key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효능" 형식으로 각 한 줄씩 설명
-예시: "황금기에 쓰면 비타민C 흡수가 극대화돼요 💜"
-주의사항:
-- 카테고리에 맞는 태그만 사용할 것
-- 확실하지 않은 건 caution_tags에 넣지 말 것
-- owner_analysis 무조건 1문장 50자 이내
-- 전성분 없고 제품명만 있으면 제품명 기반으로 최선 분석`
+
                       const resp = await fetch('/api/analyze-ingredients', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
