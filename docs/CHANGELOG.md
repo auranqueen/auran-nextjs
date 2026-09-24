@@ -1,9 +1,11 @@
-# AURAN 변경 이력 (CHANGELOG)
+﻿# AURAN 변경 이력 (CHANGELOG)
 > 최신순 정렬. 작업 완료 시마다 업데이트할 것.
 
 ---
 
 ## 2026-09-24
+- products/[id] twitter:card summary로 변경 (정사각형 이미지 강제)
+- og:description 완전 제거 (제품명+이미지만)
 - products/[id] og:description 폴백 최소화 → `auran.kr` (제품명+이미지만으로 충분)
 - metadata.title L7 옛 카피 → 플랫폼 중심 문구로 통일
 - metadata.description L8 "맑원장" 문구 제거 — og/twitter와 동일 문구로 통일

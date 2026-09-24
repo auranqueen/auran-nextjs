@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProductDetailClient from './client'
@@ -11,8 +11,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .eq('id', params.id)
     .maybeSingle()
 
-  const defaultDescription = 'auran.kr'
-  const description = product?.meta_description || defaultDescription
+  const description = ''
   const title = product?.meta_title || `${product?.name || '제품 상세'} · AURAN`
   const imageUrl = product?.storage_thumb_url || product?.thumb_img || ''
 
@@ -29,7 +28,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       locale: 'ko_KR',
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: product?.meta_title || product?.name || '제품 상세',
       description,
       images: imageUrl ? [imageUrl] : ['/og-image.png'],
@@ -99,3 +98,4 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     </>
   )
 }
+
