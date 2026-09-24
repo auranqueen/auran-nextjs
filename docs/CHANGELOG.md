@@ -4,6 +4,8 @@
 ---
 
 ## 2026-09-24
+- feat: 알림 패널 상단 현재 토스트 잔액 고정 표시 (`GET /api/notifications/points-balance`, `users.points`를 `auth_id`로 조회)
+- feat: 알림 카드 제목 말줄임 + `created_at` 날짜시간 표시 (`formatDateTime`)
 - products/[id] twitter:card summary로 변경 (정사각형 이미지 강제)
 - og:description 완전 제거 (제품명+이미지만)
 - products/[id] og:description 폴백 최소화 → `auran.kr` (제품명+이미지만으로 충분)

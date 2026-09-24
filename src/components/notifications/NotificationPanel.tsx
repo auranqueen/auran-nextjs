@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { formatDateTime } from '@/lib/notifications/format'
 
 type NotificationPanelProps = {
   isOpen: boolean
@@ -47,6 +48,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [expandedNotice, setExpandedNotice] = useState<string | null>(null)
   const [popNotice, setPopNotice] = useState<any>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [pointsBalance, setPointsBalance] = useState<number | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -74,6 +76,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
         .order('created_at', { ascending: false })
         .limit(20)
       setNotices(sortNotices(nData || []))
+      fetch('/api/notifications/points-balance')
+        .then(r => r.json())
+        .then(d => { if (d.ok) setPointsBalance(d.points) })
+        .catch(() => {})
     }
     void run()
   }, [isOpen])
@@ -152,6 +158,13 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           </button>
         </div>
 
+        {pointsBalance !== null && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '0 8px 4px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, color: '#C9A96E' }}>현재 토스트 잔액</span>
+            <span style={{ fontSize: 14, color: '#F5F1EC' }}>{pointsBalance.toLocaleString()}T</span>
+          </div>
+        )}
+
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 16px' }}>
           {tab === 'notif' ? (
             items.length === 0 ? (
@@ -204,10 +217,13 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       borderLeft: n.is_read ? '3px solid transparent' : `3px solid ${PURPLE}`,
                     }}
                   >
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
                       <span style={{ fontSize: 14, color: iconStyle.color }}>{iconStyle.icon}</span>
-                      <span style={{ fontSize: 13, color: '#fff' }}>{n.title}</span>
+                      <span style={{ fontSize: 13, color: '#fff', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</span>
                       <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{'>'}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                      {formatDateTime(n.created_at)}
                     </div>
                     {isPayment && n.body ? (
                       <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.55)', whiteSpace: 'pre-line' }}>{String(n.body)}</div>
