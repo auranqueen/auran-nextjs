@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-24
+- feat: 출석체크 알림 카드를 이번달 요약 한 줄로 통합 (`type=toast` 숨김, `GET /api/notifications/points-balance`에 `attendanceCount`/`attendanceTotal` 추가)
 - feat: 알림 패널 상단 현재 토스트 잔액 고정 표시 (`GET /api/notifications/points-balance`, `users.points`를 `auth_id`로 조회)
 - feat: 알림 카드 제목 말줄임 + `created_at` 날짜시간 표시 (`formatDateTime`)
 - products/[id] twitter:card summary로 변경 (정사각형 이미지 강제)

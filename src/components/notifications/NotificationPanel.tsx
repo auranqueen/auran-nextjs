@@ -49,6 +49,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [popNotice, setPopNotice] = useState<any>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [pointsBalance, setPointsBalance] = useState<number | null>(null)
+  const [attendanceSummary, setAttendanceSummary] = useState<{ count: number; total: number } | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -78,11 +79,18 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       setNotices(sortNotices(nData || []))
       fetch('/api/notifications/points-balance')
         .then(r => r.json())
-        .then(d => { if (d.ok) setPointsBalance(d.points) })
+        .then(d => {
+          if (d.ok) {
+            setPointsBalance(d.points)
+            setAttendanceSummary({ count: d.attendanceCount, total: d.attendanceTotal })
+          }
+        })
         .catch(() => {})
     }
     void run()
   }, [isOpen])
+
+  const visibleItems = items.filter((n: any) => n.type !== 'toast')
 
   const chalkNoise = useMemo(
     () =>
@@ -165,12 +173,37 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           </div>
         )}
 
+        {tab === 'notif' && attendanceSummary && attendanceSummary.count > 0 && (
+          <button
+            type="button"
+            style={{
+              margin: '0 8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: 'calc(100% - 16px)',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+              🧈 이번 달 출석 {attendanceSummary.count}회
+            </span>
+            <span style={{ fontSize: 12, color: '#C9A96E' }}>누적 +{attendanceSummary.total}T ›</span>
+          </button>
+        )}
+
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 16px' }}>
           {tab === 'notif' ? (
-            items.length === 0 ? (
+            visibleItems.length === 0 ? (
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', textAlign: 'center', paddingTop: 28 }}>새 알림이 없어요</div>
             ) : (
-              items.map((n: any) => {
+              visibleItems.map((n: any) => {
                 const iconStyle = iconForType(String(n.type || ''))
                 const isPayment = String(n.type || '') === 'payment_complete' || String(n.type || '') === 'order_paid'
                 return (
