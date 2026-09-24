@@ -4,6 +4,8 @@
 ---
 
 ## 2026-09-24
+- feat: Pretendard CDN을 `layout.tsx` `<head>`에 추가 — `globals.css` body/`button`/`input`의 `font-family: Pretendard`가 실제로 로드되도록 함
+- feat: `src/components/home/SectionTitle.tsx` 신규 (eyebrow/title/description + SECTION_GAP·CARD_* 상수). 폰트는 전역 상속, 컴포넌트에 미지정
 - feat: 출석체크 알림 카드를 이번달 요약 한 줄로 통합 (`type=toast` 숨김, `GET /api/notifications/points-balance`에 `attendanceCount`/`attendanceTotal` 추가)
 - feat: 알림 패널 상단 현재 토스트 잔액 고정 표시 (`GET /api/notifications/points-balance`, `users.points`를 `auth_id`로 조회)
 - feat: 알림 카드 제목 말줄임 + `created_at` 날짜시간 표시 (`formatDateTime`)
