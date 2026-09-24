@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-24
+- metadata.description L8 "맑원장" 문구 제거 — og/twitter와 동일 문구로 통일
 - 루트 og: 메타 문구 개선 — "맑원장" 주체 제거, 플랫폼 중심 재작성
   - og:title: `AURAN · 내 피부 주기를 아는 플랫폼`
   - og:description: `호르몬 주기에 맞춘 스킨케어 추천과 예약을 한 곳에`
