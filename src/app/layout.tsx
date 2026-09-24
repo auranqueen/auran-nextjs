@@ -4,7 +4,7 @@ import { AppProviders } from '@/components/providers/AppProviders'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AURAN · 같은 화장품인데 어떤 날은 잘 받고 어떤 날은 왜 안 받지?',
+  title: 'AURAN · 내 피부 주기를 아는 플랫폼',
   description: '호르몬 주기에 맞춘 스킨케어 추천과 예약을 한 곳에',
   metadataBase: new URL('https://auran.kr'),
   openGraph: {
