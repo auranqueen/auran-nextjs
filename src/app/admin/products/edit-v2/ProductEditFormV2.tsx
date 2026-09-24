@@ -1356,7 +1356,7 @@ key_ingredients_description: 주요 성분 3~5가지를 "성분명: 피부 효�
                           <div key={c.id} onClick={() => {
                             if (col.set === setCatL1) {
                               const hasTags = skinConcerns.length > 0 || skinTypes.length > 0 || hormoneTiming.length > 0 || skinTags.length > 0 || bodyPartTags.length > 0
-                              if (hasTags && !window.confirm('카테고리를 변경하면 기존 태그가 초기화됩니다.\n계속할까요?')) return
+                              if (hasTags && !window.confirm('카테고리를 변경하면 기존 태그가 초기화됩니다.\nAI 재분석을 다시 돌려주세요. 계속할까요?')) return
                               setSkinConcerns([])
                               setSkinTypes([])
                               setHormoneStages([])
