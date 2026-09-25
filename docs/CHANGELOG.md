@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-09-25
+- refactor: 홈에서 `BodyCareCard`(페이스/바디 탭·케어카드) 마운트 제거 — `src/app/page.tsx` import + 조건부 렌더 삭제. `BodyCareCard.tsx` 파일·어드민 care-cards는 유지
+- feat: `HormoneCard`에 상시 노출 「자세히보기 ›」 버튼 추가 — `stopPropagation` 후 로그인 시 `/my/hormone`, 비로그인 시 `/login?role=customer&redirect=/my/hormone` (`HomeExtraSection`과 동일). 카드 루트 시트·∨ 토글·? 팁은 변경 없음
+
 ## 2026-09-24
 - feat: Pretendard CDN을 `layout.tsx` `<head>`에 추가 — `globals.css` body/`button`/`input`의 `font-family: Pretendard`가 실제로 로드되도록 함
 - feat: `src/components/home/SectionTitle.tsx` 신규 (eyebrow/title/description + SECTION_GAP·CARD_* 상수). 폰트는 전역 상속, 컴포넌트에 미지정

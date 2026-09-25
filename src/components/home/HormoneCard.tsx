@@ -1,6 +1,7 @@
 'use client'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import HormoneSheet from '@/components/home/HormoneSheet'
 import { PHASE_LABELS, PHASE_DESC } from '@/lib/hormoneUtils'
@@ -40,6 +41,7 @@ export default function HormoneCard({
   supabaseClient,
   onRefreshCycle,
 }: HormoneCardProps) {
+  const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [phaseDetailsOpen, setPhaseDetailsOpen] = useState(false)
   const phaseIdx = PHASE_ORDER.indexOf(currentPhase)
@@ -231,6 +233,34 @@ export default function HormoneCard({
             {hormonePhaseTipDesc}
           </div>
         ) : null}
+        <button
+          type="button"
+          onClick={async e => {
+            e.stopPropagation()
+            const {
+              data: { user },
+            } = await supabaseClient.auth.getUser()
+            if (!user) {
+              router.push('/login?role=customer&redirect=' + encodeURIComponent('/my/hormone'))
+              return
+            }
+            router.push('/my/hormone')
+          }}
+          style={{
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.6)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontFamily: 'inherit',
+          }}
+        >
+          자세히보기 ›
+        </button>
       </div>
 
       <HormoneSheet

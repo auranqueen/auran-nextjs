@@ -15,7 +15,6 @@ import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import HomeExtraSection from '@/components/home/HomeExtraSection'
 import FavoriteSalonsSection from '@/components/home/FavoriteSalonsSection'
-import BodyCareCard from '@/components/home/BodyCareCard'
 import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
@@ -2573,19 +2572,6 @@ export default function CustomerHomePage() {
             >✕</span>
           </div>
         )}
-        {hormoneCycle !== null && !isPC && (
-          <BodyCareCard
-            currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
-            skinType={String((motivationProfile as any)?.skin_type ?? '')}
-            skinConcerns={Array.isArray((motivationProfile as any)?.skin_concerns)
-              ? (motivationProfile as any).skin_concerns
-              : []}
-            recommended={skinRecList.slice(0, 12)}
-            showEditChrome={showHomeEditChrome}
-            supabaseClient={supabase}
-          />
-        )}
-
         {dailyQuestion ? (
           <div style={{ marginTop: 8, padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(123,94,167,0.08)' }}>
             <div style={{ fontSize: 10, color: 'rgba(196,170,230,0.8)', marginBottom: 6 }}>오늘의 질문</div>
