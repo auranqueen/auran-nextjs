@@ -68,7 +68,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           .order('created_at', { ascending: false })
           .limit(20)
         setItems(data || [])
-        await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+        const markRes = await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+        if (markRes.ok) {
+          setItems(prev => prev.map(n => ({ ...n, is_read: true })))
+        }
       } else {
         setItems([])
       }

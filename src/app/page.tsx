@@ -2258,7 +2258,7 @@ export default function CustomerHomePage() {
           </button>
         </div>
       </header>
-      <NotificationPanel isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
+      <NotificationPanel isOpen={notificationOpen} onClose={() => { setNotificationOpen(false); setUnreadCount(0) }} />
       <div
         style={{
           maxHeight: 420,
