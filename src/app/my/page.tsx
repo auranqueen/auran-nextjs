@@ -223,7 +223,7 @@ export default function MyPage() {
               !!profile?.birth_date,
               !!profile?.skin_type,
               profile?.skin_concerns?.length > 0,
-              !!profile?.menstrual_cycle,
+              (!isPeriodTrack(hormoneTrack) || gender === 'male') ? true : !!profile?.menstrual_cycle,
               !!profile?.drink_frequency,
               !!profile?.exercise_frequency,
               profile?.preferred_brands?.length > 0,
@@ -336,7 +336,7 @@ export default function MyPage() {
     !profileData?.skin_type ? '· 피부타입을 선택해주세요' : '',
     !profileData?.birth_date ? '· 생년월일을 입력해주세요' : '',
     !profileData?.phone ? '· 전화번호를 입력해주세요' : '',
-    !profileData?.menstrual_cycle ? '· 생리 주기 정보를 입력해주세요' : '',
+    (isPeriodTrack(hormoneTrack) && gender !== 'male' && !profileData?.menstrual_cycle) ? '· 생리 주기 정보를 입력해주세요' : '',
     !(profileData?.preferred_brands?.length > 0) ? '· 선호 브랜드를 선택해주세요' : '',
     !(profileData?.special_dates?.length > 0) ? '· 기념일을 1개 이상 등록해주세요' : '',
   ].filter(Boolean).slice(0, 2)
