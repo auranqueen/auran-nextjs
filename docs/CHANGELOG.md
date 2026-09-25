@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- test: 제품상세 `src/app/(customer)/products/[id]/page.tsx`에만 `export const viewport` (`maximumScale: 5`) 추가 — 핀치줌 허용 A/B 테스트. 루트 `layout.tsx` `maximumScale: 1`은 유지(로그인/홈 등 비확대)
 - fix: `/my` 완성도 힌트·checks의 `menstrual_cycle`에 `isPeriodTrack(hormoneTrack) && gender !== 'male'` 조건 적용 — 남성·비주기 트랙에 「생리 주기 정보를 입력해주세요」오노출 및 완성도 패널티 방지 (`src/app/my/page.tsx`)
 - fix: 원장님 상담톡(리추얼/선물) 남성 고객 호르몬 문구 오발송 — `curate/route.ts` profiles에 `gender` 조회·`userGender` 보관 후 male이면 `ritualTrack='male'`; `gifts/route.ts`에 profiles.gender 조회 추가 후 동일. track 비어 있을 때 무조건 `general`이던 기본값 수정
 - refactor: 홈에서 `BodyCareCard`(페이스/바디 탭·케어카드) 마운트 제거 — `src/app/page.tsx` import + 조건부 렌더 삭제. `BodyCareCard.tsx` 파일·어드민 care-cards는 유지
