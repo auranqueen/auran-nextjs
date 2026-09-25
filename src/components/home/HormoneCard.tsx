@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import HormoneSheet from '@/components/home/HormoneSheet'
+import { sectionTitleStyles } from '@/components/home/SectionTitle'
 import { PHASE_LABELS, PHASE_DESC } from '@/lib/hormoneUtils'
 
 type HormoneCardProps = {
@@ -152,9 +153,9 @@ export default function HormoneCard({
                 </button>
               ) : null}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 300, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+            <div style={{ ...sectionTitleStyles.title, fontSize: 12, fontWeight: 300 }}>{hormoneMainLine}</div>
             {cycleDay > 0 && PHASE_DESC[currentPhase] ? (
-              <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.5)', marginTop: 6 }}>
+              <div style={{ ...sectionTitleStyles.description, fontSize: 12, fontWeight: 300 }}>
                 {PHASE_DESC[currentPhase]}
               </div>
             ) : null}
