@@ -2084,7 +2084,7 @@ export default function CustomerHomePage() {
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '32px 24px 16px',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px',
         background: 'rgba(13,11,9,0.95)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         backdropFilter: 'blur(12px)',
