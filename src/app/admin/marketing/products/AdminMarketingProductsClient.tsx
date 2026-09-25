@@ -213,8 +213,8 @@ export default function AdminMarketingProductsClient() {
           const isSelected = selectedIds.has(p.id)
           const sc = getStatusClass(p)
           return (
-            <div key={p.id} style={{ ...s.card, position: 'relative', borderColor: isSelected ? '#7B5EA7' : 'rgba(255,255,255,0.1)', background: isSelected ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)' }}>
-              <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(p.id)} style={{ position: 'absolute', top: 8, left: 8, cursor: 'pointer', width: 18, height: 18 }} />
+            <div key={p.id} style={{ ...s.card, position: 'relative', borderColor: isSelected ? '#7B5EA7' : 'rgba(255,255,255,0.1)', background: isSelected ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)', cursor: 'pointer' }} onClick={() => router.push(`/admin/products/edit-v2?id=${p.id}`)}>
+              <input type="checkbox" checked={isSelected} onChange={e => { e.stopPropagation(); toggleSelect(p.id) }} onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 8, left: 8, cursor: 'pointer', width: 18, height: 18 }} />
               <div style={s.imgBox}>
                 {(p as any).thumb_img || (p as any).storage_thumb_url
                   ? <img src={(p as any).storage_thumb_url || (p as any).thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
