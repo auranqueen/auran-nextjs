@@ -135,11 +135,13 @@ export default function CategoryPage() {
               background: isConcern ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.03)',
               border: `0.5px solid ${isConcern ? 'rgba(201,169,110,0.25)' : 'rgba(255,255,255,0.08)'}`,
               borderRadius: 10,
+              cursor: hasChildren ? 'pointer' : 'default',
             }}
+            onClick={() => hasChildren && toggleExpand(row.id)}
           >
             {hasChildren ? (
               <button
-                onClick={() => toggleExpand(row.id)}
+                onClick={e => { e.stopPropagation(); toggleExpand(row.id) }}
                 style={{
                   width: 20,
                   height: 20,
@@ -208,7 +210,7 @@ export default function CategoryPage() {
             {isEditing ? (
               <>
                 <button
-                  onClick={() => void saveEdit(row.id)}
+                  onClick={e => { e.stopPropagation(); void saveEdit(row.id) }}
                   disabled={saving}
                   style={{
                     fontSize: 11,
@@ -224,7 +226,7 @@ export default function CategoryPage() {
                   저장
                 </button>
                 <button
-                  onClick={() => setEditingId(null)}
+                  onClick={e => { e.stopPropagation(); setEditingId(null) }}
                   style={{
                     fontSize: 11,
                     padding: '4px 10px',
@@ -242,7 +244,7 @@ export default function CategoryPage() {
             ) : (
               <>
                 <button
-                  onClick={() => startEdit(row)}
+                  onClick={e => { e.stopPropagation(); startEdit(row) }}
                   style={{
                     fontSize: 11,
                     padding: '4px 8px',
@@ -258,7 +260,7 @@ export default function CategoryPage() {
                 </button>
                 {row.level < 5 && (
                   <button
-                    onClick={() => addChild(row.id, row.level)}
+                    onClick={e => { e.stopPropagation(); addChild(row.id, row.level) }}
                     style={{
                       fontSize: 11,
                       padding: '4px 8px',
@@ -274,7 +276,7 @@ export default function CategoryPage() {
                   </button>
                 )}
                 <button
-                  onClick={() => void deleteRow(row.id)}
+                  onClick={e => { e.stopPropagation(); void deleteRow(row.id) }}
                   style={{
                     fontSize: 11,
                     padding: '4px 8px',
