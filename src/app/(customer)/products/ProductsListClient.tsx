@@ -57,15 +57,15 @@ function tagMatch(tags: string[] | null | undefined, q: string) {
 
 function dramaticLine(p: Row, phase: string, focus: string, hormoneMatch: boolean, gender?: string | null, hca?: boolean | null) {
   if (hormoneMatch) {
-    if (gender === 'male') return `남성 피부 맞춤 · 피지조절에 어울려요`
-    if (hca === false) return `탄력 케어 맞춤 · 수분에 어울려요`
-    return `지금 ${phase} · ${focus.split('/')[0]}에 어울려요`
+    if (gender === 'male') return `${p.name}, 피지조절에 어울려요`
+    if (hca === false) return `${p.name}, 탄력·수분 케어에 어울려요`
+    return `${p.name}, ${phase} 시기 ${focus.split('/')[0]}에 딱이에요`
   }
   const s = p.step_tags?.[0]
   const f = p.func_tags?.[0]
-  if (s && f) return `${s} × ${f} — 오늘의 한 줄`
-  if (s) return `${s} 케어로 마무리`
-  return '피부가 고마워할 거예요'
+  if (s && f) return `${p.name} — ${s} × ${f}`
+  if (s) return `${p.name}, ${s} 케어로 마무리`
+  return `${p.name}, 오늘 피부가 반가워할 거예요`
 }
 
 export default function ProductsListClient() {

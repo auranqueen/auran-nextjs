@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- feat: 제품목록 `ProductsListClient.tsx` `dramaticLine` — 모든 분기·폴백에 `p.name` 포함(호르몬/단계/기능 매칭·폴백 문구가 카드마다 다르게 보이도록)
 - fix: 제품목록 `ProductsListClient.tsx` — 2열 그리드 아이템·카드 Link에 `minWidth: 0`(± Link `overflow: hidden`), 큐레이션 가로줄 `maxWidth: 100%`/`minWidth: 0`로 격리. 가로밀림 유력 후보 수정(실기기 확인 필요)
 - style: 홈 검색 — `globals.css` placeholder `rgba(255,255,255,0.2)`→`0.45`; `page.tsx` 돋보기 SVG `stroke=#fff`, `width/height` 13→11
 - fix: 알림 — `page.tsx`·`NotificationPanel.tsx` unread/목록 조회를 `auth_id`→`users.id`로 통일(`mark-all-read`·`notifyProfile` 규약과 맞춤). 패널 헤더 `safe-area-inset-top` 패딩. 토스트 잔액 클릭 → `/my/point`
