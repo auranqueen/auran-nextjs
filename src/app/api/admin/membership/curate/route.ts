@@ -95,15 +95,17 @@ export async function POST(req: NextRequest) {
 
   let userConcerns: string[] = []
   let userSkinType = ''
+  let userGender = ''
   const { data: urow } = await client.from('users').select('auth_id').eq('id', um.user_id).maybeSingle()
   if ((urow as any)?.auth_id) {
     const { data: prof } = await client
       .from('profiles')
-      .select('skin_concerns,skin_type')
+      .select('skin_concerns,skin_type,gender')
       .eq('auth_id', (urow as any).auth_id)
       .maybeSingle()
     userConcerns = Array.isArray((prof as any)?.skin_concerns) ? (prof as any).skin_concerns : []
     userSkinType = (prof as any)?.skin_type || ''
+    userGender = String((prof as any)?.gender || '')
   }
 
   const { data: tpl } = await client
@@ -229,7 +231,9 @@ export async function POST(req: NextRequest) {
     }
     if (chId2) {
       let ritualTrack = 'general'
-      if ((urow as any)?.auth_id) {
+      if (userGender === 'male') {
+        ritualTrack = 'male'
+      } else if ((urow as any)?.auth_id) {
         const { data: hcRitual } = await client3.from('hormone_cycle').select('track').eq('auth_id', (urow as any).auth_id).maybeSingle()
         if ((hcRitual as any)?.track) ritualTrack = String((hcRitual as any).track)
       }

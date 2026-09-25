@@ -116,8 +116,13 @@ export async function PATCH(req: Request) {
       if (claimedBy) {
         const { data: urowGift } = await supabase.from('users').select('auth_id').eq('id', claimedBy).maybeSingle()
         if ((urowGift as any)?.auth_id) {
-          const { data: hcGift } = await supabase.from('hormone_cycle').select('track').eq('auth_id', (urowGift as any).auth_id).maybeSingle()
-          if ((hcGift as any)?.track) giftTrack = String((hcGift as any).track)
+          const { data: profGift } = await supabase.from('profiles').select('gender').eq('auth_id', (urowGift as any).auth_id).maybeSingle()
+          if ((profGift as any)?.gender === 'male') {
+            giftTrack = 'male'
+          } else {
+            const { data: hcGift } = await supabase.from('hormone_cycle').select('track').eq('auth_id', (urowGift as any).auth_id).maybeSingle()
+            if ((hcGift as any)?.track) giftTrack = String((hcGift as any).track)
+          }
         }
       }
       if (claimedBy) {

@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- fix: 원장님 상담톡(리추얼/선물) 남성 고객 호르몬 문구 오발송 — `curate/route.ts` profiles에 `gender` 조회·`userGender` 보관 후 male이면 `ritualTrack='male'`; `gifts/route.ts`에 profiles.gender 조회 추가 후 동일. track 비어 있을 때 무조건 `general`이던 기본값 수정
 - refactor: 홈에서 `BodyCareCard`(페이스/바디 탭·케어카드) 마운트 제거 — `src/app/page.tsx` import + 조건부 렌더 삭제. `BodyCareCard.tsx` 파일·어드민 care-cards는 유지
 - feat: `HormoneCard`에 상시 노출 「자세히보기 ›」 버튼 추가 — `stopPropagation` 후 로그인 시 `/my/hormone`, 비로그인 시 `/login?role=customer&redirect=/my/hormone` (`HomeExtraSection`과 동일). 카드 루트 시트·∨ 토글·? 팁은 변경 없음
 
