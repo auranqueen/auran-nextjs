@@ -2261,7 +2261,7 @@ export default function CustomerHomePage() {
             padding: '5px 12px',
             background: 'rgba(255,255,255,0.02)',
           }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" strokeWidth="1.6">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>

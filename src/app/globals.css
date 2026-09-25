@@ -155,5 +155,5 @@ a img, button img, [role="button"] img { pointer-events: auto; }
 
 .search-input-slim::placeholder {
   font-size: 9px;
-  color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.45);
 }
