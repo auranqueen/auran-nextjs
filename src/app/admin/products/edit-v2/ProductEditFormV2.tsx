@@ -321,6 +321,9 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     step_tags: stepTags.length ? stepTags : [],
     skin_types: skinTypes.length ? skinTypes : [],
     skin_tags: skinTags.length ? skinTags : [],
+    ai_tag_status: (skinConcerns.length || skinTags.length || hormoneTiming.length)
+      ? 'approved'
+      : undefined,
     season_tags: seasonTags.length ? seasonTags : [],
     ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : [],
     options: JSON.stringify({
