@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- style: 홈 검색 — `page.tsx` input `fontSize` 14→9 + `className=search-input-slim`; `globals.css`에 `::placeholder` 9px·`rgba(255,255,255,0.2)`; 인기 쇼핑 키워드 제목/순번/텍스트 전부 9px
 - fix: 브랜드허브 `BrandHubContent.tsx` — `POST /api/profile/active-role` 기반 `switchRole` + `position:fixed` 「✦ 고객으로」 버튼 추가(모든 탭 상시 노출). sticky 헤더 `home` 제외 조건과 무관
 - fix: 홈 `page.tsx` 탑바 padding — 고정 `32px` 상단 → `calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px` (노치/상태바 대응, 9/11 원장 대시보드와 동일 방식)
 - style: 홈 `page.tsx` 검색바 — 채운 박스 → 골드 `0.5px` 테두리·투명 배경 필 + SVG 돋보기. input `fontSize: 14`·검색/초기화 로직 유지

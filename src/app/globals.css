@@ -152,3 +152,8 @@ a img, button img, [role="button"] img { pointer-events: auto; }
   max-width: 100%;
   height: auto;
 }
+
+.search-input-slim::placeholder {
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+}

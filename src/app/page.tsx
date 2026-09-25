@@ -2261,6 +2261,7 @@ export default function CustomerHomePage() {
               <path d="m21 21-4.3-4.3"></path>
             </svg>
             <input
+              className="search-input-slim"
               value={searchKeyword}
               onChange={e => setSearchKeyword(e.target.value)}
               onFocus={() => setSearchFocused(true)}
@@ -2271,7 +2272,7 @@ export default function CustomerHomePage() {
                 border: 'none',
                 background: 'transparent',
                 color: '#fff',
-                fontSize: 14,
+                fontSize: 9,
                 outline: 'none',
               }}
             />
@@ -2299,14 +2300,14 @@ export default function CustomerHomePage() {
         {searchFocused && !searchKeyword && popularKeywords.length > 0 && (
           <div style={{ background: 'rgba(20,20,20,0.97)', borderRadius: 16, padding: '16px', marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 13, color: '#fff' }}>인기 쇼핑 키워드</span>
+              <span style={{ fontSize: 9, color: '#fff' }}>인기 쇼핑 키워드</span>
             </div>
             {popularKeywords.map((kw, i) => (
               <div key={kw} onClick={() => { setSearchKeyword(kw); setSearchFocused(false) }}
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
                   borderBottom: i < popularKeywords.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', cursor: 'pointer' }}>
-                <span style={{ fontSize: 13, color: '#7B5EA7', minWidth: 20 }}>{i + 1}</span>
-                <span style={{ fontSize: 14, color: '#fff' }}>{kw}</span>
+                <span style={{ fontSize: 9, color: '#7B5EA7', minWidth: 20 }}>{i + 1}</span>
+                <span style={{ fontSize: 9, color: '#fff' }}>{kw}</span>
               </div>
             ))}
           </div>
