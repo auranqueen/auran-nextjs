@@ -1176,12 +1176,17 @@ export default function CustomerHomePage() {
           setUnreadCount(0)
           return
         }
-        const { data: unreadRows } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('user_id', uid)
-          .eq('is_read', false)
-        setUnreadCount((unreadRows || []).length)
+        const { data: uRow } = await supabase.from('users').select('id').eq('auth_id', uid).maybeSingle()
+        if (uRow?.id) {
+          const { data: unreadRows } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', uRow.id)
+            .eq('is_read', false)
+          setUnreadCount((unreadRows || []).length)
+        } else {
+          setUnreadCount(0)
+        }
       } finally {
         setSessionChecked(true)
       }

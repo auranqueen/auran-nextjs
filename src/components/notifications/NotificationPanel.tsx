@@ -61,16 +61,21 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       const userId = session?.user?.id || ''
       setUid(userId)
       if (userId) {
-        const { data } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        setItems(data || [])
-        const markRes = await fetch('/api/notifications/mark-all-read', { method: 'POST' })
-        if (markRes.ok) {
-          setItems(prev => prev.map(n => ({ ...n, is_read: true })))
+        const { data: uRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
+        if (uRow?.id) {
+          const { data } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', uRow.id)
+            .order('created_at', { ascending: false })
+            .limit(20)
+          setItems(data || [])
+          const markRes = await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+          if (markRes.ok) {
+            setItems(prev => prev.map(n => ({ ...n, is_read: true })))
+          }
+        } else {
+          setItems([])
         }
       } else {
         setItems([])
@@ -132,7 +137,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           pointerEvents: isOpen ? 'auto' : 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px' }}>
           <div style={{ display: 'flex', gap: 14 }}>
             <button
               type="button"
@@ -171,7 +176,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
         </div>
 
         {pointsBalance !== null && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '0 8px 4px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, flexShrink: 0 }}>
+          <div
+            onClick={() => router.push('/my/point')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '0 8px 4px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}
+          >
             <span style={{ fontSize: 11, color: '#C9A96E' }}>현재 토스트 잔액</span>
             <span style={{ fontSize: 14, color: '#F5F1EC' }}>{pointsBalance.toLocaleString()}T</span>
           </div>

@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- fix: 알림 — `page.tsx`·`NotificationPanel.tsx` unread/목록 조회를 `auth_id`→`users.id`로 통일(`mark-all-read`·`notifyProfile` 규약과 맞춤). 패널 헤더 `safe-area-inset-top` 패딩. 토스트 잔액 클릭 → `/my/point`
 - style: 홈 검색 — `page.tsx` input `fontSize` 14→9 + `className=search-input-slim`; `globals.css`에 `::placeholder` 9px·`rgba(255,255,255,0.2)`; 인기 쇼핑 키워드 제목/순번/텍스트 전부 9px
 - fix: 브랜드허브 `BrandHubContent.tsx` — `POST /api/profile/active-role` 기반 `switchRole` + `position:fixed` 「✦ 고객으로」 버튼 추가(모든 탭 상시 노출). sticky 헤더 `home` 제외 조건과 무관
 - fix: 홈 `page.tsx` 탑바 padding — 고정 `32px` 상단 → `calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px` (노치/상태바 대응, 9/11 원장 대시보드와 동일 방식)
