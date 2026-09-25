@@ -68,6 +68,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           .order('created_at', { ascending: false })
           .limit(20)
         setItems(data || [])
+        await fetch('/api/notifications/mark-all-read', { method: 'POST' })
       } else {
         setItems([])
       }
