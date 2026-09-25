@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- style: 홈 `page.tsx` 탑바 — padding `32px 24px 16px`, AURAN `16px`, 역할칩 `9`/▼`7`, 장바구니·알림 원 `28`·이모지 `13`, 뱃지 `13`/`fontSize 8`, 장바구니 이모지 `🛒`→`🛍️` (기능·space-between 유지)
 - fix: 홈 `page.tsx` Period/Dalbit 생리 안내 팝업 — `setShow*` 시 `genderNow`(profiles.gender 로컬)로 남성 제외, 렌더에 `userGender !== 'male'`(+ Period는 `hormoneTrack === 'general'`) 재확인. stale `userGender` state로 set 가드하지 않음
 - refactor: 홈 `src/app/page.tsx` — 케어팁+날씨 2열 그리드·펼침을 `trackToSegment!=='cycle'` 분기(`<>`) 밖으로 이동, `{myUserId && (…)}`로 로그인 고객만 노출(남성·SegmentSlot 등 전 세그먼트). 생리 시작 배너는 cycle 분기 유지. (선행 미커밋 정리 포함: CARE TIP/TODAY'S SKIN 상단 제거·dailyQuestion UI 제거·압축 그리드 도입)
 - style: `HormoneCard.tsx` 메인 문구(`hormoneMainLine`)·페이즈 설명(`PHASE_DESC`)에 `sectionTitleStyles` 적용 + `fontSize: 12`, `fontWeight: 300` 오버라이드. ∨/?/시트/자세히보기/eyebrow 미변경

@@ -2084,7 +2084,7 @@ export default function CustomerHomePage() {
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 20px',
+        padding: '32px 24px 16px',
         background: 'rgba(13,11,9,0.95)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         backdropFilter: 'blur(12px)',
@@ -2093,7 +2093,7 @@ export default function CustomerHomePage() {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{
             fontFamily: 'Georgia, serif',
-            fontSize: '22px', fontWeight: 400,
+            fontSize: '16px', fontWeight: 400,
             color: GOLD, letterSpacing: '6px',
             cursor: 'pointer',
             userSelect: 'none',
@@ -2106,7 +2106,7 @@ export default function CustomerHomePage() {
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 20,
             padding: '4px 10px',
-            fontSize: 11,
+            fontSize: 9,
             color: 'rgba(255,255,255,0.7)',
             cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 4,
@@ -2116,7 +2116,7 @@ export default function CustomerHomePage() {
            activeRole === 'partner' ? '◈ 파트너스' :
            activeRole === 'owner' ? '◉ 원장' :
            activeRole === 'brand' ? '◇ 브랜드사' : '✦ 고객'}
-          <span style={{ fontSize: 8, opacity: 0.6 }}>▼</span>
+          <span style={{ fontSize: 7, opacity: 0.6 }}>▼</span>
         </button>
         {showRoleSwitcher && (
           <div style={{
@@ -2178,21 +2178,21 @@ export default function CustomerHomePage() {
           <button
             onClick={() => router.push('/cart')}
             style={{
-              width: '34px', height: '34px', borderRadius: '50%',
+              width: '28px', height: '28px', borderRadius: '50%',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '15px', cursor: 'pointer',
+              fontSize: '13px', cursor: 'pointer',
               position: 'relative',
             }}
           >
-            🛒
+            🛍️
             {cart.items.length > 0 ? (
               <span style={{
                 position: 'absolute', top: -4, right: -4,
-                minWidth: 16, height: 16, borderRadius: 8,
+                minWidth: 13, height: 13, borderRadius: 8,
                 background: '#7B5EA7', color: '#fff',
-                fontSize: 10, display: 'flex',
+                fontSize: 8, display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
                 padding: '0 4px',
               }}>
@@ -2203,11 +2203,11 @@ export default function CustomerHomePage() {
           <button
             onClick={() => setNotificationOpen(true)}
             style={{
-              width: '34px', height: '34px', borderRadius: '50%',
+              width: '28px', height: '28px', borderRadius: '50%',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '15px', cursor: 'pointer',
+              fontSize: '13px', cursor: 'pointer',
               position: 'relative',
             }}
           >
@@ -2218,12 +2218,12 @@ export default function CustomerHomePage() {
                   position: 'absolute',
                   top: -4,
                   right: -4,
-                  minWidth: 16,
-                  height: 16,
+                  minWidth: 13,
+                  height: 13,
                   borderRadius: 8,
                   background: '#E04030',
                   color: '#fff',
-                  fontSize: 10,
+                  fontSize: 8,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
