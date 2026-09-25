@@ -313,7 +313,7 @@ export default function ProductsListClient() {
                 return arr[Math.floor(Math.random() * arr.length)]
               })()}
             </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%', minWidth: 0 }}>
               {rows.slice(0, 3).map(p => (
                 <div
                   key={p.id}
@@ -508,6 +508,7 @@ export default function ProductsListClient() {
                     key={p.id}
                     style={{
                       position: 'relative',
+                      minWidth: 0,
                     }}
                   >
                     {pick && showEditChrome ? (
@@ -545,6 +546,8 @@ export default function ProductsListClient() {
                         textDecoration: 'none',
                         color: 'inherit',
                         border: '1px solid rgba(255,255,255,0.06)',
+                        minWidth: 0,
+                        overflow: 'hidden',
                       }}
                     >
                       <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: 6 }}>

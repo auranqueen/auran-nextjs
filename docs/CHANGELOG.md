@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- fix: 제품목록 `ProductsListClient.tsx` — 2열 그리드 아이템·카드 Link에 `minWidth: 0`(± Link `overflow: hidden`), 큐레이션 가로줄 `maxWidth: 100%`/`minWidth: 0`로 격리. 가로밀림 유력 후보 수정(실기기 확인 필요)
 - style: 홈 검색 — `globals.css` placeholder `rgba(255,255,255,0.2)`→`0.45`; `page.tsx` 돋보기 SVG `stroke=#fff`, `width/height` 13→11
 - fix: 알림 — `page.tsx`·`NotificationPanel.tsx` unread/목록 조회를 `auth_id`→`users.id`로 통일(`mark-all-read`·`notifyProfile` 규약과 맞춤). 패널 헤더 `safe-area-inset-top` 패딩. 토스트 잔액 클릭 → `/my/point`
 - style: 홈 검색 — `page.tsx` input `fontSize` 14→9 + `className=search-input-slim`; `globals.css`에 `::placeholder` 9px·`rgba(255,255,255,0.2)`; 인기 쇼핑 키워드 제목/순번/텍스트 전부 9px
