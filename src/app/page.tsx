@@ -628,6 +628,7 @@ export default function CustomerHomePage() {
 
       const profile = profileRes.data
       let nameForHormoneLine = '고객'
+      const genderNow = (profile as any)?.gender ?? null
       if (profile) {
         setMotivationProfile(profile)
         setUserGender((profile as any).gender ?? null)
@@ -682,6 +683,7 @@ export default function CustomerHomePage() {
         })()
         // 달빛기 생리 기록 안내 팝업 (general 트랙 여성 전용)
         if (
+          genderNow !== 'male' &&
           (hc as any)?.track === 'general' &&
           (hc as any)?.last_period_date &&
           (hc as any)?.expected_period_date
@@ -697,7 +699,7 @@ export default function CustomerHomePage() {
             }
           }
         }
-        if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
+        if (genderNow !== 'male' && (hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
           if (!localStorage.getItem('auran_period_popup_skip')) {
             setShowPeriodPopup(true)
           }
@@ -1919,7 +1921,7 @@ export default function CustomerHomePage() {
   </div>
 )}
 
-      {showDalbitPopup && hormoneTrack === 'general' && (
+      {showDalbitPopup && hormoneTrack === 'general' && userGender !== 'male' && (
   <div style={{
     position: 'absolute', inset: 0,
     background: 'rgba(0,0,0,0.8)',
@@ -1996,7 +1998,7 @@ export default function CustomerHomePage() {
   </div>
 )}
 
-      {showPeriodPopup && (
+      {showPeriodPopup && userGender !== 'male' && hormoneTrack === 'general' && (
         <div style={{
           position: 'absolute', inset: 0,
           background: 'rgba(0,0,0,0.8)',
