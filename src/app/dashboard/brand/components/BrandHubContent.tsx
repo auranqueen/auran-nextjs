@@ -50,6 +50,14 @@ export default function BrandHubContent({
   rows, tab, onTabChange, onEdit, onNew, pinAuth, onSwitchStaff, onFullLogout
 }: Props) {
   const supabase = createClient()
+  async function switchRole(role: string) {
+    const res = await fetch('/api/profile/active-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    if (res.ok && role === 'customer') window.location.href = '/'
+  }
   type NavItem = { key: string; label: string; icon: string; alert?: boolean; requiredModule?: string | readonly string[] | null }
   type NavSection = { label: string; items: NavItem[] }
   const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
@@ -158,6 +166,24 @@ export default function BrandHubContent({
   }, [brandId, supabase])
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#0a0908', overflow: 'hidden' }}>
+      <button
+        onClick={() => switchRole('customer')}
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          zIndex: 9999,
+          background: 'rgba(0,0,0,0.7)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 20,
+          padding: '6px 14px',
+          fontSize: 11,
+          color: '#fff',
+          cursor: 'pointer',
+        }}
+      >
+        ✦ 고객으로
+      </button>
       <div style={{ width: 188, flexShrink: 0, background: '#0d0b0a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>
