@@ -84,15 +84,6 @@ function pickGroupbuyHook(gbIdRaw: string, remaining: number): string {
   return GROUPBUY_HOOKS[idx].replace(/○○/g, String(remaining))
 }
 
-const SKIN_TOOLTIP_MSGS = [
-  '오늘 피부 컨디션 몰래 엿볼까요? 💜',
-  '날씨가 내 피부한테 하고 싶은 말이 있대요 💌',
-  '오늘 피부가 뭘 원하는지 살짝 들여다볼게요 ✨',
-  '눌러봐요, 피부 비서가 준비했어요 👑',
-  '오늘 내 피부 날씨 예보예요 🌸',
-  '오늘 피부 상태 딱 맞춤 케어 알려드릴게요 🌿',
-]
-
 const CARE_CHEER_MSGS = [
   '오늘 피부 관리 잊지 않으셨죠? 💜',
   '오늘 내 피부한테 5분만 써줄래요? 💎',
@@ -475,7 +466,6 @@ export default function CustomerHomePage() {
     return !!localStorage.getItem(`auran_cycle_banner_${today}`)
   })
   const [showWeatherRec, setShowWeatherRec] = useState(false)
-  const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -554,10 +544,8 @@ export default function CustomerHomePage() {
   const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
   const [categoryBanners, setCategoryBanners] = useState<any[]>([])
-  const [dailyQuestion, setDailyQuestion] = useState<any>(null)
   const [questionPopup, setQuestionPopup] = useState<any | null>(null)
   const [questionAnswer, setQuestionAnswer] = useState('')
-  const [questionOptions, setQuestionOptions] = useState<string[]>([])
   const [routineExpanded, setRoutineExpanded] = useState(false)
   const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
   const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
@@ -1349,18 +1337,6 @@ export default function CustomerHomePage() {
         const tracks = Array.isArray(q.target_tracks) ? q.target_tracks.map((x: any) => String(x)) : ['all']
         return tracks.includes('all') || tracks.includes(hormoneTrack)
       })
-      const daily = list.find((q: any) => String(q.question_type) === 'daily')
-      setDailyQuestion(daily || null)
-      if (daily) {
-        const raw = daily.options
-        const opts = Array.isArray(raw)
-          ? raw.map((x: any) => String(x))
-          : String(raw || '')
-              .split(/[,\n]/)
-              .map((x: string) => x.trim())
-              .filter(Boolean)
-        setQuestionOptions(opts)
-      }
       const m = new Date()
       const monthStart = new Date(m.getFullYear(), m.getMonth(), 1).toISOString().slice(0, 10)
       const monthly = list.find((q: any) => String(q.question_type) === 'monthly')
@@ -2401,50 +2377,6 @@ export default function CustomerHomePage() {
           <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
-          {dailyCareTip && (
-            <div style={{
-              margin: '10px 0 4px',
-              padding: '14px 16px',
-              borderRadius: 14,
-              background: 'rgba(201,169,110,0.06)',
-              border: '0.5px solid rgba(201,169,110,0.2)',
-            }}>
-              <div
-                onClick={() => setCareTipOpen(o => !o)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer' }}
-              >
-                <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.6)', letterSpacing: '.08em' }}>
-                  TODAY'S CARE TIP
-                </div>
-                <span style={{
-                  fontSize: 13, color: 'rgba(201,169,110,0.6)',
-                  display: 'inline-block', transition: 'transform 0.2s',
-                  transform: careTipOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                }}>›</span>
-              </div>
-              {careTipOpen && (
-                <>
-                  <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5, marginTop: 5 }}>
-                    {dailyCareTip.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
-                    {dailyCareTip.message}
-                  </div>
-                  {dailyCareTip.has_bath && (
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      background: 'rgba(91,138,107,0.15)',
-                      border: '0.5px solid rgba(91,138,107,0.3)',
-                      borderRadius: 10, padding: '3px 8px',
-                      fontSize: 10, color: '#7BC49A', marginTop: 8,
-                    }}>
-                      🛁 오늘 반신욕 추천
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -2551,7 +2483,7 @@ export default function CustomerHomePage() {
               background: 'rgba(123,94,167,0.12)',
               border: '0.5px solid rgba(123,94,167,0.3)',
               borderRadius: 12, padding: '10px 14px',
-              marginBottom: 12, cursor: 'pointer',
+              marginTop: 12, marginBottom: 12, cursor: 'pointer',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -2572,128 +2504,71 @@ export default function CustomerHomePage() {
             >✕</span>
           </div>
         )}
-        {dailyQuestion ? (
-          <div style={{ marginTop: 8, padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(123,94,167,0.08)' }}>
-            <div style={{ fontSize: 10, color: 'rgba(196,170,230,0.8)', marginBottom: 6 }}>오늘의 질문</div>
-            <div style={{ fontSize: 12, color: '#fff', marginBottom: 8 }}>{String(dailyQuestion.question_text || '')}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {(dailyQuestion.answer_type === 'yesno' ? ['예', '아니오'] : questionOptions).slice(0, 6).map((op: string) => (
-                <button
-                  key={op}
-                  type="button"
-                  onClick={async () => {
-                    const today = new Date().toISOString().slice(0, 10)
-                    if (!myUserId || !dailyQuestion?.id) return
-                    const { data: dup } = await supabase
-                      .from('customer_question_answers')
-                      .select('id')
-                      .eq('auth_id', myUserId)
-                      .eq('question_id', dailyQuestion.id)
-                      .eq('answer_date', today)
-                      .limit(1)
-                    if (dup && dup.length > 0) {
-                      setHomeToast('오늘은 이미 답변했어요')
-                      return
-                    }
-                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: op, answer_date: today } as any)
-                    void logUserBehavior(supabase, myUserId, 'question_answer', String(dailyQuestion.id), { answer: op })
-                    setHomeToast('답변 저장 완료')
-                  }}
-                  style={{ padding: '6px 9px', borderRadius: 999, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  {op}
-                </button>
-              ))}
-              {dailyQuestion.answer_type === 'text' ? (
-                <input
-                  value={questionAnswer}
-                  onChange={e => setQuestionAnswer(e.target.value)}
-                  placeholder="답변 입력"
-                  style={{ flex: 1, minWidth: 140, padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12 }}
-                />
-              ) : null}
-              {dailyQuestion.answer_type === 'text' ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const today = new Date().toISOString().slice(0, 10)
-                    if (!myUserId || !dailyQuestion?.id || !questionAnswer.trim()) return
-                    const { data: dup } = await supabase
-                      .from('customer_question_answers')
-                      .select('id')
-                      .eq('auth_id', myUserId)
-                      .eq('question_id', dailyQuestion.id)
-                      .eq('answer_date', today)
-                      .limit(1)
-                    if (dup && dup.length > 0) {
-                      setHomeToast('오늘은 이미 답변했어요')
-                      return
-                    }
-                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: questionAnswer.trim(), answer_date: today } as any)
-                    void logUserBehavior(supabase, myUserId, 'question_answer', String(dailyQuestion.id), { answer: questionAnswer.trim() })
-                    setHomeToast('답변 저장 완료')
-                  }}
-                  style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  저장
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
 
-      </>)}</div>
-
-      {/* ── TODAY'S SKIN ── */}
-      <div
-        onClick={() => setShowWeatherDetail(prev => !prev)}
-        style={{
-          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
-          borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '30px' }}>💧</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: showWeatherDetail ? '3px' : 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              TODAY&apos;S SKIN
-              {showWeatherDetail && weather ? `· ${weather.city} ${weather.temp}°` : ''}
-              {showWeatherDetail ? (
-              <span
-                onClick={e => {
-                  e.stopPropagation()
-                  const msg = SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]
-                  setSkinTooltipMsg(msg)
-                  setTimeout(() => setSkinTooltipMsg(''), 3000)
-                }}
-                style={{ cursor: 'pointer' }}
-              >?</span>
-              ) : null}
+      </>)}
+      {myUserId && (
+        <>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '12px 0 0' }}>
+          <button
+            type="button"
+            onClick={() => setCareTipOpen(o => !o)}
+            style={{ background: '#171018', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+          >
+            <span style={{ fontSize: 20 }}>💧</span>
+            <div>
+              <div style={{ fontSize: 9, color: '#9C9390' }}>오늘의 케어</div>
+              <div style={{ fontSize: 11, color: '#F5F1EC', marginTop: 4, fontWeight: 300, lineHeight: 1.4 }}>
+                {dailyCareTip?.title || '보습에 집중해보세요'}
+              </div>
             </div>
-            {showWeatherDetail ? (
-              <>
-            <div
-              onClick={e => { e.stopPropagation(); router.push('/my/track') }}
-              style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px', cursor: 'pointer' }}
-            >
-              {profileSkinType || '피부타입을 설정해주세요'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowWeatherDetail(o => !o)}
+            style={{ background: '#171018', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+          >
+            <span style={{ fontSize: 20 }}>☀️</span>
+            <div>
+              <div style={{ fontSize: 9, color: '#9C9390' }}>{weather?.city || '날씨'} · {weather?.temp ?? '-'}°</div>
+              <div style={{ fontSize: 11, color: '#F5F1EC', marginTop: 4, fontWeight: 300, lineHeight: 1.4 }}>
+                미세먼지 {weather?.dust?.level || '-'}
+              </div>
             </div>
-            {profileSkinConcerns ? (
-              <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.45)' }}>{profileSkinConcerns}</div>
-            ) : null}
-              </>
-            ) : null}
-          </div>
-          <span style={{
-            fontSize: '13px', color: TEXT_MUTED,
-            display: 'inline-block', transition: 'transform 0.2s',
-            transform: showWeatherDetail ? 'rotate(90deg)' : 'rotate(0deg)',
-          }}>›</span>
+          </button>
         </div>
 
+        {careTipOpen && (
+          <div style={{
+            marginTop: 10,
+            padding: '14px 16px',
+            borderRadius: 14,
+            background: 'rgba(201,169,110,0.06)',
+            border: '0.5px solid rgba(201,169,110,0.2)',
+          }}>
+            <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5 }}>
+              {dailyCareTip?.title || '보습에 집중해보세요'}
+            </div>
+            {dailyCareTip?.message ? (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+                {dailyCareTip.message}
+              </div>
+            ) : null}
+            {dailyCareTip?.has_bath && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'rgba(91,138,107,0.15)',
+                border: '0.5px solid rgba(91,138,107,0.3)',
+                borderRadius: 10, padding: '3px 8px',
+                fontSize: 10, color: '#7BC49A', marginTop: 8,
+              }}>
+                🛁 오늘 반신욕 추천
+              </div>
+            )}
+          </div>
+        )}
+
         {showWeatherDetail && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}
-            onClick={e => e.stopPropagation()}>
+          <div style={{ marginTop: 10, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
               {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
             </div>
@@ -2731,6 +2606,7 @@ export default function CustomerHomePage() {
             })()}
             <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
               <button
+                type="button"
                 onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
                 style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
               >
@@ -2739,6 +2615,8 @@ export default function CustomerHomePage() {
             </div>
           </div>
         )}
+        </>
+      )}
       </div>
 
       {/* 내 피부 맞춤 추천 + 루틴 패널 — 베타 후 복구 예정 */}
@@ -4687,20 +4565,6 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
-
-      {skinTooltipMsg && (
-        <div style={{
-          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
-          background: 'linear-gradient(135deg,#2D1B4E,#1A0A2E)',
-          border: '1px solid rgba(123,94,167,0.4)',
-          borderRadius: 20, padding: '12px 20px',
-          fontSize: 13, color: 'white', zIndex: 300,
-          whiteSpace: 'nowrap', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          animation: 'slideUp 0.3s ease',
-        }}>
-          {skinTooltipMsg}
-        </div>
-      )}
 
       <WeatherRecommendSheet
         isOpen={showWeatherRec}
