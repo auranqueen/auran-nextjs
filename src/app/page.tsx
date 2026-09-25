@@ -2246,24 +2246,36 @@ export default function CustomerHomePage() {
         }}
       >
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            value={searchKeyword}
-            onChange={e => setSearchKeyword(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-            placeholder="제품명, 브랜드 검색"
-            style={{
-              flex: 1,
-              height: 40,
-              padding: '0 14px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 20,
-              color: '#fff',
-              fontSize: 14,
-              outline: 'none',
-            }}
-          />
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            border: '0.5px solid rgba(201,169,110,0.13)',
+            borderRadius: 18,
+            padding: '5px 12px',
+            background: 'rgba(255,255,255,0.02)',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.6)" strokeWidth="1.6">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+              placeholder="제품명, 브랜드 검색"
+              style={{
+                flex: 1,
+                border: 'none',
+                background: 'transparent',
+                color: '#fff',
+                fontSize: 14,
+                outline: 'none',
+              }}
+            />
+          </div>
           <button
             type="button"
             onClick={() => {

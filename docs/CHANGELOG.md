@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-25
+- style: 홈 `page.tsx` 검색바 — 채운 박스 → 골드 `0.5px` 테두리·투명 배경 필 + SVG 돋보기. input `fontSize: 14`·검색/초기화 로직 유지
 - style: 홈 `page.tsx` 탑바 — padding `32px 24px 16px`, AURAN `16px`, 역할칩 `9`/▼`7`, 장바구니·알림 원 `28`·이모지 `13`, 뱃지 `13`/`fontSize 8`, 장바구니 이모지 `🛒`→`🛍️` (기능·space-between 유지)
 - fix: 홈 `page.tsx` Period/Dalbit 생리 안내 팝업 — `setShow*` 시 `genderNow`(profiles.gender 로컬)로 남성 제외, 렌더에 `userGender !== 'male'`(+ Period는 `hormoneTrack === 'general'`) 재확인. stale `userGender` state로 set 가드하지 않음
 - refactor: 홈 `src/app/page.tsx` — 케어팁+날씨 2열 그리드·펼침을 `trackToSegment!=='cycle'` 분기(`<>`) 밖으로 이동, `{myUserId && (…)}`로 로그인 고객만 노출(남성·SegmentSlot 등 전 세그먼트). 생리 시작 배너는 cycle 분기 유지. (선행 미커밋 정리 포함: CARE TIP/TODAY'S SKIN 상단 제거·dailyQuestion UI 제거·압축 그리드 도입)
