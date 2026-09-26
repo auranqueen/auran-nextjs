@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- refactor: `NotificationPanel` 토스트 내역 — 바텀시트 제거, 잔액 카드 아래 인라인 펼침(`showPointInline`/`togglePointInline`). 재클릭 시 접힘
 - refactor: 고객 알림 UI 정리 — `CustomerHeaderRight`에서 `NoticeBell` 제거(장바구니 버튼만), `/my/notifications`·`NoticePanel`·`TopBar` 삭제, 홈 `page.tsx` NoticePanel 언마운트. `NotificationPanel` 잔액 클릭→토스트 내역 바텀시트(최근 10건), points-balance를 useEffect 선두로 이동. `NoticeBell`은 원장/브랜드용 유지(알림장 링크만 제거)
 - fix: `/api/checkin` — `profiles.roles`에 `owner`/`admin`이면 월 토스트 상한(`noOrderCap`)·IP 중복 블락 면제. `users` select에 `profiles(roles)` join + `isOperator` 가드
 - fix: 알림 패널 닫을 때 `mark-all-read` 재호출 — `NotificationPanel` `handleClose`(오버레이·X) + `page.tsx` onClose에서 POST 후 `setUnreadCount(0)`. 열릴 때 실패해도 닫을 때 서버 읽음 한 번 더 보장

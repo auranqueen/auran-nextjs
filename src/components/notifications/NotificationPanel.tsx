@@ -51,7 +51,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [pointsBalance, setPointsBalance] = useState<number | null>(null)
   const [attendanceSummary, setAttendanceSummary] = useState<{ count: number; total: number } | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
-  const [showPointPopup, setShowPointPopup] = useState(false)
+  const [showPointInline, setShowPointInline] = useState(false)
   const [pointTxs, setPointTxs] = useState<Array<{ id: string; amount: number; source_type: string | null; created_at: string }>>([])
   const [pointTxLoading, setPointTxLoading] = useState(false)
 
@@ -103,8 +103,12 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     void run()
   }, [isOpen])
 
-  const openPointPopup = async () => {
-    setShowPointPopup(true)
+  const togglePointInline = async () => {
+    if (showPointInline) {
+      setShowPointInline(false)
+      return
+    }
+    setShowPointInline(true)
     setPointTxLoading(true)
     try {
       const {
@@ -226,11 +230,35 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
         {pointsBalance !== null && (
           <div
-            onClick={() => void openPointPopup()}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '0 8px 4px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, flexShrink: 0, cursor: 'pointer' }}
+            onClick={() => void togglePointInline()}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '0 8px 4px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: showPointInline ? '10px 10px 0 0' : 10, flexShrink: 0, cursor: 'pointer' }}
           >
             <span style={{ fontSize: 11, color: '#C9A96E' }}>현재 토스트 잔액</span>
             <span style={{ fontSize: 14, color: '#F5F1EC' }}>{pointsBalance.toLocaleString()}T</span>
+          </div>
+        )}
+        {showPointInline && (
+          <div style={{ margin: '0 8px 4px', background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.15)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '0 14px', maxHeight: 260, overflowY: 'auto' }}>
+            {pointTxLoading ? (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: 20 }}>불러오는 중…</div>
+            ) : pointTxs.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: 20 }}>내역이 없어요</div>
+            ) : pointTxs.map(tx => {
+              const amt = Number(tx.amount) || 0
+              const positive = amt >= 0
+              return (
+                <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize: 15 }}>{toastSourceIcon(tx.source_type)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: '#fff' }}>{String(tx.source_type || '기타')}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{formatDateTime(tx.created_at)}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: positive ? '#C9A96E' : 'rgba(220,100,100,0.9)', fontWeight: 600 }}>
+                    {positive ? '+' : ''}{amt.toLocaleString()}T
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -458,78 +486,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           </div>
         ) : null}
       </div>
-      {showPointPopup ? (
-        <div
-          onClick={() => setShowPointPopup(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            zIndex: 300,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 480,
-              maxHeight: '70vh',
-              background: '#1a1520',
-              borderRadius: '20px 20px 0 0',
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 16, color: '#fff', fontWeight: 600 }}>토스트 내역</div>
-              <button
-                type="button"
-                onClick={() => setShowPointPopup(false)}
-                style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 16, cursor: 'pointer' }}
-              >
-                X
-              </button>
-            </div>
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {pointTxLoading ? (
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: 24 }}>불러오는 중…</div>
-              ) : pointTxs.length === 0 ? (
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: 24 }}>내역이 없어요</div>
-              ) : (
-                pointTxs.map(tx => {
-                  const amt = Number(tx.amount) || 0
-                  const positive = amt >= 0
-                  return (
-                    <div
-                      key={tx.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '12px 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                      }}
-                    >
-                      <span style={{ fontSize: 16 }}>{toastSourceIcon(tx.source_type)}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, color: '#fff' }}>{String(tx.source_type || '기타')}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{formatDateTime(tx.created_at)}</div>
-                      </div>
-                      <div style={{ fontSize: 13, color: positive ? '#C9A96E' : 'rgba(220,100,100,0.9)', fontWeight: 600 }}>
-                        {positive ? '+' : ''}{amt.toLocaleString()}T
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
       <style>{`@keyframes bounceIn { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} } @keyframes slideDown { 0%{transform:translateY(-20px);opacity:0} 100%{transform:translateY(0);opacity:1} } @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }`}</style>
     </>
   )
