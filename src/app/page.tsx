@@ -8,7 +8,6 @@ import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
-import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
 import HormoneCard from '@/components/home/HormoneCard'
 import SeasonRecommendSection from
@@ -2373,7 +2372,6 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
       </div>
-      <NoticePanel supabase={supabase} myUserId={myUserId} />
 
       {/* ── 인사말 ── */}
       <div style={{
