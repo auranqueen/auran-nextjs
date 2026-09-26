@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- perf: admin/magazine 브라우저 Supabase DB 직접호출 7건 제거 → 서버API 전환 (storage 업로드는 브라우저 유지)
 - perf: admin/toto 브라우저 Supabase 직접호출 6건 제거 → 서버API 전환
 - perf: admin/home-curation 브라우저 Supabase 직접호출 10건 제거 → 서버API 전환
 - perf: admin/owner-customers, admin/guest-consult 브라우저 Supabase 직접호출 제거 → 서버API 전환

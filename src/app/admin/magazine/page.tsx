@@ -20,8 +20,17 @@ function debounce<A extends unknown[]>(fn: (...args: A) => void | Promise<void>,
   }
 }
 
+async function api(action: string, extra?: Record<string, unknown>) {
+  const res = await fetch('/api/admin/magazine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...extra }),
+  })
+  return res.json()
+}
+
 export default function AdminMagazinePage() {
-  const supabase = createClient()
+  const supabase = createClient() // storage(uploadThumb·onImageUpload) 전용
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
@@ -52,8 +61,8 @@ export default function AdminMagazinePage() {
       debounce(async (html: string) => {
         const id = modalRowRef.current?.id
         if (!id) return
-        const { error } = await supabase.from('magazines' as any).update({ content: html }).eq('id', id)
-        if (!error) setToast('자동 저장됨')
+        const json = await api('saveContent', { id, content: html })
+        if (!json.error) setToast('자동 저장됨')
       }, 2500),
     []
   )
@@ -67,8 +76,8 @@ export default function AdminMagazinePage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await supabase.from('magazines' as any).select('*').order('created_at', { ascending: false }).limit(200)
-      const list = (data as any[]) || []
+      const json = await api('load')
+      const list = (json.items as any[]) || []
       setRows(list)
       const published = list.filter((r) => r.is_published)
       setKpi({
@@ -133,12 +142,8 @@ export default function AdminMagazinePage() {
       setProdHits([])
       return
     }
-    const { data } = await supabase
-      .from('products')
-      .select('id,name,retail_price,sale_price')
-      .ilike('name', `%${q}%`)
-      .limit(15)
-    setProdHits((data as any[]) || [])
+    const json = await api('searchProducts', { query: q })
+    setProdHits((json.products as any[]) || [])
   }
 
   const addTag = (id: string) => {
@@ -191,9 +196,9 @@ export default function AdminMagazinePage() {
     }
 
     if (modal.row?.id) {
-      await supabase.from('magazines' as any).update(payload).eq('id', modal.row.id)
+      await api('save', { id: modal.row.id, payload })
     } else {
-      await supabase.from('magazines' as any).insert({ ...payload, id: magId } as any)
+      await api('save', { payload: { ...payload, id: magId } })
     }
     setModal({ open: false, row: null })
     setToast('저장됐어요 💜')
@@ -202,20 +207,18 @@ export default function AdminMagazinePage() {
 
   const del = async (id: string) => {
     if (!confirm('삭제할까요?')) return
-    await supabase.from('magazines' as any).delete().eq('id', id)
+    await api('delete', { id })
     setToast('삭제됐어요')
     void load()
   }
 
   const togglePublish = async (r: any) => {
     const next = !r.is_published
-    await supabase
-      .from('magazines' as any)
-      .update({
-        is_published: next,
-        published_at: next ? r.published_at || new Date().toISOString() : r.published_at,
-      } as any)
-      .eq('id', r.id)
+    await api('togglePublish', {
+      id: r.id,
+      is_published: next,
+      published_at: next ? r.published_at || new Date().toISOString() : r.published_at,
+    })
     void load()
   }
 
