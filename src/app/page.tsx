@@ -1183,6 +1183,7 @@ export default function CustomerHomePage() {
             .select('id')
             .eq('user_id', uRow.id)
             .eq('is_read', false)
+            .neq('type', 'toast')
           setUnreadCount((unreadRows || []).length)
         } else {
           setUnreadCount(0)

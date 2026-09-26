@@ -20,6 +20,7 @@ export async function POST() {
     .update({ is_read: true })
     .eq('user_id', uRow.id)
     .eq('is_read', false)
+    .neq('type', 'toast')
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- fix: notifications unreadCount에서 toast 타입 제외 (뱃지 오카운트 버그) — `page.tsx` unread 쿼리·`mark-all-read` API에 `.neq('type', 'toast')` 추가. 패널 UI(`visibleItems`에서 toast 숨김)과 카운트/일괄읽음 기준 정렬
 - verify/docs: 알림 뱃지 `user_id`/`auth_id` 불일치 — 원격 `3a729a92`에서 `page.tsx` unread·`NotificationPanel` 목록이 이미 `users.id` 조회로 통일됨을 재확인. 로컬 동일 수정은 rebase 시 원격본(else `setUnreadCount(0)`/`setItems([])` 포함) 유지. 추가 코드 diff 없음
 
 ## 2026-09-25
