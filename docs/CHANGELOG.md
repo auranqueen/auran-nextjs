@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- fix: 마이월드 남성회원 호르몬 페이즈 노출 방지 — `myworld/page.tsx` profile null 게이트 추가, `hormonePhase`에 `gender !== 'male'` 조건 강화. 커밋: `72789aeb`
 - fix: 홈 `page.tsx` `finishOnboarding` — `gender: obGender`를 `...(obGender ? { gender: obGender } : {})`로 변경. `onboarding_done===false`일 때 빈 `obGender`로 `profiles.gender`를 덮어쓰던 경로 차단
 - refactor: `NotificationPanel` 토스트 내역 — 바텀시트 제거, 잔액 카드 아래 인라인 펼침(`showPointInline`/`togglePointInline`). 재클릭 시 접힘
 - refactor: 고객 알림 UI 정리 — `CustomerHeaderRight`에서 `NoticeBell` 제거(장바구니 버튼만), `/my/notifications`·`NoticePanel`·`TopBar` 삭제, 홈 `page.tsx` NoticePanel 언마운트. `NotificationPanel` 잔액 클릭→토스트 내역 바텀시트(최근 10건), points-balance를 useEffect 선두로 이동. `NoticeBell`은 원장/브랜드용 유지(알림장 링크만 제거)
