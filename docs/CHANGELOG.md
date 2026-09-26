@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- fix: `/api/checkin` — `profiles.roles`에 `owner`/`admin`이면 월 토스트 상한(`noOrderCap`)·IP 중복 블락 면제. `users` select에 `profiles(roles)` join + `isOperator` 가드
 - fix: 알림 패널 닫을 때 `mark-all-read` 재호출 — `NotificationPanel` `handleClose`(오버레이·X) + `page.tsx` onClose에서 POST 후 `setUnreadCount(0)`. 열릴 때 실패해도 닫을 때 서버 읽음 한 번 더 보장
 - fix: notifications unreadCount에서 toast 타입 제외 (뱃지 오카운트 버그) — `page.tsx` unread 쿼리·`mark-all-read` API에 `.neq('type', 'toast')` 추가. 패널 UI(`visibleItems`에서 toast 숨김)과 카운트/일괄읽음 기준 정렬
 - verify/docs: 알림 뱃지 `user_id`/`auth_id` 불일치 — 원격 `3a729a92`에서 `page.tsx` unread·`NotificationPanel` 목록이 이미 `users.id` 조회로 통일됨을 재확인. 로컬 동일 수정은 rebase 시 원격본(else `setUnreadCount(0)`/`setItems([])` 포함) 유지. 추가 코드 diff 없음

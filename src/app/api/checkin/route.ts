@@ -22,10 +22,13 @@ export async function POST(req: NextRequest) {
   // 유저 row 조회
   const { data: userRow } = await client
     .from('users')
-    .select('id, points, consecutive_checkin_days, last_checkin_at, total_checkin_days')
+    .select('id, points, consecutive_checkin_days, last_checkin_at, total_checkin_days, profiles(roles)')
     .eq('auth_id', user.id)
     .maybeSingle()
   if (!userRow) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
+
+  const rolesArr: string[] = (userRow as any)?.profiles?.roles ?? []
+  const isOperator = rolesArr.includes('owner') || rolesArr.includes('admin')
 
   // IP 중복 체크
   const { data: ipCheck } = await client
@@ -35,7 +38,7 @@ export async function POST(req: NextRequest) {
     .eq('checked_at', today)
     .neq('user_id', userRow.id)
     .maybeSingle()
-  const ipBlocked = !!ipCheck && ip !== 'unknown'
+  const ipBlocked = !isOperator && !!ipCheck && ip !== 'unknown'
 
   // admin_settings에서 출석 설정 조회
   const { data: settings } = await client
@@ -116,7 +119,7 @@ export async function POST(req: NextRequest) {
   if (newStreak === 30) { totalEarned += bonus30; bonusMessages.push(`30일 개근 보너스 +${bonus30}T 🎊`) }
 
   // D안: 구매 이력 없으면 월 1,000T 상한 적용
-  if (!hasOrderOrMembership) {
+  if (!isOperator && !hasOrderOrMembership) {
     const remaining = Math.max(0, noOrderCap - monthAttendanceTotal)
     if (remaining <= 0) {
       return NextResponse.json({ ok: true, toast_earned: 0, capped: true, streak: newStreak, message: '출석 완료! (이번달 구매 후 풀 적립 가능)' })
