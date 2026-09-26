@@ -1,29 +1,35 @@
 'use client'
-import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 const curMonth = new Date().getMonth() + 1
+
+async function api(action: string, extra?: Record<string, unknown>) {
+  const res = await fetch('/api/admin/home-curation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...extra }),
+  })
+  return res.json()
+}
 
 export default function HomeCurationClient({
   initialMappings, initialIssueButtons, products, initialConcerns
 }: {
   initialMappings: any[], initialIssueButtons: any[], products: any[], initialConcerns: any[]
 }) {
-  const supabase = createClient()
   const [tab, setTab] = useState(0)
   const [month, setMonth] = useState(curMonth)
   const [mappings, setMappings] = useState(initialMappings)
   const [issueButtons, setIssueButtons] = useState(initialIssueButtons.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
   const [concerns, setConcerns] = useState<any[]>([])
   useEffect(() => {
-    supabase.from('admin_settings')
-      .select('key,value')
-      .eq('category', 'concern_best')
-      .order('key')
-      .then(({ data }) => {
-        if (data) setConcerns(data.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
-      })
+    void (async () => {
+      const json = await api('init')
+      if (Array.isArray(json.items)) {
+        setConcerns(json.items.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
+      }
+    })()
   }, [])
   const [prodSearch, setProdSearch] = useState('')
   const [showProdDrop, setShowProdDrop] = useState(false)
@@ -60,39 +66,27 @@ export default function HomeCurationClient({
 
   const saveMappings = async () => {
     for (const product of pendingProds) {
-      const existing = await supabase
-        .from('season_product_mapping')
-        .select('id')
-        .eq('month', month)
-        .eq('product_id', product.id)
-        .maybeSingle()
-      if (existing.data) continue
-      const { error } = await supabase.from('season_product_mapping').insert({
-        month, product_id: product.id,
-        concern_tag: '',
+      await api('saveMapping', {
+        seasonId: month,
+        productId: product.id,
         func_tag: selectedIssue !== '전체' ? selectedIssue : null,
         issue_key: selectedIssue !== '전체' ? selectedIssue : null,
         priority: monthMappings.length + pendingProds.indexOf(product) + 1,
-        is_active: true,
       })
-      if (error) { console.error('[saveMappings] error:', error); continue }
     }
-    const { data: fresh } = await supabase
-      .from('season_product_mapping')
-      .select('*, products(id,name,thumb_img,storage_thumb_url)')
-      .eq('month', month).eq('is_active', true).order('priority')
-    if (fresh) setMappings(fresh)
+    const json = await api('getMappings', { seasonId: month })
+    if (json.mappings) setMappings(json.mappings)
     setPendingProds([])
   }
 
   const removeMapping = async (id: string) => {
-    await supabase.from('season_product_mapping').delete().eq('id', id)
+    await api('removeMapping', { id })
     setMappings(prev => prev.filter((m: any) => m.id !== id))
   }
 
   const removeAllMappings = async () => {
     if (!confirm('이 달 매핑을 전체 삭제할까요?')) return
-    await supabase.from('season_product_mapping').delete().eq('month', month).eq('is_active', true)
+    await api('removeAllMappings', { seasonId: month })
     setMappings([])
   }
 
@@ -100,13 +94,13 @@ export default function HomeCurationClient({
     if (!newBtnLabel.trim()) return
     const key = `${month}_${Date.now()}`
     const value = JSON.stringify({ key, label: newBtnLabel, func_tag: newBtnLabel })
-    await supabase.from('admin_settings').insert({ category: 'monthly_issue', key, value })
+    await api('addIssue', { key, value })
     setIssueButtons(prev => [...prev, { key, label: newBtnLabel }])
     setNewBtnLabel('')
   }
 
   const removeIssueBtn = async (key: string) => {
-    await supabase.from('admin_settings').delete().eq('key', key).eq('category', 'monthly_issue')
+    await api('removeIssue', { key })
     setIssueButtons(prev => prev.filter((b: any) => b.key !== key))
   }
 
@@ -114,13 +108,13 @@ export default function HomeCurationClient({
     if (!newConcern.trim()) return
     const key = `concern_${Date.now()}`
     const value = JSON.stringify({ key, label: newConcern })
-    await supabase.from('admin_settings').insert({ category: 'concern_best', key, value })
+    await api('addConcern', { key, value })
     setConcerns(prev => [...prev, { key, label: newConcern }])
     setNewConcern('')
   }
 
   const removeConcern = async (key: string) => {
-    await supabase.from('admin_settings').delete().eq('key', key).eq('category', 'concern_best')
+    await api('removeConcern', { key })
     setConcerns(prev => prev.filter((c: any) => c.key !== key))
   }
 
