@@ -101,6 +101,15 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
   const visibleItems = items.filter((n: any) => n.type !== 'toast')
 
+  const handleClose = async () => {
+    try {
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+    } catch {
+      /* ignore */
+    }
+    onClose()
+  }
+
   const chalkNoise = useMemo(
     () =>
       "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08))",
@@ -110,7 +119,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={handleClose}
         style={{
           position: 'fixed',
           inset: 0,
@@ -170,7 +179,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
               공지
             </button>
           </div>
-          <button type="button" onClick={onClose} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+          <button type="button" onClick={handleClose} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
             X
           </button>
         </div>

@@ -2242,7 +2242,15 @@ export default function CustomerHomePage() {
           </button>
         </div>
       </header>
-      <NotificationPanel isOpen={notificationOpen} onClose={() => { setNotificationOpen(false); setUnreadCount(0) }} />
+      <NotificationPanel isOpen={notificationOpen} onClose={async () => {
+        try {
+          await fetch('/api/notifications/mark-all-read', { method: 'POST' })
+        } catch {
+          /* ignore */
+        }
+        setNotificationOpen(false)
+        setUnreadCount(0)
+      }} />
       <div
         style={{
           maxHeight: 420,
