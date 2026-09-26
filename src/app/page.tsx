@@ -1796,7 +1796,7 @@ export default function CustomerHomePage() {
 
   async function finishOnboarding() {
     await supabase.from('profiles').update({
-      gender: obGender,
+      ...(obGender ? { gender: obGender } : {}),
       skin_type: obSkin || null,
       skin_concerns: obConcerns.length > 0
         ? obConcerns.map(c => CONCERN_KEY_MAP[c] ?? c)
