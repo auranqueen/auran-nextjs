@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-09-26
+- verify/docs: 알림 뱃지 `user_id`/`auth_id` 불일치 — 원격 `3a729a92`에서 `page.tsx` unread·`NotificationPanel` 목록이 이미 `users.id` 조회로 통일됨을 재확인. 로컬 동일 수정은 rebase 시 원격본(else `setUnreadCount(0)`/`setItems([])` 포함) 유지. 추가 코드 diff 없음
+
 ## 2026-09-25
 - feat: 제품목록 `ProductsListClient.tsx` `dramaticLine` — 모든 분기·폴백에 `p.name` 포함(호르몬/단계/기능 매칭·폴백 문구가 카드마다 다르게 보이도록)
 - fix: 제품목록 `ProductsListClient.tsx` — 2열 그리드 아이템·카드 Link에 `minWidth: 0`(± Link `overflow: hidden`), 큐레이션 가로줄 `maxWidth: 100%`/`minWidth: 0`로 격리. 가로밀림 유력 후보 수정(실기기 확인 필요)
