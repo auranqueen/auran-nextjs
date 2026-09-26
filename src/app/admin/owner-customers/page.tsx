@@ -1,17 +1,13 @@
 'use client'
-import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 
 export default function AdminOwnerCustomersPage() {
-  const supabase = createClient()
   const [customers, setCustomers] = useState<any[]>([])
 
   useEffect(() => {
-    supabase.from('users').select('id, name, email, customer_grade, created_at')
-      .eq('role', 'customer').eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(50)
-      .then(({ data }) => { if (data) setCustomers(data) })
+    fetch('/api/admin/owner-customers-data', { method: 'POST' })
+      .then(r => r.json())
+      .then(json => setCustomers(json.customers || []))
   }, [])
 
   return (

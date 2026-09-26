@@ -3,10 +3,8 @@
 // 비회원이 제품 상세에서 시작한 상담 내역
 // 읽음/전환 처리 + 메시지 열람
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function GuestConsultPage() {
-  const supabase = createClient()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -19,33 +17,37 @@ export default function GuestConsultPage() {
 
   const loadData = async () => {
     setLoading(true)
-    try {
-      const { data } = await supabase
-        .from('guest_consultations')
-        .select('*')
-        .order('created_at', { ascending: false })
-      setItems(data || [])
-    } finally {
-      setLoading(false)
-    }
+    const res = await fetch('/api/admin/guest-consult', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    })
+    if (!res.ok) { setLoading(false); return }
+    const json = await res.json()
+    setItems(json.items || [])
+    setLoading(false)
   }
 
   useEffect(() => { loadData() }, [])
 
   const handleRead = async (id: string, current: boolean) => {
-    await supabase
-      .from('guest_consultations')
-      .update({ is_read: !current })
-      .eq('id', id)
+    const res = await fetch('/api/admin/guest-consult', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'read', id, is_read: !current }),
+    })
+    if (!res.ok) return
     setItems(prev => prev.map(i => i.id === id ? { ...i, is_read: !current } : i))
     showToast(!current ? '읽음 처리됐어요' : '읽지 않음으로 변경됐어요')
   }
 
   const handleConverted = async (id: string, current: boolean) => {
-    await supabase
-      .from('guest_consultations')
-      .update({ is_converted: !current })
-      .eq('id', id)
+    const res = await fetch('/api/admin/guest-consult', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'converted', id, is_converted: !current }),
+    })
+    if (!res.ok) return
     setItems(prev => prev.map(i => i.id === id ? { ...i, is_converted: !current } : i))
     showToast(!current ? '회원 전환 완료로 표시됐어요 💜' : '전환 취소됐어요')
   }
