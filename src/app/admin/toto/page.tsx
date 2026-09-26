@@ -3,7 +3,6 @@
 // 오렌 또또(general) / 르노벨 골든또또(renobel) 상품 풀 관리
 // 재고 설정 + 활성화 여부 + 제품 연결
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 const RENOBEL_BRAND_ID = '90175aa9-70c8-4568-865a-195f11bd7859'
 
@@ -20,9 +19,16 @@ const RENOBEL_TIERS = [
   { value: '2000000', label: '르노벨 200만↑' },
 ]
 
-export default function TotoAdminPage() {
-  const supabase = createClient()
+async function api(action: string, extra?: Record<string, unknown>) {
+  const res = await fetch('/api/admin/toto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...extra }),
+  })
+  return res.json()
+}
 
+export default function TotoAdminPage() {
   const [tab, setTab] = useState<'general' | 'renobel'>('general')
   const [giftItems, setGiftItems] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
@@ -50,20 +56,9 @@ export default function TotoAdminPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      // gift_items 목록
-      const { data: items } = await supabase
-        .from('gift_items')
-        .select('*, product:products(id, name, thumb_img, brand_id)')
-        .order('created_at', { ascending: false })
-      setGiftItems(items || [])
-
-      // 제품 목록 (등록용 셀렉트박스)
-      const { data: prods } = await supabase
-        .from('products')
-        .select('id, name, brand_id, thumb_img')
-        .eq('is_active', true)
-        .order('name')
-      setProducts(prods || [])
+      const json = await api('load')
+      setGiftItems(json.gifts || [])
+      setProducts(json.products || [])
     } finally {
       setLoading(false)
     }
@@ -89,14 +84,16 @@ export default function TotoAdminPage() {
     if (!form.product_id) return showToast('제품을 선택해주세요')
     setSaving(true)
     try {
-      const { error } = await supabase.from('gift_items').insert({
-        product_id: form.product_id,
-        brand_type: form.brand_type,
-        tier: form.tier,
-        stock: form.stock,
-        is_active: true,
+      const json = await api('add', {
+        payload: {
+          product_id: form.product_id,
+          brand_type: form.brand_type,
+          tier: form.tier,
+          stock: form.stock,
+          is_active: true,
+        },
       })
-      if (error) throw error
+      if (json.error) throw new Error(json.error)
       showToast('등록됐어요 💜')
       setForm(f => ({ ...f, product_id: '', stock: 10 }))
       await loadData()
@@ -109,13 +106,13 @@ export default function TotoAdminPage() {
 
   // 재고 수정
   const handleStockUpdate = async (id: string, stock: number) => {
-    await supabase.from('gift_items').update({ stock }).eq('id', id)
+    await api('updateStock', { id, stock })
     setGiftItems(prev => prev.map(g => g.id === id ? { ...g, stock } : g))
   }
 
   // 활성화 토글
   const handleToggleActive = async (id: string, current: boolean) => {
-    await supabase.from('gift_items').update({ is_active: !current }).eq('id', id)
+    await api('toggleActive', { id, is_active: !current })
     setGiftItems(prev => prev.map(g => g.id === id ? { ...g, is_active: !current } : g))
     showToast(!current ? '활성화됐어요' : '비활성화됐어요')
   }
@@ -123,7 +120,7 @@ export default function TotoAdminPage() {
   // 삭제
   const handleDelete = async (id: string) => {
     if (!confirm('삭제할까요?')) return
-    await supabase.from('gift_items').delete().eq('id', id)
+    await api('delete', { id })
     setGiftItems(prev => prev.filter(g => g.id !== id))
     showToast('삭제됐어요')
   }

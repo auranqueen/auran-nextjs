@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-26
+- perf: admin/toto 브라우저 Supabase 직접호출 6건 제거 → 서버API 전환
 - perf: admin/home-curation 브라우저 Supabase 직접호출 10건 제거 → 서버API 전환
 - perf: admin/owner-customers, admin/guest-consult 브라우저 Supabase 직접호출 제거 → 서버API 전환
 - fix: 마이월드 남성회원 호르몬 페이즈 노출 방지 — `myworld/page.tsx` profile null 게이트 추가, `hormonePhase`에 `gender !== 'male'` 조건 강화. 커밋: `72789aeb`
