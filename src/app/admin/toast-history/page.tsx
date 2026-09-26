@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import {
   PERIOD_OPTIONS,
   TYPE_FILTER_OPTIONS,
@@ -37,8 +36,16 @@ const btnOn: CSSProperties = {
   color: GOLD,
 }
 
+async function api(action: string, extra?: Record<string, unknown>) {
+  const res = await fetch('/api/admin/toast-history', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...extra }),
+  })
+  return res.json()
+}
+
 export default function AdminToastHistoryPage() {
-  const supabase = useMemo(() => createClient(), [])
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<ToastRow[]>([])
   const [nameByUserId, setNameByUserId] = useState<Record<string, string>>({})
@@ -55,43 +62,27 @@ export default function AdminToastHistoryPage() {
   const [adjustNote, setAdjustNote] = useState('')
   const [adjustSubmitting, setAdjustSubmitting] = useState(false)
 
-  const resolveNameSearchIds = useCallback(
-    async (term: string): Promise<string[] | null> => {
-      const t = term.trim()
-      if (!t) return null
-      const { data, error: uErr } = await supabase
-        .from('users')
-        .select('id, auth_id, name')
-        .ilike('name', `%${t}%`)
-        .limit(200)
-      if (uErr) throw uErr
-      const ids = new Set<string>()
-      ;((data as { id: string; auth_id?: string | null }[]) || []).forEach((u) => {
-        if (u.id) ids.add(String(u.id))
-        if (u.auth_id) ids.add(String(u.auth_id))
-      })
-      return Array.from(ids)
-    },
-    [supabase]
-  )
+  const resolveNameSearchIds = useCallback(async (term: string): Promise<string[] | null> => {
+    const t = term.trim()
+    if (!t) return null
+    const json = await api('searchUsers', { query: t })
+    if (json.error) throw new Error(json.error)
+    const ids = new Set<string>()
+    ;((json.users as { id: string; auth_id?: string | null }[]) || []).forEach((u) => {
+      if (u.id) ids.add(String(u.id))
+      if (u.auth_id) ids.add(String(u.auth_id))
+    })
+    return Array.from(ids)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const { data: auth } = await supabase.auth.getUser()
-      const authUser = auth?.user
-      if (authUser) {
-        const { data: u } = await supabase.from('users').select('id,role').eq('auth_id', authUser.id).single()
-        setAdminId(u?.id || null)
-      } else {
-        setAdminId(null)
-      }
-
-      let userIds: string[] | null = null
+      let nameIds: string[] | null = null
       if (nameSearchApplied.trim()) {
-        userIds = await resolveNameSearchIds(nameSearchApplied)
-        if (!userIds?.length) {
+        nameIds = await resolveNameSearchIds(nameSearchApplied)
+        if (!nameIds?.length) {
           setRows([])
           setTotalCount(0)
           setAmountSum(0)
@@ -103,58 +94,23 @@ export default function AdminToastHistoryPage() {
       const { from: dateFrom, to: dateTo } = periodBounds(period)
       const typeOpt = TYPE_FILTER_OPTIONS.find((o) => o.key === typeFilter)
 
-      let listQ = supabase
-        .from('toast_transactions')
-        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users!toast_transactions_user_id_fkey(name, origin_track)', {
-          count: 'exact',
-        })
-      if (dateFrom) listQ = listQ.gte('created_at', dateFrom)
-      if (dateTo) listQ = listQ.lte('created_at', dateTo)
-      if ((typeOpt as any)?.sourceType) listQ = listQ.eq('source_type', (typeOpt as any).sourceType)
-      if (userIds) listQ = listQ.in('user_id', userIds)
-
-      const rangeFrom = page * PAGE_SIZE
-      const rangeTo = rangeFrom + PAGE_SIZE - 1
-      const { data, error: listErr, count } = await listQ.order('created_at', { ascending: false }).range(rangeFrom, rangeTo)
-      if (listErr) throw listErr
-
-      const list = (data || []) as ToastRow[]
-      setRows(list)
-      setTotalCount(count ?? 0)
-
-      let sumQ = supabase.from('toast_transactions').select('amount, user_id')
-      if (dateFrom) sumQ = sumQ.gte('created_at', dateFrom)
-      if (dateTo) sumQ = sumQ.lte('created_at', dateTo)
-      if ((typeOpt as any)?.sourceType) sumQ = sumQ.eq('source_type', (typeOpt as any).sourceType)
-      if (userIds) sumQ = sumQ.in('user_id', userIds)
-      const { data: sumRows, error: sumErr } = await sumQ.limit(10000)
-      if (sumErr) throw sumErr
-      const sum = ((sumRows as { amount?: number | null }[]) || []).reduce(
-        (acc, r) => acc + (Number(r.amount) || 0),
-        0
-      )
-      setAmountSum(sum)
-
-      const missing = new Set<string>()
-      list.forEach((r) => {
-        if (!pickUser(r.users)?.name && r.user_id) missing.add(String(r.user_id))
+      const json = await api('load', {
+        page,
+        pageSize: PAGE_SIZE,
+        filters: {
+          nameIds,
+          sourceType: (typeOpt as any)?.sourceType || null,
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+        },
       })
-      const extra: Record<string, string> = {}
-      if (missing.size) {
-        const ids = Array.from(missing)
-        const { data: byId } = await supabase.from('users').select('id, auth_id, name, origin_track').in('id', ids)
-        ;((byId as { id: string; name?: string | null }[]) || []).forEach((u) => {
-          if (u.id && u.name) extra[String(u.id)] = String(u.name)
-        })
-        const left = ids.filter((id) => !extra[id])
-        if (left.length) {
-          const { data: byAuth } = await supabase.from('users').select('id, auth_id, name, origin_track').in('auth_id', left)
-          ;((byAuth as { auth_id: string; name?: string | null }[]) || []).forEach((u) => {
-            if (u.auth_id && u.name) extra[String(u.auth_id)] = String(u.name)
-          })
-        }
-      }
-      setNameByUserId(extra)
+      if (json.error) throw new Error(json.error)
+
+      setAdminId(json.adminId || null)
+      setRows((json.items || []) as ToastRow[])
+      setTotalCount(json.count ?? 0)
+      setAmountSum(Number(json.total) || 0)
+      setNameByUserId((json.nameByUserId as Record<string, string>) || {})
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
       setRows([])
@@ -163,7 +119,7 @@ export default function AdminToastHistoryPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, period, typeFilter, page, nameSearchApplied, resolveNameSearchIds])
+  }, [period, typeFilter, page, nameSearchApplied, resolveNameSearchIds])
 
   useEffect(() => {
     void load()
