@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
 const btnStyle: React.CSSProperties = {
-  width: 34,
-  height: 34,
-  borderRadius: 9,
+  width: '2.125rem',
+  height: '2.125rem',
+  borderRadius: '0.5625rem',
   background: 'rgba(255,255,255,0.06)',
   border: '1px solid var(--border)',
   color: 'var(--text2)',
-  fontSize: 16,
+  fontSize: '1rem',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
@@ -50,21 +50,21 @@ export default function CartHeaderButton() {
           className={bounceClass ? 'auran-cart-badge-bounce' : undefined}
           style={{
             position: 'absolute',
-            top: -4,
-            right: -4,
-            minWidth: 16,
-            height: 16,
-            padding: '0 4px',
+            top: '-0.25rem',
+            right: '-0.25rem',
+            minWidth: '1rem',
+            height: '1rem',
+            padding: '0 0.25rem',
             background: '#d94f4f',
             borderRadius: 999,
-            fontSize: 9,
+            fontSize: '0.5625rem',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: "'JetBrains Mono', monospace",
             fontWeight: 700,
-            lineHeight: '16px',
+            lineHeight: '1rem',
           }}
         >
           {totalQty > 99 ? '99+' : totalQty}
