@@ -4,6 +4,10 @@
 ---
 
 ## 2026-09-28
+- [2026-09-28] 역할전환 버튼 숨기기 + /logi 버튼 노출 버그 수정. 커밋: `2a10a972`
+  - AppProviders.tsx: /logi 경로 hideVoiceBox 조건 누락 수정 (시바산 로그인 페이지 버튼 노출 버그)
+  - 역할전환 "고객으로" 버튼 5곳 → super_admin만 표시되도록 변경
+  - 갇힌 계정 3명 SQL 복구 필요 (owner/brand/partner → active_role=role)
 - refactor: 어드민 정산 `admin/settlement/page.tsx` 브라우저 Supabase 호출 8곳(auth·users·settlements·orders) → `POST /api/admin/settlement` (`init`/`hold`/`batchPay`/`createFromOrders`). 서버에서 `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`로 처리. 커미션 합산·중복확인·INSERT 로직은 그대로 서버로 이동, 목록 정렬(`created_at desc`)·숫자 변환·D-3 자동선택 유지
 
 ## 2026-09-26
