@@ -1,5 +1,10 @@
 ﻿# YOOMTANG 작업 로그 (쉬운 말)
 
+## 2026-09-28
+- 문제: 어드민 정산 화면이 브라우저에서 바로 DB를 읽고 고쳐서, 로그인만 되면 누구든 정산 데이터를 건드릴 수 있는 구조였다.
+- 원인: 보류·일괄지급·정산대기 생성을 전부 화면 코드가 직접 DB에 요청했다.
+- 해결: 화면은 서버 API 하나만 부르고, 서버가 관리자인지 확인한 뒤 DB를 처리하게 옮겼다. 화면 동작(목록 순서, 자동 선택, 알림 문구)은 그대로다.
+
 ## 2026-09-26
 - 토스트 내역 탭 브라우저 DB 직접호출 6건 서버로 이전.
 
@@ -18,6 +23,16 @@
 - 문제: 온보딩이 덜 끝난 회원이 홈에 들어오면, 성별이 비어 있어도 DB에 빈 성별을 덮어쓸 수 있었다.
 - 원인: 홈 `finishOnboarding`이 항상 `gender: obGender`를 넣었고, `obGender`는 비어 있는 채였다.
 - 해결: 성별을 고른 경우에만 `gender` 필드를 보내도록 바꿨다. 이미 저장된 성별은 건드리지 않는다.
+
+### CartHeaderButton.tsx — rem 적용
+- 파일: src/components/CartHeaderButton.tsx
+- 버튼: width/height 34px → 2.125rem, borderRadius 9px → 0.5625rem, fontSize 16px → 1rem
+- 뱃지: 16px → 1rem, fontSize 9px → 0.5625rem, top/right -4px → -0.25rem
+- 이유: DashboardHeader와 통일, 기기 크기 대응
+
+- 문제: 장바구니·체크아웃 헤더가 노치 폰에서 상단에 붙고, px 고정이라 기기마다 크기가 안 맞았다.
+- 원인: `DashboardHeader`만 예전 px 패딩이었고, 홈 탑바처럼 safe-area·rem이 없었다.
+- 해결: padding에 safe-area + rem, 뒤로가기·로고·제목·gap을 rem으로 맞춰 홈과 같은 방식으로 통일했다.
 
 - 문제: 토스트 내역이 화면 전체를 덮는 시트로 떠서 알림 패널과 겹쳐 보였다.
 - 원인: 잔액 클릭 시 아래 전체 팝업으로 열리게 해 두었다.

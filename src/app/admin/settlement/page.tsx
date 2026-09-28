@@ -1,7 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+
+async function api(action: string, extra?: Record<string, unknown>) {
+  const res = await fetch('/api/admin/settlement', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...extra }),
+  })
+  return res.json()
+}
 
 type Settlement = {
   id: string
@@ -18,7 +26,6 @@ type Settlement = {
 }
 
 export default function AdminSettlementBatchPage() {
-  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -56,36 +63,27 @@ export default function AdminSettlementBatchPage() {
 
   const load = async () => {
     setLoading(true)
-    const { data: auth } = await supabase.auth.getUser()
-    const authUser = auth?.user
-    if (authUser) {
-      const { data: u } = await supabase.from('users').select('id,role').eq('auth_id', authUser.id).single()
-      setAdminId(u?.id || null)
-    } else {
-      setAdminId(null)
+    try {
+      const { adminId, settlements, error } = await api('init')
+      if (error) { alert(error); return }
+      setAdminId(adminId)
+
+      const list = ((settlements || []) as any[]).map(x => ({
+        ...x,
+        amount: Number(x.amount || 0),
+        platform_fee: Number(x.platform_fee || 0),
+        net_amount: Number(x.net_amount || 0),
+      })) as Settlement[]
+
+      setRows(list)
+      const init: Record<string, boolean> = {}
+      list.forEach(r => {
+        if (new Date(r.period_end) <= cutoff) init[r.id] = true
+      })
+      setSelectedIds(init)
+    } finally {
+      setLoading(false)
     }
-
-    const { data } = await supabase
-      .from('settlements')
-      .select('id,target_id,target_role,target_name,amount,platform_fee,net_amount,period_start,period_end,status,created_at')
-      .eq('status', '정산대기')
-      .order('created_at', { ascending: false })
-      .limit(500)
-
-    const list = ((data || []) as any[]).map(x => ({
-      ...x,
-      amount: Number(x.amount || 0),
-      platform_fee: Number(x.platform_fee || 0),
-      net_amount: Number(x.net_amount || 0),
-    })) as Settlement[]
-
-    setRows(list)
-    const init: Record<string, boolean> = {}
-    list.forEach(r => {
-      if (new Date(r.period_end) <= cutoff) init[r.id] = true
-    })
-    setSelectedIds(init)
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -110,11 +108,8 @@ export default function AdminSettlementBatchPage() {
 
   const holdOne = async (id: string) => {
     if (!confirm('이 정산을 보류 처리할까요?')) return
-    const { error } = await supabase.from('settlements').update({ status: '보류' }).eq('id', id)
-    if (error) {
-      alert(error.message)
-      return
-    }
+    const { error } = await api('hold', { id })
+    if (error) { alert(error); return }
     setRows(prev => prev.filter(r => r.id !== id))
     setSelectedIds(prev => {
       const n = { ...prev }
@@ -135,15 +130,10 @@ export default function AdminSettlementBatchPage() {
     if (!confirm(`선택된 ${selected.length}건을 정산완료 처리할까요?`)) return
 
     setProcessing(true)
-    const now = new Date().toISOString()
     const ids = selected.map(s => s.id)
-    const { error } = await supabase
-      .from('settlements')
-      .update({ status: '정산완료', approved_by: adminId, approved_at: now, paid_at: now })
-      .in('id', ids)
-
+    const { error } = await api('batchPay', { ids, adminId })
     if (error) {
-      alert(error.message)
+      alert(error)
       setProcessing(false)
       return
     }
@@ -170,99 +160,12 @@ export default function AdminSettlementBatchPage() {
 
     setCreating(true)
     try {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('id,partner_id,partner_commission,owner_id,owner_commission,delivered_at,status')
-        .gte('delivered_at', start.toISOString())
-        .lte('delivered_at', end.toISOString())
-        .eq('status', '배송완료')
-
-      if (error) {
-        alert(error.message)
-        return
-      }
-
-      const partnerSum = new Map<string, number>()
-      const ownerSum = new Map<string, number>()
-      ;(orders || []).forEach((o: any) => {
-        if (o.partner_id && o.partner_commission) partnerSum.set(o.partner_id, (partnerSum.get(o.partner_id) || 0) + Number(o.partner_commission || 0))
-        if (o.owner_id && o.owner_commission) ownerSum.set(o.owner_id, (ownerSum.get(o.owner_id) || 0) + Number(o.owner_commission || 0))
-      })
-
-      const targetIds = Array.from(new Set([...Array.from(partnerSum.keys()), ...Array.from(ownerSum.keys())]))
-      if (targetIds.length === 0) {
-        alert('해당 기간에 생성할 정산 대상이 없습니다. (commission이 없거나 대상 id가 없음)')
-        return
-      }
-
-      // 이름 채우기
-      const { data: users } = await supabase.from('users').select('id,name').in('id', targetIds)
-      const nameMap: Record<string, string> = {}
-      ;(users || []).forEach((u: any) => (nameMap[u.id] = u.name))
-
       const periodStart = start.toISOString()
       const periodEnd = end.toISOString()
-
-      // 중복 방지: 동일 target_id + role + period_start/end 조합이 이미 있으면 제외
-      const { data: existing } = await supabase
-        .from('settlements')
-        .select('id,target_id,target_role,period_start,period_end,status')
-        .in('target_id', targetIds)
-        .eq('status', '정산대기')
-        .gte('period_start', periodStart)
-        .lte('period_end', periodEnd)
-        .limit(500)
-
-      const existKey = new Set<string>()
-      ;(existing || []).forEach((x: any) => {
-        existKey.add(`${x.target_id}|${x.target_role}|${String(x.period_start).slice(0, 10)}|${String(x.period_end).slice(0, 10)}`)
-      })
-      const keyOf = (targetId: string, role: string) => `${targetId}|${role}|${periodStart.slice(0, 10)}|${periodEnd.slice(0, 10)}`
-
-      const inserts: any[] = []
-      partnerSum.forEach((amount, targetId) => {
-        if (amount <= 0) return
-        if (existKey.has(keyOf(targetId, 'partner'))) return
-        inserts.push({
-          target_id: targetId,
-          target_role: 'partner',
-          target_name: nameMap[targetId] || null,
-          amount,
-          platform_fee: 0,
-          net_amount: amount,
-          period_start: periodStart,
-          period_end: periodEnd,
-          status: '정산대기',
-        })
-      })
-      ownerSum.forEach((amount, targetId) => {
-        if (amount <= 0) return
-        if (existKey.has(keyOf(targetId, 'owner'))) return
-        inserts.push({
-          target_id: targetId,
-          target_role: 'owner',
-          target_name: nameMap[targetId] || null,
-          amount,
-          platform_fee: 0,
-          net_amount: amount,
-          period_start: periodStart,
-          period_end: periodEnd,
-          status: '정산대기',
-        })
-      })
-
-      if (inserts.length === 0) {
-        alert('이미 생성된 정산대기(동일 기간)가 있어 추가 생성할 항목이 없습니다.')
-        return
-      }
-
-      const { error: insErr } = await supabase.from('settlements').insert(inserts)
-      if (insErr) {
-        alert(insErr.message)
-        return
-      }
-
-      alert(`정산대기 ${inserts.length}건 생성 완료`)
+      const { inserted, message, error: apiErr } = await api('createFromOrders', { periodStart, periodEnd })
+      if (apiErr) { alert(apiErr); return }
+      if (inserted === 0) { alert(message ?? '생성할 항목이 없습니다.'); return }
+      alert(`정산대기 ${inserted}건 생성 완료`)
       await load()
     } finally {
       setCreating(false)

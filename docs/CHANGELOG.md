@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-09-28
+- refactor: 어드민 정산 `admin/settlement/page.tsx` 브라우저 Supabase 호출 8곳(auth·users·settlements·orders) → `POST /api/admin/settlement` (`init`/`hold`/`batchPay`/`createFromOrders`). 서버에서 `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`로 처리. 커미션 합산·중복확인·INSERT 로직은 그대로 서버로 이동, 목록 정렬(`created_at desc`)·숫자 변환·D-3 자동선택 유지
+
 ## 2026-09-26
 - perf: admin/toast-history 브라우저 Supabase DB 직접호출 6건 제거 → 서버API 전환
 - perf: admin/magazine 브라우저 Supabase DB 직접호출 7건 제거 → 서버API 전환 (storage 업로드는 브라우저 유지)
@@ -11,6 +14,14 @@
 - perf: admin/owner-customers, admin/guest-consult 브라우저 Supabase 직접호출 제거 → 서버API 전환
 - fix: 마이월드 남성회원 호르몬 페이즈 노출 방지 — `myworld/page.tsx` profile null 게이트 추가, `hormonePhase`에 `gender !== 'male'` 조건 강화. 커밋: `72789aeb`
 - fix: 홈 `page.tsx` `finishOnboarding` — `gender: obGender`를 `...(obGender ? { gender: obGender } : {})`로 변경. `onboarding_done===false`일 때 빈 `obGender`로 `profiles.gender`를 덮어쓰던 경로 차단
+### DashboardHeader.tsx — rem + safe-area 적용
+- 파일: `src/components/DashboardHeader.tsx`
+- wrapper padding: `14px 16px` → `calc(env(safe-area-inset-top, 0px) + 0.875rem) 1rem 0.875rem`
+- 뒤로가기 버튼: width/height `34` → `2.125rem`, borderRadius `10` → `0.625rem`, fontSize `18` → `1.125rem`
+- AURAN 로고: fontSize `14` → `0.875rem`
+- title: fontSize `16` → `1rem`
+- gap: `12` → `0.75rem`
+- 이유: 노치 기기 대응 + 기기 크기별 글씨 유연하게
 - refactor: `NotificationPanel` 토스트 내역 — 바텀시트 제거, 잔액 카드 아래 인라인 펼침(`showPointInline`/`togglePointInline`). 재클릭 시 접힘
 - refactor: 고객 알림 UI 정리 — `CustomerHeaderRight`에서 `NoticeBell` 제거(장바구니 버튼만), `/my/notifications`·`NoticePanel`·`TopBar` 삭제, 홈 `page.tsx` NoticePanel 언마운트. `NotificationPanel` 잔액 클릭→토스트 내역 바텀시트(최근 10건), points-balance를 useEffect 선두로 이동. `NoticeBell`은 원장/브랜드용 유지(알림장 링크만 제거)
 - fix: `/api/checkin` — `profiles.roles`에 `owner`/`admin`이면 월 토스트 상한(`noOrderCap`)·IP 중복 블락 면제. `users` select에 `profiles(roles)` join + `isOperator` 가드
