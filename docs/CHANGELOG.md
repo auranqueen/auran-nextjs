@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-28
+- fix: /logi 하단 탭바 숨김 추가 — `AppProviders.tsx` `hideCustomerNav`에 `/logi` 조건 1줄 추가 (시바산 로그인 페이지 고객 하단 탭바 노출)
 - [2026-09-28] 역할전환 버튼 숨기기 + /logi 버튼 노출 버그 수정. 커밋: `2a10a972`
   - AppProviders.tsx: /logi 경로 hideVoiceBox 조건 누락 수정 (시바산 로그인 페이지 버튼 노출 버그)
   - 역할전환 "고객으로" 버튼 5곳 → super_admin만 표시되도록 변경

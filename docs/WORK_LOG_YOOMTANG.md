@@ -1,6 +1,8 @@
 ﻿# YOOMTANG 작업 로그 (쉬운 말)
 
 ## 2026-09-28
+- /logi 하단 탭바 숨김 추가 — 시바산 로그인 페이지에 고객 하단 탭바가 뜨던 문제를 막았다 (AppProviders.tsx 1줄).
+
 [2026-09-28] 역할전환 버튼 숨기기 + /logi 버튼 노출 버그 수정
 - AppProviders.tsx: /logi 경로 hideVoiceBox 조건 누락 수정 (시바산 로그인 페이지 버튼 노출 버그)
 - 역할전환 "고객으로" 버튼 5곳 → super_admin만 표시되도록 변경
