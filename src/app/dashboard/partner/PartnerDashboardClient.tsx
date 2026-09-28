@@ -41,6 +41,13 @@ function monthRange() {
 export default function PartnerDashboardClient() {
   const router = useRouter()
   const supabase = createClient()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const role = (session?.user as any)?.app_metadata?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [])
 
   const [loading, setLoading] = useState(true)
   const [partnerUserId, setPartnerUserId] = useState<string | null>(null)
@@ -373,6 +380,7 @@ export default function PartnerDashboardClient() {
             >
               {displayGrade}
             </span>
+            {isSuperAdmin && (
             <button
               onClick={() => switchRole('customer')}
               style={{
@@ -385,6 +393,7 @@ export default function PartnerDashboardClient() {
             >
               ✦ 고객으로
             </button>
+            )}
           </div>
         </div>
       </div>

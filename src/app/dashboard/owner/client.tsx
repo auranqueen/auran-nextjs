@@ -67,6 +67,13 @@ type ChannelRow = {
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const role = (session?.user as any)?.app_metadata?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [])
   const { isTrackA, ready } = useIsTrackA()
   const [csRows, setCsRows] = useState<any[]>([])
   const [ownerChannels, setOwnerChannels] = useState<ChannelRow[]>([])
@@ -223,6 +230,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           <div style={{ display: 'flex', gap: 7 }}>
             <span style={{ fontSize: 9, padding: '3px 10px', background: `${PLAN_COLORS[plan]}22`, color: PLAN_COLORS[plan], border: `1px solid ${PLAN_COLORS[plan]}44`, borderRadius: 18, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{plan.toUpperCase()}</span>
             <NoticeBell />
+            {isSuperAdmin && (
             <button
               onClick={() => switchRole('customer')}
               style={{
@@ -235,6 +243,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
             >
               ✦ 고객으로
             </button>
+            )}
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>

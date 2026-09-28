@@ -50,6 +50,13 @@ export default function BrandHubContent({
   rows, tab, onTabChange, onEdit, onNew, pinAuth, onSwitchStaff, onFullLogout
 }: Props) {
   const supabase = createClient()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const role = (session?.user as any)?.app_metadata?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [])
   async function switchRole(role: string) {
     const res = await fetch('/api/profile/active-role', {
       method: 'POST',
@@ -166,6 +173,7 @@ export default function BrandHubContent({
   }, [brandId, supabase])
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#0a0908', overflow: 'hidden' }}>
+      {isSuperAdmin && (
       <button
         onClick={() => switchRole('customer')}
         style={{
@@ -184,6 +192,7 @@ export default function BrandHubContent({
       >
         ✦ 고객으로
       </button>
+      )}
       <div style={{ width: 188, flexShrink: 0, background: '#0d0b0a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>

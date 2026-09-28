@@ -118,6 +118,13 @@ export default function OwnerHomeV3({
   const [kpiBookings, setKpiBookings] = useState(0)
   const [kpiUnanswered, setKpiUnanswered] = useState(0)
   const supabase = createClient()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const role = (session?.user as any)?.app_metadata?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [])
   const ownerProfileId = profile?.id ? String(profile.id) : null
   const [areteCompanyId, setAreteCompanyId] = useState<string | null>(null)
   const [pointBalance, setPointBalance] = useState(0)
@@ -326,6 +333,7 @@ export default function OwnerHomeV3({
                 <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
               </a>
             ) : null}
+            {isSuperAdmin && (
             <button
               onClick={() => switchRole('customer')}
               style={{
@@ -341,6 +349,7 @@ export default function OwnerHomeV3({
             >
               ✦ 고객으로
             </button>
+            )}
           </div>
         </div>
 

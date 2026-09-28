@@ -2145,7 +2145,7 @@ export default function CustomerHomePage() {
                 <button
                   key={pos.id}
                   onClick={async () => {
-                    if (!hasRole) return
+                    if (!hasRole || (pos.id === 'customer' && !isSuperAdmin)) return
                     setShowRoleSwitcher(false)
                     const res = await fetch('/api/profile/active-role', {
                       method: 'POST',
