@@ -80,3 +80,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (error) return json({ ok: false, error: error.message }, 500)
   return json({ ok: true, product: data })
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireAdminApi()
+  if (!auth.ok || !auth.db) return json({ ok: false, error: 'forbidden' }, auth.status)
+
+  const id = params.id
+  if (!id) return json({ ok: false, error: 'missing_id' }, 400)
+
+  const { error } = await auth.db.from('products').delete().eq('id', id)
+  if (error) return json({ ok: false, error: error.message }, 500)
+  return json({ ok: true })
+}

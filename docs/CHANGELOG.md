@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-09-30
+- fix: 제품 삭제 RLS 우회 → `DELETE /api/admin/products/[id]` 추가, 마케팅 제품관리 단건·일괄삭제를 브라우저 `products.delete()`에서 서버 API fetch로 교체
+
 ## 2026-09-29
 - refactor: 어드민 회원 `admin/members/page.tsx`(866줄) 브라우저 Supabase 호출 8곳(users 조회·상태변경·파운더, membership_plans, orders, point_history, login_logs) → `POST /api/admin/members` (`init`/`detail`/`setStatus`/`toggleFounder`). 서버에서 `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`로 처리, `setStatus`는 active/suspended만 허용
   - 파일 분리: `useMembers`·`useMemberDetail` 훅, `MemberListRow`, `MemberDetailModal`, `GradeEditor`, `MembershipRegisterForm`, `ToastAdjustPanel`, `PointGrantModal`, `tabs/Summary·Orders·Points·LogsTab` (최대 140줄, page.tsx 81줄)

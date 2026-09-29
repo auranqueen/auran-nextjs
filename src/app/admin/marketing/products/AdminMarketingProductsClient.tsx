@@ -89,7 +89,12 @@ export default function AdminMarketingProductsClient() {
 
   const deleteProduct = async (id: string) => {
     if (!confirm('삭제할까요?')) return
-    await supabase.from('products').delete().eq('id', id)
+    const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      alert(`삭제 실패: ${body.error ?? res.status}`)
+      return
+    }
     await load()
   }
 
@@ -201,7 +206,19 @@ export default function AdminMarketingProductsClient() {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={e => e.target.checked ? setSelectedIds(new Set(filtered.map(p => p.id))) : clearSelection()} style={{ cursor: 'pointer' }} />
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>선택됨: {selectedIds.size}/{filtered.length}</span>
-        <button style={{ marginLeft: 'auto', padding: '5px 12px', background: selectedIds.size > 0 ? '#e07898' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed', opacity: selectedIds.size > 0 ? 1 : 0.5 }} disabled={selectedIds.size === 0} onClick={async () => { if (confirm(`${selectedIds.size}개 제품을 정말 삭제할까요? 복구 불가능해요`)) { setLoading(true); for (const id of Array.from(selectedIds)) { await supabase.from('products').delete().eq('id', id) } await load(); clearSelection(); setLoading(false) } }}>일괄삭제</button>
+        <button style={{ marginLeft: 'auto', padding: '5px 12px', background: selectedIds.size > 0 ? '#e07898' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed', opacity: selectedIds.size > 0 ? 1 : 0.5 }} disabled={selectedIds.size === 0} onClick={async () => {
+          if (!confirm(`${selectedIds.size}개 제품을 정말 삭제할까요? 복구 불가능해요`)) return
+          setLoading(true)
+          const ids = Array.from(selectedIds)
+          const results = await Promise.all(
+            ids.map(id => fetch(`/api/admin/products/${id}`, { method: 'DELETE' }).then(r => r.json()))
+          )
+          const failed = results.filter(r => !r.ok)
+          if (failed.length > 0) alert(`${failed.length}개 삭제 실패`)
+          await load()
+          clearSelection()
+          setLoading(false)
+        }}>일괄삭제</button>
       </div>
 
       {loading ? (
