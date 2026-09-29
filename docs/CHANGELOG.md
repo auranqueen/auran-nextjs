@@ -3,6 +3,14 @@
 
 ---
 
+## 2026-09-29
+- refactor: 어드민 회원 `admin/members/page.tsx`(866줄) 브라우저 Supabase 호출 8곳(users 조회·상태변경·파운더, membership_plans, orders, point_history, login_logs) → `POST /api/admin/members` (`init`/`detail`/`setStatus`/`toggleFounder`). 서버에서 `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`로 처리, `setStatus`는 active/suspended만 허용
+  - 파일 분리: `useMembers`·`useMemberDetail` 훅, `MemberListRow`, `MemberDetailModal`, `GradeEditor`, `MembershipRegisterForm`, `ToastAdjustPanel`, `PointGrantModal`, `tabs/Summary·Orders·Points·LogsTab` (최대 140줄, page.tsx 81줄)
+  - `login_logs` `select('*')` → `id,email,ip_address,user_agent,created_at`
+  - fix: 멤버십 등록 응답 파싱 실패 시 버튼 "등록 중..." 고착 → try/finally, 등록 완료 메시지가 폼 닫힘으로 안 보이던 문제 수정
+  - fix: 다른 회원 열 때 토스트 패널·멤버십 폼 상태 잔존 → 모달 `key=회원id`로 매번 초기화
+  - 기존 동작 유지: 조회 컬럼, 등급값(PETAL~CÉLESTE), 승인(`auth_id`)·확인창, `?role=`/`?q=` 필터, MarketingModal props, 포인트 지급 Bearer 토큰
+
 ## 2026-09-28
 - fix: /logi 하단 탭바 숨김 추가 — `AppProviders.tsx` `hideCustomerNav`에 `/logi` 조건 1줄 추가 (시바산 로그인 페이지 고객 하단 탭바 노출)
 - [2026-09-28] 역할전환 버튼 숨기기 + /logi 버튼 노출 버그 수정. 커밋: `2a10a972`
