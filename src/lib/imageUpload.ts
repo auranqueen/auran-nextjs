@@ -31,6 +31,7 @@ export async function compressImage(
   file: File,
   ruleKey: ImageRuleKey
 ): Promise<File> {
+  if (file.type === 'image/gif') return file
   const mime = (file.type || '').toLowerCase()
   const fname = (file.name || '').toLowerCase()
   if (mime.includes('image/heic') || mime.includes('image/heif') || fname.endsWith('.heic') || fname.endsWith('.heif')) {
