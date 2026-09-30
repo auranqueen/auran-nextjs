@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-30
+- feat: `GET/POST /api/admin/marketing/care-cards` 신규 — GET `type=list`(body_care_cards 전체, sort_order 오름차순)·`product_names`(ids CSV → id,name,clean_name)·`product_search`(is_active, 15개), POST `action=add`(서버에서 sort_order 최댓값+1)·`update`·`delete`. `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`. 어드민 `care-cards/page.tsx` 연결은 다음 단계
+  - `care-cards/types.ts` 신규: page.tsx 6~154줄(타입·TRACKS 등 상수·변환함수 5개·`inp`) 복사 + export. `lbl`(JSX)은 DraftForm 분리 시 이동
+  - `care-cards/useCareCards.ts` 신규: state 8개·`loadRows`·`loadMeta`·검색·`openRow`/`openNew`·`save`/`remove`·`addProduct`/`removeProduct`를 훅으로 추출, Supabase 직접호출 6곳 → care-cards API fetch. payload 생성(buildCategoryTags·phase_tags·trim·updated_at) 원본 유지, sort_order는 서버 계산. 의존성 배열에서 supabase 제거
+  - `care-cards/DraftForm.tsx` 신규: page.tsx 469~712줄 `DraftForm` + `lbl` 그대로 이동(export 추가), props 시그니처 원본 유지
+  - `care-cards/page.tsx` 교체(712줄 → 157줄): `createClient`·브라우저 Supabase 호출 6곳 제거, `useCareCards`·`DraftForm`·`types` 사용. 목록 표 JSX(원본 320~467줄) 그대로 유지. First Load JS 147kB → 92.4kB
+- chore: 미사용 `src/components/home/BodyCareCard.tsx`(494줄) 삭제 — 2026-09-25 `adaeb230`에서 홈 마운트 제거 후 import 0건. 브라우저 `body_care_cards` insert/update/delete·`cart_items` insert 잔존 코드 제거
 - refactor: 어드민 멤버십 큐레이션 `admin/membership/members/MembersClient.tsx`(979줄 → 557줄) 브라우저 Supabase 호출 9곳 제거 → `/api/admin/membership/curate` 경유
   - curate API 확장: GET `type=shipments`(회차 목록)·`tomorrow`(내일 발송 이름)·`templates`·`product_search`, POST `action=save_tpl`·`add_tpl`·`delete_tpl`. 발송(POST ship)·예정일 저장(PATCH) 응답에 `shipments` 포함 → 클라이언트 재조회 제거. 기존 `tryCreateServiceClient` 로직 유지
   - 파일 분리: `types.ts`, `utils.ts`, `useMembershipInit`, `useTemplates`, `TomorrowPopup`, `ShipHistoryModal`, `ShipConfirmModal`, `ManualRegisterPanel`, `TemplatePanel`
