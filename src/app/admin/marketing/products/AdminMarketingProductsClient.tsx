@@ -240,7 +240,7 @@ export default function AdminMarketingProductsClient() {
               <input type="checkbox" checked={isSelected} onChange={e => { e.stopPropagation(); toggleSelect(p.id) }} onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 8, left: 8, cursor: 'pointer', width: 18, height: 18 }} />
               <div style={s.imgBox}>
                 {(p as any).thumb_img || (p as any).storage_thumb_url
-                  ? <img src={(p as any).storage_thumb_url || (p as any).thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                  ? <img src={(p as any).storage_thumb_url || (p as any).thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   : <span>🧴</span>
                 }
               </div>

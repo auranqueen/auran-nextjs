@@ -4,6 +4,7 @@
 ---
 
 ## 2026-09-30
+- fix: 마케팅 제품관리 목록 썸네일 `img`에 `onError` 추가 — 로드 실패 시 `display: none`으로 깨진 이미지 숨김
 - fix: 마케팅 제품관리 일괄삭제 — `try/finally`로 오류 시에도 `setLoading(false)` 보장, DELETE 응답이 JSON이 아니면 `{ ok: false, error: 'invalid_response' }`로 실패 처리
 - fix: 제품 삭제 RLS 우회 → `DELETE /api/admin/products/[id]` 추가, 마케팅 제품관리 단건·일괄삭제를 브라우저 `products.delete()`에서 서버 API fetch로 교체
 
