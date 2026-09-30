@@ -1501,3 +1501,8 @@ PC 화면에서 보이는 사이드바 메뉴를 새로 만들었어요. 모바�
 - 수정: hasEligibleItem 조건 추가로 보완
 - 참고: 또또 섹션 자체는 이미 hasEligibleItem 조건 있어서
   공구만 담으면 원래 안 뜸
+
+[2026-09-30] care-cards 브라우저 Supabase 제거 + 파일 분리
+- 712줄 → 157줄 (4개 파일 분리)
+- 신규 API: /api/admin/marketing/care-cards
+- 미사용 BodyCareCard.tsx 삭제
