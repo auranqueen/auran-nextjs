@@ -4,6 +4,12 @@
 ---
 
 ## 2026-09-30
+- refactor: 어드민 멤버십 큐레이션 `admin/membership/members/MembersClient.tsx`(979줄 → 557줄) 브라우저 Supabase 호출 9곳 제거 → `/api/admin/membership/curate` 경유
+  - curate API 확장: GET `type=shipments`(회차 목록)·`tomorrow`(내일 발송 이름)·`templates`·`product_search`, POST `action=save_tpl`·`add_tpl`·`delete_tpl`. 발송(POST ship)·예정일 저장(PATCH) 응답에 `shipments` 포함 → 클라이언트 재조회 제거. 기존 `tryCreateServiceClient` 로직 유지
+  - 파일 분리: `types.ts`, `utils.ts`, `useMembershipInit`, `useTemplates`, `TomorrowPopup`, `ShipHistoryModal`, `ShipConfirmModal`, `ManualRegisterPanel`, `TemplatePanel`
+  - 기존 동작 유지: 멤버 목록·회차 표시·예정일 수정·배송방법·미리보기/발송 JSX, 수동등록 `/api/admin/membership/manual` 호출
+  - 남은 정리(Step 9): MembersClient 내 `C`·타입·`PHASES`·`MALE_PRESETS`·`histTh/Td`·`fmtScheduleDate`·`calcCycleDate`·`pill` 중복 → `types.ts`/`utils.ts`로 통합 예정
+
 - fix: `compressImage` — `image/gif`는 압축·JPEG 변환 없이 원본 반환 (GIF 업로드 시 애니메이션이 첫 프레임 JPG로 굳던 버그)
 - fix: 마케팅 제품관리 목록 썸네일 `img`에 `onError` 추가 — 로드 실패 시 `display: none`으로 깨진 이미지 숨김
 - fix: 마케팅 제품관리 일괄삭제 — `try/finally`로 오류 시에도 `setLoading(false)` 보장, DELETE 응답이 JSON이 아니면 `{ ok: false, error: 'invalid_response' }`로 실패 처리

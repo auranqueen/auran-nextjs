@@ -39,11 +39,74 @@ export async function GET(req: NextRequest) {
   if (!admin) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
 
   const type = req.nextUrl.searchParams.get('type')
+  const client = tryCreateServiceClient() || supabase
+
+  // type=shipments&ids=id1,id2,...
+  if (type === 'shipments') {
+    const idsRaw = req.nextUrl.searchParams.get('ids') || ''
+    const ids = idsRaw.split(',').filter(Boolean)
+    if (!ids.length) return NextResponse.json({ ok: true, data: [] })
+    const { data, error } = await client
+      .from('membership_shipments')
+      .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+      .in('user_membership_id', ids)
+      .order('cycle_no', { ascending: true })
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, data: data || [] })
+  }
+
+  // type=tomorrow&date=YYYY-MM-DD
+  if (type === 'tomorrow') {
+    const dateStr = req.nextUrl.searchParams.get('date') || ''
+    if (!dateStr) return NextResponse.json({ ok: true, names: [] })
+    const dayStart = `${dateStr}T00:00:00.000Z`
+    const dayAfterDate = new Date(dateStr)
+    dayAfterDate.setDate(dayAfterDate.getDate() + 1)
+    const dayEnd = dayAfterDate.toISOString().slice(0, 10) + 'T00:00:00.000Z'
+    const [{ data: dueRows }, { data: firstDue }] = await Promise.all([
+      client.from('membership_shipments').select('id, scheduled_at, user_membership_id, users(name)').gte('scheduled_at', dayStart).lt('scheduled_at', dayEnd),
+      client.from('user_memberships').select('id, next_shipment_date, shipments_total, shipments_remaining, users(name)').eq('status', 'active').eq('next_shipment_date', dateStr).gt('shipments_remaining', 0),
+    ])
+    const names: string[] = []
+    const seen = new Set<string>()
+    for (const row of dueRows || []) {
+      const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
+      const key = `s:${(row as any).user_membership_id}:${name}`
+      if (!seen.has(key)) { seen.add(key); names.push(name) }
+    }
+    for (const row of firstDue || []) {
+      const completed = ((row as any).shipments_total || 0) - ((row as any).shipments_remaining || 0)
+      if (completed > 0) continue
+      const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
+      const key = `m:${(row as any).id}:${name}`
+      if (!seen.has(key)) { seen.add(key); names.push(name) }
+    }
+    return NextResponse.json({ ok: true, names })
+  }
+
+  // type=templates
+  if (type === 'templates') {
+    const { data, error } = await client
+      .from('bundle_templates')
+      .select('id,theme_name,target_phase,product_ids,usage_guide,owner_tip,is_active,display_order,target_gender')
+      .order('display_order', { ascending: true })
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, data: data || [] })
+  }
+
+  // type=product_search&q=...
+  if (type === 'product_search') {
+    const q = req.nextUrl.searchParams.get('q') || ''
+    if (q.length < 2) return NextResponse.json({ ok: true, data: [] })
+    const { data, error } = await client.from('products').select('id,name').ilike('name', `%${q}%`).limit(8)
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, data: data || [] })
+  }
+
   if (type !== 'history') {
     return NextResponse.json({ ok: false, error: 'invalid_type' }, { status: 400 })
   }
 
-  const client = tryCreateServiceClient() || supabase
   const { data, error } = await client
     .from('membership_shipments')
     .select('id, cycle_no, status, shipped_at, delivery_type, courier, tracking_no, users(name), bundle_templates(theme_name)')
@@ -71,9 +134,41 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
 
   const body = await req.json().catch(() => ({}))
+  const client = tryCreateServiceClient() || supabase
+
+  const actionRaw = String(body?.action || '')
+  if (actionRaw === 'save_tpl') {
+    const tplId = String(body?.id || '')
+    if (!tplId) return NextResponse.json({ ok: false, error: 'missing_id' }, { status: 400 })
+    const { error } = await client.from('bundle_templates').update({
+      theme_name: body.theme_name,
+      target_phase: body.target_phase ?? null,
+      product_ids: body.product_ids ?? [],
+      usage_guide: body.usage_guide ?? null,
+      owner_tip: body.owner_tip ?? null,
+      is_active: body.is_active ?? true,
+      target_gender: body.target_gender || 'all',
+    }).eq('id', tplId)
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+  if (actionRaw === 'add_tpl') {
+    const { count } = await client.from('bundle_templates').select('id', { count: 'exact', head: true })
+    const { data, error } = await client.from('bundle_templates').insert({ theme_name: '새 리추얼', product_ids: [], is_active: true, display_order: (count ?? 0) + 1 } as any).select().single()
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, data })
+  }
+  if (actionRaw === 'delete_tpl') {
+    const tplId = String(body?.id || '')
+    if (!tplId) return NextResponse.json({ ok: false, error: 'missing_id' }, { status: 400 })
+    const { error } = await client.from('bundle_templates').delete().eq('id', tplId)
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
   const membershipId = String(body?.user_membership_id || '')
   const templateId = String(body?.bundle_template_id || '')
-  const action = body?.action === 'ship' ? 'ship' : 'preview'
+  const action = actionRaw === 'ship' ? 'ship' : 'preview'
   const nextShipmentDate = body?.next_shipment_date ? String(body.next_shipment_date).slice(0, 10) : null
   const scheduledDatesRaw = Array.isArray(body?.scheduled_dates) ? body.scheduled_dates : []
   const deliveryType = body?.delivery_type ? String(body.delivery_type) : 'courier'
@@ -83,8 +178,6 @@ export async function POST(req: NextRequest) {
   if (!membershipId || !templateId) {
     return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
   }
-
-  const client = tryCreateServiceClient() || supabase
 
   const { data: um } = await client
     .from('user_memberships')
@@ -253,6 +346,12 @@ export async function POST(req: NextRequest) {
     }
   } catch (_) {}
 
+  const { data: freshShipments } = await client
+    .from('membership_shipments')
+    .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+    .eq('user_membership_id', um.id)
+    .order('cycle_no', { ascending: true })
+
   return NextResponse.json({
     ok: true,
     shipped: true,
@@ -260,6 +359,7 @@ export async function POST(req: NextRequest) {
     remaining,
     next_shipment_date: nextDateStr,
     scheduled_at: nextScheduledIso,
+    shipments: freshShipments || [],
   })
 }
 
@@ -344,10 +444,17 @@ export async function PATCH(req: NextRequest) {
     .update({ next_shipment_date: nextDateStr, scheduled_at: nextScheduledIso })
     .eq('id', membershipId)
 
+  const { data: freshShipments2 } = await client
+    .from('membership_shipments')
+    .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+    .eq('user_membership_id', membershipId)
+    .order('cycle_no', { ascending: true })
+
   return NextResponse.json({
     ok: true,
     cycle_no: cycleNo,
     scheduled_at: schedIso,
     next_shipment_date: nextDateStr,
+    shipments: freshShipments2 || [],
   })
 }

@@ -1,7 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
+import { useMembershipInit } from './useMembershipInit'
+import { useTemplates } from './useTemplates'
+import { TomorrowPopup } from './TomorrowPopup'
+import { ShipHistoryModal } from './ShipHistoryModal'
+import { ShipConfirmModal } from './ShipConfirmModal'
+import { ManualRegisterPanel } from './ManualRegisterPanel'
+import { TemplatePanel } from './TemplatePanel'
 
 const C = {
   purple: '#7B5EA7', purpleSoft: '#F1ECF8', goldDark: '#A07F4A', goldSoft: '#F6EFE3',
@@ -46,9 +52,7 @@ export default function MembersClient({
 }: {
   memberships: Membership[]; templates: Tpl[]; plans: Plan[]; productMap: Record<string, ProductInfo>; genderMap?: Record<string, string>
 }) {
-  const supabase = createClient()
   const [memberships, setMemberships] = useState<Membership[]>(initial)
-  const [templates, setTemplates] = useState<Tpl[]>(initialTpls)
   const [openId, setOpenId] = useState<string | null>(null)
   const [localProductMap, setLocalProductMap] = useState<Record<string, ProductInfo>>(productMap)
   const [deliveryTypes, setDeliveryTypes] = useState<Record<string, string>>({})
@@ -61,25 +65,11 @@ export default function MembersClient({
   const [msg, setMsg] = useState<string | null>(null)
 
   // 템플릿 관리
-  const [showTplPanel, setShowTplPanel] = useState(false)
-  const [editTpl, setEditTpl] = useState<Tpl | null>(null)
-  const [tplSearch, setTplSearch] = useState('')
-  const [tplSearchResults, setTplSearchResults] = useState<{ id: string; name: string }[]>([])
-  const [savingTpl, setSavingTpl] = useState(false)
-  const [tplMsg, setTplMsg] = useState('')
+  const tpl = useTemplates(initialTpls)
+  const { templates, showTplPanel, setShowTplPanel, setEditTpl, setTplMsg } = tpl
 
   // 수동 등록
   const [showManual, setShowManual] = useState(false)
-  const [mSearch, setMSearch] = useState('')
-  const [mUsers, setMUsers] = useState<{ id: string; name: string; email: string; shipments_remaining?: number; shipments_total?: number; status?: string }[]>([])
-  const [mUserId, setMUserId] = useState('')
-  const [mUserName, setMUserName] = useState('')
-  const [mPlanId, setMPlanId] = useState('')
-  const [mShipments, setMShipments] = useState(6)
-  const [mDate, setMDate] = useState('')
-  const [mMemo, setMMemo] = useState('')
-  const [mBusy, setMBusy] = useState(false)
-  const [mMsg, setMMsg] = useState('')
   const [showShipmentHistory, setShowShipmentHistory] = useState(false)
   const [shipmentHistory, setShipmentHistory] = useState<ShipmentHistoryRow[]>([])
   const [historySummary, setHistorySummary] = useState({ total: 0, monthCount: 0 })
@@ -171,12 +161,7 @@ export default function MembersClient({
       next_shipment_date: json.next_shipment_date ?? m.next_shipment_date,
       scheduled_at: json.scheduled_at ?? m.scheduled_at,
     } : m))
-    const { data: fresh } = await supabase
-      .from('membership_shipments')
-      .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
-      .eq('user_membership_id', mId)
-      .order('cycle_no', { ascending: true })
-    setMemberShipments((prev) => ({ ...prev, [mId]: (fresh as MemberShipment[]) || [] }))
+    setMemberShipments((prev) => ({ ...prev, [mId]: (json.shipments as MemberShipment[]) || [] }))
     setEditCycleKey(null)
     setEditCycleDate('')
     setMsg(`${cycleNo}회차 예정일 저장 완료`)
@@ -204,69 +189,9 @@ export default function MembersClient({
     setShipModalCycleDates({})
   }
 
-  useEffect(() => {
-    const run = async () => {
-      const mIds = initial.map((m) => m.id)
-      if (mIds.length) {
-        const { data } = await supabase
-          .from('membership_shipments')
-          .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
-          .in('user_membership_id', mIds)
-          .order('cycle_no', { ascending: true })
-        const grouped: Record<string, MemberShipment[]> = {}
-        for (const row of (data as MemberShipment[]) || []) {
-          const mid = row.user_membership_id
-          if (!grouped[mid]) grouped[mid] = []
-          grouped[mid].push(row)
-        }
-        setMemberShipments(grouped)
-      }
-
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const tomorrowStr = tomorrow.toISOString().slice(0, 10)
-      const dayStart = `${tomorrowStr}T00:00:00.000Z`
-      const dayAfter = new Date(tomorrow)
-      dayAfter.setDate(dayAfter.getDate() + 1)
-      const dayEnd = dayAfter.toISOString().slice(0, 10) + 'T00:00:00.000Z'
-
-      const { data: dueRows } = await supabase
-        .from('membership_shipments')
-        .select('id, scheduled_at, user_membership_id, users(name)')
-        .gte('scheduled_at', dayStart)
-        .lt('scheduled_at', dayEnd)
-
-      const { data: firstDue } = await supabase
-        .from('user_memberships')
-        .select('id, next_shipment_date, shipments_total, shipments_remaining, users(name)')
-        .eq('status', 'active')
-        .eq('next_shipment_date', tomorrowStr)
-        .gt('shipments_remaining', 0)
-
-      const names: string[] = []
-      const seen = new Set<string>()
-      for (const row of dueRows || []) {
-        const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
-        const key = `s:${(row as any).user_membership_id}:${name}`
-        if (!seen.has(key)) { seen.add(key); names.push(name) }
-      }
-      for (const row of firstDue || []) {
-        const completed = ((row as any).shipments_total || 0) - ((row as any).shipments_remaining || 0)
-        if (completed > 0) continue
-        const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
-        const key = `m:${(row as any).id}:${name}`
-        if (!seen.has(key)) { seen.add(key); names.push(name) }
-      }
-      if (names.length) {
-        setTomorrowNames(names)
-        setShowTomorrowPopup(true)
-      }
-    }
-    void run()
-  }, [])
+  useMembershipInit(initial, setMemberShipments, setTomorrowNames, setShowTomorrowPopup)
 
   const pendingMemberships = memberships.filter(m => m.status === 'active' && m.shipments_remaining > 0)
-  const ritualDeliveryLabel = (r: ShipmentHistoryRow) => r.delivery_type === 'direct' ? '직접전달' : r.delivery_type === 'quick' ? `퀵 · ${r.courier || ''}` : `택배 · ${r.courier || ''}`
 
   const openShipmentHistory = async () => {
     setShowShipmentHistory(true)
@@ -328,12 +253,7 @@ export default function MembersClient({
         next_shipment_date: json.next_shipment_date ?? m.next_shipment_date,
         scheduled_at: json.scheduled_at ?? m.scheduled_at,
       } : m))
-      const { data: fresh } = await supabase
-        .from('membership_shipments')
-        .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
-        .eq('user_membership_id', mId)
-        .order('cycle_no', { ascending: true })
-      setMemberShipments((prev) => ({ ...prev, [mId]: (fresh as MemberShipment[]) || [] }))
+      setMemberShipments((prev) => ({ ...prev, [mId]: (json.shipments as MemberShipment[]) || [] }))
       setMsg(`${json.cycle_no}회차 발송 완료 · 남은 ${json.remaining}회`)
       setPreview(null)
       closeShipModal()
@@ -358,73 +278,6 @@ export default function MembersClient({
     })
   }
 
-  // 템플릿 제품 검색
-  const searchProducts = async (q: string) => {
-    if (q.length < 2) { setTplSearchResults([]); return }
-    const { data } = await supabase.from('products').select('id,name').ilike('name', `%${q}%`).limit(8)
-    setTplSearchResults((data as any) || [])
-  }
-
-  // 템플릿 저장
-  const saveTpl = async () => {
-    if (!editTpl) return
-    setSavingTpl(true); setTplMsg('')
-    const { error } = await supabase.from('bundle_templates').update({
-      theme_name: editTpl.theme_name,
-      target_phase: editTpl.target_phase,
-      product_ids: editTpl.product_ids,
-      usage_guide: editTpl.usage_guide,
-      owner_tip: editTpl.owner_tip,
-      is_active: editTpl.is_active,
-      target_gender: editTpl.target_gender || 'all',
-    }).eq('id', editTpl.id)
-    setSavingTpl(false)
-    if (error) { setTplMsg('저장 실패: ' + error.message); return }
-    setTemplates(ts => ts.map(t => t.id === editTpl.id ? editTpl : t))
-    setTplMsg('저장됐어요 ✓'); setEditTpl(null)
-  }
-
-  // 템플릿 추가
-  const addTpl = async () => {
-    const { data, error } = await supabase.from('bundle_templates')
-      .insert({ theme_name: '새 리추얼', product_ids: [], is_active: true, display_order: templates.length + 1 } as any)
-      .select().single()
-    if (!error && data) {
-      const newTpl = data as Tpl
-      setTemplates(ts => [...ts, newTpl])
-      setEditTpl(newTpl)
-    }
-  }
-
-  const deleteTpl = async (id: string) => {
-    if (!confirm('템플릿을 삭제할까요?')) return
-    const { error } = await supabase.from('bundle_templates').delete().eq('id', id)
-    if (error) { setTplMsg('삭제 실패'); return }
-    setTemplates(ts => ts.filter(t => t.id !== id))
-    setTplMsg('✓ 삭제됐어요')
-  }
-
-  // 수동 등록
-  const searchUsers = async (q: string) => {
-    if (q.length < 2) { setMUsers([]); return }
-    const res = await fetch('/api/admin/membership/manual?q=' + encodeURIComponent(q))
-    const json = await res.json()
-    setMUsers(json.users || [])
-  }
-
-  const registerManual = async () => {
-    if (!mUserId || !mPlanId || !mDate) { setMMsg('고객·플랜·배송일을 모두 입력해주세요'); return }
-    setMBusy(true); setMMsg('')
-    const res = await fetch('/api/admin/membership/manual', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: mUserId, plan_id: mPlanId, shipments_total: mShipments, next_shipment_date: mDate, memo: mMemo || undefined, user_name: mUserName || undefined }),
-    })
-    const json = await res.json()
-    setMBusy(false)
-    if (json.ok) { setMMsg('등록 완료! 💜'); setMUserId(''); setMUserName(''); setMPlanId(''); setMDate(''); setMMemo(''); setMSearch(''); setMUsers([]) }
-    else { setMMsg(json.error || '실패했어요') }
-  }
-
   const selectedTpl = templates.find(t => t.id === tplId)
 
   return (
@@ -433,7 +286,7 @@ export default function MembersClient({
 
       {/* 상단 버튼 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button onClick={() => { setShowManual(!showManual); setShowTplPanel(false); setMMsg('') }}
+        <button onClick={() => { setShowManual(!showManual); setShowTplPanel(false) }}
           style={{ padding: '7px 14px', background: showManual ? C.purple : 'transparent', border: `1px solid ${C.purple}`, color: showManual ? '#fff' : C.purple, borderRadius: 9, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
           {showManual ? '닫기' : '+ 수동 등록'}
         </button>
@@ -449,174 +302,12 @@ export default function MembersClient({
 
       {/* 수동 등록 패널 */}
       {showManual && (
-        <div style={{ background: '#fff', border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: C.ink, marginBottom: 12 }}>수동 멤버십 등록</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>고객 검색</div>
-              <input value={mSearch} onChange={e => { setMSearch(e.target.value); void searchUsers(e.target.value) }}
-                placeholder="이름 또는 이메일 2자 이상"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-              {mUsers.length > 0 && (
-                <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, marginTop: 4, overflow: 'hidden' }}>
-                  {mUsers.map(u => (
-                    <div key={u.id} onClick={() => { setMUserId(u.id); setMUserName(u.name || ''); setMSearch(u.email); setMUsers([]) }}
-                      style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: `0.5px solid ${C.line}`, background: mUserId === u.id ? C.purpleSoft : '#fff', color: '#111' }}>
-                      {u.name || '(이름없음)'} · {u.email}
-                      {u.shipments_remaining != null ? ` · 남은 ${u.shipments_remaining}회` : ''}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {mUserId && (
-              <input value={mUserName} onChange={e => setMUserName(e.target.value)} placeholder="이름 확인/수정"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-            )}
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>플랜</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {plans.map(p => <button key={p.id} onClick={() => setMPlanId(p.id)} style={pill(mPlanId === p.id)}>{p.name} · ₩{p.price.toLocaleString()}</button>)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>배송 횟수</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[3, 6, 12].map(n => <button key={n} onClick={() => setMShipments(n)} style={pill(mShipments === n)}>{n}회</button>)}
-              </div>
-            </div>
-            <input type="date" value={mDate} onChange={e => setMDate(e.target.value)}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-            <input value={mMemo} onChange={e => setMMemo(e.target.value)} placeholder="메모 (예: 300만원 송금 확인)"
-              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-            {mMsg && <div style={{ fontSize: 12, color: mMsg.includes('완료') ? C.green : '#A33' }}>{mMsg}</div>}
-            <button onClick={registerManual} disabled={mBusy}
-              style={{ padding: 12, background: mBusy ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: mBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-              {mBusy ? '등록 중...' : '멤버십 등록하기'}
-            </button>
-          </div>
-        </div>
+        <ManualRegisterPanel plans={plans} onClose={() => setShowManual(false)} />
       )}
 
       {/* 템플릿 관리 패널 */}
       {showTplPanel && (
-        <div style={{ background: '#fff', border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: C.ink }}>리추얼 템플릿 관리</div>
-            <button onClick={addTpl} style={{ padding: '5px 12px', background: C.purple, border: 'none', color: '#fff', borderRadius: 8, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>+ 추가</button>
-          </div>
-          {tplMsg && <div style={{ fontSize: 12, color: tplMsg.includes('✓') ? C.green : '#A33', marginBottom: 8 }}>{tplMsg}</div>}
-
-          {/* 템플릿 목록 */}
-          {!editTpl && templates.map(t => (
-            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `0.5px solid ${C.line}` }}>
-              <div>
-                <div style={{ fontSize: 13, color: C.plum }}>{t.theme_name}</div>
-                <div style={{ fontSize: 11, color: C.muted }}>{t.target_phase || '전체 페이즈'} · 제품 {t.product_ids?.length || 0}개 · {t.is_active ? '활성' : '비활성'}</div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => { setEditTpl({ ...t }); setTplMsg('') }}
-                  style={{ padding: '5px 10px', background: 'transparent', border: `0.5px solid ${C.line}`, color: C.muted, borderRadius: 7, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>편집</button>
-                <button onClick={() => deleteTpl(t.id)}
-                  style={{ padding: '5px 10px', background: 'transparent', border: '0.5px solid rgba(163,51,51,0.3)', color: '#A33', borderRadius: 7, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>삭제</button>
-              </div>
-            </div>
-          ))}
-
-          {/* 템플릿 편집 */}
-          {editTpl && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input value={editTpl.theme_name} onChange={e => setEditTpl({ ...editTpl, theme_name: e.target.value })}
-                placeholder="테마명" style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-              <div>
-                {(editTpl.target_gender || 'all') !== 'male' && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>호르몬 페이즈</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {PHASES.map(p => <button key={p} onClick={() => setEditTpl({ ...editTpl, target_phase: editTpl.target_phase === p ? null : p })} style={pill(editTpl.target_phase === p)}>{p}</button>)}
-                    </div>
-                  </div>
-                )}
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>대상 성별</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['all', 'female', 'male'] as const).map(g => (
-                      <button key={g} onClick={() => setEditTpl({ ...editTpl, target_gender: g, target_phase: g === 'male' ? null : editTpl.target_phase })}
-                        style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: '0.5px solid rgba(123,94,167,0.3)', background: (editTpl.target_gender || 'all') === g ? C.purple : 'transparent', color: (editTpl.target_gender || 'all') === g ? '#fff' : C.muted }}>
-                        {g === 'all' ? '전체' : g === 'female' ? '여성' : '남성'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              {(editTpl.target_gender || 'all') === 'male' && (
-                <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(123,94,167,0.05)', borderRadius: 8, border: `0.5px solid ${C.line}` }}>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 7 }}>남성 프리셋 불러오기</div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {Object.keys(MALE_PRESETS).map(key => (
-                      <button key={key} onClick={() => setEditTpl({ ...editTpl, ...MALE_PRESETS[key] })}
-                        style={{ padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer', border: `0.5px solid ${C.line}`, background: 'transparent', color: C.ink, fontFamily: 'inherit' }}>
-                        {key}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>제품 검색</div>
-                <input value={tplSearch} onChange={e => { setTplSearch(e.target.value); void searchProducts(e.target.value) }}
-                  placeholder="제품명 검색" style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
-                {tplSearchResults.length > 0 && (
-                  <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, marginTop: 4 }}>
-                    {tplSearchResults.map(p => (
-                      <div key={p.id} onClick={() => { if (!editTpl.product_ids.includes(p.id)) { setEditTpl({ ...editTpl, product_ids: [...editTpl.product_ids, p.id] }); setLocalProductMap(prev => ({ ...prev, [p.id]: { id: p.id, name: p.name, description: null, key_ingredients: null } })) } setTplSearch(''); setTplSearchResults([]) }}
-                        style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', color: '#111', borderBottom: `0.5px solid ${C.line}`, background: '#fff' }}>
-                        {p.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>구성 제품 ({editTpl.product_ids.length}개)</div>
-                {editTpl.product_ids.map(pid => (
-                  <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `0.5px solid ${C.line}` }}>
-                    <div>
-                      <div style={{ fontSize: 12, color: C.plum }}>{localProductMap[pid]?.name || pid}</div>
-                      {localProductMap[pid]?.key_ingredients && <div style={{ fontSize: 10, color: C.gold }}>성분: {localProductMap[pid].key_ingredients}</div>}
-                    </div>
-                    <button onClick={() => setEditTpl({ ...editTpl, product_ids: editTpl.product_ids.filter(id => id !== pid) })}
-                      style={{ fontSize: 11, color: '#A33', background: 'none', border: 'none', cursor: 'pointer' }}>삭제</button>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>사용법 안내</div>
-                <textarea value={editTpl.usage_guide || ''} onChange={e => setEditTpl({ ...editTpl, usage_guide: e.target.value })} rows={3}
-                  placeholder="제품 사용법, 순서 등을 입력하세요"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff', resize: 'vertical' }}/>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>원장님 팁</div>
-                <textarea value={editTpl.owner_tip || ''} onChange={e => setEditTpl({ ...editTpl, owner_tip: e.target.value })} rows={2}
-                  placeholder="원장님만의 특별한 팁을 입력하세요 💜"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff', resize: 'vertical' }}/>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.ink, cursor: 'pointer' }}>
-                <input type="checkbox" checked={editTpl.is_active} onChange={e => setEditTpl({ ...editTpl, is_active: e.target.checked })} style={{ accentColor: C.purple }}/>
-                활성 템플릿
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={saveTpl} disabled={savingTpl}
-                  style={{ flex: 1, padding: 11, background: savingTpl ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {savingTpl ? '저장 중...' : '저장'}
-                </button>
-                <button onClick={() => { setEditTpl(null); setTplMsg('') }}
-                  style={{ padding: '11px 16px', background: 'transparent', border: `0.5px solid ${C.line}`, color: C.muted, borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>취소</button>
-              </div>
-            </div>
-          )}
-        </div>
+        <TemplatePanel {...tpl} productMap={localProductMap} setProductMap={setLocalProductMap} />
       )}
 
       {/* 멤버 목록 — 배송 대기(active·잔여회차)만 */}
@@ -835,140 +526,27 @@ export default function MembersClient({
       </div>
 
       {showShipmentHistory ? (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowShipmentHistory(false)}>
-          <div style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF }}>발송 내역</div>
-              <button type="button" onClick={() => setShowShipmentHistory(false)} style={{ padding: '5px 12px', background: '#f0f0f0', border: 'none', color: C.muted, borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
-            </div>
-            {!historyLoading && shipmentHistory.length > 0 && (
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>
-                총 발송 {historySummary.total}건 · 이번달 {historySummary.monthCount}건
-              </div>
-            )}
-            {historyLoading ? (
-              <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>불러오는 중...</div>
-            ) : shipmentHistory.length === 0 ? (
-              <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>발송 완료 내역이 없어요</div>
-            ) : (
-              <div style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 520 }}>
-                  <thead>
-                    <tr>
-                      <th style={histTh}>고객명</th>
-                      <th style={histTh}>회차</th>
-                      <th style={histTh}>발송일</th>
-                      <th style={histTh}>배송방식</th>
-                      <th style={histTh}>운송장</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shipmentHistory.map(r => (
-                      <tr key={r.id}>
-                        <td style={histTd}>{(Array.isArray(r.users) ? r.users[0] : r.users)?.name || '-'}</td>
-                        <td style={histTd}>{r.cycle_no ? `${r.cycle_no}회차` : '-'}</td>
-                        <td style={histTd}>{r.shipped_at ? new Date(r.shipped_at).toLocaleDateString('ko-KR') : '-'}</td>
-                        <td style={histTd}>{ritualDeliveryLabel(r)}</td>
-                        <td style={histTd}>{r.delivery_type === 'courier' ? (r.tracking_no || '-') : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+        <ShipHistoryModal loading={historyLoading} rows={shipmentHistory} summary={historySummary} onClose={() => setShowShipmentHistory(false)} />
       ) : null}
 
       {showTomorrowPopup ? (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 56, padding: 16 }} onClick={() => setShowTomorrowPopup(false)}>
-          <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 16, padding: 20 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF, marginBottom: 8 }}>내일 발송 예정 리추얼 ({tomorrowNames.length}건)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-              {tomorrowNames.map((name, i) => (
-                <div key={`${name}-${i}`} style={{ fontSize: 13, color: C.ink, padding: '8px 10px', background: C.goldSoft, borderRadius: 8 }}>{name}</div>
-              ))}
-            </div>
-            <button type="button" onClick={() => setShowTomorrowPopup(false)} style={{ width: '100%', padding: 10, background: C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>확인</button>
-          </div>
-        </div>
+        <TomorrowPopup names={tomorrowNames} onClose={() => setShowTomorrowPopup(false)} />
       ) : null}
 
       {shipModalId ? (() => {
         const modalM = memberships.find((x) => x.id === shipModalId)
         if (!modalM) return null
-        const currentCycle = modalM.shipments_total - modalM.shipments_remaining + 1
-        const futureCycles = Array.from({ length: modalM.shipments_total - currentCycle }, (_, i) => currentCycle + 1 + i)
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 57, padding: 16 }} onClick={closeShipModal}>
-            <div style={{ width: '100%', maxWidth: 440, maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 16, padding: 20 }} onClick={(e) => e.stopPropagation()}>
-              <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF, marginBottom: 4 }}>{currentCycle}회차 발송 처리</div>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>{modalM.users?.name || '회원'} · 남은 {modalM.shipments_remaining}회</div>
-              {modalM.shipments_remaining > 1 && (
-                <>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    다음 회차 발송일 (next_shipment_date)
-                    <button
-                      type="button"
-                      title="날짜 수정"
-                      onClick={() => {
-                        const el = document.getElementById('ship-modal-next-date') as HTMLInputElement | null
-                        el?.showPicker?.()
-                        el?.focus()
-                      }}
-                      style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
-                    >✏️</button>
-                  </div>
-                  <input
-                    id="ship-modal-next-date"
-                    type="date"
-                    value={shipModalNextDate}
-                    onChange={(e) => setShipModalNextDate(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff', marginBottom: 12 }}
-                  />
-                  {futureCycles.length > 0 && (
-                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>회차별 예정일 (started_at + 30일 간격, 수정 가능)</div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                    {futureCycles.map((cycle) => (
-                      <div key={`ship-modal-cycle-${cycle}`}>
-                        <div style={{ fontSize: 11, color: C.ink, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {cycle}회차 예정일
-                          <button
-                            type="button"
-                            title="날짜 수정"
-                            onClick={() => {
-                              const el = document.getElementById(`ship-modal-cycle-${cycle}`) as HTMLInputElement | null
-                              el?.showPicker?.()
-                              el?.focus()
-                            }}
-                            style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
-                          >✏️</button>
-                        </div>
-                        <input
-                          id={`ship-modal-cycle-${cycle}`}
-                          type="date"
-                          value={shipModalCycleDates[cycle] || ''}
-                          onChange={(e) => setShipModalCycleDates((prev) => ({ ...prev, [cycle]: e.target.value }))}
-                          style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={closeShipModal} disabled={busy}
-                  style={{ flex: 1, padding: 11, background: 'transparent', border: `1px solid ${C.line}`, color: C.muted, borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  취소
-                </button>
-                <button type="button" onClick={confirmShipModal} disabled={busy}
-                  style={{ flex: 1, padding: 11, background: busy ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
-                  {busy ? '처리 중...' : '발송 확인'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ShipConfirmModal
+            membership={modalM}
+            busy={busy}
+            nextDate={shipModalNextDate}
+            setNextDate={setShipModalNextDate}
+            cycleDates={shipModalCycleDates}
+            setCycleDates={setShipModalCycleDates}
+            onClose={closeShipModal}
+            onConfirm={confirmShipModal}
+          />
         )
       })() : null}
     </div>
