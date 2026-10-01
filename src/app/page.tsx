@@ -415,6 +415,13 @@ function OrenSceneSection() {
 }
 
 
+const PHASE_RING_COLOR: Record<string, string> = {
+  달빛기: '#c4a8ff',
+  황금기: '#f0c060',
+  만개기: '#e87b9b',
+  물들기: '#d4904a',
+}
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -427,6 +434,14 @@ export default function CustomerHomePage() {
   const [userHca, setUserHca] = useState<boolean | null>(null)
   const [profileReady, setProfileReady] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
+  const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
+  const [showPulse, setShowPulse] = useState(false)
+  useEffect(() => {
+    if (!phaseColor) return
+    setShowPulse(true)
+    const t = setTimeout(() => setShowPulse(false), 10000)
+    return () => clearTimeout(t)
+  }, [phaseColor])
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -2373,6 +2388,18 @@ export default function CustomerHomePage() {
         ) : null}
       </div>
 
+      {phaseColor && (
+      <style>{`
+        @keyframes phaseRingPulse {
+          0% { box-shadow: 0 0 0 0px ${phaseColor}99, 0 0 0 0px ${phaseColor}44; }
+          70% { box-shadow: 0 0 0 10px ${phaseColor}00, 0 0 0 18px ${phaseColor}00; }
+          100% { box-shadow: 0 0 0 0px ${phaseColor}00, 0 0 0 0px ${phaseColor}00; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .phase-ring-pulse { animation: none !important; }
+        }
+      `}</style>
+      )}
       {/* ── 인사말 ── */}
       <div style={{
         padding: '14px 20px 0',
@@ -2384,11 +2411,24 @@ export default function CustomerHomePage() {
         >
           {myUserId ? (
             <>
-              <Avatar
-                url={(motivationProfile as any)?.avatar_url ?? null}
-                name={userName || '·'}
-                size={64}
-              />
+              <div
+                className="phase-ring-pulse"
+                style={{
+                  borderRadius: '50%',
+                  animation: showPulse && phaseColor
+                    ? 'phaseRingPulse 2.2s ease-out infinite'
+                    : 'none',
+                  display: 'inline-flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
+                <Avatar
+                  url={(motivationProfile as any)?.avatar_url ?? null}
+                  name={userName || '·'}
+                  size={64}
+                />
+              </div>
               <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
             </>
           ) : (
@@ -2400,8 +2440,12 @@ export default function CustomerHomePage() {
             }}>🌙</div>
           )}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '9px', fontWeight: 400, marginBottom: '3px' }}>
+        <div style={{
+          flex: 1, minWidth: 0,
+          borderLeft: phaseColor ? `2.5px solid ${phaseColor}` : 'none',
+          paddingLeft: phaseColor ? '10px' : '0',
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
         </div>
