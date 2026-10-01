@@ -2464,6 +2464,40 @@ export default function CustomerHomePage() {
               </div>
             )}
           </div>
+          {activeChip && (
+            <div
+              onClick={() => setActiveChip(null)}
+              style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+            />
+          )}
+          {activeChip === 'phase' && phaseColor && hormonePhase && (
+            <div style={{
+              marginTop: 8,
+              background: `${phaseColor}12`,
+              border: `0.5px solid ${phaseColor}33`,
+              borderRadius: 12,
+              padding: '12px 14px',
+              position: 'relative',
+              zIndex: 11,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                  {PHASE_EMOJI[hormonePhase]} {hormonePhase}
+                </div>
+                <div onClick={() => setActiveChip(null)}
+                  style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}>✕</div>
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 10 }}>
+                {hormonePhaseTipDesc || hormoneMainLine}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div onClick={() => router.push('/my/hormone')}
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 0', textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+                  자세히보기 →
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
