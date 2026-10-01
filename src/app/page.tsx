@@ -422,6 +422,10 @@ const PHASE_RING_COLOR: Record<string, string> = {
   물들기: '#d4904a',
 }
 
+const PHASE_EMOJI: Record<string, string> = {
+  달빛기: '🌙', 황금기: '🌱', 만개기: '☀️', 물들기: '🍂',
+}
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -435,6 +439,7 @@ export default function CustomerHomePage() {
   const [profileReady, setProfileReady] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
+  const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showPulse, setShowPulse] = useState(false)
   useEffect(() => {
     if (!phaseColor) return
@@ -2429,7 +2434,6 @@ export default function CustomerHomePage() {
                   size={64}
                 />
               </div>
-              <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
             </>
           ) : (
             <div style={{
@@ -2447,6 +2451,18 @@ export default function CustomerHomePage() {
         }}>
           <div style={{ fontSize: '11px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
+          </div>
+          {myUserId && (
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 5 }}>My</div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            {phaseColor && hormonePhase && (
+              <div onClick={() => setActiveChip(activeChip === 'phase' ? null : 'phase')}
+                style={{ background: `${phaseColor}18`, border: `0.5px solid ${phaseColor}44`, borderRadius: 10, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
+                <span style={{ fontSize: 10 }}>{PHASE_EMOJI[hormonePhase] ?? '🌙'}</span>
+                <span style={{ fontSize: 9, color: `${phaseColor}` }}>{hormonePhase}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
