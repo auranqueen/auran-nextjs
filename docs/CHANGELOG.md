@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-01
+- feat(admin): `GET/POST /api/admin/marketing/external-cards` 신규 — GET `type=cards`·`customers`(owner_id IS NULL)·`customer_search`(owner_id IS NULL, 5명)·`product_search`(mode=purchase|bundle|sample, 원본 page.tsx와 같은 컬럼), POST `action=save`(save_external_card RPC, 빈 phone/address/channel→null, customer_name 필수)·`delete_card`·`delete_customer`(delete_external_customer RPC). `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`. `external-cards-v2/page.tsx` 연결은 다음 단계
+  - `supabase/migrations/207_external_cards_save_rpc.sql` 신규: `save_external_card`(고객 조회·수정·추가 + 카드 저장을 한 트랜잭션으로, customer_id 기준 합계, memo COALESCE)·`delete_external_customer`(존재 확인 후 카드→고객 삭제). 둘 다 `owner_id IS NULL`(어드민 외부고객만, 원장 살롱고객 제외)·SECURITY DEFINER·`search_path=public`·anon/authenticated EXECUTE 회수. **운영 DB 미적용**
 - style(home): 고객홈 상단 인사말 영역 — 고객 썸네일 40→64px(로그인 `Avatar size`·비로그인 원형 동일), 비로그인 🌙 20→28px, 인사말 fontSize 13→9px(확정 기준 '일반 본문 9px'). `src/app/page.tsx` 2390·2396·2399·2404줄 값만 교체
 
 ## 2026-09-30
