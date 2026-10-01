@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-01
+- style(home): 고객홈 상단 인사말 영역 — 고객 썸네일 40→64px(로그인 `Avatar size`·비로그인 원형 동일), 비로그인 🌙 20→28px, 인사말 fontSize 13→9px(확정 기준 '일반 본문 9px'). `src/app/page.tsx` 2390·2396·2399·2404줄 값만 교체
+
 ## 2026-09-30
 - feat: `GET/POST /api/admin/marketing/care-cards` 신규 — GET `type=list`(body_care_cards 전체, sort_order 오름차순)·`product_names`(ids CSV → id,name,clean_name)·`product_search`(is_active, 15개), POST `action=add`(서버에서 sort_order 최댓값+1)·`update`·`delete`. `profiles.role='admin'` 확인 후 `tryCreateAdminClient()`. 어드민 `care-cards/page.tsx` 연결은 다음 단계
   - `care-cards/types.ts` 신규: page.tsx 6~154줄(타입·TRACKS 등 상수·변환함수 5개·`inp`) 복사 + export. `lbl`(JSX)은 DraftForm 분리 시 이동

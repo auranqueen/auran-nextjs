@@ -2387,21 +2387,21 @@ export default function CustomerHomePage() {
               <Avatar
                 url={(motivationProfile as any)?.avatar_url ?? null}
                 name={userName || '·'}
-                size={40}
+                size={64}
               />
               <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
             </>
           ) : (
             <div style={{
-              width: 40, height: 40, borderRadius: '50%',
+              width: 64, height: 64, borderRadius: '50%',
               background: 'linear-gradient(135deg, #7B5EA7, #C9A96E)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, lineHeight: 1,
+              fontSize: 28, lineHeight: 1,
             }}>🌙</div>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>
+          <div style={{ fontSize: '9px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
         </div>
