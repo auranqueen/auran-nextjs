@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-01
+- style(home): 달빛기 칩 팝업을 인사말 칸 밖(인사말 행 다음)으로 이동해 하단 fixed 카드로 변경 — `bottom: calc(80px + env(safe-area-inset-bottom, 0px))`, 가운데 정렬(`left 50%` + `translateX(-50%)`), `width calc(100% - 40px)`·`maxWidth 380`, 배경 `#1A1030`, `${phaseColor}55` 테두리, radius 16. 바깥 클릭 오버레이 zIndex 10→95, 팝업 11→96(FAB 90·헤더 40 위로 — 열린 동안 FAB/헤더 대신 닫힘)
 - feat(home): 페이즈 칩 클릭 시 인사말 칸 안에 팝업 — 제목(`PHASE_EMOJI` + 페이즈명)·✕ 닫기, 본문 `hormonePhaseTipDesc`(페이즈 피부 설명, 비면 `hormoneMainLine`), 「자세히보기 →」 `/my/hormone`. 바깥 클릭 닫힘 — `activeChip` 있을 때 투명 fixed 오버레이(zIndex 10, 클릭 시 null), 팝업은 relative·zIndex 11(헤더 40·플로팅 90은 오버레이 위). HormoneCard 제거 전 역할 이전 1단계(HormoneCard/HormoneSheet 무수정, 주기 기록·`hormoneCardRef` 스크롤 2곳·어드민 편집은 아직 카드에만 있음)
 - style(home): 고객홈 "My" 라벨을 아바타 아래에서 인사말 아래로 이동(로그인 시에만, 10px·rgba(255,255,255,0.4)). 그 아래 칩 행 추가 — 4개 페이즈일 때만 페이즈 칩(`PHASE_EMOJI` 🌙🌱☀️🍂 + 페이즈명, `phaseColor` 테두리·옅은 배경). 클릭 시 `activeChip` state만 토글(팝업은 다음 단계). 스트릭 칩은 `users.login_streak` 컬럼이 없어 제외
 - style(home): 고객홈 인사말 fontSize 9→11px. 썸네일에 호르몬 페이즈별 컬러 링 펄스 추가 — `PHASE_RING_COLOR`(달빛기 #c4a8ff·황금기 #f0c060·만개기 #e87b9b·물들기 #d4904a, HormoneCalendarPage 값), 홈 진입·페이즈 변경 시 10초간 `phaseRingPulse`(box-shadow, 2.2s) 후 정지, `prefers-reduced-motion` 시 끔. 링은 로그인 `<Avatar>`만 감싸는 래퍼(`Avatar.tsx` 무수정), 인사말 칸에 같은 색 `borderLeft 2.5px`. 4개 페이즈가 아니면(비로그인·남성·임신·폐경 등) 링·보더·`<style>` 모두 렌더 안 함
