@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-10-02
+- fix(home): 생리 시작일(`last_period_date`)이 없는 주기 트랙(general·menopause_peri) 사용자의 `hormonePhase`가 `calcCycleDay`=0 → `calcHormoneBriefing` 기본값 "물들기"로 잘못 표시되던 문제 — 734줄 초기 로드와 `hormoneCycle` 변경 useEffect(1341~)에서 시작일 없으면 `hormonePhase` = 빈 문자열(칩·링·왼쪽 보더 숨김), `hormoneMainLine` = "생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙". useEffect에 `setHormonePhase` 재계산 추가 → 시작일 기록 직후 새로고침 없이 페이즈 칩·링 반영(이전엔 문구만 바뀌고 칩은 유지). 서브 문구·`hormoneUtils.ts` 무수정
+  - 시작일 기록 칩: 로그인 + `hormone_cycle` 행 있음 + general 트랙 + 남성 아님 + 시작일 없음일 때 칩 줄에 「🌙 시작일 기록하기」(연보라) → 기존 홈 시작일 입력 팝업(`setShowPeriodPopup(true)`) 재오픈("나중에" 눌렀던 사용자도 가능). 행 없는 사용자는 `/api/hormone/period-start`가 update 전용이라 제외
+
 ## 2026-10-01
 - style(home): 달빛기 칩 팝업을 인사말 칸 밖(인사말 행 다음)으로 이동해 하단 fixed 카드로 변경 — `bottom: calc(80px + env(safe-area-inset-bottom, 0px))`, 가운데 정렬(`left 50%` + `translateX(-50%)`), `width calc(100% - 40px)`·`maxWidth 380`, 배경 `#1A1030`, `${phaseColor}55` 테두리, radius 16. 바깥 클릭 오버레이 zIndex 10→95, 팝업 11→96(FAB 90·헤더 40 위로 — 열린 동안 FAB/헤더 대신 닫힘)
 - feat(home): 페이즈 칩 클릭 시 인사말 칸 안에 팝업 — 제목(`PHASE_EMOJI` + 페이즈명)·✕ 닫기, 본문 `hormonePhaseTipDesc`(페이즈 피부 설명, 비면 `hormoneMainLine`), 「자세히보기 →」 `/my/hormone`. 바깥 클릭 닫힘 — `activeChip` 있을 때 투명 fixed 오버레이(zIndex 10, 클릭 시 null), 팝업은 relative·zIndex 11(헤더 40·플로팅 90은 오버레이 위). HormoneCard 제거 전 역할 이전 1단계(HormoneCard/HormoneSheet 무수정, 주기 기록·`hormoneCardRef` 스크롤 2곳·어드민 편집은 아직 카드에만 있음)

@@ -731,8 +731,8 @@ export default function CustomerHomePage() {
         }
         setHormoneTrack(String((hc as any).track || 'general'))
         const calc = calcHormoneBriefing(hc)
-        setHormonePhase(calc.phase)
-        setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
+        setHormonePhase(isPeriodTrack(String((hc as any).track || 'general')) && !(hc as any).last_period_date ? '' : calc.phase)
+        setHormoneMainLine(isPeriodTrack(String((hc as any).track || 'general')) && !(hc as any).last_period_date ? '생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙' : `${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
         setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
         if (isPeriodTrack(String((hc as any).track || 'general'))) {
           const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
@@ -1341,7 +1341,9 @@ export default function CustomerHomePage() {
   useEffect(() => {
     if (!hormoneCycle) return
     const c = calcHormoneBriefing(hormoneCycle)
-    setHormoneMainLine(`${userName}님, 지금 ${c.phase} 예요 ✨`)
+    const noStart = isPeriodTrack(String(hormoneCycle.track || 'general')) && !hormoneCycle.last_period_date
+    setHormonePhase(noStart ? '' : c.phase)
+    setHormoneMainLine(noStart ? '생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙' : `${userName}님, 지금 ${c.phase} 예요 ✨`)
     setHormoneSubLine(`오늘의 피부 사이클 · ${c.focus}`)
   }, [hormoneCycle, userName])
 
@@ -2461,6 +2463,24 @@ export default function CustomerHomePage() {
                 style={{ background: `${phaseColor}18`, border: `0.5px solid ${phaseColor}44`, borderRadius: 10, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer' }}>
                 <span style={{ fontSize: 10 }}>{PHASE_EMOJI[hormonePhase] ?? '🌙'}</span>
                 <span style={{ fontSize: 9, color: `${phaseColor}` }}>{hormonePhase}</span>
+              </div>
+            )}
+            {myUserId && hormoneCycle && hormoneTrack === 'general' && userGender !== 'male' && !(hormoneCycle as any).last_period_date && (
+              <div
+                onClick={() => setShowPeriodPopup(true)}
+                style={{
+                  background: 'rgba(196,168,255,0.1)',
+                  border: '0.5px solid rgba(196,168,255,0.3)',
+                  borderRadius: 10,
+                  padding: '2px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ fontSize: 10 }}>🌙</span>
+                <span style={{ fontSize: 9, color: 'rgba(196,168,232,0.8)' }}>시작일 기록하기</span>
               </div>
             )}
           </div>
