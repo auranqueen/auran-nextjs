@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-02
+- feat(home): 썸네일 프로필 팝업 초심플 리디자인 — `profileSubView`(main / weather / care) state 추가. 메인: Avatar 80 + 4페이즈 배지·시기명, 이름, 원형 버튼 4개(날씨 `weather.condition` / 케어 / 토스트 → `/wallet` / 마이 → `/my`). 날씨·케어는 같은 팝업 안 서브뷰로 좌우 슬라이드(0.2s). 날씨 서브뷰: 기온·이모지·도시, 미세먼지 / 자외선(`uv.level`, 객체라 그대로 찍으면 [object Object]) / 습도, 「날씨 맞춤 추천 →」은 팝업 닫고 `WeatherRecommendSheet` 열기. 케어 서브뷰: `dailyCareTip` 제목·내용·반신욕. ← 버튼은 서브뷰가 빠진 뒤 메인 재렌더 다음 틱에 슬라이드 클래스 부여(스펙 원안은 메인 미렌더 상태라 동작 안 함). ✕ 닫을 때 서브뷰 초기화. 키프레임은 팝업 내 style 1곳만
 - fix(home): 남성·시작일 없음 페이즈/케어팁 차단 — `hormonePhase`(초기 로드 735, `hormoneCycle` useEffect 1346, 의존성에 `userGender` 추가)를 `isPeriodTrack(track) && (male || !last_period_date)`이면 빈 값으로. 생리 주기 track이 아닌 임신·산후·갱년기·남성 track 값은 유지(1515 `isSafe` hormone_phase 성분 제외 규칙·추천 점수 보호, `canShowCyclePhase` 미사용). 프로필 팝업 시기명 `phaseColor && hormonePhase` 조건. `hormone_daily_tips` 조회를 생리 주기 track에서 남성이거나 cycleDay 0이면 건너뜀(시작일 없는 여성에게 달빛기 1일차 팁 오노출도 차단)
   - refactor(hormone): `/my/hormone` 달력 두 벌(일반 / 갱년기) → `calendarActive && 달력 탭` 공통 1벌로 통합(날짜 칸·스타일 기존 그대로, 갱년기 케어 가이드 버튼은 `showMenopauseCalendar`일 때만 카드 안에 표시). 머리글 아래 4색 범례(달빛기·황금기·만개기·물들기) 추가. `hasCalendar`와 `showMenopauseCalendar`가 동시에 참이면 달력이 두 번 뜨던 잠재 버그 해소. 25줄 추가·71줄 삭제
 - fix(hormone): `/my/hormone` (`HormoneCalendarPage.tsx`) 가짜 데이터 제거 — 분석 모달 「페이즈별 수분 시뮬」(`analysisBars`: 수분 점수 없으면 55, 페이즈별 ±6·현재 페이즈 +8로 만든 지어낸 %) 계산·렌더 삭제, 불규칙 주기 카드 고정 문구 「내일쯤 달빛기가 시작될 것 같아요」 삭제(안내문 1줄은 유지). 27줄 삭제만, 다른 로직 무변경

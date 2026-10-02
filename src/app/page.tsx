@@ -441,6 +441,7 @@ export default function CustomerHomePage() {
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
+  const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
   const [showPulse, setShowPulse] = useState(false)
   useEffect(() => {
     if (!phaseColor) return
@@ -2538,53 +2539,145 @@ export default function CustomerHomePage() {
           }}
         >
           <style>{`
-            @keyframes slideUpIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            @keyframes slideDownOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
-            .popup-closing { animation: slideDownOut 0.25s ease-in forwards !important; }
+            @keyframes slideUpIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+            @keyframes slideDownOut{from{transform:translateY(0);opacity:1}to{transform:translateY(100%);opacity:0}}
+            @keyframes profileSlideInRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+            @keyframes profileSlideInLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
+            @keyframes profileSlideOutLeft{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-60px)}}
+            @keyframes profileSlideOutRight{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
+            .popup-closing{animation:slideDownOut 0.25s ease-in forwards !important}
+            .profile-slide-in-right{animation:profileSlideInRight 0.2s ease-out forwards}
+            .profile-slide-in-left{animation:profileSlideInLeft 0.2s ease-out forwards}
+            .profile-slide-out-left{animation:profileSlideOutLeft 0.2s ease-out forwards}
+            .profile-slide-out-right{animation:profileSlideOutRight 0.2s ease-out forwards}
           `}</style>
           {/* 헤더 */}
-          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div onClick={() => {
-              const el = document.getElementById('profile-popup')
-              if (el) { el.classList.add('popup-closing'); setTimeout(() => setShowProfilePopup(false), 250) }
-            }} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16 }}>✕</div>
-            <span style={{ fontSize: 13, fontWeight: 500, color: '#2C2620' }}>{userName || '고객님'}</span>
+          <div style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            paddingLeft: 20, paddingRight: 20, paddingBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            {profileSubView !== 'main' && (
+              <div
+                onClick={() => {
+                  const from = document.getElementById('profile-sub-view')
+                  if (from) {
+                    from.classList.add('profile-slide-out-right')
+                    setTimeout(() => {
+                      setProfileSubView('main')
+                      setTimeout(() => {
+                        const to = document.getElementById('profile-main-view')
+                        to?.classList.add('profile-slide-in-left')
+                        setTimeout(() => to?.classList.remove('profile-slide-in-left'), 200)
+                      }, 0)
+                    }, 180)
+                  }
+                }}
+                style={{ width: 30, height: 30, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#666', flexShrink: 0 }}
+              >←</div>
+            )}
+            <div
+              onClick={() => {
+                const el = document.getElementById('profile-popup')
+                if (el) { el.classList.add('popup-closing'); setTimeout(() => { setShowProfilePopup(false); setProfileSubView('main') }, 250) }
+              }}
+              style={{ width: 30, height: 30, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#666', flexShrink: 0 }}
+            >✕</div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>
+              {profileSubView === 'weather' ? '날씨' : profileSubView === 'care' ? '오늘의 케어' : ''}
+            </span>
           </div>
-          {/* 썸네일 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0 24px' }}>
-            <div style={{ position: 'relative', marginBottom: 12 }}>
-              <Avatar url={(motivationProfile as any)?.avatar_url ?? null} name={userName || '·'} size={90} />
-              {phaseColor && hormonePhase && (
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-                  {PHASE_EMOJI[hormonePhase] ?? '🌙'}
-                </div>
+          {/* 메인 뷰 */}
+          {profileSubView === 'main' && (
+            <div id="profile-main-view" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 20px 40px' }}>
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <Avatar url={(motivationProfile as any)?.avatar_url ?? null} name={userName || '·'} size={80} />
+                {phaseColor && hormonePhase && (
+                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                    {PHASE_EMOJI[hormonePhase] ?? '🌙'}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', marginBottom: 4 }}>{userName || '고객님'}</div>
+              {phaseColor && hormonePhase && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 32 }}>{hormonePhase}</div>}
+              {(!phaseColor || !hormonePhase) && <div style={{ marginBottom: 32 }} />}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around' }}>
+                {[
+                  { id: 'weather', emoji: weather?.condition ?? '☀️', label: '날씨' },
+                  { id: 'care', emoji: '💧', label: '케어' },
+                  { id: 'toast', emoji: '🍞', label: '토스트' },
+                  { id: 'my', emoji: '👤', label: '마이' },
+                ].map(({ id, emoji, label }) => (
+                  <div
+                    key={id}
+                    onClick={() => {
+                      if (id === 'toast') { router.push('/wallet') }
+                      else if (id === 'my') { setShowProfilePopup(false); router.push('/my') }
+                      else {
+                        const from = document.getElementById('profile-main-view')
+                        if (from) {
+                          from.classList.add('profile-slide-out-left')
+                          setTimeout(() => {
+                            from.classList.remove('profile-slide-out-left')
+                            setProfileSubView(id as 'weather' | 'care')
+                          }, 180)
+                        }
+                      }
+                    }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                  >
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{emoji}</div>
+                    <span style={{ fontSize: 10, color: '#888' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* 서브뷰 */}
+          {profileSubView !== 'main' && (
+            <div id="profile-sub-view" style={{ flex: 1, padding: '0 20px 40px', animation: 'profileSlideInRight 0.2s ease-out forwards' }}>
+              {profileSubView === 'weather' && (
+                <>
+                  <div style={{ fontSize: 32, fontWeight: 300, color: '#1a1a1a', marginBottom: 4 }}>{weather?.temp ?? '-'}° {weather?.condition ?? ''}</div>
+                  <div style={{ fontSize: 13, color: '#aaa', marginBottom: 24 }}>{weather?.city ?? ''}</div>
+                  {[
+                    { label: '미세먼지', value: weather?.dust?.level ?? '-', color: weather?.dust?.level === '좋음' ? '#4CAF50' : weather?.dust?.level === '나쁨' ? '#f44336' : '#888' },
+                    { label: '자외선', value: weather?.uv?.level ? `UV ${weather.uv.level}` : '-', color: '#FF9800' },
+                    { label: '습도', value: weather?.humidity != null ? `${weather.humidity}%` : '-', color: '#2196F3' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '0.5px solid #f0f0f0' }}>
+                      <span style={{ fontSize: 13, color: '#888' }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color }}>{value}</span>
+                    </div>
+                  ))}
+                  <div
+                    onClick={() => { setShowProfilePopup(false); setProfileSubView('main'); setShowWeatherRec(true) }}
+                    style={{ marginTop: 20, background: '#1a1a1a', borderRadius: 12, padding: 14, textAlign: 'center', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>날씨 맞춤 추천 →</span>
+                  </div>
+                </>
+              )}
+              {profileSubView === 'care' && (
+                <>
+                  <div style={{ fontSize: 13, color: '#aaa', marginBottom: 6 }}>오늘의 케어</div>
+                  <div style={{ fontSize: 20, fontWeight: 500, color: '#1a1a1a', marginBottom: 20 }}>{dailyCareTip?.title ?? '오늘의 케어'}</div>
+                  <div style={{ padding: '14px 0', borderBottom: '0.5px solid #f0f0f0' }}>
+                    <div style={{ fontSize: 13, color: '#444', lineHeight: 1.7 }}>{dailyCareTip?.message ?? ''}</div>
+                  </div>
+                  {dailyCareTip?.has_bath && (
+                    <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 22 }}>🛁</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>오늘 반신욕 추천</div>
+                        <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>혈액순환에 좋아요</div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
-            {phaseColor && hormonePhase && <div style={{ fontSize: 13, color: '#888' }}>{hormonePhase}</div>}
-          </div>
-          {/* 정보 그리드 */}
-          <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div style={{ background: '#F5F3EF', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>날씨</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>{weather ? `${weather.city ?? ''} ${weather.temp ?? '-'}° ${weather.condition ?? ''}` : ''}</div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{weather?.dust?.level ? `미세먼지 ${weather.dust.level}` : ''}</div>
-            </div>
-            <div style={{ background: '#F5F3EF', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>오늘의 케어</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>{dailyCareTip?.title ? `${dailyCareTip.title} 💧` : ''}</div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{dailyCareTip?.message || ''}</div>
-            </div>
-            <div onClick={() => router.push('/wallet')} style={{ background: '#F5F3EF', borderRadius: 12, padding: 14, cursor: 'pointer' }}>
-              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>토스트</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>🍞 포인트</div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>지갑 바로가기</div>
-            </div>
-            <div onClick={() => { setShowProfilePopup(false); router.push('/my') }} style={{ background: '#F5F3EF', borderRadius: 12, padding: 14, cursor: 'pointer' }}>
-              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>마이페이지</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#7B5EA7' }}>바로가기 →</div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>주문·쿠폰·설정</div>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
