@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -9,15 +8,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '날짜 형식 오류' }, { status: 400 })
     }
 
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
 
-    const { data: hc } = await supabase
+    const { data: hc, error: hcErr } = await supabase
       .from('hormone_cycle')
       .select('last_period_date, cycle_length, track')
       .eq('auth_id', user.id)
-      .single()
+      .maybeSingle()
+    if (hcErr) return NextResponse.json({ error: hcErr.message }, { status: 500 })
 
     let newCycleLength = Math.max(21, Math.min(60, Number(hc?.cycle_length || 28)))
 
@@ -37,6 +37,8 @@ export async function POST(req: Request) {
     const isPregnantOrPostpartum = hc?.track === 'pregnant' || hc?.track === 'postpartum'
 
     const payload: any = {
+      auth_id: user.id,
+      ...(hc ? {} : { track: 'general' }),
       last_period_date: date,
       period_started_at: date,
       cycle_length: newCycleLength,
@@ -49,8 +51,7 @@ export async function POST(req: Request) {
 
     const { error } = await supabase
       .from('hormone_cycle')
-      .update(payload)
-      .eq('auth_id', user.id)
+      .upsert(payload, { onConflict: 'auth_id' })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
