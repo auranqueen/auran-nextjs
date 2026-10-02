@@ -442,6 +442,13 @@ export default function CustomerHomePage() {
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
   const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
+  const closeProfilePopup = () => {
+    const el = document.getElementById('profile-popup')
+    if (el) {
+      el.classList.add('popup-closing')
+      setTimeout(() => { setShowProfilePopup(false); setProfileSubView('main') }, 250)
+    }
+  }
   const [showPulse, setShowPulse] = useState(false)
   useEffect(() => {
     if (!phaseColor) return
@@ -2577,10 +2584,7 @@ export default function CustomerHomePage() {
               >←</div>
             )}
             <div
-              onClick={() => {
-                const el = document.getElementById('profile-popup')
-                if (el) { el.classList.add('popup-closing'); setTimeout(() => { setShowProfilePopup(false); setProfileSubView('main') }, 250) }
-              }}
+              onClick={closeProfilePopup}
               style={{ width: 30, height: 30, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#666', flexShrink: 0 }}
             >✕</div>
             <span style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a' }}>
@@ -2611,8 +2615,8 @@ export default function CustomerHomePage() {
                   <div
                     key={id}
                     onClick={() => {
-                      if (id === 'toast') { router.push('/wallet') }
-                      else if (id === 'my') { setShowProfilePopup(false); router.push('/my') }
+                      if (id === 'toast') { closeProfilePopup(); setTimeout(() => router.push('/wallet'), 260) }
+                      else if (id === 'my') { closeProfilePopup(); setTimeout(() => router.push('/my'), 260) }
                       else {
                         const from = document.getElementById('profile-main-view')
                         if (from) {
@@ -2651,7 +2655,7 @@ export default function CustomerHomePage() {
                     </div>
                   ))}
                   <div
-                    onClick={() => { setShowProfilePopup(false); setProfileSubView('main'); setShowWeatherRec(true) }}
+                    onClick={() => { closeProfilePopup(); setTimeout(() => setShowWeatherRec(true), 260) }}
                     style={{ marginTop: 20, background: '#1a1a1a', borderRadius: 12, padding: 14, textAlign: 'center', cursor: 'pointer' }}
                   >
                     <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>날씨 맞춤 추천 →</span>
