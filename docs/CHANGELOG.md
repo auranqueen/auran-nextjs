@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-02
+- fix(hormone): `/my/hormone` (`HormoneCalendarPage.tsx`) 가짜 데이터 제거 — 분석 모달 「페이즈별 수분 시뮬」(`analysisBars`: 수분 점수 없으면 55, 페이즈별 ±6·현재 페이즈 +8로 만든 지어낸 %) 계산·렌더 삭제, 불규칙 주기 카드 고정 문구 「내일쯤 달빛기가 시작될 것 같아요」 삭제(안내문 1줄은 유지). 27줄 삭제만, 다른 로직 무변경
 - fix(hormone): `POST /api/hormone/period-start` — `.update().eq(auth_id)` → `.upsert(payload, { onConflict: auth_id })`(payload에 `auth_id` 추가, 기존 행 없을 때만 `track: general`, 기존 행 track 유지). 미리 읽기 `.single()` → `.maybeSingle()` + 조회 에러 시 500(일시 오류로 기존 행을 새 행으로 오인해 track 덮어쓰기 방지). 클라이언트 auth-helpers `createRouteHandlerClient` → `@/lib/supabase/server` `createClient`, `cookies` import 제거. 전제: `hormone_cycle.auth_id` UNIQUE + RLS INSERT 정책(사용자 DB 확인). 홈 시작일 칩의 `hormoneCycle` 조건은 미변경
 - fix(my/orders): 주문 내역 리뷰 유도 박스 「리뷰 쓰기」 버튼 `router.push` 경로 `/my/reviews/new`(페이지 없음, 404) → `/my/reviews`. 주문 ID 미전달이라 해당 상품 작성 화면 직행은 아님
 - fix(weather): `/api/weather` 에어코리아 미세먼지 `sidoName=대구` 고정 → 요청 lat/lon으로 가장 가까운 시도명 조회(`LAT_LNG_TO_SIDO` 17개 시도 대표 좌표 + `getSidoName`, 좌표 없거나 NaN이면 대구). 화면·기존 fetch 무수정. 한계: 대표 좌표 거리 비교라 경계 지역 오분류 가능(서울 인근 경기 → 서울), `numOfRows=1` 단일 측정소, 측정값 없으면 0 → 좋음 유지

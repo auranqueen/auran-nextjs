@@ -357,16 +357,6 @@ export default function HormoneCalendarPage() {
     fontFamily: 'inherit',
   }
 
-  const analysisBars = useMemo(() => {
-    const phases = ['달빛기', '황금기', '만개기', '물들기']
-    const base = skinLatest?.moisture_score ?? 55
-    return phases.map((ph, i) => ({
-      phase: ph,
-      value: Math.max(20, Math.min(95, base + (i - 1) * 6 + (ph === currentPhase ? 8 : 0))),
-      color: phaseColor(ph),
-    }))
-  }, [skinLatest, currentPhase])
-
   const onTab = (tab: 'calendar' | 'record' | 'analysis') => {
     setActiveTab(tab)
     if (tab === 'record') record.openTodayRecord()
@@ -527,9 +517,6 @@ export default function HormoneCalendarPage() {
 
           {isIrregular && activeTab === 'calendar' ? (
             <div style={{ margin: '16px 16px 0', padding: '18px 16px', borderRadius: 14, background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.35)' }}>
-              <div style={{ fontSize: 14, color: '#e8dff5', lineHeight: 1.65, marginBottom: 8 }}>
-                내일쯤 달빛기가 시작될 것 같아요
-              </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
                 생리가 시작되면 기록해주세요. 오렌이 다시 리셋해드려요.
               </div>
@@ -816,20 +803,6 @@ export default function HormoneCalendarPage() {
                   <div key={m.label} style={{ padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.05)' }}>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>{m.label}</div>
                     <div style={{ fontSize: 18, color: GOLD, fontFamily: 'Georgia, serif' }}>{m.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>페이즈별 수분 시뮬</div>
-                {analysisBars.map((bar) => (
-                  <div key={bar.phase} style={{ marginBottom: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
-                      <span style={{ color: bar.color }}>{bar.phase}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>{bar.value}%</span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)' }}>
-                      <div style={{ width: `${bar.value}%`, height: '100%', borderRadius: 3, background: bar.color }} />
-                    </div>
                   </div>
                 ))}
               </div>
