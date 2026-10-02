@@ -442,6 +442,8 @@ export default function CustomerHomePage() {
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
   const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
+  const profilePopupHistoryRef = useRef(false)
+  const profilePopupNavRef = useRef(false)
   const closeProfilePopup = () => {
     const el = document.getElementById('profile-popup')
     if (el) {
@@ -449,6 +451,23 @@ export default function CustomerHomePage() {
       setTimeout(() => { setShowProfilePopup(false); setProfileSubView('main') }, 250)
     }
   }
+  useEffect(() => {
+    if (!showProfilePopup) return
+    window.history.pushState({ ...(window.history.state ?? {}), profilePopup: true }, '')
+    profilePopupHistoryRef.current = true
+    const onPopState = () => {
+      profilePopupHistoryRef.current = false
+      closeProfilePopup()
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      if (profilePopupHistoryRef.current && !profilePopupNavRef.current) window.history.back()
+      profilePopupHistoryRef.current = false
+      profilePopupNavRef.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showProfilePopup])
   const [showPulse, setShowPulse] = useState(false)
   useEffect(() => {
     if (!phaseColor) return
@@ -1861,7 +1880,7 @@ export default function CustomerHomePage() {
 
       {showTrackPopup && (
   <div style={{
-    position: 'absolute', inset: 0,
+    position: 'fixed', inset: 0,
     background: 'rgba(0,0,0,0.8)',
     zIndex: 999,
     display: 'flex',
@@ -1874,6 +1893,8 @@ export default function CustomerHomePage() {
       borderRadius: '24px 24px 0 0',
       padding: '32px 24px 48px',
       width: '100%',
+      maxWidth: 390,
+      margin: '0 auto',
       borderTop: '0.5px solid rgba(123,94,167,0.3)',
     }}>
       <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌸</div>
@@ -1960,7 +1981,7 @@ export default function CustomerHomePage() {
 
       {showDalbitPopup && hormoneTrack === 'general' && userGender !== 'male' && (
   <div style={{
-    position: 'absolute', inset: 0,
+    position: 'fixed', inset: 0,
     background: 'rgba(0,0,0,0.8)',
     zIndex: 999,
     display: 'flex',
@@ -1973,6 +1994,8 @@ export default function CustomerHomePage() {
       borderRadius: '24px 24px 0 0',
       padding: '28px 24px 48px',
       width: '100%',
+      maxWidth: 390,
+      margin: '0 auto',
       borderTop: '0.5px solid rgba(123,94,167,0.3)',
       position: 'relative',
     }}>
@@ -2037,7 +2060,7 @@ export default function CustomerHomePage() {
 
       {showPeriodPopup && userGender !== 'male' && hormoneTrack === 'general' && (
         <div style={{
-          position: 'absolute', inset: 0,
+          position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.8)',
           zIndex: 999,
           display: 'flex',
@@ -2050,6 +2073,8 @@ export default function CustomerHomePage() {
             borderRadius: '24px 24px 0 0',
             padding: '32px 24px 48px',
             width: '100%',
+            maxWidth: 390,
+            margin: '0 auto',
             borderTop: '0.5px solid rgba(123,94,167,0.3)',
           }}>
             <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌙</div>
@@ -2615,8 +2640,8 @@ export default function CustomerHomePage() {
                   <div
                     key={id}
                     onClick={() => {
-                      if (id === 'toast') { closeProfilePopup(); setTimeout(() => router.push('/wallet'), 260) }
-                      else if (id === 'my') { closeProfilePopup(); setTimeout(() => router.push('/my'), 260) }
+                      if (id === 'toast') { profilePopupNavRef.current = true; closeProfilePopup(); setTimeout(() => router.push('/wallet'), 260) }
+                      else if (id === 'my') { profilePopupNavRef.current = true; closeProfilePopup(); setTimeout(() => router.push('/my'), 260) }
                       else {
                         const from = document.getElementById('profile-main-view')
                         if (from) {
