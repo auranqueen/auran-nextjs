@@ -440,6 +440,7 @@ export default function CustomerHomePage() {
   const [sessionChecked, setSessionChecked] = useState(false)
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
   const [activeChip, setActiveChip] = useState<string | null>(null)
+  const [showProfilePopup, setShowProfilePopup] = useState(false)
   const [showPulse, setShowPulse] = useState(false)
   useEffect(() => {
     if (!phaseColor) return
@@ -1726,9 +1727,9 @@ export default function CustomerHomePage() {
     const dustLevel = weather?.dust?.level
     const isDustBad = dustLevel === '나쁨' || dustLevel === '매우나쁨'
     const isRaining =
-      weather?.condition === '비' ||
-      weather?.condition === '소나기' ||
-      weather?.condition === '눈/비'
+      weather?.icon?.startsWith('09') ||
+      weather?.icon?.startsWith('10') ||
+      weather?.icon?.startsWith('11')
 
     if (isDustBad && rand < 0.2) {
       greeting = GREETINGS_WEATHER['dust'](userName)
@@ -2413,7 +2414,7 @@ export default function CustomerHomePage() {
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <div
-          onClick={() => router.push(myUserId ? '/my' : '/login')}
+          onClick={() => myUserId ? setShowProfilePopup(true) : router.push('/login')}
           style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         >
           {myUserId ? (
@@ -2520,6 +2521,67 @@ export default function CustomerHomePage() {
             <div onClick={() => router.push('/my/hormone')}
               style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 0', textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
               자세히보기 →
+            </div>
+          </div>
+        </div>
+      )}
+      {showProfilePopup && (
+        <div
+          id="profile-popup"
+          style={{
+            position: 'fixed', inset: 0,
+            background: '#fff',
+            zIndex: 200,
+            display: 'flex', flexDirection: 'column',
+            animation: 'slideUpIn 0.25s ease-out',
+          }}
+        >
+          <style>{`
+            @keyframes slideUpIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes slideDownOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+            .popup-closing { animation: slideDownOut 0.25s ease-in forwards !important; }
+          `}</style>
+          {/* 헤더 */}
+          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div onClick={() => {
+              const el = document.getElementById('profile-popup')
+              if (el) { el.classList.add('popup-closing'); setTimeout(() => setShowProfilePopup(false), 250) }
+            }} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16 }}>✕</div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#2C2620' }}>{userName || '고객님'}</span>
+          </div>
+          {/* 썸네일 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0 24px' }}>
+            <div style={{ position: 'relative', marginBottom: 12 }}>
+              <Avatar url={(motivationProfile as any)?.avatar_url ?? null} name={userName || '·'} size={90} />
+              {phaseColor && hormonePhase && (
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+                  {PHASE_EMOJI[hormonePhase] ?? '🌙'}
+                </div>
+              )}
+            </div>
+            {hormonePhase && <div style={{ fontSize: 13, color: '#888' }}>{hormonePhase}</div>}
+          </div>
+          {/* 정보 그리드 */}
+          <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ background: '#F5F3EF', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>날씨</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>{weather ? `${weather.city ?? ''} ${weather.temp ?? '-'}° ${weather.condition ?? ''}` : ''}</div>
+              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{weather?.dust?.level ? `미세먼지 ${weather.dust.level}` : ''}</div>
+            </div>
+            <div style={{ background: '#F5F3EF', borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>오늘의 케어</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>{dailyCareTip?.title ? `${dailyCareTip.title} 💧` : ''}</div>
+              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{dailyCareTip?.message || ''}</div>
+            </div>
+            <div onClick={() => router.push('/wallet')} style={{ background: '#F5F3EF', borderRadius: 12, padding: 14, cursor: 'pointer' }}>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>토스트</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#2C2620' }}>🍞 포인트</div>
+              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>지갑 바로가기</div>
+            </div>
+            <div onClick={() => { setShowProfilePopup(false); router.push('/my') }} style={{ background: '#F5F3EF', borderRadius: 12, padding: 14, cursor: 'pointer' }}>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>마이페이지</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#7B5EA7' }}>바로가기 →</div>
+              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>주문·쿠폰·설정</div>
             </div>
           </div>
         </div>

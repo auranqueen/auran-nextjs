@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-02
+- feat(home): 썸네일 클릭 시 풀화면 프로필 팝업(`showProfilePopup`, fixed·흰 배경·zIndex 200, slideUpIn/slideDownOut 0.25s, 헤더 safe-area-inset-top) — ✕·이름(없으면 고객님), Avatar 90 + 4페이즈일 때 이모지 배지·페이즈명, 2×2 칸(날씨: `weather` city·temp·condition / 미세먼지 등급, 오늘의 케어: `dailyCareTip` title·message, 토스트 → `/wallet`, 마이페이지 → `/my`). 값 없으면 빈 칸(하드코딩 대체값 없음). 비로그인은 기존대로 `/login`. 새 fetch 없음, Avatar.tsx 무수정
+  - fix(home): 인사말 비 판정 `isRaining`이 이모지인 `weather.condition`을 한국어(비·소나기·눈/비)와 비교해 항상 false → `weather.icon` 09·10·11 접두로 판정(비 인사말 20% 정상 동작)
 - fix(home): 생리 시작일(`last_period_date`)이 없는 주기 트랙(general·menopause_peri) 사용자의 `hormonePhase`가 `calcCycleDay`=0 → `calcHormoneBriefing` 기본값 "물들기"로 잘못 표시되던 문제 — 734줄 초기 로드와 `hormoneCycle` 변경 useEffect(1341~)에서 시작일 없으면 `hormonePhase` = 빈 문자열(칩·링·왼쪽 보더 숨김), `hormoneMainLine` = "생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙". useEffect에 `setHormonePhase` 재계산 추가 → 시작일 기록 직후 새로고침 없이 페이즈 칩·링 반영(이전엔 문구만 바뀌고 칩은 유지). 서브 문구·`hormoneUtils.ts` 무수정
   - 시작일 기록 칩: 로그인 + `hormone_cycle` 행 있음 + general 트랙 + 남성 아님 + 시작일 없음일 때 칩 줄에 「🌙 시작일 기록하기」(연보라) → 기존 홈 시작일 입력 팝업(`setShowPeriodPopup(true)`) 재오픈("나중에" 눌렀던 사용자도 가능). 행 없는 사용자는 `/api/hormone/period-start`가 update 전용이라 제외
 
