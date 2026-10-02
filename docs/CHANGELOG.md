@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-02
+- fix(my/orders): 주문 내역 리뷰 유도 박스 「리뷰 쓰기」 버튼 `router.push` 경로 `/my/reviews/new`(페이지 없음, 404) → `/my/reviews`. 주문 ID 미전달이라 해당 상품 작성 화면 직행은 아님
 - fix(weather): `/api/weather` 에어코리아 미세먼지 `sidoName=대구` 고정 → 요청 lat/lon으로 가장 가까운 시도명 조회(`LAT_LNG_TO_SIDO` 17개 시도 대표 좌표 + `getSidoName`, 좌표 없거나 NaN이면 대구). 화면·기존 fetch 무수정. 한계: 대표 좌표 거리 비교라 경계 지역 오분류 가능(서울 인근 경기 → 서울), `numOfRows=1` 단일 측정소, 측정값 없으면 0 → 좋음 유지
 - feat(home): 썸네일 클릭 시 풀화면 프로필 팝업(`showProfilePopup`, fixed·흰 배경·zIndex 200, slideUpIn/slideDownOut 0.25s, 헤더 safe-area-inset-top) — ✕·이름(없으면 고객님), Avatar 90 + 4페이즈일 때 이모지 배지·페이즈명, 2×2 칸(날씨: `weather` city·temp·condition / 미세먼지 등급, 오늘의 케어: `dailyCareTip` title·message, 토스트 → `/wallet`, 마이페이지 → `/my`). 값 없으면 빈 칸(하드코딩 대체값 없음). 비로그인은 기존대로 `/login`. 새 fetch 없음, Avatar.tsx 무수정
   - fix(home): 인사말 비 판정 `isRaining`이 이모지인 `weather.condition`을 한국어(비·소나기·눈/비)와 비교해 항상 false → `weather.icon` 09·10·11 접두로 판정(비 인사말 20% 정상 동작)

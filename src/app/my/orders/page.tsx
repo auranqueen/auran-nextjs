@@ -322,7 +322,7 @@ export default function MyOrdersPage() {
               {reviewPromptOrderId === order.id ? (
                 <div style={{ marginTop: 10, background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 12px' }}>
                   <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>리뷰 작성하면 +50T 추가 적립!</div>
-                  <button type="button" onClick={() => router.push('/my/reviews/new')} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => router.push('/my/reviews')} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>
                     리뷰 쓰기
                   </button>
                 </div>
