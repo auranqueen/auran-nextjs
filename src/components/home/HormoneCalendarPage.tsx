@@ -542,10 +542,25 @@ export default function HormoneCalendarPage() {
             </div>
           ) : null}
         </>
-      ) : activeTab === 'calendar' ? (
+      ) : null}
+      {/* ── 공통 달력 (일반+갱년기 통합) ── */}
+      {calendarActive && activeTab === 'calendar' ? (
         <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10, textAlign: 'center' }}>
             {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+            {[
+              { label: '달빛기', color: '#c4a8ff' },
+              { label: '황금기', color: '#f0c060' },
+              { label: '만개기', color: '#e87b9b' },
+              { label: '물들기', color: '#d4904a' },
+            ].map(({ label, color }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{label}</span>
+              </div>
+            ))}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
             {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
@@ -602,76 +617,15 @@ export default function HormoneCalendarPage() {
               )
             })}
           </div>
-        </div>
-      ) : null}
-
-      {showMenopauseCalendar && activeTab === 'calendar' ? (
-        <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10, textAlign: 'center' }}>
-            {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
-            {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
-              <div key={w} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{w}</div>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-            {calendarDays.map((cell, idx) => {
-              const cellIso = cell.date
-                ? `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, '0')}-${String(cell.date.getDate()).padStart(2, '0')}`
-                : ''
-              const isSelected = cellIso === record.selectedDateIso
-              const hasRecord = cellIso ? record.recordedDates.has(cellIso) : false
-              return (
-                <div
-                  key={idx}
-                  role={cell.date ? 'button' : undefined}
-                  tabIndex={cell.date ? 0 : undefined}
-                  onClick={cell.date ? () => { void record.openForDate(cell.date!) } : undefined}
-                  onKeyDown={cell.date ? (e) => { if (e.key === 'Enter') void record.openForDate(cell.date!) } : undefined}
-                  style={{
-                    aspectRatio: '1',
-                    borderRadius: 8,
-                    background: cell.date ? cell.color : 'transparent',
-                    opacity: cell.date ? (cell.isToday || isSelected ? 1 : 0.72) : 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 11,
-                    color: cell.date ? '#1a1028' : 'transparent',
-                    fontWeight: cell.isToday || isSelected ? 600 : 400,
-                    boxShadow: cell.isToday
-                      ? `0 0 0 3px #fff, 0 0 0 5px ${cell.color}`
-                      : isSelected
-                        ? `0 0 0 2px #fff, 0 0 0 4px ${P}`
-                        : 'none',
-                    cursor: cell.date ? 'pointer' : 'default',
-                    position: 'relative',
-                  }}
-                >
-                  {cell.date ? cell.date.getDate() : ''}
-                  {hasRecord ? (
-                    <span style={{
-                      position: 'absolute',
-                      bottom: 3,
-                      width: 4,
-                      height: 4,
-                      borderRadius: 999,
-                      background: '#2A2433',
-                    }} />
-                  ) : null}
-                </div>
-              )
-            })}
-          </div>
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            style={{ width: '100%', marginTop: 12, padding: 12, borderRadius: 10, border: 'none', background: '#5adb8a', color: '#1a1028', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            갱년기 케어 가이드 보기 →
-          </button>
+          {showMenopauseCalendar ? (
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              style={{ width: '100%', marginTop: 12, padding: 12, borderRadius: 10, border: 'none', background: '#5adb8a', color: '#1a1028', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              갱년기 케어 가이드 보기 →
+            </button>
+          ) : null}
         </div>
       ) : null}
 

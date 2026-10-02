@@ -678,6 +678,7 @@ export default function CustomerHomePage() {
           try {
             const track = (hc as any)?.track || 'general'
             const calc = calcHormoneBriefing(hc)
+            if (isPeriodTrack(track) && (genderNow === 'male' || !calc?.cycleDay)) { setDailyCareTip(null); return }
             const cycleDay = calc?.cycleDay || 1
             let query = supabase
               .from('hormone_daily_tips')
@@ -732,7 +733,7 @@ export default function CustomerHomePage() {
         }
         setHormoneTrack(String((hc as any).track || 'general'))
         const calc = calcHormoneBriefing(hc)
-        setHormonePhase(isPeriodTrack(String((hc as any).track || 'general')) && !(hc as any).last_period_date ? '' : calc.phase)
+        setHormonePhase(isPeriodTrack(String((hc as any).track || 'general')) && (genderNow === 'male' || !(hc as any).last_period_date) ? '' : calc.phase)
         setHormoneMainLine(isPeriodTrack(String((hc as any).track || 'general')) && !(hc as any).last_period_date ? '생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙' : `${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
         setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
         if (isPeriodTrack(String((hc as any).track || 'general'))) {
@@ -1343,10 +1344,10 @@ export default function CustomerHomePage() {
     if (!hormoneCycle) return
     const c = calcHormoneBriefing(hormoneCycle)
     const noStart = isPeriodTrack(String(hormoneCycle.track || 'general')) && !hormoneCycle.last_period_date
-    setHormonePhase(noStart ? '' : c.phase)
+    setHormonePhase(isPeriodTrack(String(hormoneCycle.track || 'general')) && (userGender === 'male' || !hormoneCycle.last_period_date) ? '' : c.phase)
     setHormoneMainLine(noStart ? '생리 시작일을 기록하면 오늘의 피부 단계를 알려드려요 🌙' : `${userName}님, 지금 ${c.phase} 예요 ✨`)
     setHormoneSubLine(`오늘의 피부 사이클 · ${c.focus}`)
-  }, [hormoneCycle, userName])
+  }, [hormoneCycle, userName, userGender])
 
   useEffect(() => {
     if (!homeToast) return
@@ -2559,7 +2560,7 @@ export default function CustomerHomePage() {
                 </div>
               )}
             </div>
-            {hormonePhase && <div style={{ fontSize: 13, color: '#888' }}>{hormonePhase}</div>}
+            {phaseColor && hormonePhase && <div style={{ fontSize: 13, color: '#888' }}>{hormonePhase}</div>}
           </div>
           {/* 정보 그리드 */}
           <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

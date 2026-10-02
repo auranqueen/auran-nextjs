@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-02
+- fix(home): 남성·시작일 없음 페이즈/케어팁 차단 — `hormonePhase`(초기 로드 735, `hormoneCycle` useEffect 1346, 의존성에 `userGender` 추가)를 `isPeriodTrack(track) && (male || !last_period_date)`이면 빈 값으로. 생리 주기 track이 아닌 임신·산후·갱년기·남성 track 값은 유지(1515 `isSafe` hormone_phase 성분 제외 규칙·추천 점수 보호, `canShowCyclePhase` 미사용). 프로필 팝업 시기명 `phaseColor && hormonePhase` 조건. `hormone_daily_tips` 조회를 생리 주기 track에서 남성이거나 cycleDay 0이면 건너뜀(시작일 없는 여성에게 달빛기 1일차 팁 오노출도 차단)
+  - refactor(hormone): `/my/hormone` 달력 두 벌(일반 / 갱년기) → `calendarActive && 달력 탭` 공통 1벌로 통합(날짜 칸·스타일 기존 그대로, 갱년기 케어 가이드 버튼은 `showMenopauseCalendar`일 때만 카드 안에 표시). 머리글 아래 4색 범례(달빛기·황금기·만개기·물들기) 추가. `hasCalendar`와 `showMenopauseCalendar`가 동시에 참이면 달력이 두 번 뜨던 잠재 버그 해소. 25줄 추가·71줄 삭제
 - fix(hormone): `/my/hormone` (`HormoneCalendarPage.tsx`) 가짜 데이터 제거 — 분석 모달 「페이즈별 수분 시뮬」(`analysisBars`: 수분 점수 없으면 55, 페이즈별 ±6·현재 페이즈 +8로 만든 지어낸 %) 계산·렌더 삭제, 불규칙 주기 카드 고정 문구 「내일쯤 달빛기가 시작될 것 같아요」 삭제(안내문 1줄은 유지). 27줄 삭제만, 다른 로직 무변경
 - fix(hormone): `POST /api/hormone/period-start` — `.update().eq(auth_id)` → `.upsert(payload, { onConflict: auth_id })`(payload에 `auth_id` 추가, 기존 행 없을 때만 `track: general`, 기존 행 track 유지). 미리 읽기 `.single()` → `.maybeSingle()` + 조회 에러 시 500(일시 오류로 기존 행을 새 행으로 오인해 track 덮어쓰기 방지). 클라이언트 auth-helpers `createRouteHandlerClient` → `@/lib/supabase/server` `createClient`, `cookies` import 제거. 전제: `hormone_cycle.auth_id` UNIQUE + RLS INSERT 정책(사용자 DB 확인). 홈 시작일 칩의 `hormoneCycle` 조건은 미변경
 - fix(my/orders): 주문 내역 리뷰 유도 박스 「리뷰 쓰기」 버튼 `router.push` 경로 `/my/reviews/new`(페이지 없음, 404) → `/my/reviews`. 주문 ID 미전달이라 해당 상품 작성 화면 직행은 아님
