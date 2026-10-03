@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-03
+- ui: `HormoneSheet` 날짜 선택 팝업을 가운데 딤 창에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 1000, translateY 300ms). 날짜·시간 입력과 확인 버튼은 그대로
+- ui: `HormoneSheet` 껍질을 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 999, translateY 300ms, ← 뒤로가기). 시작일·종료일·저장은 그대로
 - ui: `HormoneSheet`에서 페이즈 탭 6개·가이드 문구·admin_settings 편집을 제거하고 시작일(`last_period_date`/`period-start`)·종료일(`period_end_date`)과 저장만 남김. 제목은 「사이클 설정」. props 시그니처는 유지
 - ui: `HormoneCalendarRecord` `RecordModal`을 하단 시트에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, translateY 300ms, 닫힘 300ms 후 unmount). 기록 입력 UI는 그대로
 - ui: `/my/hormone`에서 달력/기록/분석 탭, 다음 페이즈 예고, 분석 모달과 `activeTab`·`analysisOpen` 제거. 달력·모드 안내는 탭 조건 없이 표시. 분석 전용 `skin_analyses` 조회도 이 화면에서 삭제

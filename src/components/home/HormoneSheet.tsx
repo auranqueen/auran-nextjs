@@ -3,9 +3,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 
-const THEME_BORDER = 'rgba(123, 94, 167, 0.35)'
-const THEME_BG = 'rgba(123, 94, 167, 0.12)'
-
 type HormoneSheetProps = {
   isOpen: boolean
   onClose: () => void
@@ -31,21 +28,36 @@ export default function HormoneSheet({
   const [dateModalType, setDateModalType] = useState<'start' | 'end'>('start')
   const [dateModalVal, setDateModalVal] = useState('')
   const [timeModalVal, setTimeModalVal] = useState('')
+  const [dateModalEntered, setDateModalEntered] = useState(false)
+  const [dateModalClosing, setDateModalClosing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [entered, setEntered] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const handleClose = () => {
     if (isClosing) return
     setIsClosing(true)
-    setTimeout(() => { setIsClosing(false); onClose() }, 260)
+    setTimeout(() => { setIsClosing(false); onClose() }, 300)
   }
 
   useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  useEffect(() => {
+    if (!dateModalOpen) return
+    setDateModalEntered(false)
+    const id = requestAnimationFrame(() => setDateModalEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [dateModalOpen])
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isOpen) handleClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, onClose])
+  }, [isOpen, isClosing, onClose])
 
   function fmtDate(ds: string) {
     const d = new Date(ds)
@@ -57,6 +69,8 @@ export default function HormoneSheet({
     const now = new Date()
     setDateModalVal(now.toISOString().split('T')[0])
     setTimeModalVal(now.toTimeString().slice(0, 5))
+    setDateModalClosing(false)
+    setDateModalEntered(false)
     setDateModalOpen(true)
   }
 
@@ -68,7 +82,13 @@ export default function HormoneSheet({
   }
 
   function closeDateModal() {
-    setDateModalOpen(false)
+    if (dateModalClosing) return
+    setDateModalClosing(true)
+    setTimeout(() => {
+      setDateModalOpen(false)
+      setDateModalClosing(false)
+      setDateModalEntered(false)
+    }, 300)
   }
 
   async function saveDates() {
@@ -122,79 +142,41 @@ export default function HormoneSheet({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999,
+        zIndex: 999,
+        background: '#0F0D0C',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-end',
-        background: 'rgba(0,0,0,0.55)',
+        transform: entered && !isClosing ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 300ms ease',
       }}
-      onClick={e => {
-        if (e.target === e.currentTarget) handleClose()
-      }}
-      role="presentation"
     >
-      <style>{`
-        @keyframes hormoneSheetUp {
-          from { transform: translateY(100%); opacity: 0.8; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes hormoneSheetRight {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
-        }
-      `}</style>
-      <div
-        style={{
-          background: '#17171e',
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          border: `1px solid ${THEME_BORDER}`,
-          boxShadow: '0 -12px 40px rgba(0,0,0,0.45)',
-          maxHeight: '88vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          animation: isClosing
-            ? 'hormoneSheetRight 0.25s ease-in forwards'
-            : 'hormoneSheetUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flexShrink: 0,
+        padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px 12px',
+      }}>
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="뒤로가기"
           style={{
-            padding: '14px 16px 10px',
-            borderBottom: `1px solid ${THEME_BORDER}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 22,
+            color: 'rgba(255,255,255,0.75)',
+            padding: '4px 8px',
+            lineHeight: 1,
           }}
-        >
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#f3ecff', letterSpacing: '-0.02em' }}>
-            사이클 설정
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            style={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              border: `1px solid ${THEME_BORDER}`,
-              background: THEME_BG,
-              color: '#e8e0f5',
-              fontSize: 18,
-              lineHeight: 1,
-              cursor: 'pointer',
-            }}
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </div>
+        >←</button>
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#f3ecff', letterSpacing: '-0.02em' }}>
+          사이클 설정
+        </span>
+      </div>
 
-        <div style={{ padding: '16px 16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px calc(24px + env(safe-area-inset-bottom, 0px))', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={fieldStyle} onClick={() => openDateModal('start')}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>마법 시작일</div>
@@ -233,11 +215,44 @@ export default function HormoneSheet({
         </div>
 
         {dateModalOpen ? (
-          <div style={{ position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 24 }} onClick={closeDateModal}>
-            <div style={{ background: '#1e1c2a', borderRadius: 18, padding: '22px 20px 20px', width: '100%', maxWidth: 340, border: '0.5px solid rgba(123,94,167,0.3)' }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 14, color: '#fff', marginBottom: 16 }}>
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              background: '#0F0D0C',
+              display: 'flex',
+              flexDirection: 'column',
+              transform: dateModalEntered && !dateModalClosing ? 'translateY(0)' : 'translateY(100%)',
+              transition: 'transform 300ms ease',
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexShrink: 0,
+              padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px 12px',
+            }}>
+              <button
+                type="button"
+                onClick={closeDateModal}
+                aria-label="뒤로가기"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 22,
+                  color: 'rgba(255,255,255,0.75)',
+                  padding: '4px 8px',
+                  lineHeight: 1,
+                }}
+              >←</button>
+              <span style={{ fontSize: 16, fontWeight: 600, color: '#f3ecff' }}>
                 {dateModalType === 'start' ? '마법 시작일' : '마법 종료일'}
-              </div>
+              </span>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', minWidth: 44 }}>날짜</span>
                 <input type="date" value={dateModalVal}
@@ -256,7 +271,6 @@ export default function HormoneSheet({
             </div>
           </div>
         ) : null}
-      </div>
     </div>
   )
 }
