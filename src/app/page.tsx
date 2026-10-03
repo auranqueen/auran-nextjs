@@ -58,6 +58,14 @@ function seoulNoonUtcMs(y: number, m0: number, day: number): number {
   return Date.parse(`${y}-${String(m0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00:00+09:00`)
 }
 
+type PriveConfig = {
+  title: string
+  subtitle?: string | null
+  image_url?: string | null
+  video_url?: string | null
+  link_url?: string | null
+}
+
 const GOLD = 'var(--gold)'
 const BG = 'var(--bg)'
 const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
@@ -439,6 +447,24 @@ export default function CustomerHomePage() {
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
+  const [priveConfig, setPriveConfig] = useState<PriveConfig>({ title: 'PRIVÉ Collection', subtitle: '오렌 프라이빗 큐레이션', link_url: '/membership/checkout' })
+  const [priveSpinning, setPriveSpinning] = useState(false)
+  const [priveVideoOpen, setPriveVideoOpen] = useState(false)
+  useEffect(() => {
+    const sb = createClient()
+    sb.from('prive_config').select('*').eq('id', 1).maybeSingle()
+      .then(({ data }) => { if (data) setPriveConfig(data as PriveConfig) })
+  }, [])
+  const handlePrivePlay = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (priveConfig.video_url) {
+      setPriveVideoOpen(true)
+      return
+    }
+    if (priveSpinning) return
+    setPriveSpinning(true)
+    setTimeout(() => setPriveSpinning(false), 900)
+  }
   const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
   const profilePopupHistoryRef = useRef(false)
   const profilePopupNavRef = useRef(false)
@@ -3248,28 +3274,59 @@ export default function CustomerHomePage() {
         supabaseClient={supabase}
         hormonePhase={hormonePhase}
       />
-      {/* ORÆN PRIVÉ 멤버십 진입 */}
+      {/* ORÆN PRIVÉ 배너 */}
       <div
-        onClick={() => { window.location.href = '/membership/checkout' }}
-        style={{
-          marginTop: 14,
-          cursor: 'pointer',
-          borderRadius: 14,
-          padding: '18px',
-          background: 'var(--bg2)',
-          border: '0.5px solid rgba(201,169,110,0.45)',
-        }}
+        onClick={() => router.push(priveConfig.link_url || '/membership/checkout')}
+        style={{ display: 'flex', overflow: 'hidden', borderRadius: 16, background: 'var(--bg2)', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', minHeight: 96, cursor: 'pointer', position: 'relative', margin: '14px 16px 16px' }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, letterSpacing: 3, color: 'var(--gold)' }}>ORÆN PRIVÉ</div>
-            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.7)', marginTop: 6, lineHeight: 1.6 }}>
-              두 달마다, 오렌이 직접 고른 리추얼이 도착해요
-            </div>
+        <div style={{ flex: 1, padding: '18px 16px 18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
+          <div style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--gold)', fontWeight: 500 }}>ORÆN PRIVÉ</div>
+          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 18, fontWeight: 600, lineHeight: 1.2, color: 'var(--text)' }}>
+            {priveConfig.title}
           </div>
-          <div style={{ fontSize: 20, color: 'var(--gold)' }}>→</div>
+          {priveConfig.subtitle && (
+            <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{priveConfig.subtitle}</div>
+          )}
         </div>
+        {/* 권장 이미지: 220×192px @2x */}
+        <div style={{ width: 110, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+          {priveConfig.image_url
+            ? <img src={priveConfig.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #d4b896 0%, #c4956a 40%, #8b5e3c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cormorant Garamond', serif", fontSize: 13, color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', letterSpacing: '0.1em' }}>PRIVÉ</div>
+          }
+          <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, background: 'rgba(255,255,255,0.82)', color: '#888', padding: '2px 6px', borderRadius: 20 }}>AD</div>
+        </div>
+        <button
+          type="button"
+          aria-label={priveConfig.video_url ? '영상 재생' : '보러가기'}
+          onClick={handlePrivePlay}
+          style={{
+            position: 'absolute', bottom: 10, right: 10,
+            width: 34, height: 34, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: priveSpinning ? 'priveSpinY 0.9s cubic-bezier(0.4,0,0.2,1) forwards' : 'none',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <polygon points="3,1 13,7 3,13" fill="white" />
+          </svg>
+        </button>
       </div>
+      {priveVideoOpen && priveConfig.video_url && (
+        <div
+          onClick={() => setPriveVideoOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <video
+            src={priveConfig.video_url}
+            controls
+            autoPlay
+            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 12 }}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>

@@ -137,6 +137,11 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
   to { transform: scale(1); opacity: 1; }
 }
 
+@keyframes priveSpinY {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(720deg); }
+}
+
 .admin-wrap *,
 .super-console *,
 [class*="admin"] * {
