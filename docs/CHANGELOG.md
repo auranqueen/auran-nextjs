@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- fix(hormoneUtils): `TrackType`에 `irregular` 추가, `calcHormoneBriefing`에 `irregular` 분기(`phase: '불규칙기'`, `cycleDay: 0`, focus 체크인 기반 추천) 추가 — `RhythmFix`가 `track: 'irregular'`를 저장하는데 분기가 없어 마지막 기본값 `'남성'`으로 떨어지던 버그. 홈 `hormonePhase`가 안전 성분 필터·상품 점수·시즌 추천에 남성 기준으로 들어가던 문제 차단. `trackToSegment`는 여전히 `irregular` → `unknown`
 - fix(home): 「생리 시작일을 알려주세요」 배너 조건 맨 앞에 `myUserId &&` 추가 — 비로그인 방문자는 `hormoneCycle`이 null이라 배너가 보였고, 팝업에서 저장하면 period-start가 401로 거절돼 콘솔 에러만 남던 문제 차단. 「시작일 기록하기」 칩과 로그인 조건 일치
 - feat(home): 홈 `HormoneCard` 제거 — import·`hormoneCardRef`·`hormonePhaseTipOpen` state와 그 초기화 useEffect(안 지우면 빌드 실패) 삭제. 카드로 스크롤하던 달빛기 팝업 「호르몬 카드에서 기록하기」 버튼과 「생리 시작일을 알려주세요」 배너는 `setShowPeriodPopup(true)`로 시작일 팝업을 바로 열도록 교체. 배너 조건에 `userGender !== 'male'` 추가(남성에게 배너가 뜨고 팝업은 성별 조건으로 안 열리던 문제). 호르몬 브리핑 메인/서브 홈 편집 진입점은 카드와 함께 사라짐(편집 시트 코드·`HormoneCard.tsx` 파일은 남음)
 

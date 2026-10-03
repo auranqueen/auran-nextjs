@@ -6,6 +6,7 @@ export type TrackType =
   | 'postpartum'
   | 'male'
   | 'male_menopause'
+  | 'irregular'
 
 export const PHASE_LABELS: Record<string, string> = {
   '달빛기': '달빛기 🌙 (생리기)',
@@ -61,6 +62,7 @@ export function calcHormoneBriefing(row: any, now = new Date()) {
     const months = d && !Number.isNaN(d.getTime()) ? Math.max(0, Math.floor((now.getTime() - d.getTime()) / 2629800000)) : 0
     return { track, cycleDay: months, phase: `출산 후 ${months}개월차`, focus: '회복/장벽/진정' }
   }
+  if (track === 'irregular') return { track, cycleDay: 0, phase: '불규칙기', focus: '체크인 기반 추천' }
   if (track === 'male_menopause') return { track, cycleDay: 0, phase: '남성 갱년기', focus: '피부타입+고민 기반' }
   return { track: 'male' as TrackType, cycleDay: 0, phase: '남성', focus: '피부타입+고민 기반' }
 }
