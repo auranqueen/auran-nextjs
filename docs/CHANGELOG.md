@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-03
+- ui: 홈 HormoneSheet 열림 시 아래에서 올라오는 `hormoneSheetUp` 애니메이션 추가 (0.28s). 닫힘 애니메이션은 없음
+- ui: HormoneSheet 닫힘 시 `hormoneSheetRight`로 오른쪽 슬라이드 후 260ms 뒤 `onClose` (바깥 클릭·닫기 버튼). Escape는 즉시 `onClose`. `isClosing`이면 `handleClose`가 바로 반환해 연타로 타이머가 겹치지 않음
 - feat(hormone): /my/hormone — 타임라인 바·라벨 클릭 시 페이즈 설명 팝업(PHASE_INFO, slideUpIn), 시작일 없으면 currentPhase 빈값 → 달력 물들기·배지·범례 제거, 시작일 없음/기존 고객 안내 문구, 갱년기 고객 「생리가 완전히 끝났어요」/「다시 시작됐어요」 버튼(confirm + 신규 `POST /api/hormone/track` post_menopause|resume → hormone_cycle·profiles 갱신, resume 후 period-start), 실패 시 alert + period-start 응답 확인 + json() catch
 - fix(hormone): 예정일 갱신 — `RhythmFix`(「생리 주기가 있어요」)·`SegmentSlot` `switchToCycle`(「전환하기」)이 `hormone_cycle` update에서 `last_period_date`를 빼고, track 변경 뒤 `/api/hormone/period-start`에 오늘(한국 날짜)을 보내 `expected_period_date`·`period_started_at`·`cycle_length`까지 서버에서 저장. RhythmFix 날짜 UTC → `Asia/Seoul`, 기록 없는 고객도 general 선택 시 upsert로 새 기록 생성. `HormoneSheet` 「다음 마법 예상일」은 `expected_period_date` 우선, 없으면 기존 `last_period_date + cycle_length` 계산. 리스크: 오늘 날짜 가정이라 일반 주기 고객이 재선택하면 간격 21~45일일 때 `cycle_length`가 바뀔 수 있음, period-start 실패는 확인 안 함
 - feat(hormone): `/my/hormone` 달력 월 이동 — `viewYM` state + 헤더 ‹ / › 버튼(연도 넘김 처리), `calendarDays`가 보고 있는 연·월 기준, `isToday`는 연·월·일 모두 비교. `useHormoneCalendarRecord`에 `viewY`·`viewM` 인자 추가, `loadMonthRecords(uid, y, m)`로 보고 있는 달 기록 점 조회. 미래 날짜 칸은 onClick 없음 + cursor default(키보드 Enter는 아직 열림). 「오늘 케어」 `HormoneCard` 블록 제거 → `hasCalendar`일 때 「🌙 생리 기록하기 ›」 카드(`HormoneSheet` 열기). 생리 예정일 지남 안내 — track general + 시작일 있음 + 한국 날짜 기준 실제 경과일 > `cycleLen + 3`(스펙 원안의 `cycleDay`는 주기로 순환하는 값이라 절대 안 떠서 수정). 달력 없는 임신·산후·남성·갱년기 고객은 오늘 케어 카드가 사라짐, `tipOpen`·카드 문구 계산은 미사용으로 남음

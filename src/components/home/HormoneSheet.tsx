@@ -233,6 +233,12 @@ export default function HormoneSheet({
   const [dateModalType, setDateModalType] = useState<'start'|'end'>('start')
   const [dateModalVal, setDateModalVal] = useState('')
   const [timeModalVal, setTimeModalVal] = useState('')
+  const [isClosing, setIsClosing] = useState(false)
+  const handleClose = () => {
+    if (isClosing) return
+    setIsClosing(true)
+    setTimeout(() => { setIsClosing(false); onClose() }, 260)
+  }
 
   const tabId = TAB_DEFS[activeTab]?.id ?? 'moon'
 
@@ -423,10 +429,20 @@ export default function HormoneSheet({
         background: 'rgba(0,0,0,0.55)',
       }}
       onClick={e => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) handleClose()
       }}
       role="presentation"
     >
+      <style>{`
+        @keyframes hormoneSheetUp {
+          from { transform: translateY(100%); opacity: 0.8; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes hormoneSheetRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `}</style>
       <div
         style={{
           background: '#17171e',
@@ -438,6 +454,9 @@ export default function HormoneSheet({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          animation: isClosing
+            ? 'hormoneSheetRight 0.25s ease-in forwards'
+            : 'hormoneSheetUp 0.28s cubic-bezier(0.32,0.72,0,1) forwards',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -462,7 +481,7 @@ export default function HormoneSheet({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               flexShrink: 0,
               width: 36,
