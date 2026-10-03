@@ -52,7 +52,7 @@ const POP_CONTENT: Record<Exclude<PopKey, null>, { title: string; body: string }
 }
 
 const SHORTCUTS = [
-  { label: '내관리', emoji: '💆', href: '/my/manage', bg: '#E1F5EE', disabled: false },
+  { label: '내관리', emoji: '💆', customIcon: '/icons/icon_manage.png', href: '/my/manage', bg: '#E1F5EE', disabled: false },
   { label: '스킨스타', emoji: '✨', href: '/myworld', bg: '#FBEAF0', disabled: false },
   { label: '리뷰·커뮤니티', emoji: '📝', href: '/dashboard/customer/community', bg: '#FAEEDA', disabled: false },
   { label: '라이브', emoji: '📹', href: '#', bg: '#f0f0f0', disabled: true },
@@ -107,7 +107,9 @@ function ShortcutGrid({ isLoggedIn, onSelect }: { isLoggedIn: boolean; onSelect?
               fontSize: 26,
               background: 'rgba(255,255,255,0.45)',
             }}>
-              {item.emoji}
+              {'customIcon' in item
+                ? <img src={item.customIcon} alt={item.label} width={50} height={50} style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                : item.emoji}
             </div>
             <span style={{ fontSize: 11, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
           </div>
