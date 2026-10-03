@@ -2763,7 +2763,8 @@ export default function CustomerHomePage() {
         ) : trackToSegment(hormoneTrack) !== 'cycle' ? (
           <SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />
         ) : (<>
-        {hormoneCycle === null
+        {myUserId
+          && hormoneCycle === null
           && hormoneTrack === 'general'
           && userGender !== 'male'
           && !cycleBannerDismissed && (
