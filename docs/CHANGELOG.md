@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- style(product): 제품상세(`products/[id]/client.tsx`) 라이트모드 — 배경·카드·시트·입력창·글자·테두리 하드코딩 색 → `--bg`/`--bg2`/`--bg3`/`--text`/`--fg-rgb`/`--purple`. 금색 버튼·카카오·할인 빨강·호르몬 팔레트·초록/파랑 배지·이미지 오버레이·어드민 칩·토스트는 고정색 유지. `ProductTagSection` 아코디언 셸·글자, `ConsultChat` 본문 배경도 변수화
 - style(home): 검색 input fontSize 9 → 10(홈 검색바·검색 시트 2곳), `.search-input-slim::placeholder` 9px → 10px
 - feat(home): 홈 검색 결과를 전체화면 슬라이드업 시트로 전환 — 홈 검색바 포커스 시 `searchSheetOpen`으로 시트(fixed inset 0, z 200, `var(--bg)`, translateY 0.3s) 오픈, 시트 상단 ← + 검색 입력(autoFocus), 인기 키워드(검색어 없을 때)·결과 리스트를 시트 안 스크롤로 이동(결과 maxHeight 300 제거). ← 시 내려간 뒤 `searchFocused=false`, `searchKeyword=''`. 검색 API·필터·클릭 로직 변경 없음
 - style(home): 홈 검색바 골드 테두리(`1.5px solid var(--gold)`)·배경 `var(--bg)`·돋보기 SVG 골드·placeholder 「브랜드·제품명으로 검색해보세요」(골드 50%). 인기 키워드 드롭다운 배경 `var(--bg)`+그림자, 번호 `var(--purple)`. `globals.css`에 `--gold-rgb: 184,150,90`(다크/라이트) 추가, `.search-input-slim::placeholder` 골드로. 검색 로직 변경 없음

@@ -122,12 +122,12 @@ function AccordionShell({
   const shell =
     variant === 'match'
       ? {
-          background: '#1a1428' as const,
+          background: 'rgba(123,94,167,0.06)' as const,
           border: '1px solid rgba(123,94,167,0.3)',
         }
       : {
-          background: '#1a1a20' as const,
-          border: '0.5px solid rgba(255,255,255,0.07)',
+          background: 'var(--bg2)' as const,
+          border: '0.5px solid rgba(var(--fg-rgb),0.07)',
         }
   return (
     <div
@@ -148,7 +148,7 @@ function AccordionShell({
           padding: '12px 14px',
           border: 'none',
           background: 'transparent',
-          color: '#e8e4dc',
+          color: 'var(--text)',
           fontSize: 13,
           fontFamily: 'inherit',
           cursor: 'pointer',
@@ -158,7 +158,7 @@ function AccordionShell({
         }}
       >
         <span>{title}</span>
-        <span style={{ color: '#888', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: 'rgba(var(--fg-rgb),0.5)', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
       </button>
       {open ? <div style={{ padding: '0 14px 14px' }}>{children}</div> : null}
     </div>
@@ -408,7 +408,7 @@ export default function ProductTagSection({
                   style={{
                     padding: '6px 11px',
                     borderRadius: 999,
-                    border: on ? `1px solid ${st.color}` : '1px solid rgba(255,255,255,0.12)',
+                    border: on ? `1px solid ${st.color}` : '1px solid rgba(var(--fg-rgb),0.12)',
                     background: st.bg,
                     color: st.color,
                     fontSize: 11,
@@ -429,7 +429,7 @@ export default function ProductTagSection({
               style={{
                 padding: '12px 12px',
                 borderRadius: 14,
-                background: matchResult.match ? '#0f1a14' : '#1a0f0a',
+                background: matchResult.match ? 'rgba(90,219,138,0.08)' : 'rgba(232,123,74,0.08)',
                 border: matchResult.match ? '1px solid rgba(90,219,138,0.35)' : '1px solid rgba(232,123,74,0.35)',
               }}
             >
@@ -449,7 +449,7 @@ export default function ProductTagSection({
                   style={{
                     marginTop: 4,
                     fontSize: 11,
-                    color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(var(--fg-rgb),0.5)',
                     lineHeight: 1.5,
                   }}
                 >
@@ -461,7 +461,7 @@ export default function ProductTagSection({
                   style={{
                     marginTop: 6,
                     fontSize: 10,
-                    color: 'rgba(255,255,255,0.35)',
+                    color: 'rgba(var(--fg-rgb),0.35)',
                     lineHeight: 1.5,
                     padding: '0 2px',
                   }}
@@ -472,7 +472,7 @@ export default function ProductTagSection({
             </div>
             )
           })() : (
-            <div style={{ fontSize: 12, color: '#888' }}>호르몬 단계를 선택하면 매칭 결과를 볼 수 있어요.</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)' }}>호르몬 단계를 선택하면 매칭 결과를 볼 수 있어요.</div>
           )}
         </AccordionShell>
       ) : null}
@@ -484,7 +484,7 @@ export default function ProductTagSection({
       >
         {(hormoneTags?.length ?? 0) > 0 ? (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>호르몬 · 단계</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>호르몬 · 단계</div>
             <div>
               {hormoneTags!.map((t) => {
                 const st = hormoneStyleForLabel(String(t))
@@ -495,7 +495,7 @@ export default function ProductTagSection({
         ) : null}
         {(skinTypes?.length ?? 0) > 0 ? (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>피부 타입</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>피부 타입</div>
             <div>
               {skinTypes!.map((t) => (
                 <Chip key={t} label={String(t)} bg={CHIP_SKIN.bg} color={CHIP_SKIN.color} />
@@ -505,7 +505,7 @@ export default function ProductTagSection({
         ) : null}
         {(funcTags?.length ?? 0) > 0 ? (
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>기능</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>기능</div>
             <div>
               {funcTags!.map((t) => (
                 <Chip key={t} label={String(t)} bg={CHIP_FUNC.bg} color={CHIP_FUNC.color} />
@@ -515,7 +515,7 @@ export default function ProductTagSection({
         ) : null}
         {(situationTags?.length ?? 0) > 0 ? (
           <div>
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>상황</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>상황</div>
             <div>
               {situationTags!.map((t) => (
                 <Chip key={t} label={String(t)} bg={CHIP_SITUATION.bg} color={CHIP_SITUATION.color} />

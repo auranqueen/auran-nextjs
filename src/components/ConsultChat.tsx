@@ -101,7 +101,7 @@ export default function ConsultChat({
       overflow: 'hidden',
       boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
       display: 'flex', flexDirection: 'column',
-      background: '#1a1a1a',
+      background: 'var(--bg2)',
     }}>
       {/* 헤더 */}
       <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -125,7 +125,7 @@ export default function ConsultChat({
       <div
         ref={bodyRef}
         style={{
-          background: '#1a1a1a',
+          background: 'var(--bg2)',
           padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
           maxHeight: 280, overflowY: 'auto',
         }}

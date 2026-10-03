@@ -1016,7 +1016,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   })
 
   const wrap: React.CSSProperties = {
-    background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
+    background: 'var(--bg)', color: 'var(--text)', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
     paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
     fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
@@ -1047,9 +1047,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           boxSizing: 'border-box',
           padding: '10px 12px',
           borderRadius: 8,
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: '#141210',
-          color: '#fff',
+          border: '1px solid rgba(var(--fg-rgb),0.12)',
+          background: 'var(--bg2)',
+          color: 'var(--text)',
           fontSize: 12,
           fontFamily: 'inherit',
         }}
@@ -1061,7 +1061,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             maxHeight: 180,
             overflowY: 'auto',
             borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(var(--fg-rgb),0.08)',
           }}
         >
           {ptSearchHits.map((h) => (
@@ -1094,9 +1094,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 textAlign: 'left',
                 padding: '10px 12px',
                 border: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                borderBottom: '1px solid rgba(var(--fg-rgb),0.06)',
                 background: 'transparent',
-                color: '#e8e4dc',
+                color: 'var(--text)',
                 fontSize: 12,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -1117,8 +1117,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
     return (
       <div
         style={{
-          background: '#0d0b09',
-          color: '#e8e4dc',
+          background: 'var(--bg)',
+          color: 'var(--text)',
           maxWidth: 430,
           margin: '0 auto',
           minHeight: '100dvh',
@@ -1131,7 +1131,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
         }}
       >
-        <div style={{ fontSize: 16, lineHeight: 1.65, color: '#e8e4dc', marginBottom: 20 }}>
+        <div style={{ fontSize: 16, lineHeight: 1.65, color: 'var(--text)', marginBottom: 20 }}>
           원장님과 상담 후 만나볼 수 있는 브랜드예요 💜
         </div>
         <button
@@ -1169,7 +1169,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         />
       ) : null}
       {/* 탑바 */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 18px 14px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 18px 14px', background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 90 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
           <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
         </div>
@@ -1181,12 +1181,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       </div>
 
       {/* 갤러리 */}
-      <div style={{ position: 'relative', background: '#0f0c08' }}>
-        <div style={{ height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#1e1810,#131008)', position: 'relative' }}>
+      <div style={{ position: 'relative', background: 'var(--bg)' }}>
+        <div style={{ height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg2)', position: 'relative' }}>
           {discount > 0 && (
-            <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
+            <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#FFF', fontSize: 12, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
           )}
-          <div style={{ position: 'absolute', top: 14, right: 14, background: '#2a1f0e', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
+          <div style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(201,169,110,0.12)', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
             피부 매칭 {matchPct}
           </div>
           {activeThumb === 99 ? (
@@ -1198,14 +1198,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 <img src={activeMainImageUrl} alt={name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ) : (
-              <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
+              <div style={{ fontSize: 80, color: 'rgba(var(--fg-rgb),0.35)' }}>🧴</div>
             )
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', background: '#0f0c08' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', background: 'var(--bg)' }}>
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
-            <div style={{ fontSize: 9, color: '#7B5EA7', padding: '4px 8px', border: '1px solid #7B5EA7', borderRadius: '12px' }}>💌 친구에게 추천하기</div>
+            <div style={{ fontSize: 9, color: 'var(--purple)', padding: '4px 8px', border: '1px solid var(--purple)', borderRadius: '12px' }}>💌 친구에게 추천하기</div>
             {shareOpen ? (
           <div
             style={{
@@ -1220,7 +1220,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               onClick={e => e.stopPropagation()}
               style={{
                 width: '100%', maxWidth: 360,
-                background: '#1A1714',
+                background: 'var(--bg2)',
                 borderRadius: 20,
                 padding: '20px',
                 border: '0.5px solid rgba(123,94,167,0.3)',
@@ -1231,7 +1231,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <span style={{ fontSize: 22 }}>🍓</span>
                   <div>
-                    <div style={{ fontSize: 13, color: '#c4a8ff', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
+                    <div style={{ fontSize: 13, color: 'var(--purple)', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
                     <div style={{ fontSize: 12, color: 'rgba(201,169,110,0.9)', marginTop: 4 }}>
                       {myRole === 'partner'
                         ? `공유하면 커미션 약 ${Math.floor(Number(product.retail_price ?? 0) * partnerCommissionRate / 100).toLocaleString()}원 지급`
@@ -1242,18 +1242,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 <button
                   type="button"
                   onClick={() => setShareOpen(false)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'rgba(255,255,255,0.5)', padding: '0 0 0 8px', lineHeight: 1 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'rgba(var(--fg-rgb),0.5)', padding: '0 0 0 8px', lineHeight: 1 }}
                 >✕</button>
               </div>
               {/* 구분선 */}
-              <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.1)', marginBottom: 16 }} />
+              <div style={{ height: '0.5px', background: 'rgba(var(--fg-rgb),0.1)', marginBottom: 16 }} />
               {/* 카카오톡 공유 */}
               {shareRefUserId === null ? (
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '12px 0' }}>
+                <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center', padding: '12px 0' }}>
                   로그인 후 공유하면 적립돼요
                 </div>
               ) : shareRefUserId === undefined ? (
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '12px 0' }}>연결 확인 중…</div>
+                <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.3)', textAlign: 'center', padding: '12px 0' }}>연결 확인 중…</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button
@@ -1294,7 +1294,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       width: '100%', padding: '14px',
                       background: 'rgba(123,94,167,0.15)', borderRadius: 12,
                       border: '0.5px solid rgba(123,94,167,0.4)',
-                      fontSize: 11, color: '#c4a8ff', cursor: 'pointer',
+                      fontSize: 11, color: 'var(--purple)', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     }}
                   >
@@ -1309,42 +1309,42 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         </div>
 
         {/* 썸네일 스트립 */}
-        <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: 'var(--bg)', overflowX: 'auto' }}>
           <div
             data-edit-field="storage_thumb_url"
             onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'storage_thumb_url', label: '썸네일 이미지 수정', currentValue: thumbUrl }) } : undefined}
             style={{
               position: showEditChrome ? 'relative' : undefined,
               flexShrink: 0,
-              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               borderRadius: showEditChrome ? 8 : undefined,
               cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
-              <span style={{ position: 'absolute', top: 2, right: 2, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+              <span style={{ position: 'absolute', top: 2, right: 2, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
             ) : null}
             <div onClick={() => setActiveThumb(0)} onMouseEnter={() => setActiveThumb(0)}
-              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               {thumbUrl ? <img src={thumbUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 26 }}>🧴</div>}
             </div>
           </div>
           {maxThumbs.map((url, i) => (
             <div key={i} onClick={() => setActiveThumb(i + 1)} onMouseEnter={() => setActiveThumb(i + 1)}
-              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {galleryImgs.map((url, i) => (
             <div key={`g-${i}`} onClick={() => setActiveThumb(maxThumbs.length + i + 1)} onMouseEnter={() => setActiveThumb(maxThumbs.length + i + 1)}
-              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {hasVideo && (
             <div onClick={() => setActiveThumb(99)} onMouseEnter={() => setActiveThumb(99)}
-              style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+              style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
               <video src={product.video_url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               <div style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(201,169,110,0.9)', borderRadius: 3, padding: '1px 4px', fontSize: 8, color: '#000' }}>▶</div>
             </div>
@@ -1375,12 +1375,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <div>
                 <div style={{ fontSize: 12, color: '#C9A96E' }}>{et}</div>
                 {(product as any).event_desc && (
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{(product as any).event_desc}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginTop: 2 }}>{(product as any).event_desc}</div>
                 )}
               </div>
             </div>
             {ee && (
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+              <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)' }}>
                 D-{Math.max(0, Math.ceil((new Date(ee).getTime() - now.getTime()) / 86400000))}
               </div>
             )}
@@ -1391,7 +1391,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {/* 제품 기본 정보 */}
       <div style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 10, color: '#888' }}>{brand}</span>
+          <span style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)' }}>{brand}</span>
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {repurchaseRate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {activeUsers}명 사용중</span>
         </div>
@@ -1433,7 +1433,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 padding: '10px 12px',
                 border: 'none',
                 background: 'transparent',
-                color: '#e8d9ff',
+                color: 'var(--purple)',
                 fontSize: 12,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -1441,7 +1441,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               }}
             >
               <span>호르몬 주기별 케어 타이밍</span>
-              <span style={{ color: '#888', fontSize: 11 }}>{hormoneOpen ? '접기' : '펼치기'}</span>
+              <span style={{ color: 'rgba(var(--fg-rgb),0.5)', fontSize: 11 }}>{hormoneOpen ? '접기' : '펼치기'}</span>
             </button>
             {hormoneOpen ? (
               <div style={{ padding: '0 12px 12px' }}>
@@ -1454,9 +1454,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       style={{
                         padding: '5px 10px',
                         borderRadius: 20,
-                        border: hormonePhaseIdx === i ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
-                        background: hormonePhaseIdx === i ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.2)',
-                        color: hormonePhaseIdx === i ? GOLD : '#aaa',
+                        border: hormonePhaseIdx === i ? `1px solid ${GOLD}` : '1px solid rgba(var(--fg-rgb),0.12)',
+                        background: hormonePhaseIdx === i ? 'rgba(201,169,110,0.12)' : 'rgba(var(--fg-rgb),0.04)',
+                        color: hormonePhaseIdx === i ? GOLD : 'rgba(var(--fg-rgb),0.65)',
                         fontSize: 11,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
@@ -1468,7 +1468,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 </div>
                 {showEditChrome && editingHormone ? (
                   <div style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, color: '#B09AD0', marginBottom: 4 }}>Tip</div>
+                    <div style={{ fontSize: 10, color: 'var(--purple)', marginBottom: 4 }}>Tip</div>
                     <textarea
                       value={editingHormone[curHormoneKey].tip}
                       onChange={(e) => {
@@ -1483,9 +1483,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                         width: '100%',
                         boxSizing: 'border-box',
                         fontSize: 11,
-                        color: '#ccc',
-                        background: '#141210',
-                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: 'rgba(var(--fg-rgb),0.75)',
+                        background: 'var(--bg2)',
+                        border: '1px solid rgba(var(--fg-rgb),0.12)',
                         borderRadius: 8,
                         padding: 8,
                         marginBottom: 8,
@@ -1508,9 +1508,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                         width: '100%',
                         boxSizing: 'border-box',
                         fontSize: 11,
-                        color: '#ccc',
-                        background: '#141210',
-                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: 'rgba(var(--fg-rgb),0.75)',
+                        background: 'var(--bg2)',
+                        border: '1px solid rgba(var(--fg-rgb),0.12)',
                         borderRadius: 8,
                         padding: 8,
                         marginBottom: 8,
@@ -1549,8 +1549,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       style={{
                         width: '100%',
                         border: 'none',
-                        background: '#7B5EA7',
-                        color: '#fff',
+                        background: 'var(--purple)',
+                        color: '#FFF',
                         padding: 13,
                         borderRadius: 10,
                         fontSize: 13,
@@ -1563,12 +1563,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     </button>
                   </div>
                 ) : showEditChrome && !editingHormone ? (
-                  <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>편집 준비 중…</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>편집 준비 중…</div>
                 ) : curHormone.tip || curHormone.recommend ? (
-                  <div style={{ fontSize: 11, color: '#ccc', lineHeight: 1.65, marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.75)', lineHeight: 1.65, marginBottom: 8 }}>
                     {curHormone.tip ? (
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: '#B09AD0' }}>Tip </span>
+                        <span style={{ color: 'var(--purple)' }}>Tip </span>
                         {curHormone.tip}
                       </div>
                     ) : null}
@@ -1580,11 +1580,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     ) : null}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>
                     {showEditChrome ? '어드민에서 hormone_timing(JSON)을 채우면 표시돼요.' : '이 단계에 대한 안내가 아직 없어요.'}
                   </div>
                 )}
-                <div style={{ fontSize: 10, color: '#666', lineHeight: 1.5, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.5, paddingTop: 6, borderTop: '1px solid rgba(var(--fg-rgb),0.06)' }}>
                   마법 캘린더에서 주기를 맞추면 단계별 맞춤 루틴과 연동될 수 있어요. (캘린더 메뉴에서 설정)
                 </div>
               </div>
@@ -1603,8 +1603,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           (product.skin_tags && (product.skin_tags as string[]).length > 0) ||
           hormoneTimingLabels.length > 0) && (
           <div style={{ margin: '0 0 8px 0', padding: '10px 14px', borderRadius: 10, background: 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.1)' }}>
-            <div style={{ fontSize: 11, color: '#9b7db5', fontWeight: 600, marginBottom: 6 }}>이런 분께 추천해요</div>
-            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 11, color: 'var(--purple)', fontWeight: 600, marginBottom: 6 }}>이런 분께 추천해요</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.8 }}>
               {product.concern_tags && product.concern_tags.length > 0 && (
                 <div>✓ {product.concern_tags.join(', ')} 고민</div>
               )}
@@ -1629,7 +1629,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 padding: '2px 8px',
                 borderRadius: 20,
                 background: 'rgba(123,94,167,0.15)',
-                color: '#7B5EA7',
+                color: 'var(--purple)',
                 border: '1px solid rgba(123,94,167,0.3)',
               }}>
                 ✦ AI 분석
@@ -1661,10 +1661,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 {/* 원장 코멘트 */}
                 {product.owner_comment && (
                   <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 4 }}>
+                    <div style={{ fontSize: 10, color: 'var(--purple)', marginBottom: 4 }}>
                       맑원장 코멘트
                     </div>
-                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
                       {product.owner_comment}
                     </div>
                   </div>
@@ -1673,7 +1673,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 {/* concern_tags */}
                 {product.concern_tags && product.concern_tags.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>
+                    <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.55)', marginBottom: 4 }}>
                       피부 고민
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -1683,7 +1683,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                           padding: '2px 8px',
                           borderRadius: 20,
                           background: 'rgba(123,94,167,0.1)',
-                          color: '#7B5EA7',
+                          color: 'var(--purple)',
                         }}>
                           {tag}
                         </span>
@@ -1696,8 +1696,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 <div style={{
                   marginTop: 10,
                   fontSize: 10,
-                  color: '#bbb',
-                  borderTop: '1px solid rgba(0,0,0,0.06)',
+                  color: 'rgba(var(--fg-rgb),0.7)',
+                  borderTop: '1px solid rgba(var(--fg-rgb),0.06)',
                   paddingTop: 8,
                 }}>
                   AI 분석은 참고용입니다. 맑원장이 검수하고 있어요 💜
@@ -1707,7 +1707,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           </div>
         )}
         {maleMeno ? (
-          <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#e8d9ff' }}>
+          <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: 'var(--purple)' }}>
             남성 갱년기 피부에도 효과적이에요
           </div>
         ) : null}
@@ -1716,15 +1716,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'name', label: '상품명 수정', currentValue: name }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
-            fontSize: 13, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
-            outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+            fontSize: 13, lineHeight: 1.4, marginBottom: 5, color: 'var(--text)',
+            outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
             cursor: isEditMode ? 'pointer' : undefined,
           }}
         >
           {showEditChrome ? (
-            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
           ) : null}
           {name}
         </div>
@@ -1733,15 +1733,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'description', label: '상품 설명 수정', currentValue: seoDesc }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
-            fontSize: 10, color: '#888', lineHeight: 1.6, marginBottom: 10,
-            outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+            fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', lineHeight: 1.6, marginBottom: 10,
+            outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
             cursor: isEditMode ? 'pointer' : undefined,
           }}
         >
           {showEditChrome ? (
-            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
           ) : null}
           {seoDesc}
         </div>
@@ -1754,18 +1754,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         )}
         {product.is_groupbuy && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 20, marginBottom: 8, width: 'fit-content' }}>
-            <span style={{ fontSize: 11, color: '#C4A0F0' }}>👥 {product.groupbuy_count || 0}명 공동구매 중</span>
+            <span style={{ fontSize: 11, color: 'var(--purple)' }}>👥 {product.groupbuy_count || 0}명 공동구매 중</span>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           {discount > 0 ? (
-            <div style={{ background: '#c02030', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
+            <div style={{ background: '#c02030', color: '#FFF', fontSize: 10, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
           ) : null}
           <div style={{ fontSize: 15, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
             {hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}
           </div>
           {discount > 0 && product.retail_price > price ? (
-            <div style={{ fontSize: 11, color: '#555', textDecoration: 'line-through' }}>{Number(product.retail_price).toLocaleString()}원</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.35)', textDecoration: 'line-through' }}>{Number(product.retail_price).toLocaleString()}원</div>
           ) : null}
         </div>
         {(String(product.unit_type || '').trim() &&
@@ -1789,16 +1789,16 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             style={{
               position: showEditChrome ? 'relative' : undefined,
               fontSize: 11,
-              color: 'rgba(255,255,255,0.45)',
+              color: 'rgba(var(--fg-rgb),0.45)',
               marginBottom: 10,
-              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               borderRadius: showEditChrome ? 4 : undefined,
               cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
-              <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+              <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
             ) : null}
             {String(product.unit_type || '').trim() &&
             Number.isFinite(Number(product.unit_price)) &&
@@ -1807,7 +1807,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 {String(product.unit_type).trim()} {Number(product.unit_price).toLocaleString()}원
               </>
             ) : (
-              <span style={{ color: '#666' }}>단위가격 (편집)</span>
+              <span style={{ color: 'rgba(var(--fg-rgb),0.45)' }}>단위가격 (편집)</span>
             )}
           </div>
         ) : null}
@@ -1828,15 +1828,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             style={{
               position: showEditChrome ? 'relative' : undefined,
               fontSize: 10,
-              color: 'rgba(255,255,255,0.38)',
+              color: 'rgba(var(--fg-rgb),0.38)',
               marginBottom: 8,
-              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
-              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
+              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
             ) : null}
             카테고리 ID: {product.category_id || '—'}
           </div>
@@ -1861,13 +1861,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               color: 'rgba(201,169,110,0.55)',
               marginBottom: 10,
               lineHeight: 1.5,
-              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
-              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
+              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
             ) : null}
             {tagLine || '태그 (편집)'}
           </div>
@@ -1877,13 +1877,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center', flexWrap: 'wrap' as const, marginBottom: 10, fontSize: 11 }}>
-          <span style={{ color: '#888' }}>
+          <span style={{ color: 'rgba(var(--fg-rgb),0.5)' }}>
             <span style={{ color: GOLD }}>오늘 오후 4시까지 주문 시 당일 발송</span>
             {' · '}
             5만원 이상 무료배송
           </span>
           {product.sales_count != null && Number(product.sales_count) > 0 ? (
-            <span style={{ color: '#888' }}>
+            <span style={{ color: 'rgba(var(--fg-rgb),0.5)' }}>
               <span style={{ color: GOLD }}>{Number(product.sales_count).toLocaleString()}</span>명이 구매했어요
             </span>
           ) : null}
@@ -1906,9 +1906,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               style={{
                 padding: '5px 11px',
                 borderRadius: 20,
-                border: storyTab === k ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
-                background: storyTab === k ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.2)',
-                color: storyTab === k ? GOLD : '#888',
+                border: storyTab === k ? `1px solid ${GOLD}` : '1px solid rgba(var(--fg-rgb),0.12)',
+                background: storyTab === k ? 'rgba(201,169,110,0.12)' : 'rgba(var(--fg-rgb),0.04)',
+                color: storyTab === k ? GOLD : 'rgba(var(--fg-rgb),0.5)',
                 fontSize: 11,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -1926,7 +1926,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               borderRadius: 20,
               border: `1px solid rgba(123,94,167,0.4)`,
               background: 'rgba(123,94,167,0.12)',
-              color: '#d4c4f0',
+              color: 'var(--purple)',
               fontSize: 11,
               cursor: 'pointer',
               fontFamily: 'inherit',
@@ -1944,8 +1944,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               style={{
                 fontSize: 11, padding: '4px 10px', borderRadius: 20,
                 border: '0.5px solid var(--color-border-secondary)',
-                background: storyTab === phase ? '#7B5EA7' : 'transparent',
-                color: storyTab === phase ? '#fff' : 'var(--color-text-secondary)',
+                background: storyTab === phase ? 'var(--purple)' : 'transparent',
+                color: storyTab === phase ? '#FFF' : 'var(--color-text-secondary)',
                 cursor: 'pointer',
               }}
             >
@@ -1958,28 +1958,28 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ color: GOLD, fontSize: 17, letterSpacing: 2 }}>★★★★★</span>
           <span style={{ fontSize: 20, color: GOLD }}>{rating}</span>
-          <span style={{ fontSize: 12, color: '#666' }}>리뷰 {reviewCount}개</span>
-          <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
+          <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)' }}>리뷰 {reviewCount}개</span>
+          <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
 
         {/* 리뷰 통계 */}
         {!reviewsLoading && reviews.length >= 1 ? (
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>리뷰 통계</div>
-            <div style={{ fontSize: 12, color: '#e8e4dc', marginBottom: 10 }}>
+          <div style={{ background: 'rgba(var(--fg-rgb),0.03)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 10 }}>리뷰 통계</div>
+            <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 10 }}>
               평균 별점 <span style={{ color: GOLD }}>{reviewListAvg.toFixed(1)}</span>
             </div>
 
             {/* 효과 태그 통계 */}
             {top4Effects.length > 0 ? (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>실제 효과</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 8 }}>실제 효과</div>
                 {top4Effects.map(([label, cnt]) => {
                   const pct = Math.round((cnt / reviews.length) * 100)
                   return (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, color: '#e8e4dc', width: 70, flexShrink: 0 }}>{label}</span>
-                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text)', width: 70, flexShrink: 0 }}>{label}</span>
+                      <div style={{ flex: 1, height: 6, background: 'rgba(var(--fg-rgb),0.1)', borderRadius: 3 }}>
                         <div style={{ width: `${pct}%`, height: '100%', background: GOLD, borderRadius: 3 }} />
                       </div>
                       <span style={{ fontSize: 11, color: GOLD, width: 32, textAlign: 'right' }}>{pct}%</span>
@@ -1989,10 +1989,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               </div>
             ) : top3Concerns.length > 0 ? (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>도움 태그 Top3</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>도움 태그 Top3</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {top3Concerns.map(([label, cnt]) => (
-                    <span key={label} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#B09AD0' }}>
+                    <span key={label} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: 'var(--purple)' }}>
                       {label} {cnt}
                     </span>
                   ))}
@@ -2003,17 +2003,17 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {/* 피부타입별 통계 */}
             {Object.keys(skinTypeStats).length > 0 ? (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>피부타입별 반응</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 8 }}>피부타입별 반응</div>
                 {Object.entries(skinTypeStats).map(([st, { count, sum }]) => {
                   const avg = (sum / count).toFixed(1)
                   const isMyType = myProfileSkinType === st
                   return (
                     <div key={st} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, padding: isMyType ? '4px 8px' : '0', borderRadius: isMyType ? 8 : 0, background: isMyType ? 'rgba(201,169,110,0.08)' : 'transparent', border: isMyType ? `1px solid rgba(201,169,110,0.25)` : 'none' }}>
-                      <span style={{ fontSize: 11, color: isMyType ? GOLD : '#aaa', width: 55, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: isMyType ? GOLD : 'rgba(var(--fg-rgb),0.65)', width: 55, flexShrink: 0 }}>
                         {st}{isMyType ? ' 👈' : ''}
                       </span>
                       <span style={{ fontSize: 11, color: GOLD }}>★{avg}</span>
-                      <span style={{ fontSize: 10, color: '#666' }}>{count}명</span>
+                      <span style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)' }}>{count}명</span>
                     </div>
                   )
                 })}
@@ -2022,13 +2022,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
             {/* 사용기간 */}
             {longTermPct > 0 ? (
-              <div style={{ fontSize: 11, color: '#aaa' }}>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.65)' }}>
                 1개월 이상 사용자 <span style={{ color: GOLD }}>{longTermPct}%</span>
               </div>
             ) : null}
             {Object.keys(hormoneStats).length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>호르몬기별 리뷰</div>
+                <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 8 }}>호르몬기별 리뷰</div>
                 {(['달빛기','황금기','만개기','물들기'] as const).map(phase => {
                   const cnt = hormoneStats[phase] || 0
                   const pct = reviews.length > 0 ? Math.round(cnt / reviews.length * 100) : 0
@@ -2036,10 +2036,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   return cnt > 0 ? (
                     <div key={phase} style={{ marginBottom: 6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{phase}</span>
+                        <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>{phase}</span>
                         <span style={{ fontSize: 11, color: colors[phase] }}>{cnt}건</span>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                      <div style={{ background: 'rgba(var(--fg-rgb),0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
                         <div style={{ width: `${pct}%`, height: '100%', background: colors[phase], borderRadius: 4 }} />
                       </div>
                     </div>
@@ -2049,12 +2049,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             )}
             {rebuyPct > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>재구매 의향</div>
+                <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 6 }}>재구매 의향</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>또 살 거예요</span>
+                  <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>또 살 거예요</span>
                   <span style={{ fontSize: 11, color: '#7BC49A' }}>{rebuyPct}%</span>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(var(--fg-rgb),0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
                   <div style={{ width: `${rebuyPct}%`, height: '100%', background: '#5B8A6B', borderRadius: 4 }} />
                 </div>
               </div>
@@ -2065,15 +2065,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* 리뷰 목록 - 가로 롤링 */}
         <div ref={reviewSectionRef}>
           {reviewsLoading ? (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 12 }}>로딩중...</div>
           ) : storyFiltered.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 12 }}>
               {reviews.length === 0 ? '아직 리뷰가 없어요' : '이 탭에 해당하는 리뷰가 없어요'}
             </div>
           ) : (
             <div ref={reviewScrollRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, WebkitOverflowScrolling: 'touch' as any, scrollSnapType: 'x mandatory' }}>
               {storyFiltered.map((rv, i) => (
-                <div key={rv.id || i} style={{ flexShrink: 0, width: 260, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14, scrollSnapAlign: 'start' }}>
+                <div key={rv.id || i} style={{ flexShrink: 0, width: 260, background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: 14, scrollSnapAlign: 'start' }}>
                   {/* ===== [리뷰 뱃지] 오렌구매/스토어구매/실구매인증 ===== */}
                   <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
                     {rv.is_store_review && (
@@ -2097,7 +2097,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     {!rv.is_store_review && (
                       <span style={{
                         fontSize: 10, padding: '2px 7px', borderRadius: 20,
-                        background: '#f5f0ff', color: '#7B5EA7',
+                        background: '#f5f0ff', color: 'var(--purple)',
                         border: '0.5px solid #AFA9EC',
                       }}>
                         오렌 구매 💜
@@ -2106,14 +2106,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ color: GOLD, fontSize: 13 }}>{'★'.repeat(Math.max(0, Number(rv.rating || 0)))}</span>
-                    {rv.skin_type ? <span style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: 10 }}>{rv.skin_type}</span> : null}
+                    {rv.skin_type ? <span style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', background: 'rgba(var(--fg-rgb),0.05)', padding: '2px 7px', borderRadius: 10 }}>{rv.skin_type}</span> : null}
                     {rv.hormone_phase && (
                       <span style={{ fontSize: 10, color: '#C9A96E', background: 'rgba(201,169,110,0.1)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 10, padding: '2px 8px', marginLeft: 4 }}>
                         {rv.hormone_phase}
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+                  <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.85)', lineHeight: 1.6, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
                     {rv.content || ''}
                   </div>
                   {Array.isArray(rv.effect_tags) && rv.effect_tags.length > 0 ? (
@@ -2125,7 +2125,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   ) : Array.isArray(rv.helpful_concerns) && rv.helpful_concerns.length > 0 ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
                       {rv.helpful_concerns.slice(0, 3).map((c: string) => (
-                        <span key={c} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#B09AD0' }}>✓ {c}</span>
+                        <span key={c} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: 'var(--purple)' }}>✓ {c}</span>
                       ))}
                     </div>
                   ) : null}
@@ -2155,10 +2155,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     }}
                     style={{
                       background: 'none',
-                      border: likedReviewIds.has(rv.id) ? '1px solid rgba(201,169,110,0.45)' : '1px solid rgba(255,255,255,0.15)',
+                      border: likedReviewIds.has(rv.id) ? '1px solid rgba(201,169,110,0.45)' : '1px solid rgba(var(--fg-rgb),0.15)',
                       borderRadius: 20,
                       padding: '6px 14px',
-                      color: likedReviewIds.has(rv.id) ? GOLD : 'rgba(255,255,255,0.6)',
+                      color: likedReviewIds.has(rv.id) ? GOLD : 'rgba(var(--fg-rgb),0.6)',
                       fontSize: 10,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -2199,13 +2199,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       borderRadius: 20,
                       border: alsoBoughtIds.has(rv.id)
                         ? '0.5px solid rgba(201,169,110,0.4)'
-                        : '0.5px solid rgba(255,255,255,0.12)',
+                        : '0.5px solid rgba(var(--fg-rgb),0.12)',
                       background: alsoBoughtIds.has(rv.id)
                         ? 'rgba(201,169,110,0.1)'
                         : 'none',
                       color: alsoBoughtIds.has(rv.id)
                         ? '#C9A96E'
-                        : 'rgba(255,255,255,0.45)',
+                        : 'rgba(var(--fg-rgb),0.45)',
                       fontSize: 11,
                       cursor: alsoBoughtIds.has(rv.id) ? 'default' : 'pointer',
                       fontFamily: 'inherit',
@@ -2214,7 +2214,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     {alsoBoughtIds.has(rv.id) ? '✓ 담았어요' : '나도 살게요'}
                   </button>
                   </div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                  <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.4)' }}>
                     {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
                     {rv.usage_period ? ` · ${rv.usage_period} 사용` : ''}
                   </div>
@@ -2225,12 +2225,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         </div>
 
         {/* 브랜드 카드 */}
-        <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
+        <div style={{ background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
           {(product as any)?.brands?.logo_url ? (
             <img src={(product as any).brands.logo_url} alt={brand}
               style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${GOLD}`, flexShrink: 0 }} />
           ) : (
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg3)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
               {brand.substring(0,4)}<br />{brand.substring(4)}
             </div>
           )}
@@ -2244,7 +2244,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               return (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                   <span style={{ fontSize: 14 }}>{flag}</span>
-                  <span style={{ fontSize: 11, color: '#888' }}>원산지 · {originVal}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)' }}>원산지 · {originVal}</span>
                 </div>
               )
             })()}
@@ -2261,18 +2261,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               position: showEditChrome ? 'relative' : undefined,
               padding: showEditChrome ? '2px' : undefined,
               marginBottom: 12,
-              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               borderRadius: showEditChrome ? 4 : undefined,
               cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
-              <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+              <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
             ) : null}
             {detailHtml ? (
               <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
-                style={{ padding: '16px 0', color: '#ffffff', marginBottom: 0 }} />
+                style={{ padding: '16px 0', color: 'var(--text)', marginBottom: 0 }} />
             ) : null}
             {Array.isArray((product as any).detail_imgs) && (product as any).detail_imgs.length > 0 ? (
               <div style={{ padding: '8px 0' }}>
@@ -2280,27 +2280,27 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', display: 'block', marginBottom: 4 }} />
                 ))}
               </div>
-            ) : (!detailHtml ? <div style={{ padding: '16px 0', color: '#666', fontSize: 12 }}>상세 이미지가 없어요</div> : null)}
+            ) : (!detailHtml ? <div style={{ padding: '16px 0', color: 'rgba(var(--fg-rgb),0.45)', fontSize: 12 }}>상세 이미지가 없어요</div> : null)}
           </div>
         ) : null}
 
         {/* KEY INGREDIENTS */}
         {keyIngredientsText || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>KEY INGREDIENTS</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', letterSpacing: 2, marginBottom: 12 }}>KEY INGREDIENTS</div>
             <div
               data-edit-field="key_ingredients"
               onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'key_ingredients', label: '주요 성분 수정', currentValue: String(product.key_ingredients ?? '') }) } : undefined}
               style={{
                 position: showEditChrome ? 'relative' : undefined,
-                fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px',
-                outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+                fontSize: 13, lineHeight: 1.75, color: 'rgba(var(--fg-rgb),0.7)', whiteSpace: 'pre-wrap', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: '14px 12px',
+                outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
                 outlineOffset: showEditChrome ? 2 : undefined,
                 cursor: isEditMode ? 'pointer' : undefined,
               }}
             >
               {showEditChrome ? (
-                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
               ) : null}
               {showEditChrome ? (
                 keyIngredientsText || '주요 성분이 비어 있어요'
@@ -2336,20 +2336,20 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* CLINICAL RESULT */}
         {clinicalResultText || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>CLINICAL RESULT</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', letterSpacing: 2, marginBottom: 12 }}>CLINICAL RESULT</div>
             <div
               data-edit-field="clinical_result"
               onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'clinical_result', label: '임상 결과 수정', currentValue: String(product.clinical_result ?? '') }) } : undefined}
               style={{
                 position: showEditChrome ? 'relative' : undefined,
-                fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px',
-                outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+                fontSize: 13, lineHeight: 1.75, color: 'rgba(var(--fg-rgb),0.7)', whiteSpace: 'pre-wrap', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: '14px 12px',
+                outline: showEditChrome ? '2px dashed var(--purple)' : undefined,
                 outlineOffset: showEditChrome ? 2 : undefined,
                 cursor: isEditMode ? 'pointer' : undefined,
               }}
             >
               {showEditChrome ? (
-                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: 'var(--purple)', color: '#FFF', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
               ) : null}
               {showEditChrome ? (
                 clinicalResultText || '임상 결과가 비어 있어요'
@@ -2362,10 +2362,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     const pct = Math.min(100, Math.max(0, Number(m[2])))
                     return (
                       <div key={i} style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>{m[1].trim()}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.7)', marginBottom: 6 }}>{m[1].trim()}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 11, color: GOLD, width: 36, flexShrink: 0 }}>{pct}%</span>
-                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(var(--fg-rgb),0.08)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{ width: `${pct}%`, height: 3, background: 'linear-gradient(90deg, #C9A96E, #A07840)', borderRadius: 2 }} />
                           </div>
                         </div>
@@ -2373,7 +2373,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     )
                   }
                   return (
-                    <div key={i} style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', marginBottom: 6 }}>{line}</div>
+                    <div key={i} style={{ fontSize: 13, lineHeight: 1.75, color: 'rgba(var(--fg-rgb),0.7)', marginBottom: 6 }}>{line}</div>
                   )
                 })
               )}
@@ -2384,9 +2384,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* CERTIFICATIONS */}
         {certificationLines.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>CERTIFICATIONS</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', letterSpacing: 2, marginBottom: 12 }}>CERTIFICATIONS</div>
             {certificationLines.map((c, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#141210', border: '1px solid #201c16', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
                 <div style={{ fontSize: 19 }}>{['🏆','✅','🌿','🏅','📋'][i % 5]}</div>
                 <div style={{ fontSize: 12 }}>{c}</div>
               </div>
@@ -2397,12 +2397,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* PERFECT TOGETHER */}
         {perfectTogetherRows.length > 0 || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>PERFECT TOGETHER</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', letterSpacing: 2, marginBottom: 12 }}>PERFECT TOGETHER</div>
             {perfectTogetherRows.length > 0 ? (
               <>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
                   {perfectTogetherRows.map((t, i) => (
-                    <div key={t.id || i} onClick={() => router.push(`/products/${t.id}`)} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative', cursor: 'pointer' }}>
+                    <div key={t.id || i} onClick={() => router.push(`/products/${t.id}`)} style={{ flexShrink: 0, width: 110, background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative', cursor: 'pointer' }}>
                       {showEditChrome ? (
                         <button
                           type="button"
@@ -2429,7 +2429,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                             borderRadius: 999,
                             border: '1px solid rgba(255,255,255,0.25)',
                             background: 'rgba(0,0,0,0.55)',
-                            color: '#fff',
+                            color: '#FFF',
                             fontSize: 12,
                             cursor: 'pointer',
                             lineHeight: 1,
@@ -2441,17 +2441,17 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                           ×
                         </button>
                       ) : null}
-                      <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
-                      <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ fontSize: 8, background: 'rgba(201,169,110,0.12)', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
+                      <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {t.storage_thumb_url || t.thumb_img ? (
                           <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : <div style={{ fontSize: 28 }}>📦</div>}
                       </div>
-                      <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
+                      <div style={{ fontSize: 8, color: 'rgba(var(--fg-rgb),0.45)' }}>{t.brands?.name || ''}</div>
                       <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
                       <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
-                        <div style={{ flex: 1, fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, cursor: 'pointer', textAlign: 'center' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
+                        <div style={{ flex: 1, fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', background: 'var(--bg3)', borderRadius: 5, padding: 4, cursor: 'pointer', textAlign: 'center' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
                         <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: '#000', textAlign: 'center', cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>구매</div>
                       </div>
                     </div>
@@ -2467,12 +2467,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <div
                 style={{
                   fontSize: 12,
-                  color: '#666',
-                  background: '#1a1610',
-                  border: '1px solid #252018',
+                  color: 'rgba(var(--fg-rgb),0.45)',
+                  background: 'var(--bg2)',
+                  border: '1px solid rgba(var(--fg-rgb),0.08)',
                   borderRadius: 12,
                   padding: '14px 12px',
-                  outline: '2px dashed #7B5EA7',
+                  outline: '2px dashed var(--purple)',
                   outlineOffset: 2,
                 }}
               >
@@ -2486,12 +2486,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* 같은 피부타입 추천 */}
         {sameSkinTypeRows.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>지금 내 피부에 맞는 제품</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', letterSpacing: 2, marginBottom: 12 }}>지금 내 피부에 맞는 제품</div>
             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' as any }}>
               {sameSkinTypeRows.map((t, i) => (
                 <div key={t.id || i} onClick={() => router.push(`/products/${t.id}`)}
-                  style={{ flexShrink: 0, width: 120, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', cursor: 'pointer' }}>
-                  <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ flexShrink: 0, width: 120, background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: 9, textAlign: 'center', cursor: 'pointer' }}>
+                  <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {t.storage_thumb_url || t.thumb_img ? (
                       <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : <div style={{ fontSize: 28 }}>📦</div>}
@@ -2506,17 +2506,17 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       </div>
 
       {/* 수량 */}
-      <div style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0d0b09', borderTop: '1px solid #1a1610' }}>
+      <div style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg)', borderTop: '1px solid rgba(var(--fg-rgb),0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, overflow: 'hidden' }}>
-          <div onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>−</div>
+          <div onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg3)', border: '1px solid rgba(var(--fg-rgb),0.12)', color: 'var(--text)', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>−</div>
           <div style={{ fontSize: 14 }}>{qty}</div>
-          <div onClick={() => setQty(q => q + 1)} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>+</div>
+          <div onClick={() => setQty(q => q + 1)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg3)', border: '1px solid rgba(var(--fg-rgb),0.12)', color: 'var(--text)', fontSize: 14, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>+</div>
         </div>
         <div style={{ fontSize: 15, color: GOLD, flexShrink: 0, whiteSpace: 'nowrap' }}>{total}</div>
       </div>
 
       {/* 3버튼 */}
-      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '5px 16px calc(5px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: 'var(--bg)', padding: '5px 16px calc(5px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(var(--fg-rgb),0.08)', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {/* ===== [상담톡] 르노벨 전용 상담 버튼 ===== */}
         {/* 르노벨 brand_id일 때만 노출 */}
         {(product as any).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859' && (
@@ -2570,14 +2570,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             })
             setCartToast('🛍️ 장바구니에 담겼어요!')
           }}
-          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: 'var(--bg3)', border: 'none', color: 'rgba(var(--fg-rgb),0.65)', fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🛍️ 담기
         </button>
         <button
           type="button"
           onClick={() => setGiftSheetOpen(true)}
-          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: 'rgba(201,169,110,0.12)', border: 'none', color: GOLD, fontSize: 10, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
         </button>
@@ -2595,7 +2595,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             style={{
               width: '100%',
               maxWidth: 430,
-              background: '#1a1a1a',
+              background: 'var(--bg2)',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: '22px 20px calc(28px + env(safe-area-inset-bottom, 0px))',
@@ -2606,19 +2606,19 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontSize: 15, color: '#fff' }}>오렌일촌 선택</div>
+              <div style={{ fontSize: 15, color: 'var(--text)' }}>오렌일촌 선택</div>
               <button
                 type="button"
                 onClick={() => setGiftSheetOpen(false)}
-                style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+                style={{ fontSize: 20, color: 'rgba(var(--fg-rgb),0.45)', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
               >
                 ✕
               </button>
             </div>
             {giftFriendsLoading ? (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>불러오는 중...</div>
+              <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center', padding: '16px 0' }}>불러오는 중...</div>
             ) : giftFriends.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>오렌일촌이 없어요</div>
+              <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center', padding: '16px 0' }}>오렌일촌이 없어요</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {giftFriends.map((f) => (
@@ -2634,9 +2634,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       textAlign: 'left',
                       padding: '14px 16px',
                       borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      background: 'rgba(255,255,255,0.04)',
-                      color: '#e8e4dc',
+                      border: '1px solid rgba(var(--fg-rgb),0.1)',
+                      background: 'rgba(var(--fg-rgb),0.04)',
+                      color: 'var(--text)',
                       fontSize: 14,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -2679,7 +2679,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             style={{
               width: '100%',
               maxWidth: 430,
-              background: '#1a1610',
+              background: 'var(--bg2)',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: '22px 18px calc(28px + env(safe-area-inset-bottom, 0px))',
@@ -2689,19 +2689,19 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 15, color: '#e8e4dc' }}>리뷰 작성</div>
+              <div style={{ fontSize: 15, color: 'var(--text)' }}>리뷰 작성</div>
               <button
                 type="button"
                 onClick={() => setShowWriteSheet(false)}
-                style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+                style={{ fontSize: 20, color: 'rgba(var(--fg-rgb),0.45)', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
               >
                 ✕
               </button>
             </div>
-            <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 10 }}>
               제품 태그{' '}
               <span style={{ color: GOLD }}>#{String(name).slice(0, 24)}</span>
-              {tagLine ? <span style={{ color: '#666' }}> · {tagLine.slice(0, 40)}{tagLine.length > 40 ? '…' : ''}</span> : null}
+              {tagLine ? <span style={{ color: 'rgba(var(--fg-rgb),0.45)' }}> · {tagLine.slice(0, 40)}{tagLine.length > 40 ? '…' : ''}</span> : null}
             </div>
             <textarea
               value={writeContent}
@@ -2711,18 +2711,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 width: '100%',
                 minHeight: 100,
                 boxSizing: 'border-box',
-                background: '#0d0b09',
-                border: '1px solid #2a2520',
+                background: 'var(--bg)',
+                border: '1px solid rgba(var(--fg-rgb),0.12)',
                 borderRadius: 10,
                 padding: 10,
-                color: '#e8e4dc',
+                color: 'var(--text)',
                 fontSize: 13,
                 fontFamily: 'inherit',
                 resize: 'vertical' as const,
                 marginBottom: 12,
               }}
             />
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>피부타입 (선택 시 +50T)</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>피부타입 (선택 시 +50T)</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {(['건성', '지성', '복합성', '민감성'] as const).map((s) => (
                 <button
@@ -2732,9 +2732,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   style={{
                     padding: '5px 12px',
                     borderRadius: 20,
-                    border: writeSkinType === s ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
-                    background: writeSkinType === s ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.25)',
-                    color: writeSkinType === s ? GOLD : '#aaa',
+                    border: writeSkinType === s ? `1px solid ${GOLD}` : '1px solid rgba(var(--fg-rgb),0.12)',
+                    background: writeSkinType === s ? 'rgba(201,169,110,0.12)' : 'rgba(var(--fg-rgb),0.04)',
+                    color: writeSkinType === s ? GOLD : 'rgba(var(--fg-rgb),0.65)',
                     fontSize: 11,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -2744,7 +2744,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>효과 태그 (각 +30T)</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>효과 태그 (각 +30T)</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {(['촉촉해요', '자극없어요', '흡수빨라요', '진정돼요'] as const).map((s) => {
                 const on = writeEffectTags.includes(s)
@@ -2758,9 +2758,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     style={{
                       padding: '5px 12px',
                       borderRadius: 20,
-                      border: on ? '1px solid rgba(123,94,167,0.5)' : '1px solid rgba(255,255,255,0.12)',
-                      background: on ? 'rgba(123,94,167,0.15)' : 'rgba(0,0,0,0.25)',
-                      color: on ? '#d4c4f0' : '#aaa',
+                      border: on ? '1px solid rgba(123,94,167,0.5)' : '1px solid rgba(var(--fg-rgb),0.12)',
+                      background: on ? 'rgba(123,94,167,0.15)' : 'rgba(var(--fg-rgb),0.04)',
+                      color: on ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.65)',
                       fontSize: 11,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -2773,7 +2773,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             </div>
             {/* 사용기간 */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>사용 기간</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>사용 기간</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {['1주 이내', '1개월', '3개월', '6개월+'].map(p => (
                   <button
@@ -2782,9 +2782,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     onClick={() => setWriteUsagePeriod(prev => prev === p ? '' : p)}
                     style={{
                       padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                      border: writeUsagePeriod === p ? '0.5px solid #7B5EA7' : '0.5px solid rgba(255,255,255,0.12)',
-                      background: writeUsagePeriod === p ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.04)',
-                      color: writeUsagePeriod === p ? '#c4b5d4' : 'rgba(255,255,255,0.5)',
+                      border: writeUsagePeriod === p ? '0.5px solid var(--purple)' : '0.5px solid rgba(var(--fg-rgb),0.12)',
+                      background: writeUsagePeriod === p ? 'rgba(123,94,167,0.2)' : 'rgba(var(--fg-rgb),0.04)',
+                      color: writeUsagePeriod === p ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.5)',
                     }}
                   >{p}</button>
                 ))}
@@ -2792,16 +2792,16 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             </div>
             {/* 재구매 의향 */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>이 제품 또 구매할 건가요?</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>이 제품 또 구매할 건가요?</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <button
                   type="button"
                   onClick={() => setWriteRebuy(true)}
                   style={{
                     padding: '10px', borderRadius: 12, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                    border: writeRebuy === true ? '0.5px solid rgba(91,138,107,0.5)' : '0.5px solid rgba(255,255,255,0.1)',
-                    background: writeRebuy === true ? 'rgba(91,138,107,0.15)' : 'rgba(255,255,255,0.03)',
-                    color: writeRebuy === true ? '#7BC49A' : 'rgba(255,255,255,0.45)',
+                    border: writeRebuy === true ? '0.5px solid rgba(91,138,107,0.5)' : '0.5px solid rgba(var(--fg-rgb),0.1)',
+                    background: writeRebuy === true ? 'rgba(91,138,107,0.15)' : 'rgba(var(--fg-rgb),0.03)',
+                    color: writeRebuy === true ? '#7BC49A' : 'rgba(var(--fg-rgb),0.45)',
                   }}
                 >또 살 거예요</button>
                 <button
@@ -2809,19 +2809,19 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   onClick={() => setWriteRebuy(false)}
                   style={{
                     padding: '10px', borderRadius: 12, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-                    border: writeRebuy === false ? '0.5px solid rgba(229,115,115,0.4)' : '0.5px solid rgba(255,255,255,0.1)',
-                    background: writeRebuy === false ? 'rgba(229,115,115,0.08)' : 'rgba(255,255,255,0.03)',
-                    color: writeRebuy === false ? '#e57373' : 'rgba(255,255,255,0.45)',
+                    border: writeRebuy === false ? '0.5px solid rgba(229,115,115,0.4)' : '0.5px solid rgba(var(--fg-rgb),0.1)',
+                    background: writeRebuy === false ? 'rgba(229,115,115,0.08)' : 'rgba(var(--fg-rgb),0.03)',
+                    color: writeRebuy === false ? '#e57373' : 'rgba(var(--fg-rgb),0.45)',
                   }}
                 >아직 모르겠어요</button>
               </div>
             </div>
             {/* 사진/영상 업로드 */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>사진 · 영상 첨부</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>사진 · 영상 첨부</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <label style={{
-                  background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.12)',
+                  background: 'rgba(var(--fg-rgb),0.03)', border: '0.5px dashed rgba(var(--fg-rgb),0.12)',
                   borderRadius: 12, padding: '14px 8px', textAlign: 'center' as const, cursor: 'pointer',
                   ...(writeImages.length > 0 ? { borderStyle: 'solid', borderColor: 'rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)' } : {}),
                 }}>
@@ -2841,14 +2841,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       setUploadingImg(false)
                     }
                   }} />
-                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.25)', marginBottom: 4 }}>📷</div>
-                  <div style={{ fontSize: 11, color: writeImages.length > 0 ? '#c4b5d4' : 'rgba(255,255,255,0.35)' }}>
+                  <div style={{ fontSize: 18, color: 'rgba(var(--fg-rgb),0.25)', marginBottom: 4 }}>📷</div>
+                  <div style={{ fontSize: 11, color: writeImages.length > 0 ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.35)' }}>
                     {uploadingImg ? '업로드 중...' : writeImages.length > 0 ? `${writeImages.length}장 첨부됨` : '사진 첨부'}
                   </div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>사용 전후 비교도 좋아요</div>
+                  <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.2)', marginTop: 2 }}>사용 전후 비교도 좋아요</div>
                 </label>
                 <label style={{
-                  background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.12)',
+                  background: 'rgba(var(--fg-rgb),0.03)', border: '0.5px dashed rgba(var(--fg-rgb),0.12)',
                   borderRadius: 12, padding: '14px 8px', textAlign: 'center' as const, cursor: 'pointer',
                   ...(writeVideoUrl ? { borderStyle: 'solid', borderColor: 'rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)' } : {}),
                 }}>
@@ -2868,18 +2868,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       setUploadingVid(false)
                     }
                   }} />
-                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.25)', marginBottom: 4 }}>🎥</div>
-                  <div style={{ fontSize: 11, color: writeVideoUrl ? '#c4b5d4' : 'rgba(255,255,255,0.35)' }}>
+                  <div style={{ fontSize: 18, color: 'rgba(var(--fg-rgb),0.25)', marginBottom: 4 }}>🎥</div>
+                  <div style={{ fontSize: 11, color: writeVideoUrl ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.35)' }}>
                     {uploadingVid ? '업로드 중...' : writeVideoUrl ? '영상 첨부됨' : '영상 첨부'}
                   </div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>사용감 영상이면 더 좋아요</div>
+                  <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.2)', marginTop: 2 }}>사용감 영상이면 더 좋아요</div>
                 </label>
               </div>
             </div>
             <div
               style={{
                 fontSize: 11,
-                color: '#B09AD0',
+                color: 'var(--purple)',
                 background: 'rgba(123,94,167,0.08)',
                 border: '1px solid rgba(123,94,167,0.25)',
                 borderRadius: 10,
@@ -2909,7 +2909,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   + 효과태그 <span style={{ color: GOLD }}>+{30 * writeEffectTags.length}T</span>
                 </span>
               ) : null}
-              <span style={{ color: '#666' }}> (실제 지급은 정책·DB 트리거 기준)</span>
+              <span style={{ color: 'rgba(var(--fg-rgb),0.45)' }}> (실제 지급은 정책·DB 트리거 기준)</span>
             </div>
             <button
               type="button"
@@ -3028,9 +3028,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {loginSheetOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => { try { localStorage.removeItem('pending_payment'); localStorage.removeItem('pending_payment_ctx') } catch {} setLoginSheetOpen(false) }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 430, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 28px', borderTop: `1px solid ${GOLD}44`, zIndex: 201 }}>
-            <div style={{ fontSize: 15, color: '#fff', marginBottom: 8, textAlign: 'center' }}>결제를 위해 로그인이 필요해요</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 18, textAlign: 'center' }}>로그인 후 이 페이지에서 결제를 이어갈게요</div>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 430, background: 'var(--bg2)', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 28px', borderTop: `1px solid ${GOLD}44`, zIndex: 201 }}>
+            <div style={{ fontSize: 15, color: 'var(--text)', marginBottom: 8, textAlign: 'center' }}>결제를 위해 로그인이 필요해요</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 18, textAlign: 'center' }}>로그인 후 이 페이지에서 결제를 이어갈게요</div>
             <button type="button"
               onClick={() => void supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined } })}
               style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: 'none', background: '#FEE500', color: '#191600', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}>
@@ -3048,13 +3048,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {editingField !== null ? (
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} />
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', background: '#1a1610', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, zIndex: 101, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', background: 'var(--bg2)', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, zIndex: 101, maxHeight: '90vh', overflowY: 'auto' }}>
             {editError ? (
               <div style={{ color: '#e05050', fontSize: 12, marginBottom: 10 }}>{editError}</div>
             ) : null}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontSize: 15, color: '#e8e4dc' }}>{editingField.label}</div>
-              <button type="button" onClick={() => setEditingField(null)} style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}>✕</button>
+              <div style={{ fontSize: 15, color: 'var(--text)' }}>{editingField.label}</div>
+              <button type="button" onClick={() => setEditingField(null)} style={{ fontSize: 20, color: 'rgba(var(--fg-rgb),0.45)', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}>✕</button>
             </div>
             {editingField.field === 'name' || editingField.field === 'description' || editingField.field === 'key_ingredients' || editingField.field === 'clinical_result' ? (
               <textarea
@@ -3063,9 +3063,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 style={{
                   width: '100%',
                   minHeight: 100,
-                  background: '#0d0b09',
-                  color: '#e8e4dc',
-                  border: '1px solid #2a2520',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
                   borderRadius: 10,
                   padding: 10,
                   fontSize: 13,
@@ -3091,9 +3091,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       borderRadius: 8,
                       fontSize: 11,
                       cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.06)',
-                      color: 'rgba(255,255,255,0.45)',
-                      border: '0.5px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(var(--fg-rgb),0.06)',
+                      color: 'rgba(var(--fg-rgb),0.45)',
+                      border: '0.5px solid rgba(var(--fg-rgb),0.15)',
                       fontFamily: 'inherit',
                     }}
                   >
@@ -3161,8 +3161,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     cursor: kAiAnalyzing ? 'not-allowed' : 'pointer',
                     border: '1px solid rgba(123,94,167,0.4)',
                     fontFamily: 'inherit',
-                    background: kAiAnalyzing ? 'rgba(123,94,167,0.2)' : '#3a2060',
-                    color: kAiAnalyzing ? 'rgba(255,255,255,0.3)' : '#c4a8ff',
+                    background: kAiAnalyzing ? 'rgba(123,94,167,0.2)' : 'rgba(123,94,167,0.15)',
+                    color: kAiAnalyzing ? 'rgba(var(--fg-rgb),0.3)' : 'var(--purple)',
                   }}
                 >
                   {kAiAnalyzing ? 'AI 분석 중...' : '✦ AI 전성분 분석 · 태그 자동 적용'}
@@ -3208,9 +3208,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     onClick={() => thumbFileInputRef.current?.click()}
                     style={{
                       fontSize: 13,
-                      color: '#e8e4dc',
-                      background: '#2a2520',
-                      border: '1px solid #3a3020',
+                      color: 'var(--text)',
+                      background: 'var(--bg3)',
+                      border: '1px solid rgba(var(--fg-rgb),0.12)',
                       borderRadius: 10,
                       padding: '10px 16px',
                       cursor: 'pointer',
@@ -3221,7 +3221,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   </button>
                 </div>
                 {selectedFile ? (
-                  <div style={{ fontSize: 12, color: '#888', textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center' }}>
                     선택됨: {selectedFile.name}
                   </div>
                 ) : null}
@@ -3230,7 +3230,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {editingField.field === 'unit_price_pair' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>단위 타입</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>단위 타입</div>
                   <input
                     value={editDraft}
                     onChange={e => setEditDraft(e.target.value)}
@@ -3239,9 +3239,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: 10,
-                      background: '#0d0b09',
-                      color: '#e8e4dc',
-                      border: '1px solid #2a2520',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      border: '1px solid rgba(var(--fg-rgb),0.12)',
                       borderRadius: 10,
                       fontSize: 13,
                       fontFamily: 'inherit',
@@ -3249,7 +3249,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>단위 가격</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 6 }}>단위 가격</div>
                   <input
                     type="number"
                     value={editDraft2}
@@ -3258,9 +3258,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: 10,
-                      background: '#0d0b09',
-                      color: '#e8e4dc',
-                      border: '1px solid #2a2520',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      border: '1px solid rgba(var(--fg-rgb),0.12)',
                       borderRadius: 10,
                       fontSize: 13,
                       fontFamily: 'inherit',
@@ -3278,9 +3278,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   width: '100%',
                   boxSizing: 'border-box',
                   padding: 10,
-                  background: '#0d0b09',
-                  color: '#e8e4dc',
-                  border: '1px solid #2a2520',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
                   borderRadius: 10,
                   fontSize: 13,
                   fontFamily: 'inherit',
@@ -3296,9 +3296,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 style={{
                   width: '100%',
                   minHeight: 80,
-                  background: '#0d0b09',
-                  color: '#e8e4dc',
-                  border: '1px solid #2a2520',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
                   borderRadius: 10,
                   padding: 10,
                   fontSize: 13,
@@ -3314,9 +3314,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 onClick={() => setEditingField(null)}
                 style={{
                   flex: 1,
-                  border: '1px solid #444',
+                  border: '1px solid rgba(var(--fg-rgb),0.25)',
                   background: 'transparent',
-                  color: '#aaa',
+                  color: 'rgba(var(--fg-rgb),0.65)',
                   padding: 13,
                   borderRadius: 10,
                   fontSize: 13,
@@ -3403,8 +3403,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 style={{
                   flex: 1,
                   border: 'none',
-                  background: '#7B5EA7',
-                  color: '#fff',
+                  background: 'var(--purple)',
+                  color: '#FFF',
                   padding: 13,
                   borderRadius: 10,
                   fontSize: 13,
@@ -3475,14 +3475,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <button
                 type="button"
                 onClick={() => window.location.href = '/admin/owner-chat'}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 💬 상담톡
               </button>
               <button
                 type="button"
                 onClick={() => router.push('/admin/guest-consult')}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 🙋 퀵상담
               </button>
@@ -3491,7 +3491,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           <button
             type="button"
             onClick={() => setIsEditMode(v => !v)}
-            style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
+            style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--purple)', border: 'none', color: '#FFF', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
           >
             {isEditMode ? '✕' : '✏️'}
           </button>
