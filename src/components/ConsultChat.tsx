@@ -178,7 +178,7 @@ export default function ConsultChat({
                   flex: 1, padding: '9px 0', borderRadius: 8,
                   border: '0.5px solid var(--color-border-secondary)',
                   background: 'transparent',
-                  color: 'var(--color-text-secondary)',
+                  color: 'var(--text2)',
                   fontSize: 11, cursor: 'pointer',
                 }}
               >

@@ -113,7 +113,7 @@ export default function TotoLottery({
         <div style={{ fontSize: 17, color: 'var(--color-text-primary)', letterSpacing: -0.3, marginBottom: 4 }}>
           {isRenobel ? '르노벨 골든또또 ✦' : '오렌 또또 💜'}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
           {step === 'card' ? '카드 하나를 골라보세요' : step === 'result' ? '선물이 확정됐어요' : '알림장을 확인해보세요'}
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function TotoLottery({
                 fontSize: 11, padding: '4px 14px', borderRadius: 20,
                 border: `0.5px solid ${currentType===t ? accentColor : 'var(--color-border-tertiary)'}`,
                 background: currentType===t ? accentColor : 'transparent',
-                color: currentType===t ? '#fff' : 'var(--color-text-secondary)',
+                color: currentType===t ? '#fff' : 'var(--text2)',
                 cursor: 'pointer',
               }}
             >
@@ -193,7 +193,7 @@ export default function TotoLottery({
                     <div style={{ fontSize: 18, marginBottom: 5 }}>
                       {i === winIdx ? (isRenobel ? '✦' : '💜') : '◇'}
                     </div>
-                    <div style={{ fontSize: 9, color: i === winIdx ? accentColor : 'var(--color-text-secondary)', textAlign: 'center', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                    <div style={{ fontSize: 9, color: i === winIdx ? accentColor : 'var(--text2)', textAlign: 'center', lineHeight: 1.5, wordBreak: 'keep-all' }}>
                       {i === winIdx ? item.product?.name : '아쉽게도...'}
                     </div>
                     {i === winIdx && (
@@ -206,7 +206,7 @@ export default function TotoLottery({
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', textAlign: 'center', minHeight: 16 }}>
+          <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'center', minHeight: 16 }}>
             {selectedIdx === null ? '마음에 드는 카드를 골라보세요' : selectedIdx === winIdx ? '당첨됐어요! 🎉' : '이번엔 아쉽게도... 다음엔 꼭!'}
           </div>
         </>
@@ -226,12 +226,12 @@ export default function TotoLottery({
             <div style={{ fontSize: 14, color: 'var(--color-text-primary)', marginBottom: 3, letterSpacing: -0.2 }}>
               {wonItem.product?.name}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text2)' }}>
               이 제품이 택배에 함께 담겨요 💜
             </div>
           </div>
           <div style={{ background: 'var(--color-background-primary)', borderRadius: 12, padding: '12px 14px', marginBottom: 10, border: '0.5px solid var(--color-border-tertiary)' }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 7 }}>
+            <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 7 }}>
               원하는 샘플이 있으면 적어주세요 (선택)
             </div>
             <textarea
@@ -247,7 +247,7 @@ export default function TotoLottery({
                 color: 'var(--color-text-primary)',
               }}
             />
-            <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 6, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>
               입력 안 하셔도 괜찮아요. 맑원장이 피부에 맞는 샘플을 직접 골라드려요 💜
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function TotoLottery({
           <div style={{ fontSize: 15, color: 'var(--color-text-primary)', marginBottom: 4 }}>
             알림장을 확인해보세요 💜
           </div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+          <div style={{ fontSize: 12, color: 'var(--text2)' }}>
             맑원장이 팁카드를 보내드렸어요
           </div>
         </div>

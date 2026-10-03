@@ -602,6 +602,11 @@ export default function CustomerHomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeSheet])
+  useEffect(() => {
+    if (!homeSheet && !searchSheetOpen) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [homeSheet, searchSheetOpen])
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [myUserId, setMyUserId] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)

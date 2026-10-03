@@ -1405,7 +1405,7 @@ export default function MyWorldPage() {
                     flex: 1, padding: '7px 0', borderRadius: 20, fontSize: 11,
                     border: editingSlot === slot ? 'none' : '0.5px solid var(--color-border-secondary)',
                     background: editingSlot === slot ? '#7B5EA7' : 'transparent',
-                    color: editingSlot === slot ? '#FFF' : 'var(--color-text-secondary)',
+                    color: editingSlot === slot ? '#FFF' : 'var(--text2)',
                     cursor: 'pointer',
                   }}
                 >
@@ -1491,12 +1491,12 @@ export default function MyWorldPage() {
                     <div style={{ flex: 1, fontSize: 12, color: 'var(--color-text-primary)' }}>
                       {r.name}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text2)' }}>
                       {r.slot === 'morning' ? '아침' : r.slot === 'evening' ? '저녁' : '주간'}
                     </div>
                     <button
                       onClick={() => setMyRoutines(prev => prev.filter((_, idx) => idx !== i))}
-                      style={{ fontSize: 11, color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+                      style={{ fontSize: 11, color: 'var(--text2)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >삭제</button>
                   </div>
                 ))}

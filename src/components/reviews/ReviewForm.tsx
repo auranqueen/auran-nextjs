@@ -500,7 +500,7 @@ export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview,
       {isStoreReview && (
         <div style={{ marginBottom: 12 }}>
           {/* ===== [스토어 후기] 주문번호 입력 ===== */}
-          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>
             네이버 주문번호 (선택)
           </div>
           <input
@@ -519,7 +519,7 @@ export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview,
               marginBottom: 6,
             }}
           />
-          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
             맑원장이 확인 후 토스트 2,000T 적립해드려요 💜
           </div>
         </div>

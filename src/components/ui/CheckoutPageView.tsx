@@ -727,7 +727,7 @@ export default function CheckoutPageView({
                   {generalShortage !== undefined && (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>오렌 또또</div>
+                        <div style={{ fontSize: 11, color: 'var(--text2)' }}>오렌 또또</div>
                         <div style={{ fontSize: 11, color: '#7B5EA7' }}>
                           {generalShortage === 0
                             ? '달성! 🎴'
@@ -742,7 +742,7 @@ export default function CheckoutPageView({
                   {rnobelShortage !== undefined && (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>르노벨 골든또또</div>
+                        <div style={{ fontSize: 11, color: 'var(--text2)' }}>르노벨 골든또또</div>
                         <div style={{ fontSize: 11, color: '#C9A96E' }}>
                           {rnobelShortage === 0
                             ? '달성! ✦'
