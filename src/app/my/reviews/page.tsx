@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewForm } from '@/components/reviews/ReviewForm'
 
-const GOLD = '#C9A96E'
-const BG = '#0D0B09'
-const PURPLE = '#7B5EA7'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
+const GOLD = 'var(--gold)'
+const BG = 'var(--bg)'
+const PURPLE = 'var(--purple)'
+const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
+const CARD_BORDER = '1px solid rgba(var(--fg-rgb),0.07)'
+const TEXT_MUTED = 'rgba(var(--fg-rgb),0.4)'
 
 type Row = {
   product: any
@@ -182,8 +182,8 @@ export default function MyReviewsPage() {
   }, [tab])
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: 'var(--text)', paddingBottom: '96px' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: GOLD, fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>←</button>
         <span style={{ fontSize: 16, fontWeight: 400 }}>리뷰 관리</span>
       </header>
@@ -197,7 +197,7 @@ export default function MyReviewsPage() {
             padding: '12px 0',
             fontSize: 13,
             cursor: 'pointer',
-            color: tab === 'product' ? PURPLE : '#888888',
+            color: tab === 'product' ? PURPLE : 'var(--text3)',
             borderBottom: tab === 'product' ? `2px solid ${PURPLE}` : '2px solid transparent',
             fontWeight: 400,
           }}
@@ -212,7 +212,7 @@ export default function MyReviewsPage() {
             padding: '12px 0',
             fontSize: 13,
             cursor: 'pointer',
-            color: tab === 'salon' ? PURPLE : '#888888',
+            color: tab === 'salon' ? PURPLE : 'var(--text3)',
             borderBottom: tab === 'salon' ? `2px solid ${PURPLE}` : '2px solid transparent',
             fontWeight: 400,
           }}
@@ -239,7 +239,7 @@ export default function MyReviewsPage() {
             return (
               <div key={product.id} style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 12, background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 10, overflow: 'hidden', background: '#1a1610', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 10, overflow: 'hidden', background: 'var(--bg2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28 }}>🧴</span>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -252,13 +252,13 @@ export default function MyReviewsPage() {
                           setEditDraft(null)
                           setFormProductId(prev => (prev === product.id ? null : product.id))
                         }}
-                        style={{ background: PURPLE, border: 'none', color: '#fff', fontSize: 12, padding: '8px 14px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit' }}
+                        style={{ background: PURPLE, border: 'none', color: '#FFF', fontSize: 12, padding: '8px 14px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit' }}
                       >
                         리뷰 쓰기
                       </button>
                     ) : (
                       <>
-                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 8 }}>{review.content || ''}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.85)', lineHeight: 1.6, marginBottom: 8 }}>{review.content || ''}</div>
                         {canEdit ? (
                           <button
                             type="button"
@@ -303,7 +303,7 @@ export default function MyReviewsPage() {
         ) : salonRows.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <div style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 8 }}>아직 관리 후기가 없어요</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>관리 완료 후 원장님 상담톡에서 작성할 수 있어요</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.3)', lineHeight: 1.6 }}>관리 완료 후 원장님 상담톡에서 작성할 수 있어요</div>
           </div>
         ) : (
           salonRows.map((row) => {
@@ -339,7 +339,7 @@ export default function MyReviewsPage() {
                 <div
                   style={{
                     fontSize: 12,
-                    color: 'rgba(255,255,255,0.75)',
+                    color: 'rgba(var(--fg-rgb),0.75)',
                     lineHeight: 1.55,
                     marginBottom: 8,
                     overflow: 'hidden',
@@ -358,7 +358,7 @@ export default function MyReviewsPage() {
 
         {tab === 'salon' && pendingBookings.length > 0 ? (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>리뷰를 작성할 수 있어요</div>
+            <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>리뷰를 작성할 수 있어요</div>
             {pendingBookings.map((b) => (
               <div
                 key={b.id}
@@ -372,7 +372,7 @@ export default function MyReviewsPage() {
                   marginBottom: 8,
                   borderRadius: 12,
                   background: PURPLE,
-                  color: '#fff',
+                  color: '#FFF',
                   fontSize: 13,
                   cursor: 'pointer',
                 }}

@@ -129,35 +129,35 @@ export default function OrdersPage() {
           </div>
         ) : null}
         {paymentDone && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,11,9,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
             <canvas id="confetti-canvas" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 10000 }} />
             <div style={{ fontSize: 52, marginBottom: 12, animation: 'popIn 0.5s ease' }}>🛍️</div>
-            <div style={{ fontSize: 18, fontWeight: 500, color: '#e8d5ff', marginBottom: 6 }}>결제가 완료됐어요!</div>
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 20, lineHeight: 1.7, textAlign: 'center' }}>곧 배송 준비가 시작될 거예요 💜</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>결제가 완료됐어요!</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.7, textAlign: 'center' }}>곧 배송 준비가 시작될 거예요 💜</div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%', maxWidth: 320, marginBottom: 16 }}>
               <div style={{ background: 'rgba(192,132,252,0.08)', border: '0.5px solid rgba(192,132,252,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>🍞</div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>구매 토스트</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>구매 토스트</div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#c084fc' }}>확정 후 지급</div>
                 <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>구매 확정 시 바로</div>
               </div>
               <div style={{ background: 'rgba(201,168,76,0.07)', border: '0.5px solid rgba(201,168,76,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>✍️</div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>리뷰 토스트</div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#c9a96e' }}>+500T~</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>리뷰 토스트</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--gold)' }}>+500T~</div>
                 <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>사진 1,000T</div>
               </div>
               <div style={{ background: 'rgba(74,222,128,0.06)', border: '0.5px solid rgba(74,222,128,0.18)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>예상 배송</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>예상 배송</div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#4ade80' }}>2-3일</div>
                 <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>출발 시 알림</div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+              <div style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '0.5px solid rgba(var(--fg-rgb),0.08)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>💜</div>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>최대 적립</div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#c9a96e' }}>1,500T~</div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>최대 적립</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--gold)' }}>1,500T~</div>
                 <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>구매+사진리뷰</div>
               </div>
             </div>
@@ -182,8 +182,8 @@ export default function OrdersPage() {
               <div
                 key={i}
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: 'rgba(var(--fg-rgb),0.04)',
+                  border: '1px solid rgba(var(--fg-rgb),0.10)',
                   borderRadius: 14,
                   padding: '14px 14px',
                 }}
@@ -194,7 +194,7 @@ export default function OrdersPage() {
                       height: 12,
                       width: '35%',
                       borderRadius: 6,
-                      background: 'rgba(255,255,255,0.08)',
+                      background: 'rgba(var(--fg-rgb),0.08)',
                       animation: 'pulse 1.5s ease-in-out infinite',
                     }}
                   />
@@ -203,7 +203,7 @@ export default function OrdersPage() {
                       height: 12,
                       width: '20%',
                       borderRadius: 6,
-                      background: 'rgba(255,255,255,0.06)',
+                      background: 'rgba(var(--fg-rgb),0.06)',
                       animation: 'pulse 1.5s ease-in-out infinite',
                     }}
                   />
@@ -214,7 +214,7 @@ export default function OrdersPage() {
                       width: 56,
                       height: 56,
                       borderRadius: 10,
-                      background: 'rgba(255,255,255,0.07)',
+                      background: 'rgba(var(--fg-rgb),0.07)',
                       flexShrink: 0,
                       animation: 'pulse 1.5s ease-in-out infinite',
                     }}
@@ -225,7 +225,7 @@ export default function OrdersPage() {
                         height: 13,
                         width: '70%',
                         borderRadius: 6,
-                        background: 'rgba(255,255,255,0.08)',
+                        background: 'rgba(var(--fg-rgb),0.08)',
                         animation: 'pulse 1.5s ease-in-out infinite',
                       }}
                     />
@@ -248,18 +248,18 @@ export default function OrdersPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {orders.map(o => (
-              <div key={o.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px' }}>
+              <div key={o.id} style={{ background: 'rgba(var(--fg-rgb),0.04)', border: '1px solid rgba(var(--fg-rgb),0.10)', borderRadius: 14, padding: '14px 14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'var(--text3)' }}>{o.order_no}</div>
                   <div style={{ fontSize: 11, color: 'var(--gold)' }}>{o.status}</div>
                 </div>
-                <div style={{ marginTop: 6, fontSize: 13, color: '#fff', fontWeight: 700 }}>
+                <div style={{ marginTop: 6, fontSize: 13, color: 'var(--text)', fontWeight: 700 }}>
                   {o.order_items?.[0]?.product_name || '주문 상품'}
                   {o.order_items?.length > 1 ? ` 외 ${o.order_items.length - 1}종` : ''}
                 </div>
                 <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>{o.ordered_at ? new Date(o.ordered_at).toLocaleDateString('ko-KR') : ''}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: '#fff' }}>₩{(o.final_amount || 0).toLocaleString()}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>₩{(o.final_amount || 0).toLocaleString()}</div>
                 </div>
                 {o.status === '배송중' ? (
                   <div style={{ marginTop: 10 }}>
@@ -288,8 +288,8 @@ export default function OrdersPage() {
                             padding: '8px 10px',
                             fontSize: 12,
                             borderRadius: 10,
-                            border: '1px solid #7B5EA7',
-                            color: '#7B5EA7',
+                            border: '1px solid var(--purple)',
+                            color: 'var(--purple)',
                             background: 'transparent',
                             cursor: trk ? 'pointer' : 'not-allowed',
                             opacity: trk ? 1 : 0.5,

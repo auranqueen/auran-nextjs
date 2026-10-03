@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const BG = '#0D0B09'
-const GOLD = '#C9A96E'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.55)'
+const BG = 'var(--bg)'
+const GOLD = 'var(--gold)'
+const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
+const CARD_BORDER = '1px solid rgba(var(--fg-rgb),0.07)'
+const TEXT_MUTED = 'rgba(var(--fg-rgb),0.55)'
 
 export default function MySecurityPage() {
   const router = useRouter()
@@ -89,9 +89,9 @@ export default function MySecurityPage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 20 }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(13,11,9,0.96)', borderBottom: CARD_BORDER }}>
-        <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>←</button>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: 'var(--text)', paddingBottom: 20 }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'var(--bg)', borderBottom: CARD_BORDER }}>
+        <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ fontSize: 16, fontWeight: 600 }}>보안 설정</div>
       </header>
 
@@ -107,9 +107,9 @@ export default function MySecurityPage() {
         {!loading && !isKakao ? (
           <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14, marginBottom: 10 }}>
             <div style={{ color: GOLD, fontSize: 12, marginBottom: 10 }}>비밀번호 변경</div>
-            <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password" placeholder="현재 비밀번호" style={{ width: '100%', marginBottom: 8, background: 'rgba(255,255,255,0.04)', border: CARD_BORDER, color: '#fff', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
-            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder="새 비밀번호" style={{ width: '100%', marginBottom: 8, background: 'rgba(255,255,255,0.04)', border: CARD_BORDER, color: '#fff', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
-            <input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type="password" placeholder="새 비밀번호 확인" style={{ width: '100%', marginBottom: 8, background: 'rgba(255,255,255,0.04)', border: CARD_BORDER, color: '#fff', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
+            <input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type="password" placeholder="현재 비밀번호" style={{ width: '100%', marginBottom: 8, background: 'rgba(var(--fg-rgb),0.04)', border: CARD_BORDER, color: 'var(--text)', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
+            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder="새 비밀번호" style={{ width: '100%', marginBottom: 8, background: 'rgba(var(--fg-rgb),0.04)', border: CARD_BORDER, color: 'var(--text)', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
+            <input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type="password" placeholder="새 비밀번호 확인" style={{ width: '100%', marginBottom: 8, background: 'rgba(var(--fg-rgb),0.04)', border: CARD_BORDER, color: 'var(--text)', borderRadius: 10, padding: '10px 12px', fontSize: 13 }} />
             <button onClick={changePassword} style={{ width: '100%', border: '1px solid rgba(201,169,110,0.3)', color: GOLD, background: 'rgba(201,169,110,0.1)', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: 'pointer' }}>
               변경하기
             </button>
@@ -129,9 +129,9 @@ export default function MySecurityPage() {
               width: '100%',
               padding: '12px',
               background: 'transparent',
-              border: '0.5px solid rgba(255,255,255,0.1)',
+              border: '0.5px solid rgba(var(--fg-rgb),0.1)',
               borderRadius: 10,
-              color: 'rgba(255,255,255,0.3)',
+              color: 'rgba(var(--fg-rgb),0.3)',
               fontSize: 13,
               cursor: 'pointer',
               marginTop: 8
@@ -144,7 +144,7 @@ export default function MySecurityPage() {
 
       {showWithdrawModal ? (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ position: 'relative', background: '#1a1a1a', borderRadius: 16, padding: '28px 24px', width: 'calc(100% - 48px)', maxWidth: 340 }}>
+          <div style={{ position: 'relative', background: 'var(--bg3)', borderRadius: 16, padding: '28px 24px', width: 'calc(100% - 48px)', maxWidth: 340 }}>
             <button
               type="button"
               onClick={() => setShowWithdrawModal(false)}
@@ -154,7 +154,7 @@ export default function MySecurityPage() {
                 right: 12,
                 background: 'transparent',
                 border: 'none',
-                color: 'rgba(255,255,255,0.4)',
+                color: 'rgba(var(--fg-rgb),0.4)',
                 fontSize: 18,
                 cursor: 'pointer',
                 lineHeight: 1
@@ -162,7 +162,7 @@ export default function MySecurityPage() {
             >
               ✕
             </button>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#fff' }}>잠깐, 정말 떠나실 건가요? 😢</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>잠깐, 정말 떠나실 건가요? 😢</div>
             <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-line' }}>
               {`지금 만개기잖아요.
 피부가 가장 빛나는 이 시기에
@@ -175,7 +175,7 @@ AURAN이 없어도 괜찮을까요?
             <button
               type="button"
               onClick={() => setShowWithdrawModal(false)}
-              style={{ width: '100%', padding: '13px', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}
+              style={{ width: '100%', padding: '13px', background: 'var(--purple)', color: '#FFF', border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}
             >
               조금 더 있을게요 💜
             </button>
@@ -183,7 +183,7 @@ AURAN이 없어도 괜찮을까요?
               type="button"
               onClick={withdraw}
               disabled={withdrawing}
-              style={{ width: '100%', padding: '13px', marginTop: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 10, fontSize: 13, cursor: withdrawing ? 'not-allowed' : 'pointer' }}
+              style={{ width: '100%', padding: '13px', marginTop: 8, background: 'transparent', border: '0.5px solid rgba(var(--fg-rgb),0.15)', color: 'rgba(var(--fg-rgb),0.4)', borderRadius: 10, fontSize: 13, cursor: withdrawing ? 'not-allowed' : 'pointer' }}
             >
               그래도 떠날게요
             </button>

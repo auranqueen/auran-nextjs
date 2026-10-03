@@ -642,19 +642,19 @@ function CheckoutPageInner() {
       />
       {payModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',zIndex:999}}>
-          <div style={{width:'100%',background:'#171310',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>
-            <div style={{fontSize:16,fontWeight:700,color:'#e8e4dc',marginBottom:6}}>결제 방법 선택</div>
-            <div style={{fontSize:13,color:'#888',marginBottom:20}}>토스트 잔액이 부족해요</div>
+          <div style={{width:'100%',background:'var(--bg2)',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--text)',marginBottom:6}}>결제 방법 선택</div>
+            <div style={{fontSize:13,color:'var(--text3)',marginBottom:20}}>토스트 잔액이 부족해요</div>
             <button onClick={() => { setPayModal(false); router.push('/wallet?return=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')) }}
-              style={{width:'100%',background:'#C9A96E',border:'none',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:800,color:'#000',marginBottom:10,cursor:'pointer',fontFamily:'inherit'}}>
+              style={{width:'100%',background:'var(--gold)',border:'none',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:800,color:'#000',marginBottom:10,cursor:'pointer',fontFamily:'inherit'}}>
               충전하고 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
             <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`) }}
               disabled={settingsLoading || isPaying}
-              style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
+              style={{width:'100%',background:'var(--bg3)',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
-              <span style={{fontSize:11,fontWeight:400,color:'#888'}}>토스트 없이 바로 결제</span>
+              <span style={{fontSize:11,fontWeight:400,color:'var(--text3)'}}>토스트 없이 바로 결제</span>
             </button>
           </div>
         </div>

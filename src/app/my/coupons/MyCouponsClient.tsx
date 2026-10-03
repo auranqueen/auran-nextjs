@@ -277,9 +277,9 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                 flex: '0 0 auto',
                 padding: '10px 12px',
                 borderRadius: 12,
-                border: `1px solid ${tab === k ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                background: tab === k ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
-                color: tab === k ? '#c9a84c' : 'rgba(255,255,255,0.75)',
+                border: `1px solid ${tab === k ? 'rgba(201,168,76,0.55)' : 'rgba(var(--fg-rgb),0.10)'}`,
+                background: tab === k ? 'rgba(201,168,76,0.12)' : 'rgba(var(--fg-rgb),0.04)',
+                color: tab === k ? 'var(--gold)' : 'rgba(var(--fg-rgb),0.75)',
                 fontWeight: 900,
                 fontSize: 11,
                 whiteSpace: 'nowrap',
@@ -313,15 +313,15 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                     }}
                     style={{
                       borderRadius: 14,
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(var(--fg-rgb),0.12)',
+                      background: 'rgba(var(--fg-rgb),0.04)',
                       padding: 16,
                       width: '100%',
                       textAlign: 'left',
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 6 }}>보유 쿠폰</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>보유 쿠폰</div>
                     <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
                       쿠폰 정보를 불러오지 못했어요. 탭하면 상세(발급 내역)를 볼 수 있어요.
                     </div>
@@ -346,8 +346,8 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                   ? '2px solid rgba(212,175,106,0.95)'
                   : '1px solid rgba(201,168,76,0.25)'
               const bgStyle = special
-                ? 'linear-gradient(145deg, rgba(40,36,28,0.98), rgba(18,20,24,0.98))'
-                : 'linear-gradient(145deg, rgba(30,34,40,0.95), rgba(18,20,24,0.98))'
+                ? 'linear-gradient(145deg, var(--bg3), var(--bg2))'
+                : 'linear-gradient(145deg, var(--bg3), var(--bg2))'
 
               const showUse = canUseCouponRow(r)
               return (
@@ -401,7 +401,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                             padding: '3px 6px',
                             borderRadius: 6,
                             background: 'rgba(217,79,79,0.85)',
-                            color: '#fff',
+                            color: '#FFF',
                             letterSpacing: 0.5,
                           }}
                         >
@@ -427,25 +427,25 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                     </div>
                     <span style={{ fontSize: 18 }}>{special ? '🎁' : '🍞'}</span>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 8 }}>{c.name}</div>
-                  <div style={{ borderTop: '1px dashed rgba(255,255,255,0.15)', margin: '10px 0', opacity: 0.8 }} />
+                  <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>{c.name}</div>
+                  <div style={{ borderTop: '1px dashed rgba(var(--fg-rgb),0.15)', margin: '10px 0', opacity: 0.8 }} />
                   <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--gold)', marginBottom: 8 }}>{discLabel}</div>
                   <div
                     style={{
                       fontSize: 12,
-                      color: 'rgba(255,255,255,0.55)',
+                      color: 'rgba(var(--fg-rgb),0.55)',
                       lineHeight: 1.5,
                       paddingBottom: 8,
-                      borderBottom: '1px dashed rgba(255,255,255,0.12)',
+                      borderBottom: '1px dashed rgba(var(--fg-rgb),0.12)',
                       marginBottom: 8,
                     }}
                   >
                     {scopeHint(c)}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.65)', lineHeight: 1.5 }}>
                     {c.description || `${Number(c.min_order || 0).toLocaleString()}원 이상 구매시`}
                   </div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 8 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginTop: 8 }}>
                     {ddayLabel(r) ? (
                       <span style={{ color: urgent ? '#ff8a8a' : 'var(--gold)', fontWeight: 900, marginRight: 6 }}>{ddayLabel(r)}</span>
                     ) : null}
@@ -454,7 +454,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                   {tab === 'used' && r.used_at && (
                     <div style={{ fontSize: 11, color: 'rgba(76,173,126,0.85)', marginTop: 8 }}>사용일 {fmtDate(r.used_at)}</div>
                   )}
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 10 }}>탭하여 상세 보기</div>
+                  <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.35)', marginTop: 10 }}>탭하여 상세 보기</div>
                   {showUse ? (
                     <button
                       type="button"
@@ -511,7 +511,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
               maxWidth: 480,
               maxHeight: '88vh',
               overflowY: 'auto',
-              background: 'linear-gradient(180deg, #1e2328 0%, #121418 100%)',
+              background: 'linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%)',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: '16px 16px 28px',
@@ -519,9 +519,9 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
               boxShadow: '0 -8px 40px rgba(0,0,0,0.45)',
             }}
           >
-            <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.25)', margin: '0 auto 14px' }} />
+            <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(var(--fg-rgb),0.25)', margin: '0 auto 14px' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', lineHeight: 1.35 }}>
+              <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--text)', lineHeight: 1.35 }}>
                 {detail.coupons?.name || '쿠폰 상세'}
               </div>
               <button
@@ -532,9 +532,9 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
+                  background: 'rgba(var(--fg-rgb),0.06)',
+                  color: 'var(--text)',
                   fontSize: 18,
                   lineHeight: 1,
                   cursor: 'pointer',
@@ -553,12 +553,12 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                     </span>
                   )}
                   {!isSpecialCoupon(detail.coupons) && (
-                    <span style={{ fontSize: 10, fontWeight: 900, padding: '4px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, padding: '4px 8px', borderRadius: 8, background: 'rgba(var(--fg-rgb),0.06)', border: '1px solid rgba(var(--fg-rgb),0.12)', color: 'rgba(var(--fg-rgb),0.75)' }}>
                       상시 쿠폰
                     </span>
                   )}
                   {isNewRow(detail) && (
-                    <span style={{ fontSize: 10, fontWeight: 900, padding: '4px 8px', borderRadius: 8, background: 'rgba(217,79,79,0.85)', color: '#fff' }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, padding: '4px 8px', borderRadius: 8, background: 'rgba(217,79,79,0.85)', color: '#FFF' }}>
                       NEW
                     </span>
                   )}
@@ -583,7 +583,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                 </DetailBlock>
               </>
             ) : (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 16 }}>쿠폰 템플릿 정보를 불러오지 못했습니다. 네트워크 후 다시 시도해 주세요.</div>
+              <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.55)', marginBottom: 16 }}>쿠폰 템플릿 정보를 불러오지 못했습니다. 네트워크 후 다시 시도해 주세요.</div>
             )}
 
             <DetailBlock title="내 쿠폰 발급 내역">
@@ -603,7 +603,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
                 borderRadius: 12,
                 border: '1px solid rgba(201,168,76,0.35)',
                 background: 'rgba(201,168,76,0.12)',
-                color: '#c9a84c',
+                color: 'var(--gold)',
                 fontWeight: 900,
                 fontSize: 14,
                 cursor: 'pointer',
@@ -623,7 +623,7 @@ function DetailBlock({ title, children }: { title: string; children: ReactNode }
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(201,168,76,0.85)', marginBottom: 8, letterSpacing: 0.5 }}>{title}</div>
-      <div style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)', padding: '12px 14px' }}>{children}</div>
+      <div style={{ borderRadius: 12, border: '1px solid rgba(var(--fg-rgb),0.08)', background: 'rgba(0,0,0,0.2)', padding: '12px 14px' }}>{children}</div>
     </div>
   )
 }
@@ -631,11 +631,11 @@ function DetailBlock({ title, children }: { title: string; children: ReactNode }
 function DetailLine({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 4 }}>{label}</div>
       <div
         style={{
           fontSize: mono ? 11 : 13,
-          color: 'rgba(255,255,255,0.92)',
+          color: 'rgba(var(--fg-rgb),0.92)',
           lineHeight: 1.45,
           fontFamily: mono ? "'JetBrains Mono', monospace" : undefined,
           wordBreak: 'break-all',

@@ -123,18 +123,18 @@ export default function MyAddressesPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0b12', color: '#fff', padding: '20px 16px 80px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', padding: '20px 16px 80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <div onClick={() => router.back()} style={{ fontSize: 20, cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
+        <div onClick={() => router.back()} style={{ fontSize: 20, cursor: 'pointer', color: 'rgba(var(--fg-rgb),0.6)' }}>
           ‹
         </div>
         <div style={{ fontSize: 16 }}>배송지 관리</div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 40 }}>불러오는 중...</div>
+        <div style={{ textAlign: 'center', color: 'rgba(var(--fg-rgb),0.3)', padding: 40 }}>불러오는 중...</div>
       ) : addresses.length === 0 ? (
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 40 }}>
+        <div style={{ textAlign: 'center', color: 'rgba(var(--fg-rgb),0.3)', padding: 40 }}>
           등록된 배송지가 없어요
           <br />
           <span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>결제 시 배송지를 추가해주세요</span>
@@ -144,8 +144,8 @@ export default function MyAddressesPage() {
           <div
             key={a.id}
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${a.is_default ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              background: 'rgba(var(--fg-rgb),0.04)',
+              border: `1px solid ${a.is_default ? 'rgba(123,94,167,0.4)' : 'rgba(var(--fg-rgb),0.08)'}`,
               borderRadius: 14,
               padding: '14px 16px',
               marginBottom: 10,
@@ -153,20 +153,20 @@ export default function MyAddressesPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: '#fff' }}>{a.recipient_name}</span>
+                <span style={{ fontSize: 13, color: 'var(--text)' }}>{a.recipient_name}</span>
                 {a.is_default && (
-                  <span style={{ fontSize: 9, background: '#7B5EA7', color: '#fff', padding: '2px 7px', borderRadius: 20 }}>
+                  <span style={{ fontSize: 9, background: 'var(--purple)', color: '#FFF', padding: '2px 7px', borderRadius: 20 }}>
                     기본
                   </span>
                 )}
-                {a.label && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>{a.label}</span>}
+                {a.label && <span style={{ fontSize: 9, color: 'rgba(var(--fg-rgb),0.4)' }}>{a.label}</span>}
               </div>
               <div onClick={() => deleteAddress(a.id)} style={{ fontSize: 11, color: 'rgba(255,100,100,0.7)', cursor: 'pointer' }}>
                 삭제
               </div>
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>{a.phone}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 2 }}>{a.phone}</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)' }}>
               {a.address}
               {a.address_detail ? ` ${a.address_detail}` : ''}
             </div>
@@ -181,7 +181,7 @@ export default function MyAddressesPage() {
                   border: '1px solid rgba(123,94,167,0.2)',
                   textAlign: 'center',
                   fontSize: 11,
-                  color: '#9B7EC8',
+                  color: 'var(--purple)',
                   cursor: 'pointer',
                 }}
               >
@@ -200,8 +200,8 @@ export default function MyAddressesPage() {
               width: '100%',
               padding: 14,
               borderRadius: 14,
-              background: '#7B5EA7',
-              color: '#fff',
+              background: 'var(--purple)',
+              color: '#FFF',
               border: 'none',
               fontSize: 14,
               cursor: 'pointer',
@@ -217,13 +217,13 @@ export default function MyAddressesPage() {
             bottom: 0,
             left: 0,
             right: 0,
-            background: '#1a1625',
+            background: 'var(--bg3)',
             borderRadius: '16px 16px 0 0',
             padding: 20,
             border: '1px solid rgba(123,94,167,0.3)',
           }}
         >
-          <div style={{ fontSize: 12, color: '#C9A96E', marginBottom: 12, fontFamily: 'monospace', letterSpacing: 2 }}>새 배송지</div>
+          <div style={{ fontSize: 12, color: 'var(--gold)', marginBottom: 12, fontFamily: 'monospace', letterSpacing: 2 }}>새 배송지</div>
           {[
             { placeholder: '받는 분 이름', value: newName, set: setNewName },
             { placeholder: '연락처', value: newPhone, set: setNewPhone },
@@ -237,9 +237,9 @@ export default function MyAddressesPage() {
                 width: '100%',
                 padding: '10px 12px',
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#fff',
+                background: 'rgba(var(--fg-rgb),0.05)',
+                border: '1px solid rgba(var(--fg-rgb),0.1)',
+                color: 'var(--text)',
                 fontSize: 12,
                 outline: 'none',
                 marginBottom: 8,
@@ -257,9 +257,9 @@ export default function MyAddressesPage() {
                 minWidth: 0,
                 padding: '10px 12px',
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#fff',
+                background: 'rgba(var(--fg-rgb),0.05)',
+                border: '1px solid rgba(var(--fg-rgb),0.1)',
+                color: 'var(--text)',
                 fontSize: 12,
                 outline: 'none',
                 boxSizing: 'border-box' as const,
@@ -268,7 +268,7 @@ export default function MyAddressesPage() {
             <button
               type="button"
               onClick={() => openAddressSearch((addr) => setNewAddress(addr))}
-              style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+              style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: 'var(--purple)', color: '#FFF', fontSize: 12, cursor: 'pointer' }}
             >
               주소 검색
             </button>
@@ -281,9 +281,9 @@ export default function MyAddressesPage() {
               width: '100%',
               padding: '10px 12px',
               borderRadius: 10,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#fff',
+              background: 'rgba(var(--fg-rgb),0.05)',
+              border: '1px solid rgba(var(--fg-rgb),0.1)',
+              color: 'var(--text)',
               fontSize: 12,
               outline: 'none',
               marginBottom: 8,
@@ -298,16 +298,16 @@ export default function MyAddressesPage() {
                 flex: 1,
                 padding: 12,
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.05)',
-                color: 'rgba(255,255,255,0.5)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(var(--fg-rgb),0.05)',
+                color: 'rgba(var(--fg-rgb),0.5)',
+                border: '1px solid rgba(var(--fg-rgb),0.1)',
                 fontSize: 12,
                 cursor: 'pointer',
               }}
             >
               취소
             </button>
-            <button type="button" onClick={addAddress} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer' }}>
+            <button type="button" onClick={addAddress} style={{ flex: 2, padding: 12, borderRadius: 10, background: 'var(--purple)', color: '#FFF', border: 'none', fontSize: 12, cursor: 'pointer' }}>
               저장
             </button>
           </div>

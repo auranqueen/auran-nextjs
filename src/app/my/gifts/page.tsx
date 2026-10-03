@@ -72,7 +72,7 @@ export default function GiftsPage() {
     <LoginRequiredModal open={showLogin} onClose={() => router.back()} returnPath="/my/gifts" />
   )
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0c0f', color: '#e8e0f5', paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', paddingBottom: 80 }}>
       <DashboardHeader
         title="선물함"
         right={<CustomerHeaderRight />}
@@ -81,8 +81,8 @@ export default function GiftsPage() {
         {(['sent', 'received'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '6px 16px', borderRadius: 20, border: 'none', fontSize: 12, cursor: 'pointer',
-            background: tab === t ? '#7B5EA7' : 'rgba(123,94,167,0.15)',
-            color: tab === t ? '#fff' : '#9B7EC8',
+                background: tab === t ? 'var(--purple)' : 'rgba(123,94,167,0.15)',
+                color: tab === t ? '#FFF' : 'var(--purple)',
           }}>
             {t === 'sent' ? '보낸 선물' : '받은 선물'}
           </button>
@@ -96,24 +96,24 @@ export default function GiftsPage() {
             <div style={{ textAlign: 'center', padding: 40 }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🎁</div>
               <div style={{ fontSize: 13, color: '#555' }}>보낸 선물이 없어요</div>
-              <button onClick={() => router.push('/membership/gift')} style={{ marginTop: 16, padding: '10px 24px', background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer' }}>
+              <button onClick={() => router.push('/membership/gift')} style={{ marginTop: 16, padding: '10px 24px', background: 'var(--purple)', border: 'none', color: '#FFF', borderRadius: 9, fontSize: 13, cursor: 'pointer' }}>
                 선물하기
               </button>
             </div>
           ) : sentGifts.map(g => (
             <div key={g.id} style={{ background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ fontSize: 13, color: '#e8e0f5' }}>{(g.membership_plans as any)?.name || '멤버십'} · ₩{g.amount?.toLocaleString()}</div>
-                <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(123,94,167,0.2)', color: '#9B7EC8' }}>{STATUS_LABEL[g.status] || g.status}</span>
+                <div style={{ fontSize: 13, color: 'var(--text)' }}>{(g.membership_plans as any)?.name || '멤버십'} · ₩{g.amount?.toLocaleString()}</div>
+                <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(123,94,167,0.2)', color: 'var(--purple)' }}>{STATUS_LABEL[g.status] || g.status}</span>
               </div>
-              {g.gift_copy && <div style={{ fontSize: 11, color: '#C9A96E', marginBottom: 6 }}>"{g.gift_copy}"</div>}
-              {g.shipping_name && <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 4 }}>받는 분: {g.shipping_name}</div>}
-              {g.shipping_status && <div style={{ fontSize: 10, color: '#7B5EA7' }}>{SHIP_LABEL[g.shipping_status] || g.shipping_status}</div>}
+              {g.gift_copy && <div style={{ fontSize: 11, color: 'var(--gold)', marginBottom: 6 }}>"{g.gift_copy}"</div>}
+              {g.shipping_name && <div style={{ fontSize: 11, color: 'var(--purple)', marginBottom: 4 }}>받는 분: {g.shipping_name}</div>}
+              {g.shipping_status && <div style={{ fontSize: 10, color: 'var(--purple)' }}>{SHIP_LABEL[g.shipping_status] || g.shipping_status}</div>}
               {g.tracking_no && <div style={{ fontSize: 10, color: '#1D9E75', marginTop: 4 }}>{g.courier} {g.tracking_no}</div>}
               {(!g.shipping_status || g.shipping_status === 'pending') && g.claim_token && (
                 <button
                   onClick={() => router.push('/membership/claim/' + g.claim_token)}
-                  style={{ marginTop: 8, padding: '8px 16px', background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer', display: 'block', width: '100%' }}
+                  style={{ marginTop: 8, padding: '8px 16px', background: 'var(--purple)', border: 'none', color: '#FFF', borderRadius: 8, fontSize: 12, cursor: 'pointer', display: 'block', width: '100%' }}
                 >
                   📦 배송지 입력하기
                 </button>
@@ -121,7 +121,7 @@ export default function GiftsPage() {
               {g.status === 'paid' && g.claim_token && (
                 <button
                   onClick={() => { navigator.clipboard?.writeText('https://auran.kr/membership/claim/' + g.claim_token); alert('링크 복사됐어요 💜') }}
-                  style={{ marginTop: 8, padding: '6px 14px', background: 'transparent', border: '1px solid rgba(201,169,110,0.4)', color: '#C9A96E', borderRadius: 8, fontSize: 11, cursor: 'pointer' }}
+                  style={{ marginTop: 8, padding: '6px 14px', background: 'transparent', border: '1px solid rgba(201,169,110,0.4)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, cursor: 'pointer' }}
                 >
                   🔗 선물 링크 복사
                 </button>
@@ -131,13 +131,13 @@ export default function GiftsPage() {
         ) : (
           membership ? (
             <div style={{ background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 14, padding: '16px' }}>
-              <div style={{ fontSize: 9, letterSpacing: 2, color: '#C9A96E', marginBottom: 8 }}>ORÆN PRIVÉ</div>
-              <div style={{ fontSize: 14, color: '#F0E8FF', marginBottom: 6 }}>🎁 선물로 받은 멤버십</div>
-              <div style={{ fontSize: 13, color: '#e8e0f5', marginBottom: 4 }}>{(membership.membership_plans as any)?.name || '멤버십'} 구독 중</div>
-              <div style={{ fontSize: 11, color: '#9B7EC8' }}>
+              <div style={{ fontSize: 9, letterSpacing: 2, color: 'var(--gold)', marginBottom: 8 }}>ORÆN PRIVÉ</div>
+              <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 6 }}>🎁 선물로 받은 멤버십</div>
+              <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>{(membership.membership_plans as any)?.name || '멤버십'} 구독 중</div>
+              <div style={{ fontSize: 11, color: 'var(--purple)' }}>
                 다음 배송일 · {membership.next_shipment_date ? new Date(membership.next_shipment_date).toLocaleDateString('ko-KR') : '미정'}
               </div>
-              <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>남은 횟수 · {membership.shipments_remaining}회</div>
+              <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>남은 횟수 · {membership.shipments_remaining}회</div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: 40 }}>
