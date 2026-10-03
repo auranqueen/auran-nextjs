@@ -160,7 +160,7 @@ a img, button img, [role="button"] img { pointer-events: auto; }
 }
 
 .search-input-slim::placeholder {
-  font-size: 9px;
+  font-size: 10px;
   color: rgba(var(--gold-rgb, 184,150,90), 0.5);
 }
 

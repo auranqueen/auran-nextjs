@@ -2374,7 +2374,7 @@ export default function CustomerHomePage() {
                 border: 'none',
                 background: 'transparent',
                 color: 'var(--text)',
-                fontSize: 9,
+                fontSize: 10,
                 outline: 'none',
               }}
             />
@@ -2450,7 +2450,7 @@ export default function CustomerHomePage() {
                   border: 'none',
                   background: 'transparent',
                   color: 'var(--text)',
-                  fontSize: 9,
+                  fontSize: 10,
                   outline: 'none',
                 }}
               />
