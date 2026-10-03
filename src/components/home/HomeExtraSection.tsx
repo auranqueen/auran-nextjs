@@ -81,7 +81,7 @@ const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
 
 function ShortcutGrid({ isLoggedIn, onSelect }: { isLoggedIn: boolean; onSelect?: (href: string) => void }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', gap: 10, paddingBottom: 4, marginTop: 12, scrollbarWidth: 'none' as const, msOverflowStyle: 'none' as const }}>
+    <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', gap: 10, padding: '12px 0', marginTop: 12, background: 'var(--bg2)', borderRadius: 16, scrollbarWidth: 'none' as const, msOverflowStyle: 'none' as const }}>
       {SHORTCUTS.map((item) => {
         const inner = (
           <div style={{

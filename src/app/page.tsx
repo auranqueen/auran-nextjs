@@ -2216,7 +2216,7 @@ export default function CustomerHomePage() {
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 16px 16px',
         background: 'rgba(var(--bg-rgb),0.95)',
         borderBottom: '1px solid rgba(var(--fg-rgb),0.06)',
         backdropFilter: 'blur(12px)',
@@ -2388,6 +2388,8 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{
             flex: 1,
+            minWidth: 0,
+            boxSizing: 'border-box',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -2409,6 +2411,9 @@ export default function CustomerHomePage() {
               placeholder="브랜드·제품명으로 검색해보세요"
               style={{
                 flex: 1,
+                width: '100%',
+                minWidth: 0,
+                boxSizing: 'border-box',
                 border: 'none',
                 background: 'transparent',
                 color: 'var(--text)',
@@ -2593,7 +2598,7 @@ export default function CustomerHomePage() {
       )}
       {/* ── 인사말 ── */}
       <div style={{
-        padding: '14px 20px 0',
+        padding: '14px 16px 0',
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <div

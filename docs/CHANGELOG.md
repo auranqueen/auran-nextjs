@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- fix(home): 홈 좌우 여백 16px 통일 — 탑바 24→16, 인사말 20→16, 오렌 픽(`SeasonRecommendSection`) 좌우 0→16, 검색바 `minWidth: 0`·`boxSizing`으로 넘침 방지, 바로가기 줄 `var(--bg2)` 둥근 배경
 - fix(theme): 미정의 `var(--color-text-secondary)` → `var(--text2)` (myworld·ConsultChat·ReviewForm·TotoLottery·CheckoutPageView 16곳). `DashboardHeader` 배경·제목·뒤로 버튼 테마 변수화. 홈 시트(바로가기·검색) 열림 동안 `body` 스크롤 잠금
 - feat(home): 바로가기를 인스타 하이라이트 스타일로 — 네모 카드 배경·패딩 제거, 폭 72px, 60px 원형 이미지/이모지(이모지는 `item.bg` 원), 라벨 `var(--text)` 중앙 정렬
 - fix(home): 내관리 아이콘 이미지 교체 — 하단 "내관리" 글자 없는 버전(`public/icons/icon_manage.png`)
