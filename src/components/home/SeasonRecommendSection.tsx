@@ -4,12 +4,12 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const CARD_BG = '#1e1e26'
-const BADGE_STEP_BG = '#1e1830'
-const BADGE_STEP_FG = '#7b6cc0'
-const BADGE_FUNC_BG = '#1a2818'
-const BADGE_FUNC_FG = '#5adb8a'
-const FORM_BG = '#1a1a24'
+const CARD_BG = 'var(--bg2)'
+const BADGE_STEP_BG = 'var(--bg3)'
+const BADGE_STEP_FG = 'var(--purple)'
+const BADGE_FUNC_BG = 'rgba(90,219,138,0.15)'
+const BADGE_FUNC_FG = '#3fae6a'
+const FORM_BG = 'var(--bg2)'
 
 const STEP_CHIPS = ['전체', '클렌징', '토너', '앰플·세럼·에센스', '크림·로션', '선크림'] as const
 const FUNC_CHIPS = ['전체', '미백', '탄력', '수분', '진정', '장벽'] as const
@@ -417,7 +417,7 @@ export default function SeasonRecommendSection({
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>오렌 픽 💜</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>오렌 픽 💜</div>
         {showEditChrome ? (
           <button
             type="button"
@@ -427,8 +427,8 @@ export default function SeasonRecommendSection({
               padding: '4px 10px',
               borderRadius: 8,
               border: '1px dashed rgba(123,108,192,0.55)',
-              background: 'rgba(30,24,48,0.4)',
-              color: '#c4b8f0',
+              background: 'var(--bg2)',
+              color: 'var(--purple)',
               cursor: 'pointer',
               fontFamily: 'inherit',
             }}
@@ -443,7 +443,7 @@ export default function SeasonRecommendSection({
           display: 'flex',
           gap: 0,
           margin: '10px 0 12px',
-          background: '#1a1a20',
+          background: 'var(--bg2)',
           borderRadius: 11,
           padding: 3,
         }}
@@ -465,7 +465,7 @@ export default function SeasonRecommendSection({
               fontFamily: 'inherit',
               fontWeight: activeTab === t.key ? 500 : 400,
               background: activeTab === t.key ? '#7B5EA7' : 'transparent',
-              color: activeTab === t.key ? '#fff' : '#555',
+              color: activeTab === t.key ? '#FFF' : 'var(--text3)',
               transition: 'all 0.2s',
             }}
           >
@@ -475,7 +475,7 @@ export default function SeasonRecommendSection({
       </div>
 
       {isAuto ? (
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 8 }}>판매량·평점 기준 자동 추천이에요</div>
+        <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 8 }}>판매량·평점 기준 자동 추천이에요</div>
       ) : null}
 
       {activeTab === 'pick' && (
@@ -483,7 +483,7 @@ export default function SeasonRecommendSection({
           <div
             style={{
               fontSize: 11,
-              color: 'rgba(255,255,255,0.3)',
+              color: 'var(--text3)',
               marginBottom: 10,
               paddingLeft: 2,
             }}
@@ -509,12 +509,12 @@ export default function SeasonRecommendSection({
                   borderRadius: 20,
                   fontSize: 11,
                   cursor: 'pointer',
-                  border: activeIssue === '전체' ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
+                  border: activeIssue === '전체' ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid rgba(var(--fg-rgb),0.08)',
                   fontFamily: 'inherit',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
-                  background: activeIssue === '전체' ? '#2a1a3e' : '#1e1e26',
-                  color: activeIssue === '전체' ? '#c4a8ff' : '#555',
+                  background: activeIssue === '전체' ? 'var(--bg3)' : 'var(--bg2)',
+                  color: activeIssue === '전체' ? 'var(--purple)' : 'var(--text3)',
                 }}
               >
                 전체
@@ -529,12 +529,12 @@ export default function SeasonRecommendSection({
                     borderRadius: 20,
                     fontSize: 11,
                     cursor: 'pointer',
-                    border: activeIssue === ib.label ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
+                    border: activeIssue === ib.label ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid rgba(var(--fg-rgb),0.08)',
                     fontFamily: 'inherit',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    background: activeIssue === ib.label ? '#2a1a3e' : '#1e1e26',
-                    color: activeIssue === ib.label ? '#c4a8ff' : '#555',
+                    background: activeIssue === ib.label ? 'var(--bg3)' : 'var(--bg2)',
+                    color: activeIssue === ib.label ? 'var(--purple)' : 'var(--text3)',
                   }}
                 >
                   {ib.label}
@@ -556,7 +556,7 @@ export default function SeasonRecommendSection({
                 <div
                   style={{
                     fontSize: 10,
-                    color: 'rgba(196,168,255,0.5)',
+                    color: 'var(--text3)',
                     marginBottom: 6,
                   }}
                 >
@@ -591,12 +591,12 @@ export default function SeasonRecommendSection({
                       }}
                       style={{
                         flex: 1,
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '0.5px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(var(--fg-rgb),0.04)',
+                        border: '0.5px solid rgba(var(--fg-rgb),0.1)',
                         borderRadius: 7,
                         padding: '4px 8px',
                         fontSize: 11,
-                        color: '#ccc',
+                        color: 'var(--text2)',
                         fontFamily: 'inherit',
                         outline: 'none',
                       }}
@@ -635,12 +635,12 @@ export default function SeasonRecommendSection({
                   id="newIssueLabel"
                   style={{
                     flex: 1,
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '0.5px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(var(--fg-rgb),0.04)',
+                    border: '0.5px solid rgba(var(--fg-rgb),0.1)',
                     borderRadius: 7,
                     padding: '6px 8px',
                     fontSize: 11,
-                    color: '#ccc',
+                    color: 'var(--text2)',
                     fontFamily: 'inherit',
                     outline: 'none',
                   }}
@@ -670,8 +670,8 @@ export default function SeasonRecommendSection({
                     fontSize: 11,
                     cursor: 'pointer',
                     border: '1px solid rgba(123,94,167,0.4)',
-                    background: '#2a1a3e',
-                    color: '#c4a8ff',
+                    background: 'var(--bg3)',
+                    color: 'var(--purple)',
                     fontFamily: 'inherit',
                     flexShrink: 0,
                   }}
@@ -684,7 +684,7 @@ export default function SeasonRecommendSection({
         </>
       )}
       {loading ? (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '20px 0' }}>불러오는 중…</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', padding: '20px 0' }}>불러오는 중…</div>
       ) : (
         <>
         <div
@@ -712,7 +712,7 @@ export default function SeasonRecommendSection({
                   flexShrink: 0,
                   background: CARD_BG,
                   borderRadius: 12,
-                  border: showEditChrome && !autoRow ? '1px dashed rgba(123,108,192,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                  border: showEditChrome && !autoRow ? '1px dashed rgba(123,108,192,0.45)' : '1px solid rgba(var(--fg-rgb),0.08)',
                   padding: 8,
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -730,8 +730,8 @@ export default function SeasonRecommendSection({
                         padding: '2px 5px',
                         borderRadius: 4,
                         border: '1px solid rgba(123,108,192,0.5)',
-                        background: 'rgba(30,24,48,0.9)',
-                        color: '#c4b8f0',
+                        background: 'var(--bg2)',
+                        color: 'var(--purple)',
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                       }}
@@ -762,7 +762,7 @@ export default function SeasonRecommendSection({
                     aspectRatio: '1',
                     borderRadius: 8,
                     overflow: 'hidden',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'rgba(var(--fg-rgb),0.05)',
                     marginBottom: 6,
                   }}
                 >
@@ -783,7 +783,7 @@ export default function SeasonRecommendSection({
                 <div
                   style={{
                     fontSize: 11,
-                    color: '#fff',
+                    color: 'var(--text)',
                     lineHeight: 1.35,
                     marginBottom: 4,
                     overflow: 'hidden',
@@ -795,7 +795,7 @@ export default function SeasonRecommendSection({
                 >
                   {p.name}
                 </div>
-                <div style={{ fontSize: 9, color: '#c9a96e' }}>₩{displayPrice(p).toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: 'var(--gold)' }}>₩{displayPrice(p).toLocaleString()}</div>
               </button>
             )
           })}
@@ -808,8 +808,8 @@ export default function SeasonRecommendSection({
                 minHeight: 140,
                 borderRadius: 13,
                 border: '1px dashed rgba(123,108,192,0.45)',
-                background: 'rgba(30,24,48,0.3)',
-                color: '#c4b8f0',
+                background: 'var(--bg2)',
+                color: 'var(--purple)',
                 fontSize: 24,
                 cursor: 'pointer',
                 display: 'flex',
@@ -831,7 +831,7 @@ export default function SeasonRecommendSection({
             border: '0.5px solid rgba(123,94,167,0.3)',
           }}
         >
-          <div style={{ fontSize: 10, color: 'rgba(196,168,255,0.5)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
           <input
             type="text"
             value={addProdSearch}
@@ -859,16 +859,16 @@ export default function SeasonRecommendSection({
               boxSizing: 'border-box',
               padding: '8px 10px',
               borderRadius: 8,
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#ccc',
+              border: '0.5px solid rgba(var(--fg-rgb),0.1)',
+              background: 'rgba(var(--fg-rgb),0.04)',
+              color: 'var(--text2)',
               fontSize: 12,
               fontFamily: 'inherit',
               marginBottom: 8,
               outline: 'none',
             }}
           />
-          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 6 }}>검색 중…</div> : null}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
             {addProdResults.map(p => {
               const added = mappedProductIds.has(p.id)
@@ -898,8 +898,8 @@ export default function SeasonRecommendSection({
                     {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{p.step_tags?.[0] || '—'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 500 }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text2)' }}>{p.step_tags?.[0] || '—'}</div>
                   </div>
                   <button
                     type="button"
@@ -929,7 +929,7 @@ export default function SeasonRecommendSection({
                       borderRadius: 6,
                       border: '0.5px solid rgba(123,108,192,0.45)',
                       background: added ? 'rgba(123,108,192,0.05)' : 'rgba(123,108,192,0.2)',
-                      color: added ? '#666' : '#c4b8f0',
+                      color: added ? 'var(--text3)' : 'var(--purple)',
                       cursor: added ? 'default' : 'pointer',
                       fontFamily: 'inherit',
                       flexShrink: 0,
@@ -942,7 +942,7 @@ export default function SeasonRecommendSection({
             })}
           </div>
           {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
-            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
           ) : null}
         </div>
       ) : null}
@@ -950,7 +950,7 @@ export default function SeasonRecommendSection({
       )}
 
       {filtered.length === 0 && !loading ? (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', padding: '8px 0 12px' }}>조건에 맞는 제품이 없어요</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', padding: '8px 0 12px' }}>조건에 맞는 제품이 없어요</div>
       ) : null}
 
       <button
@@ -969,9 +969,9 @@ export default function SeasonRecommendSection({
           width: '100%',
           padding: '10px 12px',
           borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: 'rgba(255,255,255,0.04)',
-          color: 'rgba(255,255,255,0.65)',
+          border: '1px solid rgba(var(--fg-rgb),0.1)',
+          background: 'rgba(var(--fg-rgb),0.04)',
+          color: 'var(--text2)',
           fontSize: 12,
           cursor: 'pointer',
           fontFamily: 'inherit',
@@ -991,11 +991,11 @@ export default function SeasonRecommendSection({
             padding: 12,
             borderRadius: 12,
             background: FORM_BG,
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(var(--fg-rgb),0.08)',
           }}
           onClick={e => e.stopPropagation()}
         >
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>{editingId ? '매핑 수정' : '매핑 추가'}</div>
+          <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 8 }}>{editingId ? '매핑 수정' : '매핑 추가'}</div>
           <input
             value={searchQ}
             onChange={e => setSearchQ(e.target.value)}
@@ -1004,16 +1004,16 @@ export default function SeasonRecommendSection({
               width: '100%',
               padding: '8px 10px',
               borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: '#14141a',
-              color: '#fff',
+              border: '1px solid rgba(var(--fg-rgb),0.12)',
+              background: 'var(--bg2)',
+              color: 'var(--text)',
               fontSize: 12,
               marginBottom: 8,
               outline: 'none',
               boxSizing: 'border-box',
             }}
           />
-          {searchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+          {searchLoading ? <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 6 }}>검색 중…</div> : null}
           <div style={{ maxHeight: 160, overflowY: 'auto', marginBottom: 8 }}>
             {searchResults.map(sp => (
               <button
@@ -1035,14 +1035,14 @@ export default function SeasonRecommendSection({
                   textAlign: 'left',
                 }}
               >
-                <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.06)', flexShrink: 0 }}>
                   {sp.storage_thumb_url || sp.thumb_img ? (
                     <img src={sp.storage_thumb_url || sp.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : null}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.name}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>₩{displayPrice(sp).toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text2)' }}>₩{displayPrice(sp).toLocaleString()}</div>
                 </div>
               </button>
             ))}
@@ -1051,7 +1051,7 @@ export default function SeasonRecommendSection({
             <select
               value={formStep}
               onChange={e => setFormStep(e.target.value)}
-              style={{ flex: 1, minWidth: 120, padding: 6, borderRadius: 8, background: '#14141a', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', fontSize: 11 }}
+              style={{ flex: 1, minWidth: 120, padding: 6, borderRadius: 8, background: 'var(--bg2)', color: 'var(--text)', border: '1px solid rgba(var(--fg-rgb),0.12)', fontSize: 11 }}
             >
               {STEP_OPTIONS.map(o => (
                 <option key={o} value={o}>
@@ -1062,7 +1062,7 @@ export default function SeasonRecommendSection({
             <select
               value={formFunc}
               onChange={e => setFormFunc(e.target.value)}
-              style={{ flex: 1, minWidth: 120, padding: 6, borderRadius: 8, background: '#14141a', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', fontSize: 11 }}
+              style={{ flex: 1, minWidth: 120, padding: 6, borderRadius: 8, background: 'var(--bg2)', color: 'var(--text)', border: '1px solid rgba(var(--fg-rgb),0.12)', fontSize: 11 }}
             >
               {FUNC_OPTIONS.map(o => (
                 <option key={o} value={o}>
@@ -1081,8 +1081,8 @@ export default function SeasonRecommendSection({
                 padding: '8px 12px',
                 borderRadius: 8,
                 border: 'none',
-                background: pickProduct ? 'rgba(123,108,192,0.45)' : 'rgba(255,255,255,0.1)',
-                color: '#fff',
+                background: pickProduct ? 'rgba(123,108,192,0.45)' : 'rgba(var(--fg-rgb),0.1)',
+                color: 'var(--text)',
                 fontSize: 12,
                 cursor: pickProduct && !saving ? 'pointer' : 'not-allowed',
                 fontFamily: 'inherit',
@@ -1096,9 +1096,9 @@ export default function SeasonRecommendSection({
               style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: '1px solid rgba(var(--fg-rgb),0.15)',
                 background: 'transparent',
-                color: 'rgba(255,255,255,0.55)',
+                color: 'var(--text2)',
                 fontSize: 12,
                 cursor: 'pointer',
                 fontFamily: 'inherit',

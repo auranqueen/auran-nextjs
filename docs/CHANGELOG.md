@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui(theme): `SeasonRecommendSection`(홈 「오렌 픽」 제품카드) 어두운 배경 상수·탭·이슈칩·카드·편집폼 → `--bg2`/`--bg3`, 글자 → `--text`/`--text2`/`--text3`/`--gold`/`--purple`, 흰 rgba → `--fg-rgb`. 기능 배지는 `rgba(90,219,138,0.15)`+`#3fae6a`(양 모드 가독). 보라 장식 rgba·빨간 삭제·활성 탭 흰 글자(`'#FFF'`) 유지. `page.tsx` 상단 sticky 헤더 `rgba(13,11,9,0.95)` → `rgba(var(--bg-rgb),0.95)`
 - ui(home): `HomeExtraSection`에서 「📷 첫 피부 분석하러 가기」 링크(분석 기록 없을 때)와 바로가기 그리드의 「호르몬달력」 카드 삭제. 그리드는 3열 그대로(내관리·스킨스타·리뷰·커뮤니티·라이브 4개). `/my/hormone`·`/skin-analysis` 페이지 자체는 유지
 - ui(theme): 홈 PRIVÉ 배너 보라 그라데이션 → `var(--bg2)`, 타임세일·공구 썸네일 플레이스홀더 그라데이션 → `var(--bg2)`. 빨간 할인배지·「지금 구매」·공구 썸네일 위 어두운 오버레이 글자는 `'#FFF'` 고정(라이트에서 검정 글씨 되던 문제). `ProductsListClient` 검색 결과·그리드 카드 테두리 `rgba(var(--fg-rgb),0.08)`, 서브텍스트·결과없음 `var(--text2)`, 「+ 제품 추가」 배경 `var(--bg2)`·글자 `var(--purple)`
 - ui(theme): `ProductsListClient`(제품 목록) 색 상수 5개 + 텍스트·검색바·카드 테두리 등 25곳을 CSS 변수(`--bg`/`--bg2`/`--bg3`/`--text`/`--text2`/`--text3`/`--gold`/`--purple`/`--fg-rgb`)로 교체. 빨간 삭제 배지·보라 장식 rgba(123,108,192,x)·큐레이션 배너 보라/금 rgba는 유지
