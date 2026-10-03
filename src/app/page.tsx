@@ -505,7 +505,6 @@ export default function CustomerHomePage() {
   const [products, setProducts] = useState<any[]>([])
   const [seasonRecs, setSeasonRecs] = useState<any[]>([])
   const [weather, setWeather] = useState<any>(null)
-  const [showWeatherDetail, setShowWeatherDetail] = useState(false)
   const [cycleBannerDismissed, setCycleBannerDismissed] = useState(() => {
     if (typeof window === 'undefined') return false
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
@@ -2800,35 +2799,6 @@ export default function CustomerHomePage() {
       </>)}
       {myUserId && (
         <>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '12px 0 0' }}>
-          <button
-            type="button"
-            onClick={() => setCareTipOpen(o => !o)}
-            style={{ background: 'var(--bg2)', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-          >
-            <span style={{ fontSize: 20 }}>💧</span>
-            <div>
-              <div style={{ fontSize: 9, color: '#9C9390' }}>오늘의 케어</div>
-              <div style={{ fontSize: 11, color: '#F5F1EC', marginTop: 4, fontWeight: 300, lineHeight: 1.4 }}>
-                {dailyCareTip?.title || '보습에 집중해보세요'}
-              </div>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowWeatherDetail(o => !o)}
-            style={{ background: 'var(--bg2)', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-          >
-            <span style={{ fontSize: 20 }}>☀️</span>
-            <div>
-              <div style={{ fontSize: 9, color: '#9C9390' }}>{weather?.city || '날씨'} · {weather?.temp ?? '-'}°</div>
-              <div style={{ fontSize: 11, color: '#F5F1EC', marginTop: 4, fontWeight: 300, lineHeight: 1.4 }}>
-                미세먼지 {weather?.dust?.level || '-'}
-              </div>
-            </div>
-          </button>
-        </div>
-
         {careTipOpen && (
           <div style={{
             marginTop: 10,
@@ -2856,55 +2826,6 @@ export default function CustomerHomePage() {
                 🛁 오늘 반신욕 추천
               </div>
             )}
-          </div>
-        )}
-
-        {showWeatherDetail && (
-          <div style={{ marginTop: 10, paddingTop: 12, borderTop: '1px solid rgba(var(--fg-rgb),0.06)' }}>
-            <div style={{ fontSize:11, color:'rgba(var(--fg-rgb),0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
-              {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
-            </div>
-            {weather && (
-              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                {[
-                  { label: '날씨', value: `${weather.temp}° ${weather.condition}` },
-                  { label: '미세먼지', value: weather.dust?.level, color: weather.dust?.level === '좋음' ? '#4CAF50' : weather.dust?.level === '보통' ? '#F5A623' : '#E53935' },
-                  { label: '초미세먼지', value: weather.fineDust?.level, color: weather.fineDust?.level === '좋음' ? '#4CAF50' : weather.fineDust?.level === '보통' ? '#F5A623' : '#E53935' },
-                  { label: '자외선', value: weather.uv?.level, color: weather.uv?.level === '낮음' ? '#4CAF50' : weather.uv?.level === '보통' ? '#8BC34A' : weather.uv?.level === '높음' ? '#FF9800' : '#E53935' },
-                  { label: '습도', value: `${weather.humidity}%` },
-                ].map((item, i) => (
-                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 8, color: 'rgba(var(--fg-rgb),0.3)', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(var(--fg-rgb),0.7)', fontWeight: 400 }}>{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {weather && (() => {
-              const warnings: string[] = []
-              if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
-                warnings.push('미세먼지 ' + weather.dust.level + ' 😷 외출 후 꼭 더블클렌징이에요')
-              if (weather.fineDust?.level === '나쁨' || weather.fineDust?.level === '매우나쁨')
-                warnings.push('초미세먼지 ' + weather.fineDust.level + ' 🌫️ 딥클렌징 오늘 필수예요')
-              if (weather.uv?.level === '높음')
-                warnings.push('자외선 높음 ☀️ 선크림 지금 바로 덧발라요')
-              if (weather.uv?.level === '매우높음')
-                warnings.push('자외선 매우 높음 🔥 2시간마다 선크림 덧바르기')
-              if (weather.humidity < 40)
-                warnings.push('건조한 날씨 💧 보습 크림 한 겹 더 올려줘요')
-              return warnings.map((w, i) => (
-                <div key={i} style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
-              ))
-            })()}
-            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(var(--fg-rgb),0.06)', display:'flex', gap:6 }}>
-              <button
-                type="button"
-                onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
-                style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
-              >
-                ✦ 날씨 맞춤 추천
-              </button>
-            </div>
           </div>
         )}
         </>

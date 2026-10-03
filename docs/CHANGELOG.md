@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui(home): 홈 본문 「오늘의 케어」·날씨 2열 칩 grid와 `showWeatherDetail` 날씨 상세 블록(미세먼지·자외선·습도·경고·「날씨 맞춤 추천」 버튼), `showWeatherDetail` state 삭제. 프로필 팝업 날씨/케어 서브뷰는 유지. `careTipOpen` 상세 블록·`CARE_CHEER_MSGS`는 남았지만 진입점 없음(미사용)
 - ui(theme): 고객 화면 11개(`my/addresses`·`charts`·`coupons`·`gifts`·`reviews`·`rituals`·`rituals/[id]`·`security`, `orders`, `checkout`, `payment/payapp`) 하드코딩 색 → CSS 변수. `rgba(255,255,255,x)` → `rgba(var(--fg-rgb),x)`, 글자 `#fff`·거의 흰 글자(`#e8e0f5`·`#F0E8FF`·`#e8e4dc`·`#e8d5ff`) → `var(--text)`, `#7B5EA7`·`#9B7EC8`·`#c4a7e7` → `var(--purple)`, `#C9A96E`·`#c9a84c` → `var(--gold)`, `#666`·`#888` → `var(--text3)`, 어두운 배경·반투명 헤더(`rgba(13,11,9,.95)`)·쿠폰 카드/시트 그라데이션 → `var(--bg)`/`--bg2`/`--bg3`. 보라·금색·빨간 버튼 위 흰 글자는 `'#FFF'`로 유지, `#333` 닫기 버튼·`#444` 비활성 점·`#555` 글자·금색 그라데이션 버튼·장식 색 배열 유지. 새 변수 없음
 - ui(theme): 라이트 모드 대비 — `globals.css`에 `--fg-rgb`(다크 `255,255,255` / 라이트 `17,17,17`) 추가. 홈 `page.tsx`, `my/page.tsx`, `my/profile/page.tsx`, `HormoneCalendarPage`·`HormoneCalendarRecord`·`HormoneSheet`·`WeatherRecommendSheet`에서 `rgba(255,255,255,x)` 310곳 → `rgba(var(--fg-rgb),x)`, 글자색 `#fff`/`#ffffff` → `var(--text)`, 금색 글자·`GOLD` → `var(--gold)`, `BG`(`#0D0B09`)·`#0F0D0C`·`#0d0b12` → `var(--bg)`, 어두운 카드 배경 → `var(--bg2)`/`var(--bg3)`. 홈 흰 프로필 팝업, 네이티브 `option` `#111`, SVG stroke, 달력 오늘 링·기록 점, 보라·파스텔 강조색, `#333`/`#666`/`#888`, 테마 선택 버튼·등급 색 ternary는 유지
 - ui: `WeatherRecommendSheet` 안쪽 기존 제목(날씨 이모지 + 「오늘 날씨 맞춤 케어」)·× 버튼 제거(상단 ← 바와 중복, ×가 `onClose` 즉시 호출하던 경로도 사라짐). 기온·습도·자외선·미세 한 줄은 유지. 미사용 `BG` 상수 삭제
