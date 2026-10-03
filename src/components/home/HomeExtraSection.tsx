@@ -81,10 +81,12 @@ const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
 
 function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', gap: 10, paddingBottom: 4, marginTop: 12, scrollbarWidth: 'none' as const, msOverflowStyle: 'none' as const }}>
       {SHORTCUTS.map((item) => {
         const inner = (
           <div style={{
+            width: 80,
+            boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -110,9 +112,9 @@ function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
             <span style={{ fontSize: 9, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
           </div>
         )
-        if (item.disabled) return <div key={item.label}>{inner}</div>
+        if (item.disabled) return <div key={item.label} style={{ flexShrink: 0 }}>{inner}</div>
         return (
-          <Link key={item.label} href={getHref(item.href, isLoggedIn)} style={{ textDecoration: 'none' }}>
+          <Link key={item.label} href={getHref(item.href, isLoggedIn)} style={{ textDecoration: 'none', flexShrink: 0 }}>
             {inner}
           </Link>
         )
