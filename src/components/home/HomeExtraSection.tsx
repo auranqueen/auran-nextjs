@@ -52,7 +52,6 @@ const POP_CONTENT: Record<Exclude<PopKey, null>, { title: string; body: string }
 }
 
 const SHORTCUTS = [
-  { label: '호르몬달력', emoji: '🌙', href: '/my/hormone', bg: '#EEEDFE', disabled: false },
   { label: '내관리', emoji: '💆', href: '/my/manage', bg: '#E1F5EE', disabled: false },
   { label: '스킨스타', emoji: '✨', href: '/myworld', bg: '#FBEAF0', disabled: false },
   { label: '리뷰·커뮤니티', emoji: '📝', href: '/dashboard/customer/community', bg: '#FAEEDA', disabled: false },
@@ -295,25 +294,7 @@ export default function HomeExtraSection() {
               </div>
             </div>
           </div>
-        ) : (
-          <Link
-            href="/skin-analysis"
-            style={{
-              display: 'block',
-              textDecoration: 'none',
-              background: 'rgba(255,255,255,0.06)',
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              borderRadius: 14,
-              padding: '14px 16px',
-              textAlign: 'center',
-              fontSize: 14,
-              fontWeight: 500,
-              color: 'rgba(255,255,255,0.92)',
-            }}
-          >
-            📷 첫 피부 분석하러 가기
-          </Link>
-        )}
+        ) : null}
 
         <ShortcutGrid isLoggedIn={isLoggedIn} />
       </div>
