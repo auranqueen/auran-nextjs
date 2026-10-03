@@ -12,10 +12,16 @@ export default function RhythmFix() {
     const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { setBusy(false); return }
-    const today = new Date().toISOString().slice(0, 10)
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
     const hc: any = { track, cycle_type: cycleType, menopause_reason: reason, updated_at: new Date().toISOString() }
-    if (track === 'general') hc.last_period_date = today
     await sb.from('hormone_cycle').update(hc).eq('auth_id', user.id)
+    if (track === 'general') {
+      await fetch('/api/hormone/period-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today }),
+      })
+    }
     await sb.from('profiles').update({
       cycle_type: cycleType,
       ...(cycleType === 'menstrual' ? { hormone_cycle_applicable: true } :

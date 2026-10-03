@@ -567,9 +567,11 @@ export default function HormoneSheet({
                 <span style={{fontSize:11,color:'rgba(255,255,255,0.6)'}}>
                   다음 마법 예상일&nbsp;
                   <span style={{color:'#C9A96E'}}>
-                    {hormoneCycle?.last_period_date
-                      ? fmtDate(new Date(new Date(hormoneCycle.last_period_date).getTime() + (hormoneCycle.cycle_length||28)*24*60*60*1000).toISOString().split('T')[0])
-                      : '예측중'}
+                    {hormoneCycle?.expected_period_date
+                      ? fmtDate(hormoneCycle.expected_period_date)
+                      : hormoneCycle?.last_period_date
+                        ? fmtDate(new Date(new Date(hormoneCycle.last_period_date).getTime() + (hormoneCycle.cycle_length||28)*24*60*60*1000).toISOString().split('T')[0])
+                        : '예측중'}
                   </span>
                 </span>
               </div>
