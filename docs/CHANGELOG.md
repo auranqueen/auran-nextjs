@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- feat(hormone): `/my/hormone` 달력 월 이동 — `viewYM` state + 헤더 ‹ / › 버튼(연도 넘김 처리), `calendarDays`가 보고 있는 연·월 기준, `isToday`는 연·월·일 모두 비교. `useHormoneCalendarRecord`에 `viewY`·`viewM` 인자 추가, `loadMonthRecords(uid, y, m)`로 보고 있는 달 기록 점 조회. 미래 날짜 칸은 onClick 없음 + cursor default(키보드 Enter는 아직 열림). 「오늘 케어」 `HormoneCard` 블록 제거 → `hasCalendar`일 때 「🌙 생리 기록하기 ›」 카드(`HormoneSheet` 열기). 생리 예정일 지남 안내 — track general + 시작일 있음 + 한국 날짜 기준 실제 경과일 > `cycleLen + 3`(스펙 원안의 `cycleDay`는 주기로 순환하는 값이라 절대 안 떠서 수정). 달력 없는 임신·산후·남성·갱년기 고객은 오늘 케어 카드가 사라짐, `tipOpen`·카드 문구 계산은 미사용으로 남음
 - fix(hormoneUtils): `TrackType`에 `irregular` 추가, `calcHormoneBriefing`에 `irregular` 분기(`phase: '불규칙기'`, `cycleDay: 0`, focus 체크인 기반 추천) 추가 — `RhythmFix`가 `track: 'irregular'`를 저장하는데 분기가 없어 마지막 기본값 `'남성'`으로 떨어지던 버그. 홈 `hormonePhase`가 안전 성분 필터·상품 점수·시즌 추천에 남성 기준으로 들어가던 문제 차단. `trackToSegment`는 여전히 `irregular` → `unknown`
 - fix(home): 「생리 시작일을 알려주세요」 배너 조건 맨 앞에 `myUserId &&` 추가 — 비로그인 방문자는 `hormoneCycle`이 null이라 배너가 보였고, 팝업에서 저장하면 period-start가 401로 거절돼 콘솔 에러만 남던 문제 차단. 「시작일 기록하기」 칩과 로그인 조건 일치
 - feat(home): 홈 `HormoneCard` 제거 — import·`hormoneCardRef`·`hormonePhaseTipOpen` state와 그 초기화 useEffect(안 지우면 빌드 실패) 삭제. 카드로 스크롤하던 달빛기 팝업 「호르몬 카드에서 기록하기」 버튼과 「생리 시작일을 알려주세요」 배너는 `setShowPeriodPopup(true)`로 시작일 팝업을 바로 열도록 교체. 배너 조건에 `userGender !== 'male'` 추가(남성에게 배너가 뜨고 팝업은 성별 조건으로 안 열리던 문제). 호르몬 브리핑 메인/서브 홈 편집 진입점은 카드와 함께 사라짐(편집 시트 코드·`HormoneCard.tsx` 파일은 남음)

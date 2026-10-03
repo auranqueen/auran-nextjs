@@ -71,6 +71,8 @@ type UseHormoneCalendarRecordArgs = {
   authId: string | null
   hormoneCycle: any
   hasCalendar: boolean
+  viewY: number
+  viewM: number
   onCloseTab?: () => void
 }
 
@@ -78,6 +80,8 @@ export function useHormoneCalendarRecord({
   authId,
   hormoneCycle,
   hasCalendar,
+  viewY,
+  viewM,
   onCloseTab,
 }: UseHormoneCalendarRecordArgs) {
   const [selectedDate, setSelectedDate] = useState(todayDate)
@@ -96,11 +100,8 @@ export function useHormoneCalendarRecord({
 
   const selectedDateIso = toIsoDate(selectedDate)
 
-  const loadMonthRecords = useCallback(async (uid: string) => {
+  const loadMonthRecords = useCallback(async (uid: string, y: number, m: number) => {
     const sb = createClient()
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = now.getMonth()
     const start = `${y}-${String(m + 1).padStart(2, '0')}-01`
     const lastDay = new Date(y, m + 1, 0).getDate()
     const end = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
@@ -122,14 +123,14 @@ export function useHormoneCalendarRecord({
     let cancelled = false
     const run = async () => {
       try {
-        await loadMonthRecords(authId)
+        await loadMonthRecords(authId, viewY, viewM)
       } catch {
         if (!cancelled) setRecordedDates(new Set())
       }
     }
     void run()
     return () => { cancelled = true }
-  }, [authId, hasCalendar, recordVersion, loadMonthRecords])
+  }, [authId, hasCalendar, recordVersion, loadMonthRecords, viewY, viewM])
 
   const loadRecordForDate = useCallback(async (uid: string, iso: string) => {
     const sb = createClient()

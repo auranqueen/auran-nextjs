@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import HormoneCard from '@/components/home/HormoneCard'
 import HormoneSheet from '@/components/home/HormoneSheet'
 import RhythmFix from '@/components/home/RhythmFix'
 import {
@@ -181,6 +180,8 @@ export default function HormoneCalendarPage() {
   const [menoSleep, setMenoSleep] = useState('')
   const [menoMood, setMenoMood] = useState('')
   const [menoJoint, setMenoJoint] = useState('')
+  const today = new Date()
+  const [viewYM, setViewYM] = useState({ y: today.getFullYear(), m: today.getMonth() })
 
   const supabase = createClient()
 
@@ -280,6 +281,8 @@ export default function HormoneCalendarPage() {
     authId,
     hormoneCycle,
     hasCalendar: recordActive,
+    viewY: viewYM.y,
+    viewM: viewYM.m,
     onCloseTab: () => setActiveTab('calendar'),
   })
 
@@ -310,8 +313,8 @@ export default function HormoneCalendarPage() {
 
   const calendarDays = useMemo(() => {
     const now = new Date()
-    const y = now.getFullYear()
-    const m = now.getMonth()
+    const y = viewYM.y
+    const m = viewYM.m
     const first = new Date(y, m, 1)
     const last = new Date(y, m + 1, 0)
     const startPad = first.getDay()
@@ -319,7 +322,7 @@ export default function HormoneCalendarPage() {
     for (let i = 0; i < startPad; i++) days.push({ date: null, isToday: false, phase: '', color: 'transparent' })
     for (let d = 1; d <= last.getDate(); d++) {
       const date = new Date(y, m, d)
-      const isToday = d === now.getDate()
+      const isToday = viewYM.y === now.getFullYear() && viewYM.m === now.getMonth() && d === now.getDate()
       if (hormoneCycle && calendarActive) {
         const dayCalc = calcHormoneBriefing(hormoneCycle, date)
         days.push({ date, isToday, phase: dayCalc.phase, color: phaseColor(dayCalc.phase) })
@@ -328,7 +331,7 @@ export default function HormoneCalendarPage() {
       }
     }
     return days
-  }, [hormoneCycle, calendarActive])
+  }, [hormoneCycle, calendarActive, viewYM])
 
   const nextPhases = hasCalendar && cycleDay > 0 ? getNextPhases(cycleDay, cycleLen) : []
 
@@ -546,8 +549,16 @@ export default function HormoneCalendarPage() {
       {/* ── 공통 달력 (일반+갱년기 통합) ── */}
       {calendarActive && activeTab === 'calendar' ? (
         <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10, textAlign: 'center' }}>
-            {new Date().getFullYear()}년 {new Date().getMonth() + 1}월
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div
+              onClick={() => setViewYM(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}
+              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.6)' }}
+            >‹</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{viewYM.y}년 {viewYM.m + 1}월</div>
+            <div
+              onClick={() => setViewYM(({ y, m }) => m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 })}
+              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.6)' }}
+            >›</div>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
             {[
@@ -579,7 +590,7 @@ export default function HormoneCalendarPage() {
                 key={idx}
                 role={cell.date ? 'button' : undefined}
                 tabIndex={cell.date ? 0 : undefined}
-                onClick={cell.date ? () => { void record.openForDate(cell.date!) } : undefined}
+                onClick={cell.date && cell.date <= new Date() ? () => { void record.openForDate(cell.date!) } : undefined}
                 onKeyDown={cell.date ? (e) => { if (e.key === 'Enter') void record.openForDate(cell.date!) } : undefined}
                 style={{
                   aspectRatio: '1',
@@ -598,7 +609,7 @@ export default function HormoneCalendarPage() {
                     : isSelected
                       ? `0 0 0 2px #fff, 0 0 0 4px ${P}`
                       : 'none',
-                  cursor: cell.date ? 'pointer' : 'default',
+                  cursor: cell.date && cell.date <= new Date() ? 'pointer' : 'default',
                   position: 'relative',
                 }}
               >
@@ -629,25 +640,28 @@ export default function HormoneCalendarPage() {
         </div>
       ) : null}
 
-      {(hasCalendar || isPregnant || isPostpartum || isMale || isMenopause) ? (
+      {hasCalendar && hormoneCycle?.last_period_date && String(hormoneCycle.track || 'general') === 'general' && (() => {
+        const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+        const daysSince = Math.floor((new Date(todayIso).getTime() - new Date(hormoneCycle.last_period_date).getTime()) / 86400000)
+        return daysSince > cycleLen + 3 ? (
+          <div style={{ margin: '10px 16px 0', background: 'rgba(255,182,193,0.08)', border: '0.5px solid rgba(255,182,193,0.2)', borderRadius: 10, padding: '10px 14px' }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,182,193,0.9)' }}>🌸 생리 예정일이 지났어요</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>몸의 변화가 있으신가요? 기록해두면 도움이 돼요</div>
+          </div>
+        ) : null
+      })()}
+
+      {hasCalendar && (
         <div style={{ margin: '14px 16px 0' }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>오늘 케어</div>
-          <HormoneCard
-            hormoneMainLine={hormoneMainLine}
-            hormoneSubLine={hormoneSubLine}
-            hormonePhaseTipDesc={calc?.focus && !isPregnant && !isPostpartum ? `${cardPhase}에는 ${calc.focus} 케어를 추천해요.` : isPregnant ? '임신 중엔 순한 성분 위주로 케어해주세요.' : isPostpartum ? '산후 회복엔 진정·장벽 케어가 좋아요.' : ''}
-            hormonePhaseTipOpen={tipOpen}
-            onTipToggle={() => setTipOpen((v) => !v)}
-            showEditChrome={false}
-            onEditClick={() => {}}
-            currentPhase={cardPhase}
-            cycleDay={cycleDay}
-            hormoneCycle={hormoneCycle}
-            supabaseClient={supabase}
-            onRefreshCycle={() => void load()}
-          />
+          <div
+            onClick={() => setSheetOpen(true)}
+            style={{ background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.3)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>🌙 생리 기록하기</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>›</span>
+          </div>
         </div>
-      ) : null}
+      )}
 
       {hasCalendar && nextPhases.length > 0 && !isIrregular ? (
         <div style={{ margin: '14px 16px 0' }}>
