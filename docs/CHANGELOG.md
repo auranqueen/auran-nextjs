@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui(theme): 홈 PRIVÉ 배너 보라 그라데이션 → `var(--bg2)`, 타임세일·공구 썸네일 플레이스홀더 그라데이션 → `var(--bg2)`. 빨간 할인배지·「지금 구매」·공구 썸네일 위 어두운 오버레이 글자는 `'#FFF'` 고정(라이트에서 검정 글씨 되던 문제). `ProductsListClient` 검색 결과·그리드 카드 테두리 `rgba(var(--fg-rgb),0.08)`, 서브텍스트·결과없음 `var(--text2)`, 「+ 제품 추가」 배경 `var(--bg2)`·글자 `var(--purple)`
 - ui(theme): `ProductsListClient`(제품 목록) 색 상수 5개 + 텍스트·검색바·카드 테두리 등 25곳을 CSS 변수(`--bg`/`--bg2`/`--bg3`/`--text`/`--text2`/`--text3`/`--gold`/`--purple`/`--fg-rgb`)로 교체. 빨간 삭제 배지·보라 장식 rgba(123,108,192,x)·큐레이션 배너 보라/금 rgba는 유지
 - feat(my): `FavoriteSalonsSection`(즐겨찾는 원장)을 홈(`src/app/page.tsx`)에서 빼고 마이페이지(`src/app/my/page.tsx`) 탑바 바로 아래로 이동. 컴포넌트 자체는 변경 없음
 - fix(nav): `DashboardBottomNav` 비원장 배경 `rgba(10,12,15,0.95)` → `rgba(var(--bg-rgb),0.95)`. `globals.css`에 `--bg-rgb`(다크 10,12,15 / 라이트 255,255,255) 추가. 원장 흰 배경은 유지

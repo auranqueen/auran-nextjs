@@ -395,7 +395,7 @@ export default function ProductsListClient() {
                     gap: 8,
                     padding: 6,
                     borderRadius: 8,
-                    border: '1px solid rgba(123,108,192,0.2)',
+                    border: '1px solid rgba(var(--fg-rgb),0.08)',
                   }}
                 >
                   <div
@@ -412,7 +412,7 @@ export default function ProductsListClient() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{p.step_tags?.[0] || '—'}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text2)' }}>{p.step_tags?.[0] || '—'}</div>
                   </div>
                   <button
                     type="button"
@@ -454,7 +454,7 @@ export default function ProductsListClient() {
             })}
           </div>
           {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
-            <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
           ) : null}
         </div>
       ) : null}
@@ -473,8 +473,8 @@ export default function ProductsListClient() {
                   padding: '8px 14px',
                   borderRadius: 10,
                   border: '1px dashed rgba(123,108,192,0.45)',
-                  background: 'rgba(30,24,48,0.35)',
-                  color: '#c4b8f0',
+                  background: 'var(--bg2)',
+                  color: 'var(--purple)',
                   fontSize: 12,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -545,7 +545,7 @@ export default function ProductsListClient() {
                         padding: 8,
                         textDecoration: 'none',
                         color: 'inherit',
-                        border: '1px solid rgba(var(--fg-rgb),0.06)',
+                        border: '1px solid rgba(var(--fg-rgb),0.08)',
                         minWidth: 0,
                         overflow: 'hidden',
                       }}
@@ -560,7 +560,7 @@ export default function ProductsListClient() {
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
-                      <div style={{ fontSize: 8, color: 'var(--text3)', marginTop: 4, lineHeight: 1.35 }}>
+                      <div style={{ fontSize: 8, color: 'var(--text2)', marginTop: 4, lineHeight: 1.35 }}>
                         {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit, userGender, userHca)}
                       </div>
                     </Link>
@@ -576,8 +576,8 @@ export default function ProductsListClient() {
                     minHeight: 140,
                     borderRadius: 13,
                     border: '1px dashed rgba(123,108,192,0.45)',
-                    background: 'rgba(30,24,48,0.3)',
-                    color: '#c4b8f0',
+                    background: 'var(--bg2)',
+                    color: 'var(--purple)',
                     fontSize: 24,
                     cursor: 'pointer',
                     display: 'flex',

@@ -3256,7 +3256,7 @@ export default function CustomerHomePage() {
           cursor: 'pointer',
           borderRadius: 14,
           padding: '18px',
-          background: 'linear-gradient(135deg, #2D1F45 0%, #4A2F6B 100%)',
+          background: 'var(--bg2)',
           border: '0.5px solid rgba(201,169,110,0.45)',
         }}
       >
@@ -3387,7 +3387,7 @@ export default function CustomerHomePage() {
                     height: '120px',
                     overflow: 'hidden',
                     borderRadius: 12,
-                    background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                    background: 'var(--bg2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
@@ -3414,7 +3414,7 @@ export default function CustomerHomePage() {
                       style={{
                         position: 'absolute', top: '-4px', right: '-4px',
                         background: '#E04030', borderRadius: '20px', padding: '2px 6px',
-                        fontSize: '9px', color: 'var(--text)', border: `1.5px solid ${BG}`,
+                        fontSize: '9px', color: '#FFF', border: `1.5px solid ${BG}`,
                         cursor: showHomeEditChrome ? 'pointer' : undefined,
                         outline: showHomeEditChrome ? '1px dashed rgba(var(--fg-rgb),0.5)' : undefined,
                       }}
@@ -3464,7 +3464,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     router.push(`/products/${item.id}`)
-                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: 'var(--text)', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
+                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#FFF', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
                 </div>
               </div>
             ))}
@@ -3497,7 +3497,7 @@ export default function CustomerHomePage() {
                   position: 'relative',
                   background: item.product?.thumb_img
                     ? undefined
-                    : 'linear-gradient(135deg,#1a1510,#2a2015)',
+                    : 'var(--bg2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -3517,10 +3517,10 @@ export default function CustomerHomePage() {
                     padding: 7,
                   }}>
                     <div style={{
-                      fontSize: 11, color: 'var(--text)',
+                      fontSize: 11, color: '#FFF',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{item.product?.name}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text)' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: '#FFF' }}>
                       {(salePrice as any)?.toLocaleString?.() ?? salePrice}원{discPct ? ` (-${discPct}%)` : ''}
                     </div>
                   </div>
