@@ -2305,7 +2305,7 @@ export default function CustomerHomePage() {
               position: 'relative',
             }}
           >
-            🔔
+            <img src="/icons/bell.png" alt="알림" width={24} height={24} style={{display:'block'}} />
             {unreadCount > 0 ? (
               <span
                 style={{

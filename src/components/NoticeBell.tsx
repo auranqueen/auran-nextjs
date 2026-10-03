@@ -182,7 +182,7 @@ export default function NoticeBell({
   return (
     <div style={{ position: 'relative' }}>
       <button type="button" aria-label="알림" onClick={() => setOpen(true)} style={btnStyle}>
-        🔔
+        <img src="/icons/bell.png" alt="알림" width={24} height={24} style={{display:'block'}} />
       </button>
       {unreadCount > 0 && (
         <span
