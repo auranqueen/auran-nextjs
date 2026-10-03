@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- feat(home): 프로필 팝업 메인 뷰 하단에 「화면 모드」 라이트/다크 토글 추가(`@/lib/theme` `getStoredTheme`/`setStoredTheme` + `currentTheme` state). 팝업이 흰 배경 고정이라 토글 테두리·글자는 팝업 팔레트(`#f0f0f0`/`#e5e5e5`/`#888`) 사용
 - ui(home): `SeasonRecommendSection` 제품카드 `CARD_BG` `var(--bg2)` → `var(--bg)` (탭 바 `--bg2`와 구분). 카드 테두리 `rgba(var(--fg-rgb),0.08)` 유지
 - ui(home): `HomeExtraSection` 바로가기 3열 grid → 가로 스크롤 flex 1줄(카드 width 80·flexShrink 0, 스크롤바 숨김)
 - ui(theme): `SeasonRecommendSection`(홈 「오렌 픽」 제품카드) 어두운 배경 상수·탭·이슈칩·카드·편집폼 → `--bg2`/`--bg3`, 글자 → `--text`/`--text2`/`--text3`/`--gold`/`--purple`, 흰 rgba → `--fg-rgb`. 기능 배지는 `rgba(90,219,138,0.15)`+`#3fae6a`(양 모드 가독). 보라 장식 rgba·빨간 삭제·활성 탭 흰 글자(`'#FFF'`) 유지. `page.tsx` 상단 sticky 헤더 `rgba(13,11,9,0.95)` → `rgba(var(--bg-rgb),0.95)`
