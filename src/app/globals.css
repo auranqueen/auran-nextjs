@@ -49,6 +49,7 @@
   --red: #d94f4f;
   --pink: #bf5f90;
   --fg-rgb: 255,255,255;
+  --bg-rgb: 10,12,15;
 }
 
 [data-theme="light"] {
@@ -68,6 +69,7 @@
   --red: #c43d3d;
   --pink: #a04a78;
   --fg-rgb: 17,17,17;
+  --bg-rgb: 255,255,255;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
