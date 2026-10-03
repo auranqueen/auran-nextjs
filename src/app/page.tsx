@@ -3944,78 +3944,90 @@ export default function CustomerHomePage() {
       </div>
 
       {magazines.length > 0 && (
-        <div style={{ padding: '0 16px 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ padding: '0 0 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, padding: '0 16px' }}>
             <span style={{ fontSize: 14, color: 'var(--text)' }}>📖 매거진</span>
             <span onClick={() => router.push('/magazine')} style={{ fontSize: 12, color: '#7B5EA7', cursor: 'pointer' }}>
               전체 보기 →
             </span>
           </div>
-          {magazines.map((m: any) => (
-            <div
-              key={m.id}
-              onClick={() => router.push(`/magazine/${m.id}`)}
-              style={{
-                display: 'flex',
-                gap: 12,
-                marginBottom: 12,
-                cursor: 'pointer',
-                background: 'rgba(var(--fg-rgb),0.04)',
-                borderRadius: 12,
-                padding: 12,
-              }}
-            >
-              {m.thumbnail_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.thumbnail_url}
-                  alt={String(m.title || '')}
-                  style={{ width: 88, height: 88, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 88,
-                    height: 88,
-                    borderRadius: 10,
-                    background: 'rgba(var(--fg-rgb),0.06)',
-                    flexShrink: 0,
+          <div
+            className="no-scrollbar"
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              overflowX: 'auto',
+              gap: 16,
+              paddingLeft: 16,
+              paddingRight: 16,
+              paddingBottom: 8,
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {magazines.map((m: any) => (
+              <div
+                key={m.id}
+                onClick={() => router.push(`/magazine/${m.id}`)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  width: 80,
+                }}
+              >
+                <div style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: '50%',
+                  padding: 2,
+                  boxSizing: 'border-box',
+                  background: 'linear-gradient(135deg, #f9a825, #e91e8c, #9c27b0)',
+                }}>
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    boxSizing: 'border-box',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    border: '2px solid var(--bg)',
+                    background: 'var(--bg2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 28,
-                    color: 'rgba(var(--fg-rgb),0.25)',
-                  }}
-                >
-                  📖
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4, lineHeight: 1.35 }}>
-                  {m.title}
-                </div>
-                {m.subtitle ? (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: 'rgba(var(--fg-rgb),0.55)',
-                      lineHeight: 1.45,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {m.subtitle}
+                  }}>
+                    {m.thumbnail_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.thumbnail_url}
+                        alt={String(m.title || '')}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 24, color: 'rgba(var(--fg-rgb),0.25)' }}>📖</span>
+                    )}
                   </div>
-                ) : null}
-                <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 6 }}>
-                  {m.category ? `${m.category} · ` : ''}
-                  {m.published_at ? new Date(m.published_at).toLocaleDateString('ko-KR') : ''}
                 </div>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: 'var(--text)',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                  maxWidth: 72,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}>
+                  {m.title}
+                </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

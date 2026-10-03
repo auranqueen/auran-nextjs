@@ -88,6 +88,7 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* 입력 폼 기본 */
 input, select, textarea {
