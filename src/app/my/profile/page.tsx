@@ -79,6 +79,19 @@ export default function MyProfilePage() {
     if (saved) setCurrentTheme(saved)
   }, [])
 
+  const [sheetEntered, setSheetEntered] = useState(false)
+  const [sheetClosing, setSheetClosing] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSheetEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+  const closeSheet = () => {
+    if (sheetClosing) return
+    setSheetClosing(true)
+    setSheetEntered(false)
+    window.setTimeout(() => router.back(), 350)
+  }
+
   useEffect(() => {
     const run = async () => {
       setLoading(true)
@@ -331,7 +344,43 @@ export default function MyProfilePage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: 'var(--text)', paddingBottom: 100 }}>
+    <>
+    <div
+      onClick={closeSheet}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        background: 'rgba(0,0,0,0.5)',
+        opacity: sheetEntered ? 1 : 0,
+        transition: 'opacity 0.35s ease',
+      }}
+    />
+    <div
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        margin: '0 auto',
+        width: '100%',
+        maxWidth: 390,
+        height: '90vh',
+        zIndex: 101,
+        background: BG,
+        borderRadius: '20px 20px 0 0',
+        transform: sheetEntered ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.35s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+    <div style={{ flexShrink: 0, padding: '10px 0 6px' }}>
+      <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(var(--fg-rgb),0.2)', margin: '0 auto' }} />
+    </div>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+    <div style={{ background: BG, minHeight: '100%', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: 'var(--text)', paddingBottom: 100 }}>
       <style>{`
         .profile-date::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.9; cursor: pointer; }
       `}</style>
@@ -345,31 +394,14 @@ export default function MyProfilePage() {
           gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
           padding: '12px 12px',
-          background: 'rgba(13,11,9,0.96)',
+          background: 'rgba(var(--bg-rgb),0.96)',
           borderBottom: CARD_BORDER,
         }}
       >
-        <button type="button" className="btn btn-gy" style={{ justifySelf: 'start' }} onClick={() => router.back()}>
+        <button type="button" className="btn btn-gy" style={{ justifySelf: 'start' }} onClick={closeSheet}>
           ←
         </button>
         <div style={{ fontSize: 15, fontWeight: 700 }}>프로필 편집</div>
-        <button
-          type="button"
-          disabled={saving || !authId}
-          onClick={() => void persist()}
-          style={{
-            justifySelf: 'end',
-            background: 'none',
-            border: 'none',
-            color: GOLD,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: saving ? 'wait' : 'pointer',
-            opacity: saving ? 0.6 : 1,
-          }}
-        >
-          저장
-        </button>
       </header>
 
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => void onAvatarFile(e)} />
@@ -792,7 +824,7 @@ export default function MyProfilePage() {
           maxWidth: 390,
           margin: '0 auto',
           padding: '12px 14px 16px',
-          background: 'linear-gradient(180deg, transparent, rgba(13,11,9,0.95) 18%)',
+          background: 'linear-gradient(180deg, transparent, rgba(var(--bg-rgb),0.95) 18%)',
           zIndex: 30,
         }}
       >
@@ -824,5 +856,8 @@ export default function MyProfilePage() {
         </div>
       ) : null}
     </div>
+    </div>
+    </div>
+    </>
   )
 }
