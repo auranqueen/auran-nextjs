@@ -6,17 +6,17 @@ import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
 import { setStoredTheme } from '@/lib/theme'
 
-const GOLD = '#C9A96E'
-const BG = '#0D0B09'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
+const GOLD = 'var(--gold)'
+const BG = 'var(--bg)'
+const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
+const CARD_BORDER = '1px solid rgba(var(--fg-rgb),0.07)'
+const TEXT_MUTED = 'rgba(var(--fg-rgb),0.4)'
 
 const selBtn = (on: boolean) =>
   ({
-    border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.12)',
-    color: on ? '#9b7ec8' : 'rgba(255,255,255,0.65)',
-    background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.04)',
+    border: on ? '1px solid #7B5EA7' : '1px solid rgba(var(--fg-rgb),0.12)',
+    color: on ? '#9b7ec8' : 'rgba(var(--fg-rgb),0.65)',
+    background: on ? 'rgba(123,94,167,0.15)' : 'rgba(var(--fg-rgb),0.04)',
     fontSize: 11,
     padding: '7px 10px',
     borderRadius: 8,
@@ -247,8 +247,8 @@ export default function MyProfilePage() {
   }
 
   const toggleRow = (label: string, value: boolean, set: (v: boolean) => void, notifyKey: string) => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{label}</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(var(--fg-rgb),0.06)' }}>
+      <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.85)' }}>{label}</span>
       <button
         type="button"
         onClick={() => {
@@ -261,7 +261,7 @@ export default function MyProfilePage() {
           height: 24,
           borderRadius: 999,
           border: 'none',
-          background: value ? '#7B5EA7' : 'rgba(255,255,255,0.15)',
+          background: value ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.15)',
           position: 'relative',
           cursor: 'pointer',
           flexShrink: 0,
@@ -331,7 +331,7 @@ export default function MyProfilePage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: '#fff', paddingBottom: 100 }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: 'var(--text)', paddingBottom: 100 }}>
       <style>{`
         .profile-date::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.9; cursor: pointer; }
       `}</style>
@@ -378,7 +378,7 @@ export default function MyProfilePage() {
         <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 16, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 4 }}>사진 변경</div>
+              <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.4)', textAlign: 'center', marginBottom: 4 }}>사진 변경</div>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -419,11 +419,11 @@ export default function MyProfilePage() {
 
         <section style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>내 피부 프로파일 완성도</div>
-          <div style={{ width: '100%', height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 8, borderRadius: 999, background: 'rgba(var(--fg-rgb),0.12)', overflow: 'hidden' }}>
             <div style={{ width: `${profileCompletion}%`, height: 8, borderRadius: 999, background: '#7B5EA7' }} />
           </div>
           <div style={{ fontSize: 11, color: '#c4a7e7', marginTop: 8, fontWeight: 700 }}>{profileCompletion}%</div>
-          <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.88)', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{profileGuideText}</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(var(--fg-rgb),0.88)', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{profileGuideText}</div>
           {profileCompletion < 100 ? (
             <button
               type="button"
@@ -440,19 +440,19 @@ export default function MyProfilePage() {
           <div style={{ display: 'grid', gap: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>이름</div>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.06)', border: '1px solid rgba(var(--fg-rgb),0.1)', borderRadius: 8, color: 'var(--text)', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>닉네임</div>
-              <input value={username} onChange={(e) => setUsername(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={username} onChange={(e) => setUsername(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.06)', border: '1px solid rgba(var(--fg-rgb),0.1)', borderRadius: 8, color: 'var(--text)', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>이메일</div>
-              <input value={email} readOnly style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#888', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={email} readOnly style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.05)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 8, color: '#888', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>전화번호</div>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.06)', border: '1px solid rgba(var(--fg-rgb),0.1)', borderRadius: 8, color: 'var(--text)', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>생년월일</div>
@@ -468,11 +468,11 @@ export default function MyProfilePage() {
                   }}
                   style={{
                     width: '100%',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'rgba(var(--fg-rgb),0.08)',
                     border: birthYear ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
                     borderRadius: 10,
                     padding: '12px 10px',
-                    color: '#ffffff',
+                    color: 'var(--text)',
                     fontSize: 13,
                     outline: 'none',
                   }}
@@ -493,11 +493,11 @@ export default function MyProfilePage() {
                   }}
                   style={{
                     width: '100%',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'rgba(var(--fg-rgb),0.08)',
                     border: birthMonth ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
                     borderRadius: 10,
                     padding: '12px 10px',
-                    color: '#ffffff',
+                    color: 'var(--text)',
                     fontSize: 13,
                     outline: 'none',
                   }}
@@ -518,11 +518,11 @@ export default function MyProfilePage() {
                   }}
                   style={{
                     width: '100%',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'rgba(var(--fg-rgb),0.08)',
                     border: birthDay ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
                     borderRadius: 10,
                     padding: '12px 10px',
-                    color: '#ffffff',
+                    color: 'var(--text)',
                     fontSize: 13,
                     outline: 'none',
                   }}
@@ -569,7 +569,7 @@ export default function MyProfilePage() {
                     value={item.label}
                     placeholder="예: 결혼기념일, 딸 생일"
                     onChange={(e) => setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
-                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: '#fff', fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.06)', border: '1px solid rgba(var(--fg-rgb),0.15)', borderRadius: 8, color: 'var(--text)', fontSize: 12, padding: '9px 10px', outline: 'none' }}
                   />
                   <input
                     type="date"
@@ -579,13 +579,13 @@ export default function MyProfilePage() {
                       const mmdd = e.target.value ? e.target.value.slice(5, 10) : ''
                       setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, date: mmdd } : x)))
                     }}
-                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid #7B5EA7', borderRadius: 8, colorScheme: 'dark', fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.08)', color: 'var(--text)', border: '1px solid #7B5EA7', borderRadius: 8, colorScheme: 'dark', fontSize: 12, padding: '9px 10px', outline: 'none' }}
                   />
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center' }}>
                     <select
                       value={item.notify_days}
                       onChange={(e) => setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, notify_days: Number(e.target.value) } : x)))}
-                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.08)', color: 'var(--text)', border: '1px solid rgba(var(--fg-rgb),0.15)', borderRadius: 8, fontSize: 12, padding: '9px 10px', outline: 'none' }}
                     >
                       {[1, 3, 7, 14, 30].map((d) => (
                         <option key={d} value={d} style={{ color: '#111' }}>
@@ -638,7 +638,7 @@ export default function MyProfilePage() {
               {preferredBrands.length === 0 ? (
                 <div
                   onClick={() => { setBrandEditSnapshot([]); setBrandEditMode(true) }}
-                  style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                  style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.3)', cursor: 'pointer' }}
                 >
                   + 브랜드 추가
                 </div>
@@ -658,7 +658,7 @@ export default function MyProfilePage() {
                   ))}
                   <div
                     onClick={() => { setBrandEditSnapshot([...preferredBrands]); setBrandEditMode(true) }}
-                    style={{ padding: '6px 14px', borderRadius: 20, border: '1px dashed rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer' }}
+                    style={{ padding: '6px 14px', borderRadius: 20, border: '1px dashed rgba(var(--fg-rgb),0.2)', color: 'rgba(var(--fg-rgb),0.3)', fontSize: 12, cursor: 'pointer' }}
                   >
                     + 추가
                   </div>
@@ -670,7 +670,7 @@ export default function MyProfilePage() {
           {brandEditMode && (
             <>
               {brandsLoading ? (
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>불러오는 중...</div>
+                <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)' }}>불러오는 중...</div>
               ) : null}
               {!!brands.length && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
@@ -680,7 +680,7 @@ export default function MyProfilePage() {
                       <div
                         key={brand.id}
                         onClick={() => setPreferredBrands((p) => p.includes(brand.name) ? p.filter((v) => v !== brand.name) : [...p, brand.name])}
-                        style={{ padding: '6px 14px', borderRadius: 20, border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)', color: on ? '#9b7ec8' : 'rgba(255,255,255,0.6)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                        style={{ padding: '6px 14px', borderRadius: 20, border: on ? '1px solid #7B5EA7' : '1px solid rgba(var(--fg-rgb),0.1)', background: on ? 'rgba(123,94,167,0.15)' : 'rgba(var(--fg-rgb),0.03)', color: on ? '#9b7ec8' : 'rgba(var(--fg-rgb),0.6)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
                       >
                         {on ? '✓ ' : ''}{brand.name}
                       </div>
@@ -691,7 +691,7 @@ export default function MyProfilePage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => { setPreferredBrands(brandEditSnapshot); setBrandEditMode(false) }}
-                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(var(--fg-rgb),0.15)', background: 'transparent', color: 'rgba(var(--fg-rgb),0.5)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
                 >
                   취소
                 </button>
@@ -705,7 +705,7 @@ export default function MyProfilePage() {
                     setBrandSaving(false)
                     setBrandEditMode(false)
                   }}
-                  style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
+                  style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#7B5EA7', color: 'var(--text)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
                 >
                   {brandSaving ? '저장 중...' : '적용'}
                 </button>
@@ -746,7 +746,7 @@ export default function MyProfilePage() {
           {toggleRow('세일알림', notifySale, setNotifySale, 'notify_sale')}
           {toggleRow('생일쿠폰 알림', notifyBirthday, setNotifyBirthday, 'notify_birthday')}
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>채팅 알림음</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 10 }}>채팅 알림음</div>
             {[
               { id: 'violet', emoji: '💜', label: 'Violet Chime' },
               { id: 'toast', emoji: '🍞', label: 'Toast Pop' },
@@ -768,12 +768,12 @@ export default function MyProfilePage() {
                   borderRadius: 10,
                   marginBottom: 6,
                   cursor: 'pointer',
-                  background: notificationSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${notificationSound === s.id ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`,
+                  background: notificationSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(var(--fg-rgb),0.03)',
+                  border: `1px solid ${notificationSound === s.id ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.08)'}`,
                 }}
               >
                 <span style={{ fontSize: 16 }}>{s.emoji}</span>
-                <span style={{ fontSize: 12, color: '#fff' }}>{s.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--text)' }}>{s.label}</span>
                 {notificationSound === s.id ? (
                   <span style={{ marginLeft: 'auto', fontSize: 10, color: '#7B5EA7' }}>선택됨 ✓</span>
                 ) : null}
@@ -806,7 +806,7 @@ export default function MyProfilePage() {
             borderRadius: 12,
             border: 'none',
             background: '#7B5EA7',
-            color: '#fff',
+            color: 'var(--text)',
             fontSize: 15,
             fontWeight: 700,
             cursor: saving ? 'wait' : 'pointer',
@@ -819,7 +819,7 @@ export default function MyProfilePage() {
 
       {loading ? <div style={{ fontSize: 11, color: TEXT_MUTED, textAlign: 'center', padding: 12 }}>불러오는 중...</div> : null}
       {toast ? (
-        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 88, zIndex: 100, background: 'rgba(123,94,167,0.95)', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 12, fontWeight: 700 }}>
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 88, zIndex: 100, background: 'rgba(123,94,167,0.95)', color: 'var(--text)', borderRadius: 10, padding: '10px 14px', fontSize: 12, fontWeight: 700 }}>
           {toast}
         </div>
       ) : null}

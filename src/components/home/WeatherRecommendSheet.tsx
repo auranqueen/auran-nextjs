@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
-const CARD_BG = '#1e1e26'
-const ROUTINE_BG = '#1e1e26'
-const REASON_BOX = '#16141e'
+const CARD_BG = 'var(--bg3)'
+const ROUTINE_BG = 'var(--bg3)'
+const REASON_BOX = 'var(--bg2)'
 const REASON_BORDER = '#5a4a9a'
 const BTN_Q = '#2a2040'
 const BTN_Q_FG = '#9b7de8'
@@ -654,9 +654,9 @@ export default function WeatherRecommendSheet({
         fontSize: 10,
         padding: '5px 8px',
         borderRadius: 8,
-        border: active ? '1px solid rgba(155,125,232,0.55)' : '1px solid rgba(255,255,255,0.12)',
+        border: active ? '1px solid rgba(155,125,232,0.55)' : '1px solid rgba(var(--fg-rgb),0.12)',
         background: active ? 'rgba(155,125,232,0.18)' : 'rgba(0,0,0,0.25)',
-        color: active ? '#e8e0ff' : 'rgba(255,255,255,0.55)',
+        color: active ? '#e8e0ff' : 'rgba(var(--fg-rgb),0.55)',
         cursor: 'pointer',
         fontFamily: 'inherit',
       }}
@@ -671,7 +671,7 @@ export default function WeatherRecommendSheet({
         position: 'fixed',
         inset: 0,
         zIndex: 200,
-        background: '#0F0D0C',
+        background: 'var(--bg)',
         display: 'flex',
         flexDirection: 'column',
         transform: entered && !isClosing ? 'translateY(0)' : 'translateY(100%)',
@@ -692,11 +692,11 @@ export default function WeatherRecommendSheet({
           type="button"
           onClick={handleClose}
           aria-label="뒤로가기"
-          style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 4 }}
+          style={{ background: 'none', border: 'none', color: 'var(--text)', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 4 }}
         >
           ←
         </button>
-        <div style={{ fontSize: 16, color: '#fff', fontWeight: 500 }}>오늘 날씨 맞춤 케어</div>
+        <div style={{ fontSize: 16, color: 'var(--text)', fontWeight: 500 }}>오늘 날씨 맞춤 케어</div>
       </div>
       <div
         style={{
@@ -710,7 +710,7 @@ export default function WeatherRecommendSheet({
       >
 
         <div style={{ padding: '0 18px 12px', flexShrink: 0 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.5, marginBottom: 12 }}>
             {weather
               ? `${weather.temp}° · 습도 ${weather.humidity}% · 자외선 ${weather.uv?.level ?? '-'} · 미세 ${weather.dust?.level ?? '-'}`
               : '날씨 정보를 불러오는 중이에요'}
@@ -794,26 +794,26 @@ export default function WeatherRecommendSheet({
                 maxWidth: 480,
                 maxHeight: '80vh',
                 overflowY: 'auto',
-                background: '#17171e',
+                background: 'var(--bg2)',
                 borderRadius: 16,
                 border: '1px solid rgba(123,94,167,0.4)',
                 padding: 16,
               }}
               onClick={e => e.stopPropagation()}
             >
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>날씨 조건 (복수)</div>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.75)', marginBottom: 6 }}>날씨 조건 (복수)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                 {WEATHER_FORM_OPTIONS.map(o =>
                   chipBtn(o, formWeather.includes(o), () => setFormWeather(toggleInList(formWeather, o)))
                 )}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>호르몬 단계 (복수)</div>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.75)', marginBottom: 6 }}>호르몬 단계 (복수)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                 {HORMONE_FORM_OPTIONS.map(o =>
                   chipBtn(o, formHormone.includes(o), () => setFormHormone(toggleInList(formHormone, o)))
                 )}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>피부 타입 (복수)</div>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.75)', marginBottom: 6 }}>피부 타입 (복수)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                 {SKIN_FORM_OPTIONS.map(o => chipBtn(o, formSkin.includes(o), () => setFormSkin(toggleInList(formSkin, o))))}
               </div>
@@ -825,16 +825,16 @@ export default function WeatherRecommendSheet({
                   width: '100%',
                   padding: '8px 10px',
                   borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: '#14141a',
-                  color: '#fff',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
+                  background: 'var(--bg2)',
+                  color: 'var(--text)',
                   fontSize: 12,
                   marginBottom: 6,
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}
               />
-              {searchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+              {searchLoading ? <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.35)', marginBottom: 6 }}>검색 중…</div> : null}
               <div style={{ maxHeight: 120, overflowY: 'auto', marginBottom: 8 }}>
                 {searchResults.map(sp => (
                   <button
@@ -856,14 +856,14 @@ export default function WeatherRecommendSheet({
                       textAlign: 'left',
                     }}
                   >
-                    <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.06)', flexShrink: 0 }}>
                       {sp!.storage_thumb_url || sp!.thumb_img ? (
                         <img src={sp!.storage_thumb_url || sp!.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : null}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp!.name}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>₩{displayPrice(sp!).toLocaleString()}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp!.name}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)' }}>₩{displayPrice(sp!).toLocaleString()}</div>
                     </div>
                   </button>
                 ))}
@@ -877,9 +877,9 @@ export default function WeatherRecommendSheet({
                   width: '100%',
                   padding: '8px 10px',
                   borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: '#14141a',
-                  color: '#fff',
+                  border: '1px solid rgba(var(--fg-rgb),0.12)',
+                  background: 'var(--bg2)',
+                  color: 'var(--text)',
                   fontSize: 12,
                   marginBottom: 8,
                   resize: 'vertical',
@@ -897,8 +897,8 @@ export default function WeatherRecommendSheet({
                     padding: '8px 12px',
                     borderRadius: 8,
                     border: 'none',
-                    background: pickProduct ? 'rgba(123,108,192,0.45)' : 'rgba(255,255,255,0.1)',
-                    color: '#fff',
+                    background: pickProduct ? 'rgba(123,108,192,0.45)' : 'rgba(var(--fg-rgb),0.1)',
+                    color: 'var(--text)',
                     fontSize: 12,
                     cursor: pickProduct && !saving ? 'pointer' : 'not-allowed',
                     fontFamily: 'inherit',
@@ -915,9 +915,9 @@ export default function WeatherRecommendSheet({
                   style={{
                     padding: '8px 12px',
                     borderRadius: 8,
-                    border: '1px solid rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(var(--fg-rgb),0.15)',
                     background: 'transparent',
-                    color: 'rgba(255,255,255,0.55)',
+                    color: 'rgba(var(--fg-rgb),0.55)',
                     fontSize: 12,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -937,9 +937,9 @@ export default function WeatherRecommendSheet({
                 flex: 1,
                 padding: '8px 10px',
                 borderRadius: 10,
-                border: tab === 'three' ? '1px solid rgba(155,125,232,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                border: tab === 'three' ? '1px solid rgba(155,125,232,0.5)' : '1px solid rgba(var(--fg-rgb),0.08)',
                 background: tab === 'three' ? 'rgba(155,125,232,0.12)' : 'transparent',
-                color: tab === 'three' ? '#e8e0ff' : 'rgba(255,255,255,0.45)',
+                color: tab === 'three' ? '#e8e0ff' : 'rgba(var(--fg-rgb),0.45)',
                 fontSize: 12,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -953,9 +953,9 @@ export default function WeatherRecommendSheet({
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 18px 28px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {loading ? (
-                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '32px 0' }}>불러오는 중…</div>
+                <div style={{ textAlign: 'center', color: 'rgba(var(--fg-rgb),0.35)', fontSize: 13, padding: '32px 0' }}>불러오는 중…</div>
               ) : displayThree.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '32px 0' }}>
+                <div style={{ textAlign: 'center', color: 'rgba(var(--fg-rgb),0.35)', fontSize: 13, padding: '32px 0' }}>
                   오늘 맞춤 제품을 준비 중이에요
                 </div>
               ) : (
@@ -1027,7 +1027,7 @@ export default function WeatherRecommendSheet({
                               border:
                                 checked[String(displayThree[0].id)] !== false
                                   ? '1.5px solid #7B5EA7'
-                                  : '1.5px solid rgba(255,255,255,0.2)',
+                                  : '1.5px solid rgba(var(--fg-rgb),0.2)',
                               background:
                                 checked[String(displayThree[0].id)] !== false ? '#7B5EA7' : 'transparent',
                               display: 'flex',
@@ -1048,7 +1048,7 @@ export default function WeatherRecommendSheet({
                               height: 72,
                               borderRadius: 12,
                               overflow: 'hidden',
-                              background: 'rgba(255,255,255,0.04)',
+                              background: 'rgba(var(--fg-rgb),0.04)',
                               flexShrink: 0,
                             }}
                           >
@@ -1118,7 +1118,7 @@ export default function WeatherRecommendSheet({
                                 }}
                                 style={{
                                   fontSize: 9,
-                                  color: 'rgba(255,255,255,0.38)',
+                                  color: 'rgba(var(--fg-rgb),0.38)',
                                   marginBottom: 2,
                                   cursor: 'pointer',
                                   textDecoration: 'underline',
@@ -1131,7 +1131,7 @@ export default function WeatherRecommendSheet({
                               <div
                                 style={{
                                   fontSize: 9,
-                                  color: 'rgba(255,255,255,0.38)',
+                                  color: 'rgba(var(--fg-rgb),0.38)',
                                   marginBottom: 2,
                                 }}
                               >
@@ -1159,7 +1159,7 @@ export default function WeatherRecommendSheet({
                                     padding: '2px 7px',
                                     borderRadius: 20,
                                     background: 'rgba(201,169,110,0.15)',
-                                    color: '#C9A96E',
+                                    color: 'var(--gold)',
                                     border: '0.5px solid rgba(201,169,110,0.3)',
                                   }}
                                 >
@@ -1183,14 +1183,14 @@ export default function WeatherRecommendSheet({
                               ))}
                             </div>
                             {(displayThree[0].products as any)?.brand_name ? (
-                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
+                              <div style={{ fontSize: 9, color: 'rgba(var(--fg-rgb),0.28)' }}>
                                 {String((displayThree[0].products as any).brand_name)}
                               </div>
                             ) : null}
-                            <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.35, marginTop: 2 }}>
+                            <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.35, marginTop: 2 }}>
                               {displayThree[0].products?.name ?? ''}
                             </div>
-                            <div style={{ fontSize: 13, color: '#C9A96E', marginTop: 3 }}>
+                            <div style={{ fontSize: 13, color: 'var(--gold)', marginTop: 3 }}>
                               {displayThree[0].products
                                 ? `₩${displayPrice(displayThree[0].products).toLocaleString()}`
                                 : ''}
@@ -1212,7 +1212,7 @@ export default function WeatherRecommendSheet({
                               borderRadius: 8,
                               padding: '10px 12px',
                               fontSize: 11,
-                              color: 'rgba(255,255,255,0.82)',
+                              color: 'rgba(var(--fg-rgb),0.82)',
                               lineHeight: 1.55,
                               boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
                             }}
@@ -1298,8 +1298,8 @@ export default function WeatherRecommendSheet({
                               style={{
                                 width: '100%',
                                 fontSize: 11,
-                                color: 'rgba(255,255,255,0.8)',
-                                background: 'rgba(255,255,255,0.06)',
+                                color: 'rgba(var(--fg-rgb),0.8)',
+                                background: 'rgba(var(--fg-rgb),0.06)',
                                 border: '0.5px solid rgba(123,94,167,0.4)',
                                 borderRadius: 7,
                                 padding: '6px 8px',
@@ -1318,7 +1318,7 @@ export default function WeatherRecommendSheet({
                                 marginTop: 5,
                                 fontSize: 10,
                                 background: '#7B5EA7',
-                                color: '#fff',
+                                color: 'var(--text)',
                                 border: 'none',
                                 borderRadius: 7,
                                 padding: '4px 10px',
@@ -1331,7 +1331,7 @@ export default function WeatherRecommendSheet({
                             </button>
                           </>
                         ) : (
-                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                          <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.7)', lineHeight: 1.55 }}>
                             {displayThree[0].reason_text?.trim()
                               ? displayThree[0].reason_text.split('\n').map((line: string, i: number) => (
                                   <div key={i}>· {line}</div>
@@ -1358,7 +1358,7 @@ export default function WeatherRecommendSheet({
                             onClick={() => router.push(`/products/${p?.id}`)}
                             style={{
                               background: CARD_BG,
-                              border: '0.5px solid rgba(255,255,255,0.07)',
+                              border: '0.5px solid rgba(var(--fg-rgb),0.07)',
                               borderRadius: 14,
                               padding: 11,
                               cursor: 'pointer',
@@ -1452,7 +1452,7 @@ export default function WeatherRecommendSheet({
                                   border:
                                     checked[rid] !== false
                                       ? '1.5px solid #7B5EA7'
-                                      : '1.5px solid rgba(255,255,255,0.2)',
+                                      : '1.5px solid rgba(var(--fg-rgb),0.2)',
                                   background: checked[rid] !== false ? '#7B5EA7' : 'transparent',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1473,7 +1473,7 @@ export default function WeatherRecommendSheet({
                                 aspectRatio: '1',
                                 borderRadius: 9,
                                 overflow: 'hidden',
-                                background: 'rgba(255,255,255,0.04)',
+                                background: 'rgba(var(--fg-rgb),0.04)',
                                 marginBottom: 7,
                               }}
                             >
@@ -1530,7 +1530,7 @@ export default function WeatherRecommendSheet({
                                 }}
                                 style={{
                                   fontSize: 9,
-                                  color: 'rgba(255,255,255,0.28)',
+                                  color: 'rgba(var(--fg-rgb),0.28)',
                                   cursor: 'pointer',
                                   textDecoration: 'underline',
                                 }}
@@ -1538,11 +1538,11 @@ export default function WeatherRecommendSheet({
                                 {(p as any)?.routine_category || row.concern_tag}
                               </div>
                             ) : !showEditChrome && ((p as any)?.routine_category || row.concern_tag) ? (
-                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
+                              <div style={{ fontSize: 9, color: 'rgba(var(--fg-rgb),0.28)' }}>
                                 {(p as any)?.routine_category || row.concern_tag}
                               </div>
                             ) : null}
-                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>
+                            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.85)', lineHeight: 1.35 }}>
                               {p?.name ?? ''}
                             </div>
                             {(row.reason_text?.trim() || (p ? buildReasonLines(p).length > 0 : false)) ? (
@@ -1596,8 +1596,8 @@ export default function WeatherRecommendSheet({
                                       style={{
                                         width: '100%',
                                         fontSize: 11,
-                                        color: 'rgba(255,255,255,0.8)',
-                                        background: 'rgba(255,255,255,0.06)',
+                                        color: 'rgba(var(--fg-rgb),0.8)',
+                                        background: 'rgba(var(--fg-rgb),0.06)',
                                         border: '0.5px solid rgba(123,94,167,0.4)',
                                         borderRadius: 7,
                                         padding: '6px 8px',
@@ -1616,7 +1616,7 @@ export default function WeatherRecommendSheet({
                                         marginTop: 5,
                                         fontSize: 10,
                                         background: '#7B5EA7',
-                                        color: '#fff',
+                                        color: 'var(--text)',
                                         border: 'none',
                                         borderRadius: 7,
                                         padding: '4px 10px',
@@ -1629,7 +1629,7 @@ export default function WeatherRecommendSheet({
                                     </button>
                                   </>
                                 ) : (
-                                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.7)', lineHeight: 1.55 }}>
                                     {row.reason_text?.trim()
                                       ? row.reason_text.split('\n').map((line: string, i: number) => (
                                           <div key={i}>· {line}</div>
@@ -1644,7 +1644,7 @@ export default function WeatherRecommendSheet({
                                 )}
                               </div>
                             ) : null}
-                            <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 3 }}>
+                            <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 3 }}>
                               {p ? `₩${displayPrice(p).toLocaleString()}` : ''}
                             </div>
                           </div>
@@ -1658,8 +1658,8 @@ export default function WeatherRecommendSheet({
                 <>
                   <div
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '0.5px solid rgba(255,255,255,0.06)',
+                      background: 'rgba(var(--fg-rgb),0.03)',
+                      border: '0.5px solid rgba(var(--fg-rgb),0.06)',
                       borderRadius: 12,
                       padding: '11px 13px',
                       marginBottom: 10,
@@ -1668,8 +1668,8 @@ export default function WeatherRecommendSheet({
                       justifyContent: 'space-between',
                     }}
                   >
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>선택 {selectedCount}개</span>
-                    <span style={{ fontSize: 14, color: '#fff' }}>₩{selectedTotal.toLocaleString()}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)' }}>선택 {selectedCount}개</span>
+                    <span style={{ fontSize: 14, color: 'var(--text)' }}>₩{selectedTotal.toLocaleString()}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     <button
@@ -1730,7 +1730,7 @@ export default function WeatherRecommendSheet({
                       }}
                       style={{
                         background: '#7B5EA7',
-                        color: '#fff',
+                        color: 'var(--text)',
                         borderRadius: 12,
                         padding: '12px 0',
                         fontSize: 12,

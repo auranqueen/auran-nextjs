@@ -12,7 +12,7 @@ import {
 } from '@/components/home/HormoneCalendarRecord'
 import { calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 
-const BG = '#0D0B09'
+const BG = 'var(--bg)'
 const P = '#7B5EA7'
 
 const PHASE_COLORS: Record<string, string> = {
@@ -94,7 +94,7 @@ function Modal({
         maxWidth: 390,
         maxHeight: '85vh',
         overflowY: 'auto',
-        background: '#1e1830',
+        background: 'var(--bg3)',
         borderRadius: '20px 20px 0 0',
         zIndex: 9999,
         padding: '16px 18px 28px',
@@ -106,8 +106,8 @@ function Modal({
             onClick={onClose}
             style={{
               border: 'none',
-              background: 'rgba(255,255,255,0.08)',
-              color: '#fff',
+              background: 'rgba(var(--fg-rgb),0.08)',
+              color: 'var(--text)',
               width: 32,
               height: 32,
               borderRadius: 8,
@@ -283,7 +283,7 @@ export default function HormoneCalendarPage() {
         const dayCalc = calcHormoneBriefing(hormoneCycle, date)
         days.push({ date, isToday, phase: dayCalc.phase, color: phaseColor(dayCalc.phase) })
       } else {
-        days.push({ date, isToday, phase: '', color: 'rgba(255,255,255,0.06)' })
+        days.push({ date, isToday, phase: '', color: 'rgba(var(--fg-rgb),0.06)' })
       }
     }
     return days
@@ -307,16 +307,16 @@ export default function HormoneCalendarPage() {
     marginTop: 6,
     padding: '10px 12px',
     borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.06)',
-    color: '#fff',
+    border: '1px solid rgba(var(--fg-rgb),0.12)',
+    background: 'rgba(var(--fg-rgb),0.06)',
+    color: 'var(--text)',
     fontSize: 13,
     fontFamily: 'inherit',
   }
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, padding: 24, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+      <div style={{ minHeight: '100vh', background: BG, padding: 24, color: 'rgba(var(--fg-rgb),0.5)', fontSize: 13 }}>
         불러오는 중…
       </div>
     )
@@ -330,7 +330,7 @@ export default function HormoneCalendarPage() {
       maxWidth: 390,
       margin: '0 auto',
       background: BG,
-      color: '#fff',
+      color: 'var(--text)',
       fontFamily: "'Noto Sans KR', sans-serif",
       fontWeight: 300,
       paddingBottom: 32,
@@ -339,7 +339,7 @@ export default function HormoneCalendarPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontSize: 20, cursor: 'pointer', padding: 4 }}
+          style={{ border: 'none', background: 'transparent', color: 'rgba(var(--fg-rgb),0.6)', fontSize: 20, cursor: 'pointer', padding: 4 }}
         >
           ‹
         </button>
@@ -373,7 +373,7 @@ export default function HormoneCalendarPage() {
       ) : null}
 
       {!currentPhase && hasCalendar && isPeriodTrack(String(hormoneCycle?.track || 'general')) && !isMenopause ? (
-        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', textAlign: 'center' }}>
           🌙 생리 시작일을 기록하면 내 시기가 보여요
         </div>
       ) : null}
@@ -387,7 +387,7 @@ export default function HormoneCalendarPage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             {TIMELINE_SEGMENTS.map((seg) => (
-              <span key={seg.phase} onClick={() => setPhasePopup(seg.phase)} style={{ fontSize: 9, color: seg.phase === currentPhase ? seg.color : 'rgba(255,255,255,0.3)', cursor: 'pointer' }}>
+              <span key={seg.phase} onClick={() => setPhasePopup(seg.phase)} style={{ fontSize: 9, color: seg.phase === currentPhase ? seg.color : 'rgba(var(--fg-rgb),0.3)', cursor: 'pointer' }}>
                 {seg.phase}
               </span>
             ))}
@@ -405,7 +405,7 @@ export default function HormoneCalendarPage() {
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#e87b9b', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#e87b9b', color: 'var(--text)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 임신 케어 가이드 (만개기) 보기 →
               </button>
@@ -421,8 +421,8 @@ export default function HormoneCalendarPage() {
           ) : null}
 
           {isMale ? (
-            <div style={{ margin: '16px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>주간 케어 체크리스트</div>
+            <div style={{ margin: '16px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(var(--fg-rgb),0.04)', border: '0.5px solid rgba(var(--fg-rgb),0.08)' }}>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 10 }}>주간 케어 체크리스트</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {MALE_WEEKLY_CHECKLIST.map((item) => (
                   <div
@@ -438,7 +438,7 @@ export default function HormoneCalendarPage() {
                     }}
                   >
                     <span style={{ fontSize: 12, color: '#64a0dc', fontWeight: 500 }}>{item.label}</span>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{item.task}</span>
+                    <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.7)' }}>{item.task}</span>
                   </div>
                 ))}
               </div>
@@ -447,7 +447,7 @@ export default function HormoneCalendarPage() {
 
           {isIrregular ? (
             <div style={{ margin: '16px 16px 0', padding: '18px 16px', borderRadius: 14, background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.35)' }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.6 }}>
                 생리가 시작되면 기록해주세요. 오렌이 다시 리셋해드려요.
               </div>
             </div>
@@ -466,7 +466,7 @@ export default function HormoneCalendarPage() {
               <div style={{ fontSize: 14, color: '#e8dff5', lineHeight: 1.65, marginBottom: 8 }}>
                 호르몬 주기를 입력하면 달력이 완성돼요
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.6 }}>
                 생리 주기·리듬을 설정하면 날짜별 페이즈 색상과 맞춤 케어를 볼 수 있어요
               </div>
             </div>
@@ -475,21 +475,21 @@ export default function HormoneCalendarPage() {
       ) : null}
       {/* ── 공통 달력 (일반+갱년기 통합) ── */}
       {calendarActive ? (
-        <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(var(--fg-rgb),0.04)', border: '0.5px solid rgba(var(--fg-rgb),0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div
               onClick={() => setViewYM(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}
-              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.6)' }}
+              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(var(--fg-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(var(--fg-rgb),0.6)' }}
             >‹</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{viewYM.y}년 {viewYM.m + 1}월</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>{viewYM.y}년 {viewYM.m + 1}월</div>
             <div
               onClick={() => setViewYM(({ y, m }) => m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 })}
-              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.6)' }}
+              style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(var(--fg-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(var(--fg-rgb),0.6)' }}
             >›</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
             {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
-              <div key={w} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{w}</div>
+              <div key={w} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(var(--fg-rgb),0.35)' }}>{w}</div>
             ))}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
@@ -587,7 +587,7 @@ export default function HormoneCalendarPage() {
       ) : null}
 
       {currentPhase && hasCalendar && !isMenopause && (
-        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: 1.6 }}>
+        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(var(--fg-rgb),0.35)', textAlign: 'center', lineHeight: 1.6 }}>
           💜 생리가 시작되면 기록해주세요 · 기록할수록 내 주기가 더 정확해져요
         </div>
       )}
@@ -598,7 +598,7 @@ export default function HormoneCalendarPage() {
         return daysSince > cycleLen + 3 ? (
           <div style={{ margin: '10px 16px 0', background: 'rgba(255,182,193,0.08)', border: '0.5px solid rgba(255,182,193,0.2)', borderRadius: 10, padding: '10px 14px' }}>
             <div style={{ fontSize: 12, color: 'rgba(255,182,193,0.9)' }}>🌸 생리 예정일이 지났어요</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>몸의 변화가 있으신가요? 기록해두면 도움이 돼요</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginTop: 4 }}>몸의 변화가 있으신가요? 기록해두면 도움이 돼요</div>
           </div>
         ) : null
       })()}
@@ -609,8 +609,8 @@ export default function HormoneCalendarPage() {
             onClick={() => setSheetOpen(true)}
             style={{ background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.3)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
           >
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>🌙 생리 기록하기</span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>›</span>
+            <span style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.8)' }}>🌙 생리 기록하기</span>
+            <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.4)' }}>›</span>
           </div>
         </div>
       )}
@@ -630,16 +630,16 @@ export default function HormoneCalendarPage() {
               ['스트레스', maleStress, setMaleStress, '예: 업무 스트레스, 양호'],
               ['수면', maleSleep, setMaleSleep, '예: 6시간, 숙면'],
             ] as const).map(([label, val, setter, ph]) => (
-              <label key={label} style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+              <label key={label} style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
                 {label}
                 <input value={val} onChange={(e) => setter(e.target.value)} placeholder={ph} style={inputStyle} />
               </label>
             ))}
-            <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+            <label style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
               피부 메모
               <textarea value={record.recordMemo} onChange={(e) => record.setRecordMemo(e.target.value)} placeholder="오늘 피부 상태를 적어주세요" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </label>
-            <button type="button" disabled={record.saving} onClick={saveMaleRecord} style={{ marginTop: 4, padding: 12, borderRadius: 10, border: 'none', background: '#64a0dc', color: '#fff', fontSize: 13, cursor: record.saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: record.saving ? 0.7 : 1 }}>
+            <button type="button" disabled={record.saving} onClick={saveMaleRecord} style={{ marginTop: 4, padding: 12, borderRadius: 10, border: 'none', background: '#64a0dc', color: 'var(--text)', fontSize: 13, cursor: record.saving ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: record.saving ? 0.7 : 1 }}>
               {record.saving ? '저장 중…' : '저장'}
             </button>
           </div>
@@ -655,12 +655,12 @@ export default function HormoneCalendarPage() {
               ['기분', menoMood, setMenoMood, '예: 예민함, 안정적'],
               ['관절', menoJoint, setMenoJoint, '예: 무릎 뻐근함'],
             ] as const).map(([label, val, setter, ph]) => (
-              <label key={label} style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+              <label key={label} style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
                 {label}
                 <input value={val} onChange={(e) => setter(e.target.value)} placeholder={ph} style={inputStyle} />
               </label>
             ))}
-            <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+            <label style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
               피부 메모
               <textarea value={record.recordMemo} onChange={(e) => record.setRecordMemo(e.target.value)} placeholder="오늘 피부 상태를 적어주세요" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </label>
@@ -691,22 +691,22 @@ export default function HormoneCalendarPage() {
           <>
             <style>{`@keyframes slideUpIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
             <div onClick={() => setPhasePopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 95 }} />
-            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, margin: '0 auto', width: '100%', maxWidth: 390, background: '#1A1030', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px', zIndex: 96, animation: 'slideUpIn 0.25s ease-out' }}>
-              <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, margin: '0 auto 20px' }} />
+            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, margin: '0 auto', width: '100%', maxWidth: 390, background: 'var(--bg3)', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px', zIndex: 96, animation: 'slideUpIn 0.25s ease-out' }}>
+              <div style={{ width: 36, height: 4, background: 'rgba(var(--fg-rgb),0.2)', borderRadius: 2, margin: '0 auto 20px' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 600, color: '#fff', marginBottom: 3 }}>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>
                     {info.emoji} {phasePopup}
-                    {isActive && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 400, marginLeft: 8 }}>← 지금 여기</span>}
+                    {isActive && <span style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', fontWeight: 400, marginLeft: 8 }}>← 지금 여기</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{info.sub}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)' }}>{info.sub}</div>
                 </div>
-                <div onClick={() => setPhasePopup(null)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>✕</div>
+                <div onClick={() => setPhasePopup(null)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(var(--fg-rgb),0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)' }}>✕</div>
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: 14, padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }}>{info.desc}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>케어 포인트</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.65)', lineHeight: 1.7, marginBottom: 14, padding: 12, background: 'rgba(var(--fg-rgb),0.04)', borderRadius: 10 }}>{info.desc}</div>
+              <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.35)', marginBottom: 8 }}>케어 포인트</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {info.care.map(c => <div key={c} style={{ padding: '7px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{c}</div>)}
+                {info.care.map(c => <div key={c} style={{ padding: '7px 10px', background: 'rgba(var(--fg-rgb),0.04)', borderRadius: 8, fontSize: 11, color: 'rgba(var(--fg-rgb),0.65)' }}>{c}</div>)}
               </div>
             </div>
           </>

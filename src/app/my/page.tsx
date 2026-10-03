@@ -11,12 +11,12 @@ import MyBookingStatus from '@/components/customer/MyBookingStatus'
 import WalletCard from '@/components/WalletCard'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 
-const GOLD = '#C9A96E'
-const BG = '#0D0B09'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
-const TEXT_DIM = 'rgba(255,255,255,0.25)'
+const GOLD = 'var(--gold)'
+const BG = 'var(--bg)'
+const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
+const CARD_BORDER = '1px solid rgba(var(--fg-rgb),0.07)'
+const TEXT_MUTED = 'rgba(var(--fg-rgb),0.4)'
+const TEXT_DIM = 'rgba(var(--fg-rgb),0.25)'
 
 export default function MyPage() {
   const router = useRouter()
@@ -387,7 +387,7 @@ export default function MyPage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '0' }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: 'var(--text)', paddingBottom: '0' }}>
 
       {/* 탑바 */}
       <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
@@ -433,7 +433,7 @@ export default function MyPage() {
                 g === 'CÉLESTE'
                   ? 'rgba(201,169,110,0.25)'
                   : g === 'NOIR'
-                    ? 'rgba(255,255,255,0.08)'
+                    ? 'rgba(var(--fg-rgb),0.08)'
                     : g === 'REINE'
                       ? 'rgba(201,169,110,0.15)'
                       : g === 'LUMIÈRE'
@@ -461,7 +461,7 @@ export default function MyPage() {
                 g === 'CÉLESTE'
                   ? '1px solid rgba(201,169,110,0.4)'
                   : g === 'NOIR'
-                    ? '1px solid rgba(255,255,255,0.2)'
+                    ? '1px solid rgba(var(--fg-rgb),0.2)'
                     : 'none',
             }}
           >
@@ -495,7 +495,7 @@ export default function MyPage() {
           <button
             type="button"
             onClick={() => setPeriodTipOpen(true)}
-            style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+            style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(var(--fg-rgb),0.2)', background: 'rgba(var(--fg-rgb),0.06)', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}
           >
             ?
           </button>
@@ -506,8 +506,8 @@ export default function MyPage() {
 
       <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '12px 14px' }}>
         <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>내 피부 트랙</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{trackNameMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
-        <div style={{ fontSize: 13, color: '#fff', marginBottom: 14 }}>{trackLabelMap[hormoneTrack] || '🔍 아직 비어있어요 · 입력할수록 맞춤 추천이 시작돼요'}</div>
+        <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginBottom: 4 }}>{trackNameMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
+        <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 14 }}>{trackLabelMap[hormoneTrack] || '🔍 아직 비어있어요 · 입력할수록 맞춤 추천이 시작돼요'}</div>
         <button
           type="button"
           onClick={() => router.push('/my/track')}
@@ -522,7 +522,7 @@ export default function MyPage() {
       {completion < 100 ? (
         <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>프로필 완성도 {completion}%</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.9)' }}>프로필 완성도 {completion}%</div>
             <div style={{ fontSize: 11, color: GOLD }}>{completion <= 30
                 ? `아직 ${myOwnerName}이 나를 잘 몰라요 🌱 조금만 알려주세요`
                 : completion <= 59
@@ -531,7 +531,7 @@ export default function MyPage() {
                     ? '거의 다 왔어요 💜 조금만 더하면 맞춤 케어 시작돼요'
                     : '포기하지 마요! 완성하면 호르몬 주기까지 분석해드려요 🌙'}</div>
           </div>
-          <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(var(--fg-rgb),0.08)', overflow: 'hidden' }}>
             <div style={{ width: `${completion}%`, height: 6, borderRadius: 3, background: '#7B5EA7' }} />
           </div>
           <div style={{ marginTop: 8, fontSize: 11, color: '#b79ce8' }}>{completionGuide}</div>
@@ -550,7 +550,7 @@ export default function MyPage() {
       {skinMonthlyReport ? (
         <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 16px' }}>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>이번 달 피부 리포트</div>
-          <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.55 }}>
             {(() => {
               const golden = Number(skinMonthlyReport.hormone_pattern?.['여포기'] || 0)
               const cs = skinMonthlyReport.checkin_summary || {}
@@ -571,7 +571,7 @@ export default function MyPage() {
       <WalletCard point={point} chargeBalance={chargeBalance} userId={user?.id ?? ''} />
       {referralCode ? (
         <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '14px 16px', position: 'relative' }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: 4 }}>친구·원장님 초대하고 1000T 받기 💜</div>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>친구·원장님 초대하고 1000T 받기 💜</div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: 12, lineHeight: 1.5 }}>추천 링크로 가입하면 친구가 첫 구매할 때 1000T가 풀려요</div>
           <div style={{ display: 'grid', gridTemplateColumns: originTrack === 'A' ? '1fr' : '1fr 1fr', gap: 8 }}>
             <button
@@ -611,10 +611,10 @@ export default function MyPage() {
               </button>
             ) : null}
           </div>
-          <div id="my-referral-share-card" style={{ position: 'absolute', left: -9999, top: 0, width: 320, background: '#1f1a26', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 14, padding: 16 }}>
+          <div id="my-referral-share-card" style={{ position: 'absolute', left: -9999, top: 0, width: 320, background: 'var(--bg3)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(201,169,110,0.5)', marginBottom: 6 }}>AURAN · 초대</div>
             <div style={{ fontSize: 15, color: GOLD, marginBottom: 6 }}>{sharePayload.title || '오렌에 초대해요 💜'}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>{sharePayload.description || '추천 링크로 가입하고 함께 혜택 받아요'}</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.55)', lineHeight: 1.5 }}>{sharePayload.description || '추천 링크로 가입하고 함께 혜택 받아요'}</div>
           </div>
         </div>
       ) : null}
@@ -627,10 +627,10 @@ export default function MyPage() {
       {pointHistory.length > 0 ? (
         <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
           {pointHistory.map((h, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center', padding: i === 0 ? '0 0 8px' : '8px 0', borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center', padding: i === 0 ? '0 0 8px' : '8px 0', borderTop: i === 0 ? 'none' : '1px solid rgba(var(--fg-rgb),0.06)' }}>
               <div>
                 <div style={{ fontSize: '12px' }}>{h.description || '내역'}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                <div style={{ fontSize: '10px', color: 'rgba(var(--fg-rgb),0.3)' }}>
                   {h.created_at ? `${String(new Date(h.created_at).getMonth() + 1).padStart(2, '0')}.${String(new Date(h.created_at).getDate()).padStart(2, '0')}` : ''}
                 </div>
               </div>
@@ -647,7 +647,7 @@ export default function MyPage() {
 
       {membership && (
         <div style={{ margin: '12px 16px 0', background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 14, padding: '14px 16px' }}>
-          <div style={{ fontSize: 9, letterSpacing: 2, color: '#C9A96E', marginBottom: 8, opacity: 0.7 }}>ORÆN PRIVÉ</div>
+          <div style={{ fontSize: 9, letterSpacing: 2, color: 'var(--gold)', marginBottom: 8, opacity: 0.7 }}>ORÆN PRIVÉ</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: 13, color: '#F0E8FF' }}>{(membership.membership_plans as any)?.name || '멤버십'} 구독 중</div>
@@ -656,12 +656,12 @@ export default function MyPage() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 22, color: '#C9A96E' }}>{membership.shipments_remaining}</div>
+              <div style={{ fontSize: 22, color: 'var(--gold)' }}>{membership.shipments_remaining}</div>
               <div style={{ fontSize: 10, color: '#9B7EC8' }}>회 남음</div>
             </div>
           </div>
           {membership.source_type === 'membership_gift' && (
-            <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 8, opacity: 0.7 }}>🎁 선물로 받은 멤버십이에요</div>
+            <div style={{ fontSize: 10, color: 'var(--gold)', marginTop: 8, opacity: 0.7 }}>🎁 선물로 받은 멤버십이에요</div>
           )}
           <div
             onClick={() => router.push('/my/rituals')}
@@ -675,10 +675,10 @@ export default function MyPage() {
       {/* 소진 알림 */}
       <div style={{ margin: '12px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
         {recentOrdersForRefill.length === 0 ? (
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 16, textAlign: 'center' }}>
+          <div style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 16, padding: 16, textAlign: 'center' }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>🛍️</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>아직 구매한 제품이 없어요</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>나에게 맞는 제품을 찾아보세요</div>
+            <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)' }}>아직 구매한 제품이 없어요</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', marginTop: 4 }}>나에게 맞는 제품을 찾아보세요</div>
             <div onClick={() => router.push('/products')} style={{ color: '#7B5EA7', fontSize: 11, marginTop: 10, cursor: 'pointer' }}>[제품 보러가기 →]</div>
           </div>
         ) : (
@@ -694,17 +694,17 @@ export default function MyPage() {
                 <div style={{ fontSize: '12px', fontWeight: 400, marginBottom: '3px' }}>{item.name}</div>
                 {item.status === '주문확인' || item.status === '발송준비' ? (
                   <div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>제품을 준비 중이에요</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{item.name}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.75)' }}>제품을 준비 중이에요</div>
+                    <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', marginTop: 2 }}>{item.name}</div>
                   </div>
                 ) : item.status === '배송중' ? (
                   <div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>곧 도착해요!</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>도착하면 사용 시작 버튼이 생겨요</div>
+                    <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.75)' }}>곧 도착해요!</div>
+                    <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', marginTop: 2 }}>도착하면 사용 시작 버튼이 생겨요</div>
                   </div>
                 ) : !item.started_at ? (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>배송완료</span>
+                    <span style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)' }}>배송완료</span>
                     <button
                       onClick={async () => {
                         if (!user?.id) return
@@ -735,17 +735,17 @@ export default function MyPage() {
                       return (
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'rgba(var(--fg-rgb),0.08)', borderRadius: '2px' }}>
                               <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '2px' }} />
                             </div>
                             <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{pct}%</span>
                           </div>
-                          {pct < 50 ? <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>D-{remaining}일 남았어요</div> : null}
-                          {pct >= 50 && pct < 80 ? <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>절반 넘게 사용하셨어요</div> : null}
+                          {pct < 50 ? <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.5)', marginTop: 4 }}>D-{remaining}일 남았어요</div> : null}
+                          {pct >= 50 && pct < 80 ? <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.65)', marginTop: 4 }}>절반 넘게 사용하셨어요</div> : null}
                           {pct >= 50 && pct < 80 ? <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.9)', marginTop: 2 }}>슬슬 다음 {item.name} 준비할 때예요 💜</div> : null}
                           {pct >= 80 && pct < 100 ? <div style={{ fontSize: 11, color: '#E07830', marginTop: 4 }}>거의 다 쓰셨어요! D-{remaining}일</div> : null}
-                          {pct >= 80 && pct < 100 ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>오늘 주문하면 딱 맞게 도착해요</div> : null}
-                          {pct >= 100 ? <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>다 쓰셨나요? 피부가 기다리고 있어요 🧴</div> : null}
+                          {pct >= 80 && pct < 100 ? <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.7)', marginTop: 2 }}>오늘 주문하면 딱 맞게 도착해요</div> : null}
+                          {pct >= 100 ? <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>다 쓰셨나요? 피부가 기다리고 있어요 🧴</div> : null}
                         </div>
                       )
                     })()}
@@ -791,7 +791,7 @@ export default function MyPage() {
           </div>
           <button
             onClick={() => router.push('/my/reviews')}
-            style={{background:'#7B5EA7',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,cursor:'pointer'}}
+            style={{background:'#7B5EA7',color:'var(--text)',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,cursor:'pointer'}}
           >
             리뷰 작성
           </button>
@@ -801,7 +801,7 @@ export default function MyPage() {
       {/* 구매 히스토리 */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📋 구매 히스토리</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>📋 구매 히스토리</span>
           <span onClick={() => router.push('/my/orders')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체보기 ›</span>
         </div>
         {orders.some((o: any) => o.status === '배송중') ? (
@@ -823,7 +823,7 @@ export default function MyPage() {
                 return (
                   <div key={order.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, padding: '8px 10px', background: CARD_BG, border: CARD_BORDER, borderRadius: 10 }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.8)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {(() => {
                           let names: string[] = []
                           const itemsRaw = order.items
@@ -852,18 +852,18 @@ export default function MyPage() {
                           return names.length > 1 ? `${names[0]} 외 ${names.length - 1}개` : names[0]
                         })()}
                       </div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginBottom: 2 }}>
+                      <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', fontFamily: 'monospace', marginBottom: 2 }}>
                         {order.order_no || '-'}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
+                        <span style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.45)' }}>
                           {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
                         </span>
                         <span style={{ fontSize: 9, color: '#7B5EA7', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 999, padding: '1px 6px' }}>
                           {order.status || '주문확인'}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: '#C9A96E' }}>
+                      <div style={{ fontSize: 12, color: 'var(--gold)' }}>
                         {(Number(order.final_amount || order.total_amount || 0)).toLocaleString()}원
                       </div>
                     </div>
@@ -930,7 +930,7 @@ export default function MyPage() {
                 </div>
                 <div style={{ padding: '7px 8px' }}>
                   <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand || '—'}</div>
-                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginBottom: '5px' }}>{item.name}</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(var(--fg-rgb),0.7)', marginBottom: '5px' }}>{item.name}</div>
                   <div onClick={() => router.push(`/products/${item.productId}`)} style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
                 </div>
               </div>
@@ -942,7 +942,7 @@ export default function MyPage() {
       {/* 일촌 피드 */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>👥 일촌들의 추천</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>👥 일촌들의 추천</span>
           <span onClick={() => router.push('/myworld')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>MY WORLD ›</span>
         </div>
         {friendFeed.length > 0 ? (
@@ -954,7 +954,7 @@ export default function MyPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🧴</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, flex: 1 }}>
+              <div style={{ fontSize: '11px', color: 'rgba(var(--fg-rgb),0.6)', lineHeight: 1.5, flex: 1 }}>
                 {String(friendFeed[0]?.message || friendFeed[0]?.content || '일촌 추천이 도착했어요 💜')}
               </div>
             </div>
@@ -967,8 +967,8 @@ export default function MyPage() {
         ) : (
           <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '18px 14px', textAlign: 'center' }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>💜</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>아직 일촌이 없어요</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', lineHeight: 1.7, whiteSpace: 'pre-line', marginTop: 6 }}>
+            <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center' }}>아직 일촌이 없어요</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', textAlign: 'center', lineHeight: 1.7, whiteSpace: 'pre-line', marginTop: 6 }}>
               {'마이월드에서 일촌을 맺으면\n친구들의 추천이 여기에 떠요 ✨'}
             </div>
             <button
@@ -997,10 +997,10 @@ export default function MyPage() {
                 }
                 if (it.path) router.push(it.path)
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? '1px solid rgba(var(--fg-rgb),0.05)' : 'none', cursor: 'pointer' }}
             >
               <span style={{ fontSize: '18px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
-              <span style={{ flex: 1, fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>{item.label}</span>
+              <span style={{ flex: 1, fontSize: '13px', color: 'rgba(var(--fg-rgb),0.75)' }}>{item.label}</span>
               {(item.badge ?? 0) > 0 && (
                 <div style={{ background: GOLD, borderRadius: '10px', padding: '2px 7px', fontSize: '10px', color: BG, fontWeight: 400 }}>{item.badge}</div>
               )}
@@ -1020,7 +1020,7 @@ export default function MyPage() {
       {periodTipOpen ? (
         <>
           <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 120 }} />
-          <div style={{ position: 'fixed', left: 16, right: 16, bottom: 96, maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 121 }}>
+          <div style={{ position: 'fixed', left: 16, right: 16, bottom: 96, maxWidth: 360, margin: '0 auto', background: 'var(--bg3)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 121 }}>
             <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>생리 시작 기록</div>
             <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
               오늘 생리가 시작됐다면 아래 버튼을 눌러주세요.
@@ -1037,7 +1037,7 @@ export default function MyPage() {
             >
               ✓ 오늘 생리 시작했어요
             </button>
-            <button type="button" onClick={() => setPeriodTipOpen(false)} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>확인</button>
+            <button type="button" onClick={() => setPeriodTipOpen(false)} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}>확인</button>
           </div>
         </>
       ) : null}
@@ -1054,13 +1054,13 @@ export default function MyPage() {
               bottom: 0,
               left: 0,
               right: 0,
-              background: '#1a1625',
+              background: 'var(--bg3)',
               borderRadius: '20px 20px 0 0',
               padding: '20px 16px 40px',
               zIndex: 101,
             }}
           >
-            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 3, fontFamily: 'monospace', marginBottom: 16 }}>채팅 알림음 선택</div>
+            <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: 3, fontFamily: 'monospace', marginBottom: 16 }}>채팅 알림음 선택</div>
             {[
               { id: 'violet', emoji: '💜', label: 'Violet Chime', desc: '부드럽고 신비로운' },
               { id: 'toast', emoji: '🍞', label: 'Toast Pop', desc: '밝고 경쾌한' },
@@ -1085,14 +1085,14 @@ export default function MyPage() {
                   borderRadius: 12,
                   marginBottom: 8,
                   cursor: 'pointer',
-                  background: notifSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${notifSound === s.id ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`,
+                  background: notifSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(var(--fg-rgb),0.03)',
+                  border: `1px solid ${notifSound === s.id ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.08)'}`,
                 }}
               >
                 <span style={{ fontSize: 20 }}>{s.emoji}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: '#fff' }}>{s.label}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.desc}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text)' }}>{s.label}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.4)', marginTop: 2 }}>{s.desc}</div>
                 </div>
                 {notifSound === s.id ? <span style={{ fontSize: 10, color: '#7B5EA7' }}>선택됨 ✓</span> : null}
               </div>

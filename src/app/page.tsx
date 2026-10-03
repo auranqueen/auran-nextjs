@@ -59,12 +59,12 @@ function seoulNoonUtcMs(y: number, m0: number, day: number): number {
   return Date.parse(`${y}-${String(m0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00:00+09:00`)
 }
 
-const GOLD = '#C9A96E'
-const BG = '#0D0B09'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
-const TEXT_DIM = 'rgba(255,255,255,0.25)'
+const GOLD = 'var(--gold)'
+const BG = 'var(--bg)'
+const CARD_BG = 'rgba(var(--fg-rgb),0.03)'
+const CARD_BORDER = '1px solid rgba(var(--fg-rgb),0.07)'
+const TEXT_MUTED = 'rgba(var(--fg-rgb),0.4)'
+const TEXT_DIM = 'rgba(var(--fg-rgb),0.25)'
 
 const GROUPBUY_HOOKS = [
   '○○명만 더 모이면 딸기잼 쏜다 🍓',
@@ -130,7 +130,7 @@ const FALLBACK_NEW = [
 ]
 
 const FALLBACK_BRANDS = [
-  { id: 1, name: 'CIVASAN', label: '시바산', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
+  { id: 1, name: 'CIVASAN', label: '시바산', color: 'var(--gold)', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
   { id: 2, name: 'GERNETIC', label: '제르네틱', color: 'rgba(120,180,240,0.9)', bg: 'rgba(100,160,220,0.1)', border: 'rgba(100,160,220,0.25)' },
   { id: 3, name: 'SHOPBELLE', label: '샵벨르', color: 'rgba(200,150,220,0.9)', bg: 'rgba(180,120,200,0.1)', border: 'rgba(180,120,200,0.25)' },
   { id: 4, name: 'THALAC', label: '탈락', color: 'rgba(80,190,210,0.9)', bg: 'rgba(60,160,180,0.1)', border: 'rgba(60,160,180,0.25)' },
@@ -325,9 +325,9 @@ function OrenSceneSection() {
     return (
       <div style={{ margin: '12px 16px 0', borderRadius: 16, border: '1px solid rgba(123,94,167,0.2)', background: 'rgba(123,94,167,0.06)', padding: '20px 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 24, marginBottom: 8 }}>🎬</div>
-        <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#C9A96E', letterSpacing: 3, marginBottom: 6 }}>OREN SCENE</div>
-        <div style={{ fontSize: 14, color: '#fff', marginBottom: 4 }}>오렌씬이 곧 열려요</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: 12 }}>살롱·고객의 짧은 영상이<br />여기에 모여요 💜</div>
+        <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: 'var(--gold)', letterSpacing: 3, marginBottom: 6 }}>OREN SCENE</div>
+        <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>오렌씬이 곧 열려요</div>
+        <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', lineHeight: 1.7, marginBottom: 12 }}>살롱·고객의 짧은 영상이<br />여기에 모여요 💜</div>
         <div style={{ display: 'inline-block', fontSize: 10, color: '#c4a8ff', background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 20, padding: '4px 12px' }}>첫 업로드를 기다려 주세요</div>
       </div>
     )
@@ -338,7 +338,7 @@ function OrenSceneSection() {
   return (
     <div style={{ margin: '12px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 13, color: '#fff' }}>🎬 오렌씬</div>
+        <div style={{ fontSize: 13, color: 'var(--text)' }}>🎬 오렌씬</div>
         <div
           role="button"
           tabIndex={0}
@@ -361,8 +361,8 @@ function OrenSceneSection() {
                 width: 110,
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(var(--fg-rgb),0.04)',
+                border: '1px solid rgba(var(--fg-rgb),0.06)',
                 cursor: 'pointer',
               }}
             >
@@ -387,7 +387,7 @@ function OrenSceneSection() {
                     left: 6,
                     fontSize: 9,
                     fontWeight: 700,
-                    color: '#fff',
+                    color: 'var(--text)',
                     background: 'rgba(0,0,0,0.55)',
                     borderRadius: 6,
                     padding: '2px 6px',
@@ -398,10 +398,10 @@ function OrenSceneSection() {
                 </div>
               </div>
               <div style={{ padding: '6px 7px 8px' }}>
-                <div style={{ fontSize: 10, color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 10, color: 'var(--text)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {orenSceneSalonName(post)}
                 </div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
+                <div style={{ fontSize: 9, color: 'rgba(var(--fg-rgb),0.45)', marginTop: 2 }}>
                   ❤ {Number(post.like_count || 0).toLocaleString()} · 조회 {Number(post.view_count || 0).toLocaleString()}
                 </div>
               </div>
@@ -1865,7 +1865,7 @@ export default function CustomerHomePage() {
       margin: '0 auto',
       fontFamily: "'Noto Sans KR', -apple-system, sans-serif",
       fontWeight: 300,
-      color: '#fff',
+      color: 'var(--text)',
       paddingBottom: '0',
       position: 'relative' as const,
     }}>
@@ -1882,7 +1882,7 @@ export default function CustomerHomePage() {
     minHeight: '100vh',
   }}>
     <div style={{
-      background: '#181520',
+      background: 'var(--bg3)',
       borderRadius: '24px 24px 0 0',
       padding: '32px 24px 48px',
       width: '100%',
@@ -1891,10 +1891,10 @@ export default function CustomerHomePage() {
       borderTop: '0.5px solid rgba(123,94,167,0.3)',
     }}>
       <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌸</div>
-      <div style={{ fontSize: 17, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 8 }}>
+      <div style={{ fontSize: 17, color: 'var(--text)', fontWeight: 500, textAlign: 'center', marginBottom: 8 }}>
         현재 상태를 알려주세요
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
+      <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
         AURAN이 내 상태에 맞는 케어를 알려드려요 💜
       </div>
       {[
@@ -1940,13 +1940,13 @@ export default function CustomerHomePage() {
             width: '100%', padding: '14px 16px', borderRadius: 14,
             background: 'rgba(123,94,167,0.12)',
             border: '0.5px solid rgba(123,94,167,0.3)',
-            color: '#fff', fontSize: 14, cursor: 'pointer',
+            color: 'var(--text)', fontSize: 14, cursor: 'pointer',
             fontFamily: 'inherit', marginBottom: 10,
             textAlign: 'left' as const,
           }}
         >
           <div style={{ marginBottom: 4 }}>{opt.label}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, whiteSpace: 'pre-line' as const }}>
+          <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', lineHeight: 1.6, whiteSpace: 'pre-line' as const }}>
             {opt.desc}
           </div>
         </button>
@@ -1964,7 +1964,7 @@ export default function CustomerHomePage() {
         }}
         style={{
           width: '100%', padding: 10, borderRadius: 14,
-          background: 'none', color: 'rgba(255,255,255,0.35)',
+          background: 'none', color: 'rgba(var(--fg-rgb),0.35)',
           border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
         }}
       >나중에 할게요</button>
@@ -1983,7 +1983,7 @@ export default function CustomerHomePage() {
     minHeight: '100vh',
   }}>
     <div style={{
-      background: '#181520',
+      background: 'var(--bg3)',
       borderRadius: '24px 24px 0 0',
       padding: '28px 24px 48px',
       width: '100%',
@@ -2001,18 +2001,18 @@ export default function CustomerHomePage() {
         style={{
           position: 'absolute', top: 16, right: 16,
           background: 'none', border: 'none',
-          color: 'rgba(255,255,255,0.4)', fontSize: 20,
+          color: 'rgba(var(--fg-rgb),0.4)', fontSize: 20,
           cursor: 'pointer', lineHeight: 1,
         }}
       >✕</button>
       <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌙</div>
-      <div style={{ fontSize: 16, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 16, color: 'var(--text)', fontWeight: 500, textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>
         생리가 시작되셨나요?
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 1.8, marginBottom: 24, wordBreak: 'keep-all' as const }}>
+      <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)', textAlign: 'center', lineHeight: 1.8, marginBottom: 24, wordBreak: 'keep-all' as const }}>
         마법캘린더에 시작일을 기록해주시면<br />
         호르몬 단계 적용이 되어<br />
-        <span style={{ color: '#C9A96E' }}>최적화된 홈케어가 시작됩니다</span>
+        <span style={{ color: 'var(--gold)' }}>최적화된 홈케어가 시작됩니다</span>
       </div>
       <button
         onClick={() => {
@@ -2023,7 +2023,7 @@ export default function CustomerHomePage() {
         }}
         style={{
           width: '100%', padding: 14, borderRadius: 14,
-          background: '#7B5EA7', color: '#fff',
+          background: '#7B5EA7', color: 'var(--text)',
           border: 'none', fontSize: 14, cursor: 'pointer',
           fontFamily: 'inherit', marginBottom: 8,
         }}
@@ -2038,7 +2038,7 @@ export default function CustomerHomePage() {
         }}
         style={{
           width: '100%', padding: 10, borderRadius: 14,
-          background: 'none', color: 'rgba(255,255,255,0.35)',
+          background: 'none', color: 'rgba(var(--fg-rgb),0.35)',
           border: 'none', fontSize: 13, cursor: 'pointer',
           fontFamily: 'inherit',
         }}
@@ -2060,7 +2060,7 @@ export default function CustomerHomePage() {
           minHeight: '100vh',
         }}>
           <div style={{
-            background: '#181520',
+            background: 'var(--bg3)',
             borderRadius: '24px 24px 0 0',
             padding: '32px 24px 48px',
             width: '100%',
@@ -2069,10 +2069,10 @@ export default function CustomerHomePage() {
             borderTop: '0.5px solid rgba(123,94,167,0.3)',
           }}>
             <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌙</div>
-            <div style={{ fontSize: 17, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 8, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 17, color: 'var(--text)', fontWeight: 500, textAlign: 'center', marginBottom: 8, lineHeight: 1.5 }}>
               마지막 생리 시작일을 알려주세요
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 1.8, marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)', textAlign: 'center', lineHeight: 1.8, marginBottom: 20 }}>
               이 날짜 하나가 달빛기·황금기·만개기·물들기를 결정해요.<br />
               기록해야 내 호르몬 케어가 시작돼요 💜
             </div>
@@ -2084,8 +2084,8 @@ export default function CustomerHomePage() {
                 { name: '물들기', desc: '트러블 예방' },
               ].map(p => (
                 <div key={p.name} style={{ background: 'rgba(123,94,167,0.12)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{p.desc}</div>
+                  <div style={{ fontSize: 10, color: 'var(--gold)', marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)' }}>{p.desc}</div>
                 </div>
               ))}
             </div>
@@ -2094,7 +2094,7 @@ export default function CustomerHomePage() {
               value={popupPeriodDate}
               onChange={e => setPopupPeriodDate(e.target.value)}
               max={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}
-              style={{ width: '100%', padding: '13px 14px', borderRadius: 12, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 14, marginBottom: 12, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
+              style={{ width: '100%', padding: '13px 14px', borderRadius: 12, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(var(--fg-rgb),0.06)', color: 'var(--text)', fontSize: 14, marginBottom: 12, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
             />
             <button
               onClick={async () => {
@@ -2116,7 +2116,7 @@ export default function CustomerHomePage() {
                 }))
                 setShowPeriodPopup(false)
               }}
-              style={{ width: '100%', padding: 14, borderRadius: 14, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 15, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: 14, borderRadius: 14, background: '#7B5EA7', color: 'var(--text)', border: 'none', fontSize: 15, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}
             >
               기록하고 케어 시작하기 💜
             </button>
@@ -2125,7 +2125,7 @@ export default function CustomerHomePage() {
                 localStorage.setItem('auran_period_popup_skip', '1')
                 setShowPeriodPopup(false)
               }}
-              style={{ width: '100%', padding: 10, borderRadius: 14, background: 'none', color: 'rgba(255,255,255,0.35)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: 10, borderRadius: 14, background: 'none', color: 'rgba(var(--fg-rgb),0.35)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               나중에 할게요
             </button>
@@ -2139,7 +2139,7 @@ export default function CustomerHomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px',
         background: 'rgba(13,11,9,0.95)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid rgba(var(--fg-rgb),0.06)',
         backdropFilter: 'blur(12px)',
       }}>
         <span
@@ -2155,12 +2155,12 @@ export default function CustomerHomePage() {
         <button
           onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(var(--fg-rgb),0.06)',
+            border: '1px solid rgba(var(--fg-rgb),0.12)',
             borderRadius: 20,
             padding: '4px 10px',
             fontSize: 9,
-            color: 'rgba(255,255,255,0.7)',
+            color: 'rgba(var(--fg-rgb),0.7)',
             cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 4,
           }}
@@ -2176,7 +2176,7 @@ export default function CustomerHomePage() {
             position: 'absolute', top: 52, left: 20,
             background: 'rgba(20,15,30,0.97)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            border: '1px solid rgba(var(--fg-rgb),0.12)',
             borderRadius: 16, padding: 12,
             display: 'flex', gap: 8, zIndex: 100,
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
@@ -2210,9 +2210,9 @@ export default function CustomerHomePage() {
                   }}
                   style={{
                     padding: '10px 8px', borderRadius: 12, minWidth: 60,
-                    border: isActive ? '1.5px solid rgba(255,255,255,0.5)' : '1.5px solid transparent',
-                    background: isActive ? 'rgba(255,255,255,0.15)' : hasRole ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
-                    color: hasRole ? 'white' : 'rgba(255,255,255,0.25)',
+                    border: isActive ? '1.5px solid rgba(var(--fg-rgb),0.5)' : '1.5px solid transparent',
+                    background: isActive ? 'rgba(var(--fg-rgb),0.15)' : hasRole ? 'rgba(var(--fg-rgb),0.05)' : 'rgba(0,0,0,0.2)',
+                    color: hasRole ? 'white' : 'rgba(var(--fg-rgb),0.25)',
                     fontSize: 10, cursor: hasRole ? 'pointer' : 'not-allowed',
                     textAlign: 'center',
                   }}
@@ -2232,8 +2232,8 @@ export default function CustomerHomePage() {
             onClick={() => router.push('/cart')}
             style={{
               width: '28px', height: '28px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(var(--fg-rgb),0.04)',
+              border: '1px solid rgba(var(--fg-rgb),0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', cursor: 'pointer',
               position: 'relative',
@@ -2244,7 +2244,7 @@ export default function CustomerHomePage() {
               <span style={{
                 position: 'absolute', top: -4, right: -4,
                 minWidth: 13, height: 13, borderRadius: 8,
-                background: '#7B5EA7', color: '#fff',
+                background: '#7B5EA7', color: 'var(--text)',
                 fontSize: 8, display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
                 padding: '0 4px',
@@ -2257,8 +2257,8 @@ export default function CustomerHomePage() {
             onClick={() => setNotificationOpen(true)}
             style={{
               width: '28px', height: '28px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(var(--fg-rgb),0.04)',
+              border: '1px solid rgba(var(--fg-rgb),0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', cursor: 'pointer',
               position: 'relative',
@@ -2275,7 +2275,7 @@ export default function CustomerHomePage() {
                   height: 13,
                   borderRadius: 8,
                   background: '#E04030',
-                  color: '#fff',
+                  color: 'var(--text)',
                   fontSize: 8,
                   display: 'flex',
                   alignItems: 'center',
@@ -2315,7 +2315,7 @@ export default function CustomerHomePage() {
             border: '0.5px solid rgba(201,169,110,0.13)',
             borderRadius: 18,
             padding: '5px 12px',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'rgba(var(--fg-rgb),0.02)',
           }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6">
               <circle cx="11" cy="11" r="7"></circle>
@@ -2332,7 +2332,7 @@ export default function CustomerHomePage() {
                 flex: 1,
                 border: 'none',
                 background: 'transparent',
-                color: '#fff',
+                color: 'var(--text)',
                 fontSize: 9,
                 outline: 'none',
               }}
@@ -2348,9 +2348,9 @@ export default function CustomerHomePage() {
               width: 34,
               height: 34,
               borderRadius: '50%',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: '#fff',
+              border: '1px solid rgba(var(--fg-rgb),0.1)',
+              background: 'rgba(var(--fg-rgb),0.05)',
+              color: 'var(--text)',
               fontSize: 14,
               cursor: 'pointer',
             }}
@@ -2361,14 +2361,14 @@ export default function CustomerHomePage() {
         {searchFocused && !searchKeyword && popularKeywords.length > 0 && (
           <div style={{ background: 'rgba(20,20,20,0.97)', borderRadius: 16, padding: '16px', marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 9, color: '#fff' }}>인기 쇼핑 키워드</span>
+              <span style={{ fontSize: 9, color: 'var(--text)' }}>인기 쇼핑 키워드</span>
             </div>
             {popularKeywords.map((kw, i) => (
               <div key={kw} onClick={() => { setSearchKeyword(kw); setSearchFocused(false) }}
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
-                  borderBottom: i < popularKeywords.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', cursor: 'pointer' }}>
+                  borderBottom: i < popularKeywords.length - 1 ? '1px solid rgba(var(--fg-rgb),0.06)' : 'none', cursor: 'pointer' }}>
                 <span style={{ fontSize: 9, color: '#7B5EA7', minWidth: 20 }}>{i + 1}</span>
-                <span style={{ fontSize: 9, color: '#fff' }}>{kw}</span>
+                <span style={{ fontSize: 9, color: 'var(--text)' }}>{kw}</span>
               </div>
             ))}
           </div>
@@ -2377,36 +2377,36 @@ export default function CustomerHomePage() {
           <div
             style={{
               marginTop: 8,
-              background: '#1a1a1a',
+              background: 'var(--bg3)',
               borderRadius: 12,
               maxHeight: 300,
               overflowY: 'auto',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(var(--fg-rgb),0.08)',
             }}
           >
             {searchLoading ? (
-              <div style={{ padding: 12, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>검색중...</div>
+              <div style={{ padding: 12, fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>검색중...</div>
             ) : searchKeyword.trim().length >= 2 && searchResults.length === 0 ? (
-              <div style={{ padding: 12, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>검색 결과가 없어요</div>
+              <div style={{ padding: 12, fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>검색 결과가 없어요</div>
             ) : (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>전체 {searchResults.length}개</span>
-                  <span style={{ fontSize: 11, color: '#C9A96E' }}>인기상품순</span>
+                  <span style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)' }}>전체 {searchResults.length}개</span>
+                  <span style={{ fontSize: 11, color: 'var(--gold)' }}>인기상품순</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '4px 0' }}>
                   {searchResults.map((p: any) => (
                     <div key={p.id} onClick={() => { logProductNav(p); router.push(`/products/${p.id}`); setSearchKeyword(''); setSearchResults([]) }}
-                      style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}>
-                      <div style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.04)', cursor: 'pointer' }}>
+                      <div style={{ aspectRatio: '1', background: 'rgba(var(--fg-rgb),0.06)', overflow: 'hidden' }}>
                         {(p.storage_thumb_url || p.thumb_img) &&
                           <img src={p.storage_thumb_url || p.thumb_img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
                       </div>
                       <div style={{ padding: '8px 10px 10px' }}>
-                        <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 2 }}>{p.brands?.name || ''}</div>
-                        <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
+                        <div style={{ fontSize: 10, color: 'var(--gold)', marginBottom: 2 }}>{p.brands?.name || ''}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.4, marginBottom: 4,
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                        <div style={{ fontSize: 9, color: '#fff' }}>
+                        <div style={{ fontSize: 9, color: 'var(--text)' }}>
                           {p.is_timesale && p.sale_price
                             ? `${p.sale_price.toLocaleString()}원`
                             : `${p.retail_price?.toLocaleString()}원`}
@@ -2481,7 +2481,7 @@ export default function CustomerHomePage() {
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
           {myUserId && (
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 5 }}>My</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 5 }}>My</div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
             {phaseColor && hormonePhase && (
@@ -2526,25 +2526,25 @@ export default function CustomerHomePage() {
           transform: 'translateX(-50%)',
           width: 'calc(100% - 40px)',
           maxWidth: 380,
-          background: '#1A1030',
+          background: 'var(--bg3)',
           border: `0.5px solid ${phaseColor}55`,
           borderRadius: 16,
           padding: '16px',
           zIndex: 96,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.9)', fontWeight: 500 }}>
               {PHASE_EMOJI[hormonePhase]} {hormonePhase}
             </div>
             <div onClick={() => setActiveChip(null)}
-              style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}>✕</div>
+              style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.3)', cursor: 'pointer' }}>✕</div>
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 10 }}>
+          <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.5)', lineHeight: 1.6, marginBottom: 10 }}>
             {hormonePhaseTipDesc || hormoneMainLine}
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             <div onClick={() => router.push('/my/hormone')}
-              style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 0', textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+              style={{ flex: 1, background: 'rgba(var(--fg-rgb),0.06)', borderRadius: 8, padding: '6px 0', textAlign: 'center', fontSize: 10, color: 'rgba(var(--fg-rgb),0.6)', cursor: 'pointer' }}>
               자세히보기 →
             </div>
           </div>
@@ -2792,7 +2792,7 @@ export default function CustomerHomePage() {
                 localStorage.setItem(`auran_cycle_banner_${today}`, '1')
                 setCycleBannerDismissed(true)
               }}
-              style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', padding: '0 4px', cursor: 'pointer' }}
+              style={{ fontSize: 16, color: 'rgba(var(--fg-rgb),0.4)', padding: '0 4px', cursor: 'pointer' }}
             >✕</span>
           </div>
         )}
@@ -2804,7 +2804,7 @@ export default function CustomerHomePage() {
           <button
             type="button"
             onClick={() => setCareTipOpen(o => !o)}
-            style={{ background: '#171018', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+            style={{ background: 'var(--bg2)', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
             <span style={{ fontSize: 20 }}>💧</span>
             <div>
@@ -2817,7 +2817,7 @@ export default function CustomerHomePage() {
           <button
             type="button"
             onClick={() => setShowWeatherDetail(o => !o)}
-            style={{ background: '#171018', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+            style={{ background: 'var(--bg2)', border: 'none', borderRadius: 16, padding: 18, textAlign: 'left', cursor: 'pointer', aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           >
             <span style={{ fontSize: 20 }}>☀️</span>
             <div>
@@ -2837,11 +2837,11 @@ export default function CustomerHomePage() {
             background: 'rgba(201,169,110,0.06)',
             border: '0.5px solid rgba(201,169,110,0.2)',
           }}>
-            <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5 }}>
+            <div style={{ fontSize: 13, color: 'var(--gold)', marginBottom: 5 }}>
               {dailyCareTip?.title || '보습에 집중해보세요'}
             </div>
             {dailyCareTip?.message ? (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.65)', lineHeight: 1.7 }}>
                 {dailyCareTip.message}
               </div>
             ) : null}
@@ -2860,8 +2860,8 @@ export default function CustomerHomePage() {
         )}
 
         {showWeatherDetail && (
-          <div style={{ marginTop: 10, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
+          <div style={{ marginTop: 10, paddingTop: 12, borderTop: '1px solid rgba(var(--fg-rgb),0.06)' }}>
+            <div style={{ fontSize:11, color:'rgba(var(--fg-rgb),0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
               {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
             </div>
             {weather && (
@@ -2874,8 +2874,8 @@ export default function CustomerHomePage() {
                   { label: '습도', value: `${weather.humidity}%` },
                 ].map((item, i) => (
                   <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 400 }}>{item.value}</div>
+                    <div style={{ fontSize: 8, color: 'rgba(var(--fg-rgb),0.3)', marginBottom: 3 }}>{item.label}</div>
+                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(var(--fg-rgb),0.7)', fontWeight: 400 }}>{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -2893,10 +2893,10 @@ export default function CustomerHomePage() {
               if (weather.humidity < 40)
                 warnings.push('건조한 날씨 💧 보습 크림 한 겹 더 올려줘요')
               return warnings.map((w, i) => (
-                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
+                <div key={i} style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
               ))
             })()}
-            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
+            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(var(--fg-rgb),0.06)', display:'flex', gap:6 }}>
               <button
                 type="button"
                 onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
@@ -2917,7 +2917,7 @@ export default function CustomerHomePage() {
       {/* ── 내 피부 맞춤 추천 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>내 피부 맞춤 추천</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>내 피부 맞춤 추천</span>
           <span
             role="button"
             tabIndex={0}
@@ -2944,7 +2944,7 @@ export default function CustomerHomePage() {
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {loading ? Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={{ minWidth: '130px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
+          <div key={i} style={{ minWidth: '130px', background: 'rgba(var(--fg-rgb),0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
         )) : skinRecList.slice(0, 6).map((p: any, i: number) => {
           const thumb = p.storage_thumb_url || p.thumb_img
           const brandName = p.brands?.name || p.brand
@@ -2982,11 +2982,11 @@ export default function CustomerHomePage() {
                 )}
               </div>
               <div style={{ padding: '8px 10px' }}>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
+                <div style={{ fontSize: '9px', color: 'rgba(var(--fg-rgb),0.38)', marginBottom: 2 }}>
                   {(p as any).step_tags?.[0] || catName || p.tag || ''}
                 </div>
                 {null}
-                <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
                 <div
                   onClick={e => {
                     if (!showHomeEditChrome || !p.id) return
@@ -3018,13 +3018,13 @@ export default function CustomerHomePage() {
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
         {routineExpanded ? (
           <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px 16px' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.75)', marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span>오늘의 루틴</span>
               {(['am', 'midday', 'pm'] as const).map((slot) => {
                 const label = slot === 'am' ? '☀️ 아침' : slot === 'midday' ? '🌤️ 점심' : '🌙 저녁'
                 const on = routineTimeSlot === slot
                 return (
-                  <span key={slot} onClick={() => setRoutineTimeSlot(slot)} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: on ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.06)', color: on ? '#C9A96E' : 'rgba(255,255,255,0.4)', border: on ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent' }}>
+                  <span key={slot} onClick={() => setRoutineTimeSlot(slot)} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: on ? 'rgba(201,169,110,0.2)' : 'rgba(var(--fg-rgb),0.06)', color: on ? '#C9A96E' : 'rgba(var(--fg-rgb),0.4)', border: on ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent' }}>
                     {label}
                   </span>
                 )
@@ -3095,7 +3095,7 @@ export default function CustomerHomePage() {
                   <div
                     key={sid || stepTitle}
                     style={{
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      borderBottom: '1px solid rgba(var(--fg-rgb),0.06)',
                       padding: '12px 0',
                       display: 'flex',
                       gap: 10,
@@ -3120,7 +3120,7 @@ export default function CustomerHomePage() {
                         height: 56,
                         borderRadius: 10,
                         overflow: 'hidden',
-                        background: 'rgba(255,255,255,0.05)',
+                        background: 'rgba(var(--fg-rgb),0.05)',
                         flexShrink: 0,
                         display: 'flex',
                         alignItems: 'center',
@@ -3141,7 +3141,7 @@ export default function CustomerHomePage() {
                       </div>
                       {rp ? (
                         <>
-                          <div style={{ fontSize: 12, color: '#fff', marginBottom: 4 }}>{rp.name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>{rp.name}</div>
                           <div style={{ fontSize: 11, color: TEXT_MUTED }}>{priceNum.toLocaleString()}원</div>
                         </>
                       ) : (
@@ -3278,7 +3278,7 @@ export default function CustomerHomePage() {
                   borderRadius: 10,
                   border: 'none',
                   background: '#7B5EA7',
-                  color: '#fff',
+                  color: 'var(--text)',
                   fontSize: 12,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -3305,9 +3305,9 @@ export default function CustomerHomePage() {
                 style={{
                   padding: '12px',
                   borderRadius: 10,
-                  border: `1px solid rgba(255,255,255,0.12)`,
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
+                  border: `1px solid rgba(var(--fg-rgb),0.12)`,
+                  background: 'rgba(var(--fg-rgb),0.06)',
+                  color: 'var(--text)',
                   fontSize: 12,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -3343,19 +3343,19 @@ export default function CustomerHomePage() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, letterSpacing: 3, color: '#C9A96E' }}>ORÆN PRIVÉ</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 6, lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, letterSpacing: 3, color: 'var(--gold)' }}>ORÆN PRIVÉ</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.7)', marginTop: 6, lineHeight: 1.6 }}>
               두 달마다, 오렌이 직접 고른 리추얼이 도착해요
             </div>
           </div>
-          <div style={{ fontSize: 20, color: '#C9A96E' }}>→</div>
+          <div style={{ fontSize: 20, color: 'var(--gold)' }}>→</div>
         </div>
       </div>
 
       {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>
             {userName
               ? `🏆 ${userName}님을 위한 BEST`
               : `🏆 ${concernList[selectedConcern]?.name} BEST`}
@@ -3391,10 +3391,10 @@ export default function CustomerHomePage() {
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
-                  background: rankColors[i] || 'rgba(255,255,255,0.1)',
+                  background: rankColors[i] || 'rgba(var(--fg-rgb),0.1)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '11px', fontWeight: 400,
-                  color: i === 0 ? BG : '#fff',
+                  color: i === 0 ? BG : 'var(--text)',
                 }}>{i + 1}</div>
                 {i === 0 && (
                   <div style={{
@@ -3406,13 +3406,13 @@ export default function CustomerHomePage() {
               </div>
               <div style={{ padding: '9px 11px' }}>
                 {null}
-                <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
                   <span style={{ fontSize: '9px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(var(--fg-rgb),0.05)', border: '1px solid rgba(var(--fg-rgb),0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(var(--fg-rgb),0.55)', textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
                   <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
                   <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>바로구매</div>
                 </div>
@@ -3426,7 +3426,7 @@ export default function CustomerHomePage() {
       {/* ── 타임세일·공구 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>⚡ 타임세일 · 공구</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>⚡ 타임세일 · 공구</span>
           <span
             onClick={() => router.push(saleTab === 'sale' ? '/time-sales' : '/group-buys')}
             style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
@@ -3495,9 +3495,9 @@ export default function CustomerHomePage() {
                       style={{
                         position: 'absolute', top: '-4px', right: '-4px',
                         background: '#E04030', borderRadius: '20px', padding: '2px 6px',
-                        fontSize: '9px', color: '#fff', border: `1.5px solid ${BG}`,
+                        fontSize: '9px', color: 'var(--text)', border: `1.5px solid ${BG}`,
                         cursor: showHomeEditChrome ? 'pointer' : undefined,
-                        outline: showHomeEditChrome ? '1px dashed rgba(255,255,255,0.5)' : undefined,
+                        outline: showHomeEditChrome ? '1px dashed rgba(var(--fg-rgb),0.5)' : undefined,
                       }}
                     >-{item.disc}%</div>
                   </div>
@@ -3505,7 +3505,7 @@ export default function CustomerHomePage() {
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>
                       {item.brand || item.product?.brand}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#fff', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '4px' }}>
                       {item.product?.name}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
@@ -3534,7 +3534,7 @@ export default function CustomerHomePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(var(--fg-rgb),0.05)', border: '1px solid rgba(var(--fg-rgb),0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(var(--fg-rgb),0.6)', textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
                   <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
                   <div onClick={async (e) => {
                     e.stopPropagation()
@@ -3545,7 +3545,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     router.push(`/products/${item.id}`)
-                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
+                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: 'var(--text)', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
                 </div>
               </div>
             ))}
@@ -3598,17 +3598,17 @@ export default function CustomerHomePage() {
                     padding: 7,
                   }}>
                     <div style={{
-                      fontSize: 11, color: '#fff',
+                      fontSize: 11, color: 'var(--text)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{item.product?.name}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: '#fff' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text)' }}>
                       {(salePrice as any)?.toLocaleString?.() ?? salePrice}원{discPct ? ` (-${discPct}%)` : ''}
                     </div>
                   </div>
                 </div>
                 <div style={{ marginTop: 6 }}>
                   <div style={{
-                    height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.12)',
+                    height: 4, borderRadius: 2, background: 'rgba(var(--fg-rgb),0.12)',
                     overflow: 'hidden', marginBottom: 6,
                   }}>
                     <div style={{
@@ -3635,8 +3635,8 @@ export default function CustomerHomePage() {
                       }}
                       style={{
                         width: 26, height: 26, flexShrink: 0,
-                        border: '0.5px solid rgba(255,255,255,0.15)',
-                        background: 'rgba(255,255,255,0.08)',
+                        border: '0.5px solid rgba(var(--fg-rgb),0.15)',
+                        background: 'rgba(var(--fg-rgb),0.08)',
                         borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 12, cursor: 'pointer',
@@ -3667,7 +3667,7 @@ export default function CustomerHomePage() {
       {homeReviews.length > 0 && (
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>📸 포토·영상 리뷰</span>
           <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>{homeReviewsTotal}개 ›</span>
         </div>
         {/* 포토 그리드 */}
@@ -3677,14 +3677,14 @@ export default function CustomerHomePage() {
             const thumb = raw ? (typeof raw === 'string' ? raw : String(raw)) : ''
             const hasVideo = Boolean(String(rv.video_url || '').trim())
             return (
-            <div key={rv.id ?? i} onClick={() => router.push(`/reviews/${rv.id}`)} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+            <div key={rv.id ?? i} onClick={() => router.push(`/reviews/${rv.id}`)} style={{ aspectRatio: '1', background: 'rgba(var(--fg-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
               {thumb ? (
                 <img src={thumb} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <span style={{ fontSize: '28px' }}>🧴</span>
               )}
               {hasVideo && (
-                <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
+                <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: 'var(--text)' }}>영상</div>
               )}
             </div>
             )
@@ -3706,7 +3706,7 @@ export default function CustomerHomePage() {
           )}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '11px', marginBottom: '3px' }}>{homeReviews.length > 0 ? '★'.repeat(Math.max(0, Number(homeReviews[0].rating || 5))) : '⭐⭐⭐⭐⭐'}</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(var(--fg-rgb),0.6)', lineHeight: 1.7 }}>
               {homeReviews.length > 0
                 ? `"${String(homeReviews[0].content || '').slice(0, 60)}${String(homeReviews[0].content || '').length > 60 ? '...' : ''}"`
                 : '"환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧"'}
@@ -3719,7 +3719,7 @@ export default function CustomerHomePage() {
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '3px',
-                padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
+                padding: '3px 8px', background: 'rgba(var(--fg-rgb),0.04)',
                 border: CARD_BORDER, borderRadius: '6px',
                 fontSize: '10px', color: TEXT_MUTED, cursor: 'pointer',
               }}>👍 도움돼요 24</div>
@@ -3732,7 +3732,7 @@ export default function CustomerHomePage() {
       {/* ── 살롱 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📍 내 주변 관리샵</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>📍 내 주변 관리샵</span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }} onClick={() => router.push('/salons')}>전체보기 ›</span>
         </div>
         <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
@@ -3768,7 +3768,7 @@ export default function CustomerHomePage() {
       {/* ── 신제품 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🆕 새로 나왔어요</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(var(--fg-rgb),0.75)' }}>🆕 새로 나왔어요</span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
         </div>
       </div>
@@ -3786,11 +3786,11 @@ export default function CustomerHomePage() {
               fontSize: '32px', position: 'relative'
             }}>
               {(item.storage_thumb_url || item.thumb_img ? <img src={item.storage_thumb_url || item.thumb_img} alt={item.name || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '💜'))}
-              <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
+              <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: 'var(--text)' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               {null}
-              <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{item.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{item.name}</div>
               <div style={{ fontSize: '9px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
             </div>
           </div>
@@ -3800,7 +3800,7 @@ export default function CustomerHomePage() {
       {magazines.length > 0 && (
         <div style={{ padding: '0 16px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, color: '#fff' }}>📖 매거진</span>
+            <span style={{ fontSize: 14, color: 'var(--text)' }}>📖 매거진</span>
             <span onClick={() => router.push('/magazine')} style={{ fontSize: 12, color: '#7B5EA7', cursor: 'pointer' }}>
               전체 보기 →
             </span>
@@ -3814,7 +3814,7 @@ export default function CustomerHomePage() {
                 gap: 12,
                 marginBottom: 12,
                 cursor: 'pointer',
-                background: 'rgba(255,255,255,0.04)',
+                background: 'rgba(var(--fg-rgb),0.04)',
                 borderRadius: 12,
                 padding: 12,
               }}
@@ -3832,27 +3832,27 @@ export default function CustomerHomePage() {
                     width: 88,
                     height: 88,
                     borderRadius: 10,
-                    background: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(var(--fg-rgb),0.06)',
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 28,
-                    color: 'rgba(255,255,255,0.25)',
+                    color: 'rgba(var(--fg-rgb),0.25)',
                   }}
                 >
                   📖
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4, lineHeight: 1.35 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4, lineHeight: 1.35 }}>
                   {m.title}
                 </div>
                 {m.subtitle ? (
                   <div
                     style={{
                       fontSize: 11,
-                      color: 'rgba(255,255,255,0.55)',
+                      color: 'rgba(var(--fg-rgb),0.55)',
                       lineHeight: 1.45,
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
@@ -3877,8 +3877,8 @@ export default function CustomerHomePage() {
         <div onClick={() => window.location.href = '/brands'}
           style={{ borderRadius: 16, background: 'rgba(245,240,255,0.06)', border: '1px solid rgba(123,94,167,0.2)', padding: '18px 20px', cursor: 'pointer' }}>
           <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: 2, marginBottom: 5 }}>BRAND HALL</div>
-          <div style={{ fontSize: 16, color: '#fff', marginBottom: 3 }}>브랜드관</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>에스테틱 명품 관리제품 공식스토어</div>
+          <div style={{ fontSize: 16, color: 'var(--text)', marginBottom: 3 }}>브랜드관</div>
+          <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.35)', marginBottom: 14 }}>에스테틱 명품 관리제품 공식스토어</div>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 20, padding: '5px 13px', fontSize: 11, color: '#c4a8ff' }}>전체 브랜드 보기 →</div>
         </div>
       </div>
@@ -3901,7 +3901,7 @@ export default function CustomerHomePage() {
               left: 0,
               right: 0,
               zIndex: 200,
-              background: '#11161b',
+              background: 'var(--bg2)',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               maxHeight: '80vh',
@@ -3917,14 +3917,14 @@ export default function CustomerHomePage() {
                 marginBottom: 12,
               }}
             >
-              <div style={{ fontSize: 14, color: '#fff' }}>{selectedBrand?.name || selectedBrand?.label || '브랜드'}</div>
+              <div style={{ fontSize: 14, color: 'var(--text)' }}>{selectedBrand?.name || selectedBrand?.label || '브랜드'}</div>
               <button
                 type="button"
                 onClick={() => setSelectedBrand(null)}
                 style={{
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(var(--fg-rgb),0.2)',
                   background: 'transparent',
-                  color: 'rgba(255,255,255,0.8)',
+                  color: 'rgba(var(--fg-rgb),0.8)',
                   borderRadius: 8,
                   padding: '6px 10px',
                   cursor: 'pointer',
@@ -3936,7 +3936,7 @@ export default function CustomerHomePage() {
             </div>
 
             {brandProductsLoading ? (
-              <div style={{ padding: '20px 0', textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'rgba(var(--fg-rgb),0.7)', fontSize: 12 }}>
                 로딩 중...
               </div>
             ) : (
@@ -3944,16 +3944,16 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px 16px' }}>
                   {brandProducts.map((p: any) => (
                     <div key={p.id} onClick={() => router.push(`/products/${p.id}`)}
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
-                      <div style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      style={{ background: 'rgba(var(--fg-rgb),0.04)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
+                      <div style={{ aspectRatio: '1', background: 'rgba(var(--fg-rgb),0.06)', overflow: 'hidden' }}>
                         {(p.storage_thumb_url || p.thumb_img) ? (
                           <img src={p.storage_thumb_url || p.thumb_img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                         ) : null}
                       </div>
                       <div style={{ padding: '8px 10px 10px' }}>
-                        <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
+                        <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.4, marginBottom: 4,
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                        <div style={{ fontSize: 9, color: '#fff' }}>
+                        <div style={{ fontSize: 9, color: 'var(--text)' }}>
                           {p.is_timesale && p.sale_price
                             ? `${Number(p.sale_price).toLocaleString()}원`
                             : `${Number(p.retail_price).toLocaleString()}원`}
@@ -3963,7 +3963,7 @@ export default function CustomerHomePage() {
                   ))}
                 </div>
                 {!brandProductsLoading && brandProducts.length === 0 ? (
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', padding: '10px 0' }}>
+                  <div style={{ color: 'rgba(var(--fg-rgb),0.6)', fontSize: 12, textAlign: 'center', padding: '10px 0' }}>
                     등록된 상품이 없어요
                   </div>
                 ) : null}
@@ -3985,8 +3985,8 @@ export default function CustomerHomePage() {
             position: 'relative',
           }}
         >
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>🏆 이달의 케어룸 컨테스트</div>
-          <div style={{ fontSize: 15, fontWeight: 300, color: '#fff', lineHeight: 1.45, marginBottom: 6 }}>{homeContestBanner.title}</div>
+          <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.65)', marginBottom: 6 }}>🏆 이달의 케어룸 컨테스트</div>
+          <div style={{ fontSize: 15, fontWeight: 300, color: 'var(--text)', lineHeight: 1.45, marginBottom: 6 }}>{homeContestBanner.title}</div>
           <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 10 }}>투표하면 반값 혜택!</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
             <span
@@ -4025,7 +4025,7 @@ export default function CustomerHomePage() {
                 borderRadius: 999,
                 padding: '8px 16px',
                 background: '#7B5EA7',
-                color: '#fff',
+                color: 'var(--text)',
                 fontSize: 12,
                 fontWeight: 300,
                 cursor: 'pointer',
@@ -4038,17 +4038,17 @@ export default function CustomerHomePage() {
       ) : null}
 
       {/* ── 히어로 배너 ── */}
-      <div style={{ margin: '12px 16px 0', height: 148, background: '#12062a', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(201,169,110,0.2)' }}>
+      <div style={{ margin: '12px 16px 0', height: 148, background: 'var(--bg2)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(201,169,110,0.2)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 2, border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '2px 8px', fontWeight: 400 }}>✦ 10.10 특별 프로모션</div>
+            <div style={{ fontSize: 9, color: 'var(--gold)', letterSpacing: 2, border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '2px 8px', fontWeight: 400 }}>✦ 10.10 특별 프로모션</div>
           </div>
-          <div style={{ fontSize: 15, color: '#fff', lineHeight: 1.5, marginBottom: 8, fontWeight: 400 }}>
+          <div style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.5, marginBottom: 8, fontWeight: 400 }}>
             당신의 귀한 피부,<br />
-            <span style={{ color: '#C9A96E', fontWeight: 400 }}>호르몬 주기</span>에 맞는<br />
+            <span style={{ color: 'var(--gold)', fontWeight: 400 }}>호르몬 주기</span>에 맞는<br />
             케어가 시작됩니다
           </div>
-          <div style={{ fontSize: 10, color: '#fff', background: 'rgba(201,169,110,0.2)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '3px 10px', display: 'inline-block', fontWeight: 400 }}>전 상품 20% · ~11.9</div>
+          <div style={{ fontSize: 10, color: 'var(--text)', background: 'rgba(201,169,110,0.2)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '3px 10px', display: 'inline-block', fontWeight: 400 }}>전 상품 20% · ~11.9</div>
         </div>
         <div style={{ fontSize: 36, marginLeft: 12 }}>🌸</div>
       </div>
@@ -4077,7 +4077,7 @@ export default function CustomerHomePage() {
       >
         <span style={{ fontSize: '28px' }}>{motivationMsg.icon}</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+          <div style={{ fontSize: '13px', color: 'rgba(var(--fg-rgb),0.85)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
             {motivationMsg.text}
           </div>
           <div style={{ fontSize: '10px', color: '#7B5EA7', marginTop: '4px' }}>
@@ -4124,7 +4124,7 @@ export default function CustomerHomePage() {
               top: '20%',
               maxWidth: 350,
               margin: '0 auto',
-              background: '#1f1a26',
+              background: 'var(--bg3)',
               border: '1px solid rgba(123,94,167,0.35)',
               borderRadius: 16,
               padding: 18,
@@ -4133,8 +4133,8 @@ export default function CustomerHomePage() {
               overflowY: 'auto',
             }}
           >
-            <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>오늘의 루틴 추천</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
+            <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 10 }}>오늘의 루틴 추천</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.78)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
               {routineSteps.map((s: any) => String(s.description || '').trim()).filter(Boolean).join('\n\n') ||
                 '루틴 단계에 설명을 등록하면 이곳에 멘트가 모여요.'}
             </div>
@@ -4148,7 +4148,7 @@ export default function CustomerHomePage() {
                 borderRadius: 10,
                 border: 'none',
                 background: '#7B5EA7',
-                color: '#fff',
+                color: 'var(--text)',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 fontSize: 13,
@@ -4162,9 +4162,9 @@ export default function CustomerHomePage() {
       {questionPopup ? (
         <>
           <div onClick={() => setQuestionPopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 124 }} />
-          <div style={{ position: 'fixed', left: 18, right: 18, top: '20%', maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 125 }}>
+          <div style={{ position: 'fixed', left: 18, right: 18, top: '20%', maxWidth: 360, margin: '0 auto', background: 'var(--bg3)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 125 }}>
             <div style={{ fontSize: 12, color: 'rgba(196,170,230,0.85)', marginBottom: 8 }}>질문</div>
-            <div style={{ fontSize: 13, color: '#fff', marginBottom: 10 }}>{String(questionPopup.question_text || '')}</div>
+            <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 10 }}>{String(questionPopup.question_text || '')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {((questionPopup.answer_type === 'yesno'
                 ? ['예', '아니오']
@@ -4201,7 +4201,7 @@ export default function CustomerHomePage() {
             </div>
             {String(questionPopup.answer_type) === 'text' ? (
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <input value={questionAnswer} onChange={e => setQuestionAnswer(e.target.value)} placeholder="답변 입력" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12 }} />
+                <input value={questionAnswer} onChange={e => setQuestionAnswer(e.target.value)} placeholder="답변 입력" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(var(--fg-rgb),0.14)', background: 'rgba(var(--fg-rgb),0.06)', color: 'var(--text)', fontSize: 12 }} />
                 <button
                   type="button"
                   onClick={async () => {
@@ -4247,7 +4247,7 @@ export default function CustomerHomePage() {
               right: 0,
               maxWidth: 390,
               margin: '0 auto',
-              background: '#1a1610',
+              background: 'var(--bg2)',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: 20,
@@ -4257,7 +4257,7 @@ export default function CustomerHomePage() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 15, color: '#fff' }}>{homeEditSheet.label}</div>
+              <div style={{ fontSize: 15, color: 'var(--text)' }}>{homeEditSheet.label}</div>
               <button
                 type="button"
                 disabled={homeEditSaving}
@@ -4273,33 +4273,33 @@ export default function CustomerHomePage() {
                 <input
                   value={sheetFields.d}
                   onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>라벨</label>
                 <input
                   value={sheetFields.d2}
                   onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>연결 태그</label>
                 <input
                   value={sheetFields.d3}
                   onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>추천 멘트</label>
                 <textarea
                   value={sheetFields.d4}
                   onChange={e => setSheetFields(s => ({ ...s, d4: e.target.value }))}
                   rows={3}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>순서</label>
                 <input
                   type="number"
                   value={sheetFields.n}
                   onChange={e => setSheetFields(s => ({ ...s, n: Number(e.target.value) }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
                   <input
@@ -4317,20 +4317,20 @@ export default function CustomerHomePage() {
                 <input
                   value={sheetFields.d}
                   onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>설명</label>
                 <textarea
                   value={sheetFields.d2}
                   onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
                   rows={3}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>연결 카테고리 UUID</label>
                 <input
                   value={sheetFields.d3}
                   onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
                   <input
@@ -4351,13 +4351,13 @@ export default function CustomerHomePage() {
                       value={sheetFields.d}
                       onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
                       rows={3}
-                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }}
                     />
                     <label style={{ fontSize: 11, color: TEXT_MUTED }}>서브 (오늘의 피부 사이클)</label>
                     <input
                       value={sheetFields.d2}
                       onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
-                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                     />
                   </>
                 ) : (
@@ -4366,7 +4366,7 @@ export default function CustomerHomePage() {
                     <input
                       value={sheetFields.d}
                       onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                     />
                   </>
                 )}
@@ -4377,7 +4377,7 @@ export default function CustomerHomePage() {
                 value={sheetFields.d}
                 onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
                 rows={3}
-                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }}
               />
             ) : null}
             {homeEditSheet.kind === 'product_card' ? (
@@ -4387,14 +4387,14 @@ export default function CustomerHomePage() {
                   type="number"
                   value={sheetFields.d}
                   onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>재고</label>
                 <input
                   type="number"
                   value={sheetFields.d2}
                   onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
               </div>
             ) : null}
@@ -4405,21 +4405,21 @@ export default function CustomerHomePage() {
                   type="number"
                   value={sheetFields.d}
                   onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>마감 (현지시간)</label>
                 <input
                   type="datetime-local"
                   value={sheetFields.d2}
                   onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>노출 순서 (0=먼저)</label>
                 <input
                   type="number"
                   value={sheetFields.n}
                   onChange={e => setSheetFields(s => ({ ...s, n: Number(e.target.value) }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
               </div>
             ) : null}
@@ -4429,20 +4429,20 @@ export default function CustomerHomePage() {
                 <input
                   value={sheetFields.d}
                   onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>본문</label>
                 <textarea
                   value={sheetFields.d2}
                   onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
                   rows={4}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }}
                 />
                 <label style={{ fontSize: 11, color: TEXT_MUTED }}>링크 URL</label>
                 <input
                   value={sheetFields.d3}
                   onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: 'var(--bg)', color: 'var(--text)' }}
                 />
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
                   <input
@@ -4691,7 +4691,7 @@ export default function CustomerHomePage() {
                   borderRadius: 10,
                   border: 'none',
                   background: '#7B5EA7',
-                  color: '#fff',
+                  color: 'var(--text)',
                   cursor: homeEditSaving ? 'default' : 'pointer',
                   fontFamily: 'inherit',
                   opacity: homeEditSaving ? 0.75 : 1,
@@ -4734,19 +4734,19 @@ export default function CustomerHomePage() {
             <div style={{
               position: 'fixed', inset: 0, zIndex: 200,
               display: 'flex', flexDirection: 'column',
-              background: '#0d0b12',
+              background: 'var(--bg)',
             }}>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 16px',
-                borderBottom: '0.5px solid rgba(255,255,255,0.1)',
-                background: '#0d0b12',
+                borderBottom: '0.5px solid rgba(var(--fg-rgb),0.1)',
+                background: 'var(--bg)',
               }}>
-                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>오렌 상담톡</span>
+                <span style={{ color: 'var(--gold)', fontSize: 14, letterSpacing: 1 }}>오렌 상담톡</span>
                 <button
                   type="button"
                   onClick={() => setOwnerChatOpen(false)}
-                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(var(--fg-rgb),0.1)', border: 'none', color: 'var(--text)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >✕</button>
               </div>
               <iframe
@@ -4761,21 +4761,21 @@ export default function CustomerHomePage() {
             <div style={{
               position: 'fixed', inset: 0, zIndex: 200,
               display: 'flex', flexDirection: 'column',
-              background: '#0d0b12',
+              background: 'var(--bg)',
             }}>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 16px',
-                borderBottom: '0.5px solid rgba(255,255,255,0.1)',
-                background: '#0d0b12',
+                borderBottom: '0.5px solid rgba(var(--fg-rgb),0.1)',
+                background: 'var(--bg)',
               }}>
-                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>
+                <span style={{ color: 'var(--gold)', fontSize: 14, letterSpacing: 1 }}>
                   퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
                 </span>
                 <button
                   type="button"
                   onClick={() => { setQuickConsultOpen(false); setQuickConsultCount(0) }}
-                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(var(--fg-rgb),0.1)', border: 'none', color: 'var(--text)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >✕</button>
               </div>
               <iframe
@@ -4796,7 +4796,7 @@ export default function CustomerHomePage() {
                     setOwnerChatUrl('/dashboard/owner/chat/redirect')
                     setOwnerChatOpen(true)
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: '1px solid rgba(var(--fg-rgb),0.15)', color: 'var(--text)', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   💬 상담톡
                 </button>
@@ -4806,7 +4806,7 @@ export default function CustomerHomePage() {
                     setHomeEditMode(false)
                     setQuickConsultOpen(true)
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: '1px solid rgba(var(--fg-rgb),0.15)', color: 'var(--text)', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   🙋 퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
                 </button>
@@ -4814,14 +4814,14 @@ export default function CustomerHomePage() {
             )}
             <div style={{ position: 'relative' }}>
               {quickConsultCount > 0 && !homeEditMode && (
-                <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#E24B4A', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, fontWeight: 500 }}>
+                <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#E24B4A', color: 'var(--text)', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, fontWeight: 500 }}>
                   {quickConsultCount > 9 ? '9+' : quickConsultCount}
                 </div>
               )}
               <button
                 type="button"
                 onClick={() => setHomeEditMode(v => !v)}
-                style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
+                style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: 'var(--text)', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
               >
                 {homeEditMode ? '✕' : '✏️'}
               </button>
@@ -4831,7 +4831,7 @@ export default function CustomerHomePage() {
       ) : null}
 
       {/* ── 푸터 ── */}
-      <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(var(--fg-rgb),0.06)' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: GOLD, letterSpacing: '4px' }}>AURAN</span>
         </div>
@@ -4844,15 +4844,15 @@ export default function CustomerHomePage() {
             ) : item === '공지사항' ? (
               <span key={i} onClick={() => router.push('/notices')} style={{ fontSize: 9, color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
             ) : (
-              <span key={i} style={{ fontSize: 9, color: 'rgba(255,255,255,0.14)', cursor: 'default' }}>{item}</span>
+              <span key={i} style={{ fontSize: 9, color: 'rgba(var(--fg-rgb),0.14)', cursor: 'default' }}>{item}</span>
             )
           )}
         </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', marginBottom: 14 }} />
-        <div style={{ textAlign: 'center', fontSize: 8, color: 'rgba(255,255,255,0.12)', lineHeight: 2 }}>
+        <div style={{ height: 1, background: 'rgba(var(--fg-rgb),0.08)', marginBottom: 14 }} />
+        <div style={{ textAlign: 'center', fontSize: 8, color: 'rgba(var(--fg-rgb),0.12)', lineHeight: 2 }}>
           <div>상호 : 주식회사 티엔씨 · 사업자등록번호 : 197-87-01357</div>
           <div>경기도 양주시 은현면 화합로610번길30-183 1F · queen7176@naver.com</div>
-          <div style={{ marginTop: '4px', fontSize: 8, color: 'rgba(255,255,255,0.1)' }}>
+          <div style={{ marginTop: '4px', fontSize: 8, color: 'rgba(var(--fg-rgb),0.1)' }}>
             © 2026 AURAN. All rights reserved.
           </div>
         </div>

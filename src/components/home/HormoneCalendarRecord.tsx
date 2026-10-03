@@ -47,7 +47,7 @@ function RecordModal({ title, onClose, children }: { title: string; onClose: () 
         position: 'fixed',
         inset: 0,
         zIndex: 999,
-        background: '#0F0D0C',
+        background: 'var(--bg)',
         display: 'flex',
         flexDirection: 'column',
         transform: entered && !closing ? 'translateY(0)' : 'translateY(100%)',
@@ -66,11 +66,11 @@ function RecordModal({ title, onClose, children }: { title: string; onClose: () 
           onClick={requestClose}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 22, color: 'rgba(255,255,255,0.75)',
+            fontSize: 22, color: 'rgba(var(--fg-rgb),0.75)',
             padding: '4px 8px', lineHeight: 1,
           }}
         >←</button>
-        <span style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>{title}</span>
+        <span style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500 }}>{title}</span>
       </div>
       <div style={{
         flex: 1,
@@ -372,8 +372,8 @@ export function HormoneCalendarRecordModal({
   if (viewMode === 'view') {
     const conditionChips = recordCondition.split(' / ').map((s) => s.trim()).filter(Boolean)
     const row = (label: string, value: string) => (
-      <div key={label} style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{label}</div>
+      <div key={label} style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(var(--fg-rgb),0.08)' }}>
+        <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 4 }}>{label}</div>
         <div style={{ fontSize: 14, color: '#f3ecff', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{value || '—'}</div>
       </div>
     )
@@ -381,8 +381,8 @@ export function HormoneCalendarRecordModal({
       <RecordModal title={`${selectedDateIso}${currentPhase ? ` · ${currentPhase}` : ''}`} onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
           {row('생리 여부', recordPeriod)}
-          <div style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>피부/몸/감정</div>
+          <div style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(var(--fg-rgb),0.08)' }}>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 8 }}>피부/몸/감정</div>
             {conditionChips.length ? (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {conditionChips.map((chip) => (
@@ -396,7 +396,7 @@ export function HormoneCalendarRecordModal({
           {row('햇빛 노출', recordUv)}
           {row('스트레스', recordStress)}
           <div style={{ padding: '12px 0' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>피부 상태</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 8 }}>피부 상태</div>
             {recordSkinStatus.length ? (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {recordSkinStatus.map((chip) => (
@@ -416,7 +416,7 @@ export function HormoneCalendarRecordModal({
               borderRadius: 10,
               border: 'none',
               background: P,
-              color: '#fff',
+              color: 'var(--text)',
               fontSize: 13,
               cursor: 'pointer',
               fontFamily: 'inherit',
@@ -432,23 +432,23 @@ export function HormoneCalendarRecordModal({
     <RecordModal title={`기록 · ${selectedDateIso}`} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {currentPhase === '달빛기' && (
-          <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+          <label style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
             생리 상태
             <input
               value={recordPeriod}
               onChange={(e) => setRecordPeriod(e.target.value)}
               placeholder={`생리 ${cycleDay}일차예요. 오늘 양은 어때요?`}
-              style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 13 }}
+              style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(var(--fg-rgb),0.12)', background: 'rgba(var(--fg-rgb),0.06)', color: 'var(--text)', fontSize: 13 }}
             />
           </label>
         )}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', lineHeight: 1.7 }}>
+        <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)', padding: '8px 12px', borderRadius: 8, background: 'rgba(var(--fg-rgb),0.05)', lineHeight: 1.7 }}>
           {currentPhase === '달빛기' && `🌙 생리 ${cycleDay}일차예요. 피부가 가장 예민한 시기예요. 자극은 최소로!`}
           {currentPhase === '황금기' && `✨ 지금이 이번 달 피부 황금기예요! 오늘 컨디션 어때요?`}
           {currentPhase === '만개기' && `🌸 배란기 피부, 유분 올라오고 있나요? 모공 케어 타이밍이에요.`}
           {currentPhase === '물들기' && `⚠️ 생리 전 예민 구간이에요. 트러블 예보 중! 오늘 피부 체크해봐요.`}
         </div>
-        <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+        <label style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
           컨디션
           <input
             value={recordCondition}
@@ -460,15 +460,15 @@ export function HormoneCalendarRecordModal({
               marginTop: 6,
               padding: '10px 12px',
               borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#fff',
+              border: '1px solid rgba(var(--fg-rgb),0.12)',
+              background: 'rgba(var(--fg-rgb),0.06)',
+              color: 'var(--text)',
               fontSize: 13,
               fontFamily: 'inherit',
             }}
           />
         </label>
-        <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+        <label style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.55)' }}>
           피부 메모
           <textarea
             value={recordMemo}
@@ -481,9 +481,9 @@ export function HormoneCalendarRecordModal({
               marginTop: 6,
               padding: '10px 12px',
               borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#fff',
+              border: '1px solid rgba(var(--fg-rgb),0.12)',
+              background: 'rgba(var(--fg-rgb),0.06)',
+              color: 'var(--text)',
               fontSize: 13,
               fontFamily: 'inherit',
               resize: 'vertical',
@@ -491,40 +491,40 @@ export function HormoneCalendarRecordModal({
           />
         </label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>오늘의 피부 일지</div>
-          <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.5)' }}>오늘의 피부 일지</div>
+          <label style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.7)' }}>
             수면 ({recordSleep + 4}시간)
             <input type="range" min={0} max={8} value={recordSleep}
               onChange={e => setRecordSleep(Number(e.target.value))}
               style={{ width: '100%', marginTop: 6 }} />
           </label>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>햇빛 노출</div>
+          <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.7)' }}>햇빛 노출</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {['거의 없음','조금','보통','많음','매우 많음'].map(v => (
               <button key={v} type="button"
                 onClick={() => setRecordUv(v)}
                 style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
-                  background: recordUv === v ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
-                  color: recordUv === v ? '#fff' : 'rgba(255,255,255,0.5)',
+                  background: recordUv === v ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.08)',
+                  color: recordUv === v ? 'var(--text)' : 'rgba(var(--fg-rgb),0.5)',
                   border: 'none', cursor: 'pointer' }}>
                 {v}
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>스트레스</div>
+          <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.7)' }}>스트레스</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {['매우 낮음','낮음','보통','높음','매우 높음'].map(v => (
               <button key={v} type="button"
                 onClick={() => setRecordStress(v)}
                 style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
-                  background: recordStress === v ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
-                  color: recordStress === v ? '#fff' : 'rgba(255,255,255,0.5)',
+                  background: recordStress === v ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.08)',
+                  color: recordStress === v ? 'var(--text)' : 'rgba(var(--fg-rgb),0.5)',
                   border: 'none', cursor: 'pointer' }}>
                 {v}
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>피부 상태</div>
+          <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.7)' }}>피부 상태</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {['촉촉함','건조함','트러블','예민함','맑음','칙칙함'].map(v => (
               <button key={v} type="button"
@@ -534,8 +534,8 @@ export function HormoneCalendarRecordModal({
                     : [...recordSkinStatus, v]
                 )}
                 style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
-                  background: recordSkinStatus.includes(v) ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
-                  color: recordSkinStatus.includes(v) ? '#fff' : 'rgba(255,255,255,0.5)',
+                  background: recordSkinStatus.includes(v) ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.08)',
+                  color: recordSkinStatus.includes(v) ? 'var(--text)' : 'rgba(var(--fg-rgb),0.5)',
                   border: 'none', cursor: 'pointer' }}>
                 {v}
               </button>
@@ -552,7 +552,7 @@ export function HormoneCalendarRecordModal({
             borderRadius: 10,
             border: 'none',
             background: P,
-            color: '#fff',
+            color: 'var(--text)',
             fontSize: 13,
             cursor: saving ? 'wait' : 'pointer',
             fontFamily: 'inherit',

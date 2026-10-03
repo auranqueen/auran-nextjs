@@ -130,7 +130,7 @@ export default function HormoneSheet({
 
   const fieldStyle = {
     flex: 1,
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(var(--fg-rgb),0.04)',
     borderRadius: 10,
     padding: '10px 12px',
     border: '0.5px solid rgba(123,94,167,0.5)',
@@ -143,7 +143,7 @@ export default function HormoneSheet({
         position: 'fixed',
         inset: 0,
         zIndex: 999,
-        background: '#0F0D0C',
+        background: 'var(--bg)',
         display: 'flex',
         flexDirection: 'column',
         transform: entered && !isClosing ? 'translateY(0)' : 'translateY(100%)',
@@ -166,7 +166,7 @@ export default function HormoneSheet({
             border: 'none',
             cursor: 'pointer',
             fontSize: 22,
-            color: 'rgba(255,255,255,0.75)',
+            color: 'rgba(var(--fg-rgb),0.75)',
             padding: '4px 8px',
             lineHeight: 1,
           }}
@@ -179,13 +179,13 @@ export default function HormoneSheet({
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px calc(24px + env(safe-area-inset-bottom, 0px))', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={fieldStyle} onClick={() => openDateModal('start')}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>마법 시작일</div>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 4 }}>마법 시작일</div>
               <div style={{ fontSize: 13, color: '#c4a7e7' }}>
                 {pendingStart ? fmtDate(pendingStart.d) : hormoneCycle?.last_period_date ? fmtDate(hormoneCycle.last_period_date) : '탭해서 선택'}
               </div>
             </div>
             <div style={fieldStyle} onClick={() => openDateModal('end')}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>마법 종료일</div>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 4 }}>마법 종료일</div>
               <div style={{ fontSize: 13, color: '#c4a7e7' }}>
                 {pendingEnd ? fmtDate(pendingEnd.d) : hormoneCycle?.period_end_date ? fmtDate(hormoneCycle.period_end_date) : '탭해서 선택'}
               </div>
@@ -205,7 +205,7 @@ export default function HormoneSheet({
               fontSize: 13,
               cursor: saving ? 'wait' : 'pointer',
               background: '#7B5EA7',
-              color: '#fff',
+              color: 'var(--text)',
               fontFamily: 'inherit',
               opacity: saving ? 0.7 : 1,
             }}
@@ -220,7 +220,7 @@ export default function HormoneSheet({
               position: 'fixed',
               inset: 0,
               zIndex: 1000,
-              background: '#0F0D0C',
+              background: 'var(--bg)',
               display: 'flex',
               flexDirection: 'column',
               transform: dateModalEntered && !dateModalClosing ? 'translateY(0)' : 'translateY(100%)',
@@ -243,7 +243,7 @@ export default function HormoneSheet({
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: 22,
-                  color: 'rgba(255,255,255,0.75)',
+                  color: 'rgba(var(--fg-rgb),0.75)',
                   padding: '4px 8px',
                   lineHeight: 1,
                 }}
@@ -254,18 +254,18 @@ export default function HormoneSheet({
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', minWidth: 44 }}>날짜</span>
+                <span style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', minWidth: 44 }}>날짜</span>
                 <input type="date" value={dateModalVal}
                   onChange={e => onDateChange(e.target.value, timeModalVal)}
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(123,94,167,0.35)', borderRadius: 9, padding: '9px 11px', color: '#fff', fontSize: 12 }} />
+                  style={{ flex: 1, background: 'rgba(var(--fg-rgb),0.06)', border: '0.5px solid rgba(123,94,167,0.35)', borderRadius: 9, padding: '9px 11px', color: 'var(--text)', fontSize: 12 }} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', minWidth: 44 }}>시간</span>
+                <span style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', minWidth: 44 }}>시간</span>
                 <input type="time" value={timeModalVal}
                   onChange={e => onDateChange(dateModalVal, e.target.value)}
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(123,94,167,0.35)', borderRadius: 9, padding: '9px 11px', color: '#fff', fontSize: 12 }} />
+                  style={{ flex: 1, background: 'rgba(var(--fg-rgb),0.06)', border: '0.5px solid rgba(123,94,167,0.35)', borderRadius: 9, padding: '9px 11px', color: 'var(--text)', fontSize: 12 }} />
               </div>
-              <button type="button" style={{ width: '100%', padding: '12px 0', borderRadius: 11, background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 }} onClick={closeDateModal}>
+              <button type="button" style={{ width: '100%', padding: '12px 0', borderRadius: 11, background: '#7B5EA7', border: 'none', color: 'var(--text)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginTop: 6 }} onClick={closeDateModal}>
                 확인
               </button>
             </div>

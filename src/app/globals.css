@@ -48,6 +48,7 @@
   --purple: #9568d4;
   --red: #d94f4f;
   --pink: #bf5f90;
+  --fg-rgb: 255,255,255;
 }
 
 [data-theme="light"] {
@@ -66,6 +67,7 @@
   --purple: #6b4aa3;
   --red: #c43d3d;
   --pink: #a04a78;
+  --fg-rgb: 17,17,17;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

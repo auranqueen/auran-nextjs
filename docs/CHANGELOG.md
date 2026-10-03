@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui(theme): 라이트 모드 대비 — `globals.css`에 `--fg-rgb`(다크 `255,255,255` / 라이트 `17,17,17`) 추가. 홈 `page.tsx`, `my/page.tsx`, `my/profile/page.tsx`, `HormoneCalendarPage`·`HormoneCalendarRecord`·`HormoneSheet`·`WeatherRecommendSheet`에서 `rgba(255,255,255,x)` 310곳 → `rgba(var(--fg-rgb),x)`, 글자색 `#fff`/`#ffffff` → `var(--text)`, 금색 글자·`GOLD` → `var(--gold)`, `BG`(`#0D0B09`)·`#0F0D0C`·`#0d0b12` → `var(--bg)`, 어두운 카드 배경 → `var(--bg2)`/`var(--bg3)`. 홈 흰 프로필 팝업, 네이티브 `option` `#111`, SVG stroke, 달력 오늘 링·기록 점, 보라·파스텔 강조색, `#333`/`#666`/`#888`, 테마 선택 버튼·등급 색 ternary는 유지
 - ui: `WeatherRecommendSheet` 안쪽 기존 제목(날씨 이모지 + 「오늘 날씨 맞춤 케어」)·× 버튼 제거(상단 ← 바와 중복, ×가 `onClose` 즉시 호출하던 경로도 사라짐). 기온·습도·자외선·미세 한 줄은 유지. 미사용 `BG` 상수 삭제
 - ui: `WeatherRecommendSheet` 껍질을 딤+블러 하단 시트(88vh, 둥근 모서리)에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 200, translateY 300ms, ← + 「오늘 날씨 맞춤 케어」 상단 바, 상단·하단 safe-area). `entered`·`isClosing`는 `isOpen` 기준. 내부 콘텐츠·× 버튼은 그대로(×는 애니메이션 없이 즉시 닫힘)
 - ui: `/my/hormone` 헤더 상단 여백 — 고정 `16px 16px 0` → `paddingTop: calc(env(safe-area-inset-top, 0px) + 16px)`, 좌우 16, 하단 0
