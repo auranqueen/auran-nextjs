@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-03
+- feat(home): 홈 `HormoneCard` 제거 — import·`hormoneCardRef`·`hormonePhaseTipOpen` state와 그 초기화 useEffect(안 지우면 빌드 실패) 삭제. 카드로 스크롤하던 달빛기 팝업 「호르몬 카드에서 기록하기」 버튼과 「생리 시작일을 알려주세요」 배너는 `setShowPeriodPopup(true)`로 시작일 팝업을 바로 열도록 교체. 배너 조건에 `userGender !== 'male'` 추가(남성에게 배너가 뜨고 팝업은 성별 조건으로 안 열리던 문제). 호르몬 브리핑 메인/서브 홈 편집 진입점은 카드와 함께 사라짐(편집 시트 코드·`HormoneCard.tsx` 파일은 남음)
+
 ## 2026-10-02
 - fix(home): 홈 팝업 3개(`showTrackPopup`·`showDalbitPopup`·`showPeriodPopup`) 오버레이 `position: absolute` → `fixed`, 안쪽 시트에 `maxWidth: 390` + `margin: '0 auto'`. 썸네일 프로필 팝업 안드로이드 뒤로가기 닫기 — 열릴 때 `pushState({ ...history.state, profilePopup: true })`(Next `__NA` 보존), 열린 동안 `popstate` 시 `closeProfilePopup()`. ✕·날씨 맞춤 추천으로 닫히면 `history.back()`으로 더미 기록 제거, 토스트·마이 이동은 `profilePopupNavRef`로 예외(라우터 이동과 충돌 방지). 의존성 `[showProfilePopup]`만(매 렌더 pushState 방지). 스펙 원안의 `e.state?.profilePopup` 조건은 뒤로가기 시 이전 기록 state가 와서 항상 false라 조건 없이 닫도록 수정
 - fix(home): 썸네일 팝업 닫기 통일 — `closeProfilePopup`(`.popup-closing` 0.25s 후 `showProfilePopup` false + `profileSubView` main) 함수 추가. ✕는 `onClick={closeProfilePopup}`, 토스트·마이는 닫은 뒤 260ms 후 `/wallet`·`/my` 이동(토스트는 원래 팝업을 안 닫고 이동, 마이는 애니메이션 없이 즉시 닫힘), 「날씨 맞춤 추천 →」은 닫은 뒤 260ms 후 `WeatherRecommendSheet` 열기

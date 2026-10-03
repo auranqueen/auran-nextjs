@@ -9,7 +9,6 @@ import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import Loading from './loading'
-import HormoneCard from '@/components/home/HormoneCard'
 import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import HomeExtraSection from '@/components/home/HomeExtraSection'
@@ -567,7 +566,6 @@ export default function CustomerHomePage() {
   const [routineSteps, setRoutineSteps] = useState<any[]>([])
   const [hormoneMainLine, setHormoneMainLine] = useState('')
   const [hormoneSubLine, setHormoneSubLine] = useState('오늘의 피부 사이클')
-  const [hormonePhaseTipOpen, setHormonePhaseTipOpen] = useState(false)
   const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
@@ -575,7 +573,6 @@ export default function CustomerHomePage() {
   const [showDalbitPopup, setShowDalbitPopup] = useState(false)
   const [dailyCareTip, setDailyCareTip] = useState<{ title: string; message: string; has_bath: boolean } | null>(null)
   const [careTipOpen, setCareTipOpen] = useState(false)
-  const hormoneCardRef = useRef<HTMLDivElement>(null)
   const [showTrackPopup, setShowTrackPopup] = useState(false)
   const [popupPeriodDate, setPopupPeriodDate] = useState('')
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
@@ -1794,10 +1791,6 @@ export default function CustomerHomePage() {
     }
     return greeting
   }, [userName, greetingIndex, hormonePhase, hormoneCycle, hormoneTrack, weather])
-  useEffect(() => {
-    setHormonePhaseTipOpen(false)
-  }, [hormoneMainLine, hormoneSubLine])
-
   const homeCalendarKind =
     profileCycleType === 'menopause'
       ? 'menopause'
@@ -2026,9 +2019,7 @@ export default function CustomerHomePage() {
           const todayKey = `auran_dalbit_popup_${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}`
           localStorage.setItem(todayKey, '1')
           setShowDalbitPopup(false)
-          setTimeout(() => {
-            hormoneCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }, 300)
+          setShowPeriodPopup(true)
         }}
         style={{
           width: '100%', padding: 14, borderRadius: 14,
@@ -2772,42 +2763,12 @@ export default function CustomerHomePage() {
         ) : trackToSegment(hormoneTrack) !== 'cycle' ? (
           <SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />
         ) : (<>
-        <div ref={hormoneCardRef}>
-        <HormoneCard
-          hormoneMainLine={hormoneMainLine}
-          hormoneSubLine={hormoneSubLine}
-          hormonePhaseTipDesc={hormonePhaseTipDesc}
-          hormonePhaseTipOpen={hormonePhaseTipOpen}
-          onTipToggle={() => setHormonePhaseTipOpen(o => !o)}
-          showEditChrome={showHomeEditChrome}
-          onEditClick={() =>
-            setHomeEditSheet({
-              kind: 'hormone_main',
-              label: '호르몬 브리핑 (메인)',
-              draft: hormoneMainLine,
-              draft2: hormoneSubLine,
-            })
-          }
-          onEditSubClick={() =>
-            setHomeEditSheet({
-              kind: 'hormone_sub',
-              label: '호르몬 브리핑 (서브)',
-              draft: hormoneSubLine,
-            })
-          }
-          currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? (userGender === 'male' ? '남성' : '달빛기')}
-          cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
-          hormoneCycle={hormoneCycle}
-          supabaseClient={supabase}
-          onRefreshCycle={() => void loadMotivationProfile()}
-        />
-        </div>
-
         {hormoneCycle === null
           && hormoneTrack === 'general'
+          && userGender !== 'male'
           && !cycleBannerDismissed && (
           <div
-            onClick={() => hormoneCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            onClick={() => setShowPeriodPopup(true)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               background: 'rgba(123,94,167,0.12)',
