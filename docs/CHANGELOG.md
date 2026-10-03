@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui(theme): `ProductsListClient`(제품 목록) 색 상수 5개 + 텍스트·검색바·카드 테두리 등 25곳을 CSS 변수(`--bg`/`--bg2`/`--bg3`/`--text`/`--text2`/`--text3`/`--gold`/`--purple`/`--fg-rgb`)로 교체. 빨간 삭제 배지·보라 장식 rgba(123,108,192,x)·큐레이션 배너 보라/금 rgba는 유지
 - feat(my): `FavoriteSalonsSection`(즐겨찾는 원장)을 홈(`src/app/page.tsx`)에서 빼고 마이페이지(`src/app/my/page.tsx`) 탑바 바로 아래로 이동. 컴포넌트 자체는 변경 없음
 - fix(nav): `DashboardBottomNav` 비원장 배경 `rgba(10,12,15,0.95)` → `rgba(var(--bg-rgb),0.95)`. `globals.css`에 `--bg-rgb`(다크 10,12,15 / 라이트 255,255,255) 추가. 원장 흰 배경은 유지
 - ui(theme): `FavoriteSalonsSection` 색 상수 5개(PURPLE·CARD·BORDER·TEXT·TEXT_SUB)를 CSS 변수(`--purple`·`--fg-rgb`·`--text`)로 교체. 배너 없을 때 보라 배경 `rgba(123,94,167,0.2)`는 유지

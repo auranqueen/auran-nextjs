@@ -17,11 +17,11 @@ const SHOP_HOOK: Record<string, string[]> = {
   default:      ['오늘 피부에 꼭 필요한 것들이에요 💜', '당신만을 위한 큐레이션이에요 ✨', '피부가 고마워할 제품들이에요 🌸'],
 }
 
-const BG = '#0f0f12'
-const CARD = '#1e1e26'
-const BRAND = '#7b6cc0'
-const BADGE_BG = '#1a0f28'
-const BADGE_FG = '#c4a8ff'
+const BG = 'var(--bg)'
+const CARD = 'var(--bg2)'
+const BRAND = 'var(--purple)'
+const BADGE_BG = 'var(--bg3)'
+const BADGE_FG = 'var(--text2)'
 
 type Row = {
   id: string
@@ -272,9 +272,9 @@ export default function ProductsListClient() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#e8e8ec', paddingBottom: 32 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 18 }}>←</button>
+    <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', paddingBottom: 32 }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid rgba(var(--fg-rgb),0.06)' }}>
+        <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18 }}>←</button>
         <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>{title}</div>
         {(() => {
           const badge =
@@ -286,16 +286,16 @@ export default function ProductsListClient() {
       </header>
       {/* 검색바 */}
       <div style={{ padding: '10px 14px 0', display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#1a1a22', borderRadius: 10, padding: '8px 12px', gap: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--bg2)', borderRadius: 10, padding: '8px 12px', gap: 8, border: '1px solid rgba(var(--fg-rgb),0.08)' }}>
           <span style={{ fontSize: 14, opacity: 0.5 }}>🔍</span>
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="제품명, 브랜드 검색"
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e8e8ec', fontSize: 13 }}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: 'var(--text)', fontSize: 13 }}
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
+            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
           )}
         </div>
       </div>
@@ -306,7 +306,7 @@ export default function ProductsListClient() {
             <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.6)', marginBottom: 4, letterSpacing: 1 }}>
               {userGender === 'male' ? '피지조절 · 클렌징 추천' : userHca === false ? '탄력 · 수분 · 콜라겐 추천' : hormoneBadge ? `${hormoneBadge} 맞춤 추천` : '오늘의 추천'}
             </div>
-            <div style={{ fontSize: 13, color: '#e8e0f5', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 12 }}>
               {(() => {
                 const key = userGender === 'male' ? 'male_active' : userHca === false ? 'age_care' : (hormoneBadge || 'default')
                 const arr = SHOP_HOOK[key] || SHOP_HOOK.default
@@ -320,7 +320,7 @@ export default function ProductsListClient() {
                   onClick={() => router.push(`/products/${p.id}`)}
                   style={{ flexShrink: 0, width: 100, cursor: 'pointer' }}
                 >
-                  <div style={{ width: 100, height: 100, borderRadius: 10, overflow: 'hidden', background: '#1a1a22', marginBottom: 6 }}>
+                  <div style={{ width: 100, height: 100, borderRadius: 10, overflow: 'hidden', background: 'var(--bg2)', marginBottom: 6 }}>
                     {(p.storage_thumb_url || p.thumb_img) ? (
                       <img src={p.storage_thumb_url || p.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
@@ -344,7 +344,7 @@ export default function ProductsListClient() {
             borderBottom: '0.5px solid rgba(123,94,167,0.3)',
           }}
         >
-          <div style={{ fontSize: 10, color: 'rgba(196,168,255,0.5)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
           <input
             type="text"
             value={addProdSearch}
@@ -372,16 +372,16 @@ export default function ProductsListClient() {
               boxSizing: 'border-box',
               padding: '8px 10px',
               borderRadius: 8,
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#ccc',
+              border: '0.5px solid rgba(var(--fg-rgb),0.1)',
+              background: 'rgba(var(--fg-rgb),0.04)',
+              color: 'var(--text2)',
               fontSize: 12,
               fontFamily: 'inherit',
               marginBottom: 8,
               outline: 'none',
             }}
           />
-          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 6 }}>검색 중…</div> : null}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
             {addProdResults.map(p => {
               const added = mappedPickIds.has(p.id)
@@ -411,8 +411,8 @@ export default function ProductsListClient() {
                     {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{p.step_tags?.[0] || '—'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 500 }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{p.step_tags?.[0] || '—'}</div>
                   </div>
                   <button
                     type="button"
@@ -454,15 +454,15 @@ export default function ProductsListClient() {
             })}
           </div>
           {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
-            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
           ) : null}
         </div>
       ) : null}
 
       {loading ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#666', fontSize: 13 }}>불러오는 중…</div>
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>불러오는 중…</div>
       ) : grouped.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#666', fontSize: 13 }}>
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
           제품이 없어요
           {pick && showEditChrome ? (
             <div style={{ marginTop: 14 }}>
@@ -490,7 +490,7 @@ export default function ProductsListClient() {
           <section key={brandName} style={{ marginTop: 18, paddingLeft: 14 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
               <span style={{ color: BRAND, fontSize: 14, fontWeight: 600 }}>{brandName}</span>
-              <span style={{ fontSize: 12, color: '#666' }}>{items.length}개</span>
+              <span style={{ fontSize: 12, color: 'var(--text3)' }}>{items.length}개</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 14px 6px' }}>
               {items.map((p: Row) => {
@@ -545,12 +545,12 @@ export default function ProductsListClient() {
                         padding: 8,
                         textDecoration: 'none',
                         color: 'inherit',
-                        border: '1px solid rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(var(--fg-rgb),0.06)',
                         minWidth: 0,
                         overflow: 'hidden',
                       }}
                     >
-                      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: 6 }}>
+                      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.05)', marginBottom: 6 }}>
                         {p.storage_thumb_url || p.thumb_img ? (
                           <img src={p.storage_thumb_url || p.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : null}
@@ -558,9 +558,9 @@ export default function ProductsListClient() {
                       <div style={{ fontSize: 8, color: '#7b6cc0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.step_tags?.[0] || '·'}
                       </div>
-                      <div style={{ fontSize: 10, color: '#fff', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: '#c9a96e', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
-                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.38)', marginTop: 4, lineHeight: 1.35 }}>
+                      <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
+                      <div style={{ fontSize: 8, color: 'var(--text3)', marginTop: 4, lineHeight: 1.35 }}>
                         {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit, userGender, userHca)}
                       </div>
                     </Link>
