@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const CARD_BG = 'var(--bg2)'
+const CARD_BG = 'var(--bg)'
 const BADGE_STEP_BG = 'var(--bg3)'
 const BADGE_STEP_FG = 'var(--purple)'
 const BADGE_FUNC_BG = 'rgba(90,219,138,0.15)'
