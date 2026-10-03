@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- feat(theme): 기본 테마 라이트로 변경 — `theme.ts` `getStoredTheme()` 폴백 `'light'`, `layout.tsx` `<html data-theme="light">`, `/my/profile` 토글 초기 표시 `'light'`. 홈 프로필 팝업 「화면 모드」 토글·`currentTheme`/`applyTheme`·theme import 제거. 이미 `auran_theme`이 저장된 사용자는 저장값 유지
 - feat(home): 프로필 팝업 메인 뷰 하단에 「화면 모드」 라이트/다크 토글 추가(`@/lib/theme` `getStoredTheme`/`setStoredTheme` + `currentTheme` state). 팝업이 흰 배경 고정이라 토글 테두리·글자는 팝업 팔레트(`#f0f0f0`/`#e5e5e5`/`#888`) 사용
 - ui(home): `SeasonRecommendSection` 제품카드 `CARD_BG` `var(--bg2)` → `var(--bg)` (탭 바 `--bg2`와 구분). 카드 테두리 `rgba(var(--fg-rgb),0.08)` 유지
 - ui(home): `HomeExtraSection` 바로가기 3열 grid → 가로 스크롤 flex 1줄(카드 width 80·flexShrink 0, 스크롤바 숨김)

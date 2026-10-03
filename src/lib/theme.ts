@@ -3,14 +3,14 @@ export type AuranTheme = 'dark' | 'light'
 const STORAGE_KEY = 'auran_theme'
 
 export function getStoredTheme(): AuranTheme {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'light'
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw === 'light' || raw === 'dark') return raw
   } catch {
     /* ignore */
   }
-  return 'dark'
+  return 'light'
 }
 
 export function setStoredTheme(theme: AuranTheme): void {

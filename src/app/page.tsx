@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
-import { getStoredTheme, setStoredTheme, type AuranTheme } from '@/lib/theme'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import Loading from './loading'
 import SeasonRecommendSection from
@@ -440,11 +439,6 @@ export default function CustomerHomePage() {
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
-  const [currentTheme, setCurrentTheme] = useState<AuranTheme>(() => getStoredTheme() ?? 'dark')
-  const applyTheme = (theme: AuranTheme) => {
-    setStoredTheme(theme)
-    setCurrentTheme(theme)
-  }
   const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
   const profilePopupHistoryRef = useRef(false)
   const profilePopupNavRef = useRef(false)
@@ -2654,22 +2648,6 @@ export default function CustomerHomePage() {
                     <span style={{ fontSize: 10, color: '#888' }}>{label}</span>
                   </div>
                 ))}
-              </div>
-              {/* 테마 토글 */}
-              <div style={{ width: '100%', marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #f0f0f0', boxSizing: 'border-box' }}>
-                <span style={{ fontSize: 13, color: '#666' }}>화면 모드</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => applyTheme('light')}
-                    style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, border: '1px solid #e5e5e5', background: currentTheme === 'light' ? 'var(--purple)' : 'transparent', color: currentTheme === 'light' ? '#FFF' : '#888', cursor: 'pointer', fontFamily: 'inherit' }}
-                  >☀️ 라이트</button>
-                  <button
-                    type="button"
-                    onClick={() => applyTheme('dark')}
-                    style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, border: '1px solid #e5e5e5', background: currentTheme === 'dark' ? 'var(--purple)' : 'transparent', color: currentTheme === 'dark' ? '#FFF' : '#888', cursor: 'pointer', fontFamily: 'inherit' }}
-                  >🌙 다크</button>
-                </div>
               </div>
             </div>
           )}
