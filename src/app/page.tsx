@@ -2337,12 +2337,12 @@ export default function CustomerHomePage() {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            border: '0.5px solid rgba(201,169,110,0.13)',
+            border: '1.5px solid var(--gold)',
             borderRadius: 18,
             padding: '5px 12px',
-            background: 'rgba(var(--fg-rgb),0.02)',
+            background: 'var(--bg)',
           }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.6">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m21 21-4.3-4.3"></path>
             </svg>
@@ -2352,7 +2352,7 @@ export default function CustomerHomePage() {
               onChange={e => setSearchKeyword(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              placeholder="제품명, 브랜드 검색"
+              placeholder="브랜드·제품명으로 검색해보세요"
               style={{
                 flex: 1,
                 border: 'none',
@@ -2384,7 +2384,7 @@ export default function CustomerHomePage() {
           </button>
         </div>
         {searchFocused && !searchKeyword && popularKeywords.length > 0 && (
-          <div style={{ background: 'rgba(20,20,20,0.97)', borderRadius: 16, padding: '16px', marginBottom: 8 }}>
+          <div style={{ background: 'var(--bg)', borderRadius: 16, padding: '16px', marginBottom: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontSize: 9, color: 'var(--text)' }}>인기 쇼핑 키워드</span>
             </div>
@@ -2392,7 +2392,7 @@ export default function CustomerHomePage() {
               <div key={kw} onClick={() => { setSearchKeyword(kw); setSearchFocused(false) }}
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
                   borderBottom: i < popularKeywords.length - 1 ? '1px solid rgba(var(--fg-rgb),0.06)' : 'none', cursor: 'pointer' }}>
-                <span style={{ fontSize: 9, color: '#7B5EA7', minWidth: 20 }}>{i + 1}</span>
+                <span style={{ fontSize: 9, color: 'var(--purple)', minWidth: 20 }}>{i + 1}</span>
                 <span style={{ fontSize: 9, color: 'var(--text)' }}>{kw}</span>
               </div>
             ))}
