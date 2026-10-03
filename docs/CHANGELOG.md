@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- ui: `/my/hormone` 헤더 상단 여백 — 고정 `16px 16px 0` → `paddingTop: calc(env(safe-area-inset-top, 0px) + 16px)`, 좌우 16, 하단 0
 - ui: 호르몬 달력에서 기록이 있는 날은 조회 화면, 없는 날은 입력 화면. 조회에서 「수정하기」면 입력으로 전환. `loadRecordForDate`가 `daily_skin_log`의 수면·햇빛·스트레스·피부 상태도 읽음
 - ui: `HormoneSheet` 날짜 선택 팝업을 가운데 딤 창에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 1000, translateY 300ms). 날짜·시간 입력과 확인 버튼은 그대로
 - ui: `HormoneSheet` 껍질을 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 999, translateY 300ms, ← 뒤로가기). 시작일·종료일·저장은 그대로
