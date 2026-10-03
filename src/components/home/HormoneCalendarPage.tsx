@@ -36,6 +36,13 @@ const TIMELINE_SEGMENTS = [
   { phase: '물들기', ratio: 12 / 28, color: '#d4904a' },
 ]
 
+const PHASE_INFO: Record<string, { emoji: string; sub: string; desc: string; care: string[] }> = {
+  달빛기: { emoji: '🌙', sub: '1~5일차 · 생리기 · 에스트로겐 최저', desc: '생리 시작부터 5일간. 호르몬이 가장 낮아 피부가 예민하고 붓기 쉬워요.', care: ['🚫 레티놀·AHA·BHA 잠시 쉬어요', '💧 세라마이드로 장벽 보호', '🛁 반신욕으로 순환 도움'] },
+  황금기: { emoji: '🌱', sub: '6~13일차 · 여포기 · 에스트로겐 상승', desc: '에스트로겐이 올라가면서 피부가 가장 좋아지는 황금 시기! 콜라겐 생성도 활발해요.', care: ['✨ 미백·항산화 집중 케어 최적', '💎 레티놀·AHA 사용해도 좋아요', '🌟 새 시술 시작하기 좋은 타이밍'] },
+  만개기: { emoji: '☀️', sub: '14~16일차 · 배란기', desc: '배란이 일어나는 시기. 피지 분비가 늘고 모공이 넓어 보일 수 있어요.', care: ['🧴 피지 조절 제품 사용', '🧖 모공 관리에 집중', '☀️ 자외선 차단 꼼꼼히'] },
+  물들기: { emoji: '🍂', sub: '17~28일차 · 황체기 · 프로게스테론 상승', desc: '프로게스테론이 올라가면서 트러블 생기기 쉽고 예민해요. PMS 시기예요.', care: ['🚫 자극 성분 피하기', '💆 스트레스 관리 중요', '🌿 진정·보습에 집중'] },
+}
+
 const MALE_WEEKLY_CHECKLIST = [
   { label: '월 · 수 · 금', task: '세안 + 보습 루틴' },
   { label: '화 · 목', task: '선크림 + 립케어' },
@@ -182,6 +189,7 @@ export default function HormoneCalendarPage() {
   const [menoJoint, setMenoJoint] = useState('')
   const today = new Date()
   const [viewYM, setViewYM] = useState({ y: today.getFullYear(), m: today.getMonth() })
+  const [phasePopup, setPhasePopup] = useState<string | null>(null)
 
   const supabase = createClient()
 
@@ -241,7 +249,7 @@ export default function HormoneCalendarPage() {
   }, [load])
 
   const calc = hormoneCycle ? calcHormoneBriefing(hormoneCycle) : null
-  const currentPhase = calc?.phase ?? '달빛기'
+  const currentPhase = !calc || (isPeriodTrack(String(hormoneCycle?.track || 'general')) && !hormoneCycle?.last_period_date) ? '' : calc.phase
   const cycleDay = calc?.cycleDay ?? 0
   const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
   const hasCalendar = hormoneCycle != null && hca !== false && isPeriodTrack(String(hormoneCycle?.track || 'general'))
@@ -323,7 +331,7 @@ export default function HormoneCalendarPage() {
     for (let d = 1; d <= last.getDate(); d++) {
       const date = new Date(y, m, d)
       const isToday = viewYM.y === now.getFullYear() && viewYM.m === now.getMonth() && d === now.getDate()
-      if (hormoneCycle && calendarActive) {
+      if (hormoneCycle?.last_period_date && calendarActive) {
         const dayCalc = calcHormoneBriefing(hormoneCycle, date)
         days.push({ date, isToday, phase: dayCalc.phase, color: phaseColor(dayCalc.phase) })
       } else {
@@ -409,7 +417,7 @@ export default function HormoneCalendarPage() {
         <ModeBadge text="갱년기 케어 모드 🌸" color="#5adb8a" />
       ) : isIrregular ? (
         <ModeBadge text="불규칙 주기 모드" color="#c4a8ff" />
-      ) : hasCalendar ? (
+      ) : hasCalendar && currentPhase ? (
         <div style={{ margin: '12px 16px 0', display: 'flex', justifyContent: 'center' }}>
           <span style={{
             fontSize: 11,
@@ -424,16 +432,22 @@ export default function HormoneCalendarPage() {
         </div>
       ) : null}
 
+      {!currentPhase && hasCalendar && isPeriodTrack(String(hormoneCycle?.track || 'general')) && !isMenopause ? (
+        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+          🌙 생리 시작일을 기록하면 내 시기가 보여요
+        </div>
+      ) : null}
+
       {hasCalendar && !isPregnant && !isPostpartum && !isMale && !isIrregular && !isMenopause ? (
         <div style={{ margin: '14px 16px 0' }}>
           <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
             {TIMELINE_SEGMENTS.map((seg) => (
-              <div key={seg.phase} style={{ flex: seg.ratio, background: seg.color, opacity: seg.phase === currentPhase ? 1 : 0.45 }} />
+              <div key={seg.phase} onClick={() => setPhasePopup(seg.phase)} style={{ flex: seg.ratio, background: seg.color, opacity: seg.phase === currentPhase ? 1 : 0.45, cursor: 'pointer' }} />
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             {TIMELINE_SEGMENTS.map((seg) => (
-              <span key={seg.phase} style={{ fontSize: 9, color: seg.phase === currentPhase ? seg.color : 'rgba(255,255,255,0.3)' }}>
+              <span key={seg.phase} onClick={() => setPhasePopup(seg.phase)} style={{ fontSize: 9, color: seg.phase === currentPhase ? seg.color : 'rgba(255,255,255,0.3)', cursor: 'pointer' }}>
                 {seg.phase}
               </span>
             ))}
@@ -560,19 +574,6 @@ export default function HormoneCalendarPage() {
               style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.6)' }}
             >›</div>
           </div>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-            {[
-              { label: '달빛기', color: '#c4a8ff' },
-              { label: '황금기', color: '#f0c060' },
-              { label: '만개기', color: '#e87b9b' },
-              { label: '물들기', color: '#d4904a' },
-            ].map(({ label, color }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{label}</span>
-              </div>
-            ))}
-          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
             {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
               <div key={w} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{w}</div>
@@ -637,8 +638,46 @@ export default function HormoneCalendarPage() {
               갱년기 케어 가이드 보기 →
             </button>
           ) : null}
+          {isMenopause && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '10px 0 0' }}>
+              <div
+                onClick={async () => {
+                  if (!window.confirm('생리가 완전히 끝난 상태(폐경기)로 바꿀까요?')) return
+                  const res = await fetch('/api/hormone/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'post_menopause' }) })
+                  const json = await res.json().catch(() => ({}))
+                  if (!res.ok || !json.ok) { console.error('저장 실패:', json.error); alert('저장 중 오류가 발생했어요. 다시 시도해주세요.'); return }
+                  window.location.reload()
+                }}
+                style={{ background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.25)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'rgba(196,168,232,0.8)', textAlign: 'center', cursor: 'pointer' }}
+              >
+                🌸 생리가 완전히 끝났어요
+              </div>
+              <div
+                onClick={async () => {
+                  if (!window.confirm('생리 주기로 바꿀까요? 오늘 날짜가 시작일로 기록돼요.')) return
+                  const res = await fetch('/api/hormone/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'resume' }) })
+                  const json = await res.json().catch(() => ({}))
+                  if (!res.ok || !json.ok) { console.error('저장 실패:', json.error); alert('저장 중 오류가 발생했어요. 다시 시도해주세요.'); return }
+                  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+                  const psRes = await fetch('/api/hormone/period-start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: today }) })
+                  const psJson = await psRes.json().catch(() => ({}))
+                  if (!psRes.ok || !psJson.ok) { console.error('시작일 저장 실패:', psJson.error); alert('시작일 저장 중 오류가 발생했어요. 다시 시도해주세요.'); return }
+                  window.location.reload()
+                }}
+                style={{ background: 'rgba(255,182,193,0.08)', border: '0.5px solid rgba(255,182,193,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'rgba(255,182,193,0.8)', textAlign: 'center', cursor: 'pointer' }}
+              >
+                🌙 생리가 다시 시작됐어요
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
+
+      {currentPhase && hasCalendar && !isMenopause && (
+        <div style={{ margin: '8px 16px 0', fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: 1.6 }}>
+          💜 생리가 시작되면 기록해주세요 · 기록할수록 내 주기가 더 정확해져요
+        </div>
+      )}
 
       {hasCalendar && hormoneCycle?.last_period_date && String(hormoneCycle.track || 'general') === 'general' && (() => {
         const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
@@ -783,6 +822,35 @@ export default function HormoneCalendarPage() {
           )}
         </Modal>
       ) : null}
+
+      {phasePopup && PHASE_INFO[phasePopup] && (() => {
+        const info = PHASE_INFO[phasePopup]
+        const isActive = phasePopup === currentPhase
+        return (
+          <>
+            <style>{`@keyframes slideUpIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+            <div onClick={() => setPhasePopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 95 }} />
+            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, margin: '0 auto', width: '100%', maxWidth: 390, background: '#1A1030', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px', zIndex: 96, animation: 'slideUpIn 0.25s ease-out' }}>
+              <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, margin: '0 auto 20px' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: '#fff', marginBottom: 3 }}>
+                    {info.emoji} {phasePopup}
+                    {isActive && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 400, marginLeft: 8 }}>← 지금 여기</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{info.sub}</div>
+                </div>
+                <div onClick={() => setPhasePopup(null)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>✕</div>
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: 14, padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }}>{info.desc}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>케어 포인트</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {info.care.map(c => <div key={c} style={{ padding: '7px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{c}</div>)}
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }
