@@ -2280,7 +2280,7 @@ export default function CustomerHomePage() {
               position: 'relative',
             }}
           >
-            🛍️
+            <img src="/icons/cart.svg" alt="장바구니" width={24} height={24} style={{display:'block'}} />
             {cart.items.length > 0 ? (
               <span style={{
                 position: 'absolute', top: -4, right: -4,

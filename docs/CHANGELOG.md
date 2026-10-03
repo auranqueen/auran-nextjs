@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- feat(header): 장바구니 아이콘 🛍️ → 커스텀 SVG `public/icons/cart.svg` (홈 헤더 `page.tsx`, 공통 `CartHeaderButton.tsx`)
 - fix(product): 제품상세 상세 본문(Toast UI) 빈 공간 — `globals.css` `.toastui-editor-contents *` 강제 흰 글자(`#ffffff !important`) → `var(--text) !important`. 라이트 배경에서 흰 글자가 묻히던 문제
 - style(product): 제품상세(`products/[id]/client.tsx`) 라이트모드 — 배경·카드·시트·입력창·글자·테두리 하드코딩 색 → `--bg`/`--bg2`/`--bg3`/`--text`/`--fg-rgb`/`--purple`. 금색 버튼·카카오·할인 빨강·호르몬 팔레트·초록/파랑 배지·이미지 오버레이·어드민 칩·토스트는 고정색 유지. `ProductTagSection` 아코디언 셸·글자, `ConsultChat` 본문 배경도 변수화
 - style(home): 검색 input fontSize 9 → 10(홈 검색바·검색 시트 2곳), `.search-input-slim::placeholder` 9px → 10px

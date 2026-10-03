@@ -44,7 +44,7 @@ export default function CartHeaderButton() {
 
   return (
     <Link href="/cart" aria-label="장바구니" style={btnStyle}>
-      🛍️
+      <img src="/icons/cart.svg" alt="장바구니" width={24} height={24} style={{display:'block'}} />
       {totalQty > 0 ? (
         <span
           className={bounceClass ? 'auran-cart-badge-bounce' : undefined}
