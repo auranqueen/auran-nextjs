@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-04
+- style(home): PRIVÉ 배너 AD 뱃지 삭제, ▶ 버튼 항상 표시(클릭 시 0.9s 회전 → `video_url` 있으면 영상 팝업, 없으면 회전만)
+
 ## 2026-10-03
 - feat(home): PRIVÉ 배너 개정 — `eyebrow` 필드 추가(조회 컬럼 명시), 배경 `var(--bg)`+테두리, ▶ 버튼은 `video_url` 있을 때만 노출(0.9s `.prive-spin` 회전 후 영상 팝업). `globals.css` `priveSpinY` 중복 제거 후 파일 끝에 keyframe+`.prive-spin` 정리. ⚠️ DB에 `eyebrow` 컬럼 없으면 조회 실패 → 기본값 표시(아래 SQL 필요)
 - feat(home): ORÆN PRIVÉ 배너를 `prive_config`(1행) 연동 카드로 교체 — 제목·부제·우측 이미지(권장 220×192 @2x)·영상(▶ 클릭 시 전체화면 재생, 영상 없으면 3D 회전 `priveSpinY`)·링크. 마이그레이션 `208_prive_config.sql`(RLS: 읽기 전체, 쓰기 admin) **대시보드 SQL Editor 수동 실행 필요**. 기본 링크는 기존 `/membership/checkout` 유지(`/shop` 라우트 없음). `layout.tsx`에 Cormorant Garamond 폰트 추가

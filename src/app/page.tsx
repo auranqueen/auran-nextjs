@@ -3315,41 +3315,31 @@ export default function CustomerHomePage() {
               fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.1em', fontStyle: 'italic',
             }}>PRIVÉ</div>
           )}
-          <div style={{
-            position: 'absolute', top: 8, right: 8,
-            fontSize: 9, letterSpacing: '0.06em',
-            background: 'rgba(255,255,255,0.82)', color: '#888',
-            padding: '2px 6px', borderRadius: 20,
-            backdropFilter: 'blur(4px)',
-          }}>AD</div>
         </div>
-        {priveConfig.video_url && (
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation()
-              if (priveSpinning) return
-              setPriveSpinning(true)
-              setTimeout(() => {
-                setPriveSpinning(false)
-                setPriveVideoOpen(true)
-              }, 900)
-            }}
-            className={priveSpinning ? 'prive-spin' : ''}
-            style={{
-              position: 'absolute', bottom: 10, right: 10,
-              width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', perspective: '200px',
-            }}
-            aria-label="영상 재생"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <polygon points="3,1 13,7 3,13" fill="white" />
-            </svg>
-          </button>
-        )}
+        <button
+          type="button"
+          aria-label="재생"
+          onClick={e => {
+            e.stopPropagation()
+            if (priveSpinning) return
+            setPriveSpinning(true)
+            setTimeout(() => {
+              setPriveSpinning(false)
+              if (priveConfig.video_url) setPriveVideoOpen(true)
+            }, 900)
+          }}
+          className={priveSpinning ? 'prive-spin' : ''}
+          style={{
+            position: 'absolute', bottom: 10, right: 10,
+            width: 34, height: 34, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <polygon points="3,1 13,7 3,13" fill="white" />
+          </svg>
+        </button>
       </div>
       {priveVideoOpen && priveConfig.video_url && (
         <div
