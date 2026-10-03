@@ -12,7 +12,6 @@ import Loading from './loading'
 import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import HomeExtraSection from '@/components/home/HomeExtraSection'
-import FavoriteSalonsSection from '@/components/home/FavoriteSalonsSection'
 import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
@@ -3242,7 +3241,6 @@ export default function CustomerHomePage() {
       </div>
       </>)}
 
-      <FavoriteSalonsSection />
       <HomeExtraSection />
       <SeasonRecommendSection
         month={new Date().getMonth() + 1}

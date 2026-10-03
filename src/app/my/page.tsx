@@ -10,6 +10,7 @@ import SkinReportCard from '@/components/my/SkinReportCard'
 import MyBookingStatus from '@/components/customer/MyBookingStatus'
 import WalletCard from '@/components/WalletCard'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
+import FavoriteSalonsSection from '@/components/home/FavoriteSalonsSection'
 
 const GOLD = 'var(--gold)'
 const BG = 'var(--bg)'
@@ -396,6 +397,8 @@ export default function MyPage() {
           <button onClick={() => router.push('/my/profile')} style={{ width: '34px', height: '34px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', cursor: 'pointer' }}>⚙️</button>
         </div>
       </header>
+
+      <FavoriteSalonsSection />
 
       {/* 프로필 */}
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', gap: '14px' }}>

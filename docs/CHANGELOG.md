@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- feat(my): `FavoriteSalonsSection`(즐겨찾는 원장)을 홈(`src/app/page.tsx`)에서 빼고 마이페이지(`src/app/my/page.tsx`) 탑바 바로 아래로 이동. 컴포넌트 자체는 변경 없음
 - fix(nav): `DashboardBottomNav` 비원장 배경 `rgba(10,12,15,0.95)` → `rgba(var(--bg-rgb),0.95)`. `globals.css`에 `--bg-rgb`(다크 10,12,15 / 라이트 255,255,255) 추가. 원장 흰 배경은 유지
 - ui(theme): `FavoriteSalonsSection` 색 상수 5개(PURPLE·CARD·BORDER·TEXT·TEXT_SUB)를 CSS 변수(`--purple`·`--fg-rgb`·`--text`)로 교체. 배너 없을 때 보라 배경 `rgba(123,94,167,0.2)`는 유지
 - ui(home): 홈 본문 「오늘의 케어」·날씨 2열 칩 grid와 `showWeatherDetail` 날씨 상세 블록(미세먼지·자외선·습도·경고·「날씨 맞춤 추천」 버튼), `showWeatherDetail` state 삭제. 프로필 팝업 날씨/케어 서브뷰는 유지. `careTipOpen` 상세 블록·`CARE_CHEER_MSGS`는 남았지만 진입점 없음(미사용)
