@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-03
+- ui: `WeatherRecommendSheet` 안쪽 기존 제목(날씨 이모지 + 「오늘 날씨 맞춤 케어」)·× 버튼 제거(상단 ← 바와 중복, ×가 `onClose` 즉시 호출하던 경로도 사라짐). 기온·습도·자외선·미세 한 줄은 유지. 미사용 `BG` 상수 삭제
+- ui: `WeatherRecommendSheet` 껍질을 딤+블러 하단 시트(88vh, 둥근 모서리)에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 200, translateY 300ms, ← + 「오늘 날씨 맞춤 케어」 상단 바, 상단·하단 safe-area). `entered`·`isClosing`는 `isOpen` 기준. 내부 콘텐츠·× 버튼은 그대로(×는 애니메이션 없이 즉시 닫힘)
 - ui: `/my/hormone` 헤더 상단 여백 — 고정 `16px 16px 0` → `paddingTop: calc(env(safe-area-inset-top, 0px) + 16px)`, 좌우 16, 하단 0
 - ui: 호르몬 달력에서 기록이 있는 날은 조회 화면, 없는 날은 입력 화면. 조회에서 「수정하기」면 입력으로 전환. `loadRecordForDate`가 `daily_skin_log`의 수면·햇빛·스트레스·피부 상태도 읽음
 - ui: `HormoneSheet` 날짜 선택 팝업을 가운데 딤 창에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, zIndex 1000, translateY 300ms). 날짜·시간 입력과 확인 버튼은 그대로

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
-const BG = '#17171e'
 const CARD_BG = '#1e1e26'
 const ROUTINE_BG = '#1e1e26'
 const REASON_BOX = '#16141e'
@@ -383,6 +382,22 @@ export default function WeatherRecommendSheet({
     void load()
   }, [isOpen, load])
 
+  const [entered, setEntered] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+  const handleClose = () => {
+    if (isClosing) return
+    setIsClosing(true)
+    setTimeout(() => { setIsClosing(false); onClose() }, 300)
+  }
+  useEffect(() => {
+    if (!isOpen) {
+      setEntered(false)
+      return
+    }
+    const id = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [isOpen])
+
   useEffect(() => {
     const q = searchQ.trim()
     if (q.length < 2) {
@@ -656,50 +671,49 @@ export default function WeatherRecommendSheet({
         position: 'fixed',
         inset: 0,
         zIndex: 200,
-        background: 'rgba(0,0,0,0.85)',
+        background: '#0F0D0C',
         display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        backdropFilter: 'blur(6px)',
+        flexDirection: 'column',
+        transform: entered && !isClosing ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 300ms ease',
       }}
-      onClick={onClose}
     >
       <div
         style={{
-          width: '100%',
-          maxWidth: 480,
-          background: BG,
-          borderRadius: '28px 28px 0 0',
-          maxHeight: '88vh',
-          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '12px 16px',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          flexShrink: 0,
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="뒤로가기"
+          style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 4 }}
+        >
+          ←
+        </button>
+        <div style={{ fontSize: 16, color: '#fff', fontWeight: 500 }}>오늘 날씨 맞춤 케어</div>
+      </div>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
         }}
-        onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-        </div>
 
         <div style={{ padding: '0 18px 12px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 16, color: '#fff', marginBottom: 4 }}>
-                {weather?.condition ?? '☀️'} 오늘 날씨 맞춤 케어
-              </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
-                {weather
-                  ? `${weather.temp}° · 습도 ${weather.humidity}% · 자외선 ${weather.uv?.level ?? '-'} · 미세 ${weather.dust?.level ?? '-'}`
-                  : '날씨 정보를 불러오는 중이에요'}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}
-            >
-              ×
-            </button>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: 12 }}>
+            {weather
+              ? `${weather.temp}° · 습도 ${weather.humidity}% · 자외선 ${weather.uv?.level ?? '-'} · 미세 ${weather.dust?.level ?? '-'}`
+              : '날씨 정보를 불러오는 중이에요'}
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
