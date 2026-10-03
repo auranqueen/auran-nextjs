@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-03
+- feat(home): PRIVÉ 배너 개정 — `eyebrow` 필드 추가(조회 컬럼 명시), 배경 `var(--bg)`+테두리, ▶ 버튼은 `video_url` 있을 때만 노출(0.9s `.prive-spin` 회전 후 영상 팝업). `globals.css` `priveSpinY` 중복 제거 후 파일 끝에 keyframe+`.prive-spin` 정리. ⚠️ DB에 `eyebrow` 컬럼 없으면 조회 실패 → 기본값 표시(아래 SQL 필요)
 - feat(home): ORÆN PRIVÉ 배너를 `prive_config`(1행) 연동 카드로 교체 — 제목·부제·우측 이미지(권장 220×192 @2x)·영상(▶ 클릭 시 전체화면 재생, 영상 없으면 3D 회전 `priveSpinY`)·링크. 마이그레이션 `208_prive_config.sql`(RLS: 읽기 전체, 쓰기 admin) **대시보드 SQL Editor 수동 실행 필요**. 기본 링크는 기존 `/membership/checkout` 유지(`/shop` 라우트 없음). `layout.tsx`에 Cormorant Garamond 폰트 추가
 - feat(my): `/my/profile` 프로필 편집을 90vh 슬라이드업 시트로 전환(딤 오버레이 `rgba(0,0,0,0.5)` 클릭·← 시 0.35s 내려간 뒤 `router.back()`, 핸들바, 상단 radius 20, 내부 스크롤). 헤더 우상단 「저장」 버튼 삭제(하단 「저장하기」 유지). 헤더·하단 그라데이션 `rgba(13,11,9,x)` → `rgba(var(--bg-rgb),x)`. 저장·데이터 로직 변경 없음
 - feat(theme): 기본 테마 라이트로 변경 — `theme.ts` `getStoredTheme()` 폴백 `'light'`, `layout.tsx` `<html data-theme="light">`, `/my/profile` 토글 초기 표시 `'light'`. 홈 프로필 팝업 「화면 모드」 토글·`currentTheme`/`applyTheme`·theme import 제거. 이미 `auran_theme`이 저장된 사용자는 저장값 유지

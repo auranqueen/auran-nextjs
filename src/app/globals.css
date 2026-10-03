@@ -137,11 +137,6 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
   to { transform: scale(1); opacity: 1; }
 }
 
-@keyframes priveSpinY {
-  0%   { transform: rotateY(0deg); }
-  100% { transform: rotateY(720deg); }
-}
-
 .admin-wrap *,
 .super-console *,
 [class*="admin"] * {
@@ -166,3 +161,10 @@ a img, button img, [role="button"] img { pointer-events: auto; }
   font-size: 9px;
   color: rgba(255,255,255,0.45);
 }
+
+/* ── PRIVÉ 배너 ── */
+@keyframes priveSpinY {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(720deg); }
+}
+.prive-spin { animation: priveSpinY 0.9s cubic-bezier(.4,0,.2,1) forwards; }

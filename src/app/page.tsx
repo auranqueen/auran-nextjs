@@ -60,10 +60,11 @@ function seoulNoonUtcMs(y: number, m0: number, day: number): number {
 
 type PriveConfig = {
   title: string
-  subtitle?: string | null
-  image_url?: string | null
-  video_url?: string | null
-  link_url?: string | null
+  subtitle: string | null
+  eyebrow: string | null
+  image_url: string | null
+  video_url: string | null
+  link_url: string | null
 }
 
 const GOLD = 'var(--gold)'
@@ -447,24 +448,24 @@ export default function CustomerHomePage() {
   const phaseColor = PHASE_RING_COLOR[hormonePhase] ?? null
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
-  const [priveConfig, setPriveConfig] = useState<PriveConfig>({ title: 'PRIVÉ Collection', subtitle: '오렌 프라이빗 큐레이션', link_url: '/membership/checkout' })
+  const [priveConfig, setPriveConfig] = useState<PriveConfig>({
+    title: 'PRIVÉ Collection',
+    subtitle: '오렌 프라이빗 큐레이션',
+    eyebrow: 'ORÆN PRIVÉ',
+    image_url: null,
+    video_url: null,
+    link_url: '/membership/checkout',
+  })
   const [priveSpinning, setPriveSpinning] = useState(false)
   const [priveVideoOpen, setPriveVideoOpen] = useState(false)
   useEffect(() => {
     const sb = createClient()
-    sb.from('prive_config').select('*').eq('id', 1).maybeSingle()
+    sb.from('prive_config')
+      .select('title,subtitle,eyebrow,image_url,video_url,link_url')
+      .eq('id', 1)
+      .maybeSingle()
       .then(({ data }) => { if (data) setPriveConfig(data as PriveConfig) })
   }, [])
-  const handlePrivePlay = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (priveConfig.video_url) {
-      setPriveVideoOpen(true)
-      return
-    }
-    if (priveSpinning) return
-    setPriveSpinning(true)
-    setTimeout(() => setPriveSpinning(false), 900)
-  }
   const [profileSubView, setProfileSubView] = useState<'main'|'weather'|'care'>('main')
   const profilePopupHistoryRef = useRef(false)
   const profilePopupNavRef = useRef(false)
@@ -3274,55 +3275,96 @@ export default function CustomerHomePage() {
         supabaseClient={supabase}
         hormonePhase={hormonePhase}
       />
-      {/* ORÆN PRIVÉ 배너 */}
+      {/* ── PRIVÉ 배너 ── */}
       <div
-        onClick={() => router.push(priveConfig.link_url || '/membership/checkout')}
-        style={{ display: 'flex', overflow: 'hidden', borderRadius: 16, background: 'var(--bg2)', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', minHeight: 96, cursor: 'pointer', position: 'relative', margin: '14px 16px 16px' }}
+        onClick={() => { if (priveConfig.link_url) router.push(priveConfig.link_url) }}
+        style={{
+          display: 'flex', overflow: 'hidden', borderRadius: 16,
+          background: 'var(--bg)', cursor: 'pointer', position: 'relative',
+          minHeight: 96, boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+          border: '1px solid rgba(var(--fg-rgb),0.07)',
+          margin: '14px 16px 16px',
+        }}
       >
         <div style={{ flex: 1, padding: '18px 16px 18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
-          <div style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--gold)', fontWeight: 500 }}>ORÆN PRIVÉ</div>
-          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 18, fontWeight: 600, lineHeight: 1.2, color: 'var(--text)' }}>
+          <div style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--gold)', fontWeight: 500 }}>
+            {priveConfig.eyebrow ?? 'ORÆN PRIVÉ'}
+          </div>
+          <div style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 18, fontWeight: 600, lineHeight: 1.2,
+            color: 'var(--text)', textWrap: 'balance' as any,
+          }}>
             {priveConfig.title}
           </div>
           {priveConfig.subtitle && (
-            <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{priveConfig.subtitle}</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2, lineHeight: 1.4 }}>
+              {priveConfig.subtitle}
+            </div>
           )}
         </div>
-        {/* 권장 이미지: 220×192px @2x */}
         <div style={{ width: 110, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-          {priveConfig.image_url
-            ? <img src={priveConfig.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #d4b896 0%, #c4956a 40%, #8b5e3c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cormorant Garamond', serif", fontSize: 13, color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', letterSpacing: '0.1em' }}>PRIVÉ</div>
-          }
-          <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, background: 'rgba(255,255,255,0.82)', color: '#888', padding: '2px 6px', borderRadius: 20 }}>AD</div>
+          {priveConfig.image_url ? (
+            <img src={priveConfig.image_url} alt="PRIVÉ" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ) : (
+            <div style={{
+              width: '100%', height: '100%',
+              background: 'linear-gradient(135deg,#d4b896 0%,#c4956a 40%,#8b5e3c 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.1em', fontStyle: 'italic',
+            }}>PRIVÉ</div>
+          )}
+          <div style={{
+            position: 'absolute', top: 8, right: 8,
+            fontSize: 9, letterSpacing: '0.06em',
+            background: 'rgba(255,255,255,0.82)', color: '#888',
+            padding: '2px 6px', borderRadius: 20,
+            backdropFilter: 'blur(4px)',
+          }}>AD</div>
         </div>
-        <button
-          type="button"
-          aria-label={priveConfig.video_url ? '영상 재생' : '보러가기'}
-          onClick={handlePrivePlay}
-          style={{
-            position: 'absolute', bottom: 10, right: 10,
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: priveSpinning ? 'priveSpinY 0.9s cubic-bezier(0.4,0,0.2,1) forwards' : 'none',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <polygon points="3,1 13,7 3,13" fill="white" />
-          </svg>
-        </button>
+        {priveConfig.video_url && (
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation()
+              if (priveSpinning) return
+              setPriveSpinning(true)
+              setTimeout(() => {
+                setPriveSpinning(false)
+                setPriveVideoOpen(true)
+              }, 900)
+            }}
+            className={priveSpinning ? 'prive-spin' : ''}
+            style={{
+              position: 'absolute', bottom: 10, right: 10,
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', perspective: '200px',
+            }}
+            aria-label="영상 재생"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <polygon points="3,1 13,7 3,13" fill="white" />
+            </svg>
+          </button>
+        )}
       </div>
       {priveVideoOpen && priveConfig.video_url && (
         <div
           onClick={() => setPriveVideoOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
         >
           <video
             src={priveConfig.video_url}
             controls
             autoPlay
-            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 12 }}
+            style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: 12 }}
             onClick={e => e.stopPropagation()}
           />
         </div>
