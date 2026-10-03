@@ -113,6 +113,7 @@ export function useHormoneCalendarRecord({
   const [recordStress, setRecordStress] = useState('보통')
   const [recordSkinStatus, setRecordSkinStatus] = useState<string[]>([])
   const [toast, setToast] = useState('')
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>('edit')
 
   const selectedDateIso = toIsoDate(selectedDate)
 
@@ -150,7 +151,8 @@ export function useHormoneCalendarRecord({
 
   const loadRecordForDate = useCallback(async (uid: string, iso: string) => {
     const sb = createClient()
-    const [aRes, dRes] = await Promise.all([
+    const userId = (await sb.auth.getUser()).data.user?.id
+    const [aRes, dRes, logRes] = await Promise.all([
       sb
         .from('skin_cycle_analysis')
         .select('checkin_condition')
@@ -163,30 +165,64 @@ export function useHormoneCalendarRecord({
         .eq('auth_id', uid)
         .eq('record_date', iso)
         .maybeSingle(),
+      userId
+        ? sb
+          .from('daily_skin_log')
+          .select('sleep_hours, uv_exposure, stress_level, skin_status')
+          .eq('user_id', userId)
+          .eq('date', iso)
+          .maybeSingle()
+        : Promise.resolve({ data: null }),
     ])
     const parsed = parseCheckinCondition((aRes.data as any)?.checkin_condition)
     setRecordPeriod(parsed.period)
     setRecordCondition(parsed.condition)
     setRecordMemo(String((dRes.data as any)?.note || ''))
+    const log = logRes.data as { sleep_hours?: number | null; uv_exposure?: string | null; stress_level?: string | null; skin_status?: string[] | string | null } | null
+    if (!log) {
+      setRecordSleep(3)
+      setRecordUv('보통')
+      setRecordStress('보통')
+      setRecordSkinStatus([])
+      return
+    }
+    const hours = Number(log.sleep_hours)
+    setRecordSleep(Number.isFinite(hours) ? Math.max(0, Math.min(8, hours - 4)) : 3)
+    setRecordUv(log.uv_exposure ? String(log.uv_exposure) : '보통')
+    setRecordStress(log.stress_level ? String(log.stress_level) : '보통')
+    const skin = log.skin_status
+    if (Array.isArray(skin)) setRecordSkinStatus(skin.map(String))
+    else if (typeof skin === 'string' && skin.trim()) setRecordSkinStatus(skin.split(',').map((s) => s.trim()).filter(Boolean))
+    else setRecordSkinStatus([])
   }, [])
 
   const openForDate = useCallback(async (date: Date) => {
+    const iso = toIsoDate(date)
     setSelectedDate(date)
+    setViewMode(recordedDates.has(iso) ? 'view' : 'edit')
     setRecordOpen(true)
     if (!authId) {
       setRecordPeriod('')
       setRecordCondition('')
       setRecordMemo('')
+      setRecordSleep(3)
+      setRecordUv('보통')
+      setRecordStress('보통')
+      setRecordSkinStatus([])
       return
     }
     try {
-      await loadRecordForDate(authId, toIsoDate(date))
+      await loadRecordForDate(authId, iso)
     } catch {
       setRecordPeriod('')
       setRecordCondition('')
       setRecordMemo('')
+      setRecordSleep(3)
+      setRecordUv('보통')
+      setRecordStress('보통')
+      setRecordSkinStatus([])
     }
-  }, [authId, loadRecordForDate])
+  }, [authId, loadRecordForDate, recordedDates])
 
   const closeRecord = useCallback(() => {
     setRecordOpen(false)
@@ -278,6 +314,8 @@ export function useHormoneCalendarRecord({
     openTodayRecord,
     closeRecord,
     saveRecord,
+    viewMode,
+    setViewMode,
   }
 }
 
@@ -303,6 +341,8 @@ export function HormoneCalendarRecordModal({
   saving,
   onClose,
   onSave,
+  viewMode,
+  setViewMode,
 }: {
   currentPhase: string
   cycleDay: number
@@ -325,8 +365,69 @@ export function HormoneCalendarRecordModal({
   saving: boolean
   onClose: () => void
   onSave: () => void
+  viewMode: 'view' | 'edit'
+  setViewMode: (mode: 'view' | 'edit') => void
 }) {
   if (!open) return null
+  if (viewMode === 'view') {
+    const conditionChips = recordCondition.split(' / ').map((s) => s.trim()).filter(Boolean)
+    const row = (label: string, value: string) => (
+      <div key={label} style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{label}</div>
+        <div style={{ fontSize: 14, color: '#f3ecff', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{value || '—'}</div>
+      </div>
+    )
+    return (
+      <RecordModal title={`${selectedDateIso}${currentPhase ? ` · ${currentPhase}` : ''}`} onClose={onClose}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+          {row('생리 여부', recordPeriod)}
+          <div style={{ padding: '12px 0', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>피부/몸/감정</div>
+            {conditionChips.length ? (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {conditionChips.map((chip) => (
+                  <span key={chip} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'rgba(123,94,167,0.25)', color: '#e8dff5' }}>{chip}</span>
+                ))}
+              </div>
+            ) : <div style={{ fontSize: 14, color: '#f3ecff' }}>—</div>}
+          </div>
+          {row('일기 메모', recordMemo)}
+          {row('수면', `${recordSleep + 4}시간`)}
+          {row('햇빛 노출', recordUv)}
+          {row('스트레스', recordStress)}
+          <div style={{ padding: '12px 0' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>피부 상태</div>
+            {recordSkinStatus.length ? (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {recordSkinStatus.map((chip) => (
+                  <span key={chip} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'rgba(123,94,167,0.25)', color: '#e8dff5' }}>{chip}</span>
+                ))}
+              </div>
+            ) : <div style={{ fontSize: 14, color: '#f3ecff' }}>—</div>}
+          </div>
+          <button
+            type="button"
+            onClick={() => setViewMode('edit')}
+            style={{
+              marginTop: 'auto',
+              position: 'sticky',
+              bottom: 0,
+              padding: 12,
+              borderRadius: 10,
+              border: 'none',
+              background: P,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            수정하기
+          </button>
+        </div>
+      </RecordModal>
+    )
+  }
   return (
     <RecordModal title={`기록 · ${selectedDateIso}`} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
