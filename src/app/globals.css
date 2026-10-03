@@ -149,7 +149,7 @@ img { -webkit-user-drag: none; pointer-events: none; }
 a img, button img, [role="button"] img { pointer-events: auto; }
 
 .toastui-editor-contents * {
-  color: #ffffff !important;
+  color: var(--text) !important;
 }
 .toastui-editor-contents a {
   color: #C9A96E !important;
