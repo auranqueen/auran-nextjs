@@ -553,6 +553,22 @@ export default function CustomerHomePage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false)
+  const [searchSheetEntered, setSearchSheetEntered] = useState(false)
+  useEffect(() => {
+    if (!searchSheetOpen) { setSearchSheetEntered(false); return }
+    const id = requestAnimationFrame(() => setSearchSheetEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [searchSheetOpen])
+  const closeSearchSheet = () => {
+    if (!searchSheetEntered) return
+    setSearchSheetEntered(false)
+    setTimeout(() => {
+      setSearchSheetOpen(false)
+      setSearchFocused(false)
+      setSearchKeyword('')
+    }, 300)
+  }
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [myUserId, setMyUserId] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
@@ -2350,7 +2366,7 @@ export default function CustomerHomePage() {
               className="search-input-slim"
               value={searchKeyword}
               onChange={e => setSearchKeyword(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
+              onFocus={() => { setSearchFocused(true); setSearchSheetOpen(true) }}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
               placeholder="브랜드·제품명으로 검색해보세요"
               style={{
@@ -2383,7 +2399,65 @@ export default function CustomerHomePage() {
             X
           </button>
         </div>
-        {searchFocused && !searchKeyword && popularKeywords.length > 0 && (
+      </div>
+
+      {searchSheetOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'var(--bg)',
+            display: 'flex',
+            flexDirection: 'column',
+            transform: searchSheetEntered ? 'translateY(0)' : 'translateY(100%)',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 16px 10px' }}>
+            <button
+              type="button"
+              onClick={closeSearchSheet}
+              aria-label="뒤로"
+              style={{ width: 32, height: 32, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+            >
+              ←
+            </button>
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              border: '1.5px solid var(--gold)',
+              borderRadius: 18,
+              padding: '5px 12px',
+              background: 'var(--bg)',
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.6">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+              <input
+                className="search-input-slim"
+                autoFocus
+                value={searchKeyword}
+                onChange={e => setSearchKeyword(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                placeholder="브랜드·제품명으로 검색해보세요"
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  fontSize: 9,
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 16px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+        {!searchKeyword && popularKeywords.length > 0 && (
           <div style={{ background: 'var(--bg)', borderRadius: 16, padding: '16px', marginBottom: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontSize: 9, color: 'var(--text)' }}>인기 쇼핑 키워드</span>
@@ -2404,8 +2478,6 @@ export default function CustomerHomePage() {
               marginTop: 8,
               background: 'var(--bg3)',
               borderRadius: 12,
-              maxHeight: 300,
-              overflowY: 'auto',
               border: '1px solid rgba(var(--fg-rgb),0.08)',
             }}
           >
@@ -2444,7 +2516,9 @@ export default function CustomerHomePage() {
             )}
           </div>
         ) : null}
-      </div>
+          </div>
+        </div>
+      )}
 
       {phaseColor && (
       <style>{`

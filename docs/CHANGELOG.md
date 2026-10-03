@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- feat(home): 홈 검색 결과를 전체화면 슬라이드업 시트로 전환 — 홈 검색바 포커스 시 `searchSheetOpen`으로 시트(fixed inset 0, z 200, `var(--bg)`, translateY 0.3s) 오픈, 시트 상단 ← + 검색 입력(autoFocus), 인기 키워드(검색어 없을 때)·결과 리스트를 시트 안 스크롤로 이동(결과 maxHeight 300 제거). ← 시 내려간 뒤 `searchFocused=false`, `searchKeyword=''`. 검색 API·필터·클릭 로직 변경 없음
 - style(home): 홈 검색바 골드 테두리(`1.5px solid var(--gold)`)·배경 `var(--bg)`·돋보기 SVG 골드·placeholder 「브랜드·제품명으로 검색해보세요」(골드 50%). 인기 키워드 드롭다운 배경 `var(--bg)`+그림자, 번호 `var(--purple)`. `globals.css`에 `--gold-rgb: 184,150,90`(다크/라이트) 추가, `.search-input-slim::placeholder` 골드로. 검색 로직 변경 없음
 - style(home): PRIVÉ 배너 AD 뱃지 삭제, ▶ 버튼 항상 표시(클릭 시 0.9s 회전 → `video_url` 있으면 영상 팝업, 없으면 회전만)
 
