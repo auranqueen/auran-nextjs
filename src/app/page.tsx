@@ -12,6 +12,7 @@ import Loading from './loading'
 import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import HomeExtraSection from '@/components/home/HomeExtraSection'
+import { InSheetContext } from '@/components/home/InSheetContext'
 import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
@@ -19,6 +20,9 @@ import CheckinTracker from '@/components/CheckinTracker'
 import ShareLinkSheet from '@/components/ShareLinkSheet'
 
 const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRecommendSheet'), { ssr: false })
+const MyManageSheet = dynamic(() => import('@/components/home/MyManagePage'), { ssr: false })
+const MyWorldSheet = dynamic(() => import('@/app/myworld/page'), { ssr: false })
+const CommunitySheet = dynamic(() => import('@/app/dashboard/customer/community/page'), { ssr: false })
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -569,6 +573,35 @@ export default function CustomerHomePage() {
       setSearchKeyword('')
     }, 300)
   }
+  const [homeSheet, setHomeSheet] = useState<string | null>(null)
+  const [homeSheetEntered, setHomeSheetEntered] = useState(false)
+  const homeSheetHistoryRef = useRef(false)
+  useEffect(() => {
+    if (!homeSheet) { setHomeSheetEntered(false); return }
+    const id = requestAnimationFrame(() => setHomeSheetEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [homeSheet])
+  const closeHomeSheet = () => {
+    setHomeSheetEntered(false)
+    setTimeout(() => setHomeSheet(null), 350)
+  }
+  useEffect(() => {
+    if (!homeSheet) return
+    window.history.pushState({ ...(window.history.state ?? {}), homeSheet: true }, '')
+    homeSheetHistoryRef.current = true
+    const onPopState = () => {
+      homeSheetHistoryRef.current = false
+      closeHomeSheet()
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      // 시트 안에서 다른 페이지로 이동한 경우엔 되돌리지 않음
+      if (homeSheetHistoryRef.current && window.location.pathname === '/') window.history.back()
+      homeSheetHistoryRef.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeSheet])
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [myUserId, setMyUserId] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
@@ -2520,6 +2553,27 @@ export default function CustomerHomePage() {
         </div>
       )}
 
+      {homeSheet && (
+        <>
+          <div
+            onClick={closeHomeSheet}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, opacity: homeSheetEntered ? 1 : 0, transition: 'opacity 0.3s ease', pointerEvents: homeSheetEntered ? 'auto' : 'none' }}
+          />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: '92vh', background: 'var(--bg)', borderRadius: '20px 20px 0 0', zIndex: 201, transform: homeSheetEntered ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.35s ease', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 40, height: 4, background: 'rgba(var(--fg-rgb),0.15)', borderRadius: 2, margin: '12px auto 0', flexShrink: 0 }} />
+            <button type="button" aria-label="닫기" onClick={closeHomeSheet} style={{ position: 'absolute', top: 16, right: 16, zIndex: 30, fontSize: 20, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', lineHeight: 1 }}>✕</button>
+            <div style={{ flex: 1, overflowY: 'auto', paddingTop: 8 }}>
+              <InSheetContext.Provider value>
+                {homeSheet === '/my/manage' ? <MyManageSheet />
+                  : homeSheet === '/myworld' ? <MyWorldSheet />
+                  : homeSheet === '/dashboard/customer/community' ? <CommunitySheet />
+                  : null}
+              </InSheetContext.Provider>
+            </div>
+          </div>
+        </>
+      )}
+
       {phaseColor && (
       <style>{`
         @keyframes phaseRingPulse {
@@ -3342,7 +3396,7 @@ export default function CustomerHomePage() {
       </div>
       </>)}
 
-      <HomeExtraSection />
+      <HomeExtraSection onShortcutSelect={setHomeSheet} />
       <SeasonRecommendSection
         month={new Date().getMonth() + 1}
         showEditChrome={showHomeEditChrome}

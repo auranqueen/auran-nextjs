@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useInSheet } from '@/components/home/InSheetContext'
 
-const BG = '#0D0B09'
-const CARD_BG = '#181520'
-const BORDER = 'rgba(255,255,255,0.07)'
+const BG = 'var(--bg)'
+const CARD_BG = 'var(--bg2)'
+const BORDER = 'rgba(var(--fg-rgb),0.1)'
 const P = '#7B5EA7'
 const GOLD = '#C9A96E'
-const TEXT_MAIN = 'rgba(255,255,255,0.9)'
-const TEXT_SUB = 'rgba(255,255,255,0.45)'
+const TEXT_MAIN = 'var(--text)'
+const TEXT_SUB = 'rgba(var(--fg-rgb),0.45)'
 
 type MainTab = 'bookings' | 'coupons' | 'care'
 type CouponSubTab = 'usable' | 'used'
@@ -102,7 +103,7 @@ function salonName(row: BookingRow): string {
 function statusBadgeStyle(status: string): { bg: string; color: string } {
   const s = String(status || '')
   if (s.includes('완료')) return { bg: 'rgba(123,94,167,0.2)', color: P }
-  if (s.includes('취소')) return { bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }
+  if (s.includes('취소')) return { bg: 'rgba(var(--fg-rgb),0.08)', color: 'rgba(var(--fg-rgb),0.3)' }
   return { bg: 'rgba(201,169,110,0.15)', color: GOLD }
 }
 
@@ -119,6 +120,7 @@ function couponDiscountLabel(c: CouponRow['coupons']) {
 
 export default function MyManagePage() {
   const router = useRouter()
+  const inSheet = useInSheet()
   const [authReady, setAuthReady] = useState(false)
   const [publicUserId, setPublicUserId] = useState<string | null>(null)
   const [userName, setUserName] = useState('')
@@ -242,7 +244,7 @@ export default function MyManagePage() {
 
   if (!authReady) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: TEXT_SUB, fontSize: 13, padding: 24 }}>
+      <div style={{ minHeight: inSheet ? undefined : '100vh', background: BG, color: TEXT_SUB, fontSize: 13, padding: 24 }}>
         불러오는 중…
       </div>
     )
@@ -250,7 +252,7 @@ export default function MyManagePage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: inSheet ? undefined : '100vh',
       maxWidth: 390,
       margin: '0 auto',
       background: BG,
@@ -262,8 +264,9 @@ export default function MyManagePage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '16px 16px 0',
+        padding: inSheet ? '0 16px' : '16px 16px 0',
       }}>
+        {inSheet ? <div style={{ width: 28 }} /> : (
         <button
           type="button"
           onClick={() => router.back()}
@@ -278,6 +281,7 @@ export default function MyManagePage() {
         >
           ‹
         </button>
+        )}
         <div style={{ fontSize: 16, color: TEXT_MAIN }}>내 관리</div>
         <div style={{ width: 28 }} />
       </div>
@@ -332,9 +336,9 @@ export default function MyManagePage() {
           bookings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🗓️</div>
-              <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>아직 예약 내역이 없어요</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 24 }}>살롱 예약 후 내역이 표시돼요</div>
-              <a href="/booking" style={{ display: 'inline-block', padding: '10px 24px', borderRadius: 20, background: '#7B5EA7', color: '#fff', fontSize: 13, textDecoration: 'none' }}>살롱 예약하기</a>
+              <div style={{ fontSize: 15, color: 'rgba(var(--fg-rgb),0.7)', marginBottom: 8 }}>아직 예약 내역이 없어요</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.35)', marginBottom: 24 }}>살롱 예약 후 내역이 표시돼요</div>
+              <a href="/booking" style={{ display: 'inline-block', padding: '10px 24px', borderRadius: 20, background: '#7B5EA7', color: '#FFF', fontSize: 13, textDecoration: 'none' }}>살롱 예약하기</a>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -404,8 +408,8 @@ export default function MyManagePage() {
             {filteredCoupons.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>🎫</div>
-                <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>보유한 쿠폰이 없어요</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>원장님께 관리권·쿠폰을 받으면 여기에 표시돼요</div>
+                <div style={{ fontSize: 15, color: 'rgba(var(--fg-rgb),0.7)', marginBottom: 8 }}>보유한 쿠폰이 없어요</div>
+                <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.35)' }}>원장님께 관리권·쿠폰을 받으면 여기에 표시돼요</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -445,8 +449,8 @@ export default function MyManagePage() {
         ) : careCards.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>💆</div>
-            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>케어카드가 없어요</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>시술 완료 후 원장님이 발송한 케어카드가 여기에 표시돼요</div>
+            <div style={{ fontSize: 15, color: 'rgba(var(--fg-rgb),0.7)', marginBottom: 8 }}>케어카드가 없어요</div>
+            <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.35)' }}>시술 완료 후 원장님이 발송한 케어카드가 여기에 표시돼요</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -468,7 +472,7 @@ export default function MyManagePage() {
                       padding: '3px 8px',
                       borderRadius: 999,
                       background: P,
-                      color: '#fff',
+                      color: '#FFF',
                     }}>
                       {phase}
                     </span>

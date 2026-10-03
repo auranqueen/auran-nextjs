@@ -8,8 +8,9 @@ import { compressImage } from '@/lib/imageUpload'
 import Avatar from '@/components/ui/Avatar'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { calcHormoneBriefing } from '@/lib/hormoneUtils'
+import { useInSheet } from '@/components/home/InSheetContext'
 
-const BG = '#0D0B09'
+const BG = 'var(--bg)'
 const GOLD = '#C9A96E'
 const PURPLE = '#7B5EA7'
 
@@ -25,6 +26,7 @@ function toKoreanSkinType(raw: string | null | undefined) {
 
 export default function MyWorldPage() {
   const router = useRouter()
+  const inSheet = useInSheet()
   const supabase = createClient()
   const { profile: userProfile } = useUserProfile()
   const [toast, setToast] = useState('')
@@ -534,7 +536,7 @@ export default function MyWorldPage() {
   }, [daysSinceRoutine])
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 0, fontWeight: 400 }}>
+    <div style={{ background: BG, minHeight: inSheet ? undefined : '100vh', maxWidth: 390, margin: '0 auto', color: 'var(--text)', paddingBottom: 0, fontWeight: 400 }}>
       <style>{`
         @keyframes snowfall {
           0% { transform: translateY(-20px) translateX(0px); opacity: 0; }
@@ -596,17 +598,17 @@ export default function MyWorldPage() {
         }
       `}</style>
 
-      <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(13,11,9,0.96)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>돌아가기</button>
-        <div style={{ fontFamily: 'Georgia, serif', color: '#c4a7e7', letterSpacing: '6px', fontSize: 18 }}>MY WORLD</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>👁 127</div>
+      <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: inSheet ? '0 52px 8px 16px' : '8px 16px', background: 'rgba(var(--bg-rgb),0.96)', borderBottom: '1px solid rgba(var(--fg-rgb),0.06)' }}>
+        {inSheet ? <div /> : <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 18, cursor: 'pointer' }}>돌아가기</button>}
+        <div style={{ fontFamily: 'Georgia, serif', color: 'var(--purple)', letterSpacing: '6px', fontSize: 16, whiteSpace: 'nowrap' }}>MY WORLD</div>
+        <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)' }}>👁 127</div>
       </header>
 
       {/* ── 슬림 주인 카드 ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 16px 0', padding: '12px 14px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 16 }}>
         <Avatar url={profile?.avatar_url ?? userProfile?.avatar_url ?? null} name={myworldNickname || profile?.username || profile?.full_name || '나의 공간'} size={44} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
+          <div style={{ fontSize: 15, color: 'var(--text)' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>{profile?.grade || 'AUBE'} · 일촌 0 · 방명록 {guestbook.length}</div>
           {!profile ? null : (profile as any)?.gender === 'male' ? (
             <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>💪 피지조절 관리 중</div>
@@ -616,7 +618,7 @@ export default function MyWorldPage() {
             <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>🌙 {hormonePhase}</div>
           ) : null}
         </div>
-        <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
+        <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: 'var(--purple)', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
       {/* ── 멤버십 카드 (분리) ── */}
       {(() => {
@@ -665,7 +667,7 @@ export default function MyWorldPage() {
         )
       })()}
 
-      <div style={{ display: 'flex', margin: '14px 16px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', margin: '14px 16px 0', borderBottom: '1px solid rgba(var(--fg-rgb),0.08)' }}>
         {[
           ['room', '스킨케어룸'],
           ['diary', '피부일기'],
@@ -679,7 +681,7 @@ export default function MyWorldPage() {
               flex: 1,
               border: 'none',
               background: 'transparent',
-              color: activeTab === key ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+              color: activeTab === key ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.5)',
               borderBottom: activeTab === key ? '2px solid #7B5EA7' : '2px solid transparent',
               fontSize: 12,
               padding: '10px 0',
@@ -726,9 +728,9 @@ export default function MyWorldPage() {
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 4 }}>✨ 새 배경 투표 중이에요</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>{roomContest.title}</div>
-                <div style={{ marginTop: 6, display: 'inline-block', fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff' }}>
+                <div style={{ fontSize: 11, color: 'var(--purple)', marginBottom: 4 }}>✨ 새 배경 투표 중이에요</div>
+                <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.85)', lineHeight: 1.35 }}>{roomContest.title}</div>
+                <div style={{ marginTop: 6, display: 'inline-block', fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: 'var(--purple)' }}>
                   {contestRoomDDay(roomContest.ends_at)}
                 </div>
               </div>
@@ -741,7 +743,7 @@ export default function MyWorldPage() {
                   borderRadius: 999,
                   padding: '8px 14px',
                   background: '#7B5EA7',
-                  color: '#fff',
+                  color: '#FFF',
                   fontSize: 11,
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -752,27 +754,27 @@ export default function MyWorldPage() {
             </div>
           ) : null}
 
-          <div style={{ margin: '14px 16px 0', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>🪞 내 화장대</div>
+          <div style={{ margin: '14px 16px 0', fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>🪞 내 화장대</div>
           <div style={{ margin: '8px 16px 0', display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {vanityItems.length > 0 ? vanityItems.map((v: any) => (
-              <div key={v.id} onClick={() => router.push(`/products/${v.id}`)} style={{ minWidth: 80, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 6, cursor: 'pointer' }}>
-                <div style={{ height: 56, borderRadius: 8, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <div key={v.id} onClick={() => router.push(`/products/${v.id}`)} style={{ minWidth: 80, background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 10, padding: 6, cursor: 'pointer' }}>
+                <div style={{ height: 56, borderRadius: 8, background: 'rgba(var(--fg-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {v.thumb ? <img src={v.thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 24 }}>🧴</span>}
                 </div>
-                <div style={{ fontSize: 9, marginTop: 6, color: 'rgba(255,255,255,0.75)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.name}</div>
+                <div style={{ fontSize: 9, marginTop: 6, color: 'rgba(var(--fg-rgb),0.75)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.name}</div>
               </div>
             )) : (
-              <div style={{ width: '100%', fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 20 }}>
+              <div style={{ width: '100%', fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', textAlign: 'center', padding: 20 }}>
                 아직 구매한 제품이 없어요{'\n'}제품을 구매하면 화장대에 올라가요 💜
               </div>
             )}
           </div>
 
           <div style={{ margin: '12px 16px 0' }}>
-            <button onClick={() => setIsDrawerOpen((p) => !p)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', borderRadius: 10, padding: '8px 12px', fontSize: 11, cursor: 'pointer' }}>🗄️ 서랍 열기</button>
+            <button onClick={() => setIsDrawerOpen((p) => !p)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.08)', color: 'var(--purple)', borderRadius: 10, padding: '8px 12px', fontSize: 11, cursor: 'pointer' }}>🗄️ 서랍 열기</button>
           </div>
           <div style={{ margin: '10px 16px 0', maxHeight: isDrawerOpen ? 900 : 0, transition: 'max-height 0.4s ease', overflow: 'hidden' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>🛍️ 당선 배경 아이템 (토스트)</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.45)', marginBottom: 8 }}>🛍️ 당선 배경 아이템 (토스트)</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
               {mwShopItems.map((p: any) => {
                 const base = Number(p.retail_price || 0)
@@ -780,12 +782,12 @@ export default function MyWorldPage() {
                 const pay = mwVotedActive ? Math.max(1, Math.ceil(base * factor)) : base
                 const thumb = p.storage_thumb_url || p.thumb_img || ''
                 return (
-                  <div key={`mwshop-${p.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>
-                    <div style={{ height: 56, borderRadius: 8, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div key={`mwshop-${p.id}`} style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 10, padding: 8 }}>
+                    <div style={{ height: 56, borderRadius: 8, background: 'rgba(var(--fg-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🖼️</span>}
                     </div>
-                    <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(255,255,255,0.75)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                    <div style={{ fontSize: 9, marginTop: 2, color: mwVotedActive ? '#9b7ec8' : 'rgba(255,255,255,0.5)' }}>
+                    <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(var(--fg-rgb),0.75)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ fontSize: 9, marginTop: 2, color: mwVotedActive ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.5)' }}>
                       {pay.toLocaleString()}T{mwVotedActive && base !== pay ? <span style={{ textDecoration: 'line-through', marginLeft: 4, opacity: 0.6 }}>{base}T</span> : null}
                     </div>
                     <button
@@ -796,7 +798,7 @@ export default function MyWorldPage() {
                         marginTop: 4,
                         border: '1px solid rgba(123,94,167,0.35)',
                         background: 'rgba(123,94,167,0.12)',
-                        color: '#c4a7e7',
+                        color: 'var(--purple)',
                         borderRadius: 8,
                         padding: '4px 0',
                         width: '100%',
@@ -810,30 +812,30 @@ export default function MyWorldPage() {
                 )
               })}
               {mwShopItems.length === 0 ? (
-                <div style={{ gridColumn: '1 / -1', fontSize: 10, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 8 }}>등록된 아이템이 없어요</div>
+                <div style={{ gridColumn: '1 / -1', fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', textAlign: 'center', padding: 8 }}>등록된 아이템이 없어요</div>
               ) : null}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
               {vanityItems.map((v: any) => (
-                <div key={`drawer-${v.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>
-                  <div style={{ height: 56, borderRadius: 8, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <div key={`drawer-${v.id}`} style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 10, padding: 8 }}>
+                  <div style={{ height: 56, borderRadius: 8, background: 'rgba(var(--fg-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                     {v.thumb ? <img src={v.thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🧴</span>}
                   </div>
-                  <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(255,255,255,0.75)' }}>{v.name}</div>
+                  <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(var(--fg-rgb),0.75)' }}>{v.name}</div>
                   <button
                     onClick={() => {
                       setDiaryMemo((prev) => `${prev}${prev ? ' ' : ''}#${v.name}`)
                       setActiveTab('diary')
                       setToast(`#${v.name} 추가됐어요 💜`)
                     }}
-                    style={{ marginTop: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '4px 0', width: '100%', fontSize: 9, cursor: 'pointer' }}
+                    style={{ marginTop: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: 'var(--purple)', borderRadius: 8, padding: '4px 0', width: '100%', fontSize: 9, cursor: 'pointer' }}
                   >
                     써요 💜
                   </button>
                 </div>
               ))}
               {vanityItems.length === 0 ? (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', padding: 10 }}>
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', fontSize: 11, color: 'rgba(var(--fg-rgb),0.35)', padding: 10 }}>
                   구매한 제품이 없어요 🧴
                 </div>
               ) : null}
@@ -844,7 +846,7 @@ export default function MyWorldPage() {
 
       {activeTab === 'diary' ? (
         <div style={{ margin: '12px 16px 0' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', textAlign: 'right', marginBottom: 8 }}>
             <div>{now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</div>
             <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
           </div>
@@ -859,20 +861,20 @@ export default function MyWorldPage() {
             />
             <div
               onClick={() => mediaInputRef.current?.click()}
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(123,94,167,0.4)', borderRadius: 12, padding: 16, textAlign: 'center', cursor: 'pointer', marginBottom: 10 }}
+              style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px dashed rgba(123,94,167,0.4)', borderRadius: 12, padding: 16, textAlign: 'center', cursor: 'pointer', marginBottom: 10 }}
             >
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>📸 사진/영상 추가</div>
+              <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.3)' }}>📸 사진/영상 추가</div>
             </div>
             {mediaPreview.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
                 {mediaPreview.map((url, idx) => (
-                  <div key={idx} style={{ width: '100%', aspectRatio: '1', position: 'relative', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                  <div key={idx} style={{ width: '100%', aspectRatio: '1', position: 'relative', borderRadius: 8, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.06)' }}>
                     {mediaFiles[idx]?.type?.startsWith('video') ? (
                       <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
                     ) : (
                       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); removeMedia(idx) }} style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, cursor: 'pointer' }}>✕</button>
+                    <button onClick={(e) => { e.stopPropagation(); removeMedia(idx) }} style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#FFF', fontSize: 10, cursor: 'pointer' }}>✕</button>
                   </div>
                 ))}
               </div>
@@ -883,7 +885,7 @@ export default function MyWorldPage() {
                 onChange={(e) => setVideoFeedText(e.target.value)}
                 placeholder={'영상에 대한 이야기를 남겨보세요...\n루틴 설명, 제품 후기, 오늘의 피부 이야기 💜'}
                 rows={3}
-                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }}
+                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: 'var(--text)', fontSize: 13, marginBottom: 8 }}
               />
             ) : null}
             {userProfile?.skin_type ? (
@@ -901,7 +903,7 @@ export default function MyWorldPage() {
               >
                 <div style={{ fontSize: 14, lineHeight: 1 }}>✨</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: '#c4a7e7' }}>{toKoreanSkinType(userProfile.skin_type)} 피부로 작성돼요</div>
+                  <div style={{ fontSize: 12, color: 'var(--purple)' }}>{toKoreanSkinType(userProfile.skin_type)} 피부로 작성돼요</div>
                   <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 2 }}>내 피부타입이 자동 적용돼요</div>
                   {Array.isArray(userProfile.skin_concerns) && userProfile.skin_concerns.length > 0 ? (
                     <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', marginTop: 2 }}>고민: {userProfile.skin_concerns.join(' · ')}</div>
@@ -929,12 +931,12 @@ export default function MyWorldPage() {
                   gap: 8,
                 }}
               >
-                <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+                <div style={{ fontSize: 11, color: 'var(--purple)', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button
                     type="button"
                     onClick={() => router.push('/my/profile')}
-                    style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
+                    style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: 'var(--purple)', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
                   >
                     설정하기
                   </button>
@@ -944,7 +946,7 @@ export default function MyWorldPage() {
                       localStorage.setItem('hide_skintype_banner', 'true')
                       setHideSkinTypeGuide(true)
                     }}
-                    style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+                    style={{ border: 'none', background: 'transparent', color: 'rgba(var(--fg-rgb),0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
                   >
                     ×
                   </button>
@@ -954,7 +956,7 @@ export default function MyWorldPage() {
             <div style={{ fontSize: 12, color: 'rgba(196,167,231,0.8)', marginBottom: 4 }}>오늘 기분이 어때요? 💜</div>
             {moodGroups.map((group) => (
               <div key={group.label} style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                   {group.items.map((m) => {
                     const selected = selectedMoods.includes(m)
@@ -967,8 +969,8 @@ export default function MyWorldPage() {
                           padding: '5px 10px',
                           borderRadius: 20,
                           border: selected ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)',
-                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
-                          color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(var(--fg-rgb),0.03)',
+                          color: selected ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.5)',
                           margin: 3,
                           cursor: 'pointer',
                         }}
@@ -983,7 +985,7 @@ export default function MyWorldPage() {
             <div style={{ fontSize: 12, color: 'rgba(196,167,231,0.8)', marginTop: 8, marginBottom: 4 }}>오늘 피부는 어때요? 🧴</div>
             {skinStatusGroups.map((group) => (
               <div key={group.label} style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                   {group.items.map((s) => {
                     const selected = selectedSkinStatuses.includes(s)
@@ -996,8 +998,8 @@ export default function MyWorldPage() {
                           padding: '5px 10px',
                           borderRadius: 20,
                           border: selected ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)',
-                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
-                          color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(var(--fg-rgb),0.03)',
+                          color: selected ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.5)',
                           margin: 3,
                           cursor: 'pointer',
                         }}
@@ -1012,7 +1014,7 @@ export default function MyWorldPage() {
             {/* ===== [제품 태그] ===== */}
             {vanityItems.length > 0 && (
               <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+                <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.4)', marginBottom: 6 }}>
                   오늘 쓴 제품 태그
                 </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -1027,13 +1029,13 @@ export default function MyWorldPage() {
                         fontSize: 11, padding: '4px 10px', borderRadius: 20,
                         border: diaryMemo.includes(`#${v.name}`)
                           ? '1px solid rgba(201,169,110,0.6)'
-                          : '1px solid rgba(255,255,255,0.1)',
+                          : '1px solid rgba(var(--fg-rgb),0.1)',
                         background: diaryMemo.includes(`#${v.name}`)
                           ? 'rgba(201,169,110,0.1)'
                           : 'transparent',
                         color: diaryMemo.includes(`#${v.name}`)
                           ? '#C9A96E'
-                          : 'rgba(255,255,255,0.4)',
+                          : 'rgba(var(--fg-rgb),0.4)',
                         cursor: 'pointer',
                       }}
                     >
@@ -1043,27 +1045,27 @@ export default function MyWorldPage() {
                 </div>
               </div>
             )}
-            <textarea value={diaryMemo} onChange={(e) => setDiaryMemo(e.target.value)} placeholder="오늘 피부 한줄 기록..." rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }} />
+            <textarea value={diaryMemo} onChange={(e) => setDiaryMemo(e.target.value)} placeholder="오늘 피부 한줄 기록..." rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: 'var(--text)', fontSize: 13, marginBottom: 8 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 onClick={() => setIsPublic((p) => !p)}
-                style={{ border: '1px solid rgba(123,94,167,0.25)', background: 'transparent', color: isPublic ? '#7B5EA7' : 'rgba(255,255,255,0.3)', borderRadius: 10, padding: '10px 12px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                style={{ border: '1px solid rgba(123,94,167,0.25)', background: 'transparent', color: isPublic ? '#7B5EA7' : 'rgba(var(--fg-rgb),0.3)', borderRadius: 10, padding: '10px 12px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 {isPublic ? '🌍 공개' : '🔒 비공개'}
               </button>
-              <button onClick={onSaveDiary} style={{ background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 10, padding: 12, fontSize: 13, width: '100%', cursor: 'pointer' }}>기록하기 💜</button>
+              <button onClick={onSaveDiary} style={{ background: '#7B5EA7', color: '#FFF', border: 'none', borderRadius: 10, padding: 12, fontSize: 13, width: '100%', cursor: 'pointer' }}>기록하기 💜</button>
             </div>
           </div>
 
           <div style={{ marginTop: 12 }}>
             {skinDiary.length > 0 ? skinDiary.map((d: any, i: number) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, marginBottom: 12, overflow: 'hidden' }}>
+              <div key={i} style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 16, marginBottom: 12, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👩</div>
                     <div>
                       <div style={{ fontSize: 12 }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
+                      <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', fontFamily: 'monospace' }}>
                         {new Date(d?.recorded_at || '').toLocaleDateString('ko-KR', {
                           year: 'numeric',
                           month: '2-digit',
@@ -1077,7 +1079,7 @@ export default function MyWorldPage() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{d?.is_public === false ? '🔒' : '🌍'}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.5)' }}>{d?.is_public === false ? '🔒' : '🌍'}</div>
                 </div>
                 {Array.isArray(d?.media_urls) && d.media_urls.length > 0 ? (
                   (() => {
@@ -1114,16 +1116,16 @@ export default function MyWorldPage() {
                 <div style={{ padding: '0 12px 10px' }}>
                   <div style={{ fontSize: 12 }}>{String(d?.mood || '').split(',').filter(Boolean).join(' ') || ''}</div>
                   <div style={{ fontSize: 12, marginTop: 2 }}>{String(d?.skin_status || '').split(',').filter(Boolean).join(' ') || ''}</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{d?.memo || ''}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(var(--fg-rgb),0.8)', marginTop: 4 }}>{d?.memo || ''}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px 12px', fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-                  <button onClick={() => toggleLike(String(d.id))} style={{ border: 'none', background: 'transparent', color: likedMap[String(d.id)] ? '#ff6b7a' : '#fff', cursor: 'pointer', fontSize: 11, padding: 0, animation: likedMap[String(d.id)] ? 'heartPop 0.24s ease-in-out' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px 12px', fontSize: 11, color: 'rgba(var(--fg-rgb),0.7)' }}>
+                  <button onClick={() => toggleLike(String(d.id))} style={{ border: 'none', background: 'transparent', color: likedMap[String(d.id)] ? '#ff6b7a' : 'var(--text)', cursor: 'pointer', fontSize: 11, padding: 0, animation: likedMap[String(d.id)] ? 'heartPop 0.24s ease-in-out' : 'none' }}>
                     {likedMap[String(d.id)] ? '❤️' : '🤍'} 좋아요 {likeCountMap[String(d.id)] || 0}
                   </button>
-                  <button onClick={() => toggleComments(String(d.id))} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                  <button onClick={() => toggleComments(String(d.id))} style={{ border: 'none', background: 'transparent', color: 'rgba(var(--fg-rgb),0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
                     💬 댓글 {commentCountMap[String(d.id)] || 0}
                   </button>
-                  <button onClick={() => setShareOpenId((p) => (p === String(d.id) ? '' : String(d.id)))} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                  <button onClick={() => setShareOpenId((p) => (p === String(d.id) ? '' : String(d.id)))} style={{ border: 'none', background: 'transparent', color: 'rgba(var(--fg-rgb),0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
                     🔗 공유
                   </button>
                   <span>🔖 저장</span>
@@ -1140,19 +1142,19 @@ export default function MyWorldPage() {
                           setToast('링크 복사 실패')
                         }
                       }}
-                      style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}
+                      style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: 'var(--purple)', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}
                     >
                       📋 링크 복사
                     </button>
-                    <button onClick={() => setShareSheetOpen(true)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>💬 카카오</button>
-                    <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>📷 인스타</button>
+                    <button onClick={() => setShareSheetOpen(true)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: 'var(--purple)', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>💬 카카오</button>
+                    <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: 'var(--purple)', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>📷 인스타</button>
                   </div>
                 ) : null}
                 {commentOpenId === String(d.id) ? (
                   <div style={{ padding: '0 12px 12px' }}>
                     <div style={{ display: 'grid', gap: 6, marginBottom: 6 }}>
                       {(commentsMap[String(d.id)] || []).map((c: any, ci: number) => (
-                        <div key={ci} style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>• {String(c?.message || '')}</div>
+                        <div key={ci} style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.7)' }}>• {String(c?.message || '')}</div>
                       ))}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -1160,15 +1162,15 @@ export default function MyWorldPage() {
                         value={commentInputMap[String(d.id)] || ''}
                         onChange={(e) => setCommentInputMap((p) => ({ ...p, [String(d.id)]: e.target.value }))}
                         placeholder="댓글을 입력하세요"
-                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 11 }}
+                        style={{ flex: 1, background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 11 }}
                       />
-                      <button onClick={() => addComment(String(d.id))} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '8px 10px', fontSize: 11, cursor: 'pointer' }}>등록</button>
+                      <button onClick={() => addComment(String(d.id))} style={{ border: 'none', background: '#7B5EA7', color: '#FFF', borderRadius: 8, padding: '8px 10px', fontSize: 11, cursor: 'pointer' }}>등록</button>
                     </div>
                   </div>
                 ) : null}
               </div>
             )) : (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', whiteSpace: 'pre-line', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', whiteSpace: 'pre-line', textAlign: 'center' }}>
                 {'아직 기록이 없어요\n매일 기록하면 피부 변화를 볼 수 있어요 ✨'}
               </div>
             )}
@@ -1187,8 +1189,8 @@ export default function MyWorldPage() {
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'space-between', marginBottom: 12,
               }}>
-                <div style={{ fontSize: 13, color: '#c4a7e7' }}>💜 피부 연대기</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+                <div style={{ fontSize: 13, color: 'var(--purple)' }}>💜 피부 연대기</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)' }}>
                   총 {skinDiary.length}개 기록
                 </div>
               </div>
@@ -1196,7 +1198,7 @@ export default function MyWorldPage() {
                 <div key={d.id} style={{
                   display: 'flex', gap: 10, marginBottom: 10,
                   paddingBottom: 10,
-                  borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  borderBottom: i < 2 ? '1px solid rgba(var(--fg-rgb),0.05)' : 'none',
                 }}>
                   <div style={{
                     width: 2, background: 'rgba(123,94,167,0.4)',
@@ -1204,7 +1206,7 @@ export default function MyWorldPage() {
                   }} />
                   <div style={{ flex: 1 }}>
                     <div style={{
-                      fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 3,
+                      fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', marginBottom: 3,
                     }}>
                       {new Date(d.recorded_at).toLocaleDateString('ko-KR', {
                         month: 'long', day: 'numeric',
@@ -1222,7 +1224,7 @@ export default function MyWorldPage() {
                       />
                     )}
                     <div style={{
-                      fontSize: 12, color: 'rgba(255,255,255,0.65)',
+                      fontSize: 12, color: 'rgba(var(--fg-rgb),0.65)',
                       lineHeight: 1.6,
                     }}>
                       {d.memo?.slice(0, 60)}{(d.memo?.length || 0) > 60 ? '...' : ''}
@@ -1233,7 +1235,7 @@ export default function MyWorldPage() {
                           <span key={s} style={{
                             fontSize: 10, padding: '2px 7px', borderRadius: 20,
                             background: 'rgba(123,94,167,0.2)',
-                            color: '#c4a7e7',
+                            color: 'var(--purple)',
                             border: '1px solid rgba(123,94,167,0.3)',
                           }}>
                             {s}
@@ -1247,7 +1249,7 @@ export default function MyWorldPage() {
               {skinDiary.length > 3 && (
                 <div style={{
                   textAlign: 'center', fontSize: 11,
-                  color: 'rgba(255,255,255,0.3)', marginTop: 4,
+                  color: 'rgba(var(--fg-rgb),0.3)', marginTop: 4,
                   cursor: 'pointer',
                 }}>
                   더보기 ({skinDiary.length - 3}개 더)
@@ -1299,7 +1301,7 @@ export default function MyWorldPage() {
       }}
       style={{
         width: '100%', padding: 12, borderRadius: 10,
-        border: 'none', background: '#7B5EA7', color: '#fff',
+        border: 'none', background: '#7B5EA7', color: '#FFF',
         fontSize: 13, cursor: 'pointer', marginBottom: 16,
         letterSpacing: -0.2,
       }}
@@ -1332,7 +1334,7 @@ export default function MyWorldPage() {
                 const key = `morning:${item}`
                 const checked = !!routineChecked[key]
                 return (
-                  <button key={key} onClick={() => toggleRoutine('morning', item)} style={{ border: checked ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)', background: checked ? '#7B5EA7' : 'transparent', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer' }}>
+                  <button key={key} onClick={() => toggleRoutine('morning', item)} style={{ border: checked ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)', background: checked ? '#7B5EA7' : 'transparent', color: checked ? '#FFF' : 'var(--text)', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer' }}>
                     {checked ? '✓ ' : '☐ '}{item}
                   </button>
                 )
@@ -1344,14 +1346,14 @@ export default function MyWorldPage() {
                 const key = `evening:${item}`
                 const checked = !!routineChecked[key]
                 return (
-                  <button key={key} onClick={() => toggleRoutine('evening', item)} style={{ border: checked ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)', background: checked ? '#7B5EA7' : 'transparent', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer' }}>
+                  <button key={key} onClick={() => toggleRoutine('evening', item)} style={{ border: checked ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)', background: checked ? '#7B5EA7' : 'transparent', color: checked ? '#FFF' : 'var(--text)', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer' }}>
                     {checked ? '✓ ' : '☐ '}{item}
                   </button>
                 )
               })}
             </div>
             <div style={{ fontSize: 11, marginBottom: 4 }}>오늘 루틴 {routinePct}%</div>
-            <div style={{ width: '100%', height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.1)', marginBottom: 8 }}>
+            <div style={{ width: '100%', height: 6, borderRadius: 999, background: 'rgba(var(--fg-rgb),0.1)', marginBottom: 8 }}>
               <div style={{ width: `${routinePct}%`, height: 6, borderRadius: 999, background: '#7B5EA7' }} />
             </div>
             {routinePct === 100 ? (
@@ -1363,13 +1365,13 @@ export default function MyWorldPage() {
           </div>
 
           <div style={{ marginTop: 12, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: 14 }}>
-            <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 8 }}>🎵 루틴 BGM 추천</div>
+            <div style={{ fontSize: 12, color: 'var(--purple)', marginBottom: 8 }}>🎵 루틴 BGM 추천</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               {[
                 ['auran', 'AURAN 루틴'],
                 ['balance', 'Keep Balance'],
               ].map(([k, label]) => (
-                <button key={k} onClick={() => setBgmTab(k as any)} style={{ flex: 1, border: bgmTab === k ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)', background: bgmTab === k ? 'rgba(123,94,167,0.2)' : 'transparent', color: '#fff', borderRadius: 8, padding: '6px 0', fontSize: 11, cursor: 'pointer' }}>
+                <button key={k} onClick={() => setBgmTab(k as any)} style={{ flex: 1, border: bgmTab === k ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)', background: bgmTab === k ? 'rgba(123,94,167,0.2)' : 'transparent', color: 'var(--text)', borderRadius: 8, padding: '6px 0', fontSize: 11, cursor: 'pointer' }}>
                   {label}
                 </button>
               ))}
@@ -1403,7 +1405,7 @@ export default function MyWorldPage() {
                     flex: 1, padding: '7px 0', borderRadius: 20, fontSize: 11,
                     border: editingSlot === slot ? 'none' : '0.5px solid var(--color-border-secondary)',
                     background: editingSlot === slot ? '#7B5EA7' : 'transparent',
-                    color: editingSlot === slot ? '#fff' : 'var(--color-text-secondary)',
+                    color: editingSlot === slot ? '#FFF' : 'var(--color-text-secondary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -1433,12 +1435,12 @@ export default function MyWorldPage() {
                     width: '100%', padding: '9px 12px', borderRadius: 10,
                     border: '0.5px solid var(--color-border-secondary)',
                     fontSize: 12, fontFamily: 'inherit',
-                    background: '#fff', color: '#111',
+                    background: 'var(--bg)', color: 'var(--text)',
                   }}
                 />
                 {showRoutineSearch && routineProducts.length > 0 && (
                   <div style={{
-                    background: '#fff', border: '0.5px solid #ddd',
+                    background: 'var(--bg)', border: '0.5px solid rgba(var(--fg-rgb),0.1)',
                     borderRadius: 10, marginTop: 4, overflow: 'hidden',
                   }}>
                     {routineProducts.map(p => (
@@ -1454,11 +1456,11 @@ export default function MyWorldPage() {
                           setShowRoutineSearch(false)
                         }}
                         style={{
-                          padding: '9px 12px', fontSize: 12, color: '#111',
-                          cursor: 'pointer', borderBottom: '0.5px solid #f5f5f5',
+                          padding: '9px 12px', fontSize: 12, color: 'var(--text)',
+                          cursor: 'pointer', borderBottom: '0.5px solid var(--bg2)',
                         }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#f5f0ff')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg)')}
                       >
                         {p.name}
                       </div>
@@ -1483,7 +1485,7 @@ export default function MyWorldPage() {
                   }}>
                     <div style={{
                       width: 20, height: 20, borderRadius: '50%',
-                      background: '#7B5EA7', color: '#fff',
+                      background: '#7B5EA7', color: '#FFF',
                       fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>{i + 1}</div>
                     <div style={{ flex: 1, fontSize: 12, color: 'var(--color-text-primary)' }}>
@@ -1527,7 +1529,7 @@ export default function MyWorldPage() {
                   }}
                   style={{
                     width: '100%', padding: 11, borderRadius: 10,
-                    border: 'none', background: '#7B5EA7', color: '#fff',
+                    border: 'none', background: '#7B5EA7', color: '#FFF',
                     fontSize: 13, cursor: 'pointer', marginTop: 4,
                   }}
                 >
@@ -1542,17 +1544,17 @@ export default function MyWorldPage() {
 
       {activeTab === 'guestbook' ? (
         <div style={{ margin: '12px 16px 0' }}>
-          <textarea value={guestbookInput} onChange={(e) => setGuestbookInput(e.target.value)} placeholder="방명록을 남겨보세요 💜" rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13 }} />
-          <button onClick={onWriteGuestbook} style={{ marginTop: 8, border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '10px 0', fontSize: 13, width: '100%', cursor: 'pointer' }}>남기기</button>
+          <textarea value={guestbookInput} onChange={(e) => setGuestbookInput(e.target.value)} placeholder="방명록을 남겨보세요 💜" rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: 'var(--text)', fontSize: 13 }} />
+          <button onClick={onWriteGuestbook} style={{ marginTop: 8, border: 'none', background: '#7B5EA7', color: '#FFF', borderRadius: 10, padding: '10px 0', fontSize: 13, width: '100%', cursor: 'pointer' }}>남기기</button>
 
           <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
             {guestbook.length > 0 ? guestbook.map((g: any, i: number) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 12 }}>
+              <div key={i} style={{ background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.05)', borderRadius: 10, padding: 12 }}>
                 <div style={{ fontSize: 11 }}>👤 {String(g?.message || '')}</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{String(g?.created_at || '').slice(0, 10)}</div>
+                <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.35)', marginTop: 4 }}>{String(g?.created_at || '').slice(0, 10)}</div>
               </div>
             )) : (
-              <div style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.3)', whiteSpace: 'pre-line', padding: '12px 0' }}>
+              <div style={{ textAlign: 'center', fontSize: 11, color: 'rgba(var(--fg-rgb),0.3)', whiteSpace: 'pre-line', padding: '12px 0' }}>
                 {'💜 아직 방명록이 없어요\n마이월드 링크를 공유해서\n친구들을 초대해보세요 ✨'}
               </div>
             )}
@@ -1573,7 +1575,7 @@ export default function MyWorldPage() {
         </div>
       ) : null}
       {toast ? (
-        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: 'rgba(123,94,167,0.9)', color: '#fff', borderRadius: 20, padding: '10px 20px', fontSize: 12, zIndex: 60 }}>
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: 'rgba(123,94,167,0.9)', color: '#FFF', borderRadius: 20, padding: '10px 20px', fontSize: 12, zIndex: 60 }}>
           {toast}
         </div>
       ) : null}
@@ -1584,21 +1586,21 @@ export default function MyWorldPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: '#1a1228', border: '1px solid rgba(123,94,167,0.4)', borderTop: '2px solid #7B5EA7', borderRadius: 16, padding: 24, width: '90%', maxWidth: 380, position: 'relative' }}
+            style={{ background: 'var(--bg2)', border: '1px solid rgba(123,94,167,0.4)', borderTop: '2px solid #7B5EA7', borderRadius: 16, padding: 24, width: '90%', maxWidth: 380, position: 'relative' }}
           >
-            <button onClick={() => setShowCustomize(false)} style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 16, cursor: 'pointer' }}>×</button>
-            <div style={{ fontSize: 15, color: '#c4a7e7', marginBottom: 12 }}>✏️ 마이월드 꾸미기</div>
+            <button onClick={() => setShowCustomize(false)} style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', color: 'rgba(var(--fg-rgb),0.5)', fontSize: 16, cursor: 'pointer' }}>×</button>
+            <div style={{ fontSize: 15, color: 'var(--purple)', marginBottom: 12 }}>✏️ 마이월드 꾸미기</div>
 
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>마이월드 닉네임</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 6 }}>마이월드 닉네임</div>
             <input
               value={myworldNickname}
               onChange={(e) => setMyworldNickname(e.target.value)}
               placeholder="달빛언니, 피부요정..."
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, width: '100%', boxSizing: 'border-box' }}
+              style={{ background: 'rgba(var(--fg-rgb),0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: 'var(--text)', fontSize: 13, width: '100%', boxSizing: 'border-box' }}
             />
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 10 }}>마이페이지 이름과 다르게 설정할 수 있어요</div>
+            <div style={{ fontSize: 10, color: 'rgba(var(--fg-rgb),0.3)', marginTop: 4, marginBottom: 10 }}>마이페이지 이름과 다르게 설정할 수 있어요</div>
 
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>방 테마</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 6 }}>방 테마</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
               {['💜 보라빛 드림', '🤍 미니멀 모던', '🌸 로맨틱 봄', '🗼 파리지앵'].map((theme) => {
                 const selected = selectedTheme === theme
@@ -1607,9 +1609,9 @@ export default function MyWorldPage() {
                     key={theme}
                     onClick={() => setSelectedTheme(theme)}
                     style={{
-                      border: selected ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
+                      border: selected ? '1px solid #7B5EA7' : '1px solid rgba(var(--fg-rgb),0.1)',
                       background: selected ? 'rgba(123,94,167,0.2)' : 'transparent',
-                      color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.4)',
+                      color: selected ? 'var(--purple)' : 'rgba(var(--fg-rgb),0.4)',
                       borderRadius: 10,
                       padding: '8px 6px',
                       fontSize: 11,
@@ -1622,13 +1624,13 @@ export default function MyWorldPage() {
               })}
             </div>
 
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>나의 스킨케어 철학</div>
+            <div style={{ fontSize: 11, color: 'rgba(var(--fg-rgb),0.6)', marginBottom: 6 }}>나의 스킨케어 철학</div>
             <textarea
               rows={2}
               value={myworldBio}
               onChange={(e) => setMyworldBio(e.target.value)}
               placeholder="예) 매일 루틴으로 빛나는 피부 💜"
-              style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, marginBottom: 12, resize: 'none' }}
+              style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(var(--fg-rgb),0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: 'var(--text)', fontSize: 13, marginBottom: 12, resize: 'none' }}
             />
 
             <button
@@ -1642,7 +1644,7 @@ export default function MyWorldPage() {
                 setToast('저장됐어요 💜')
                 setShowCustomize(false)
               }}
-              style={{ background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 12, padding: 12, width: '100%', fontSize: 13, cursor: 'pointer' }}
+              style={{ background: '#7B5EA7', color: '#FFF', border: 'none', borderRadius: 12, padding: 12, width: '100%', fontSize: 13, cursor: 'pointer' }}
             >
               저장
             </button>

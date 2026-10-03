@@ -79,7 +79,7 @@ const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
   lineHeight: 1.4,
 })
 
-function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
+function ShortcutGrid({ isLoggedIn, onSelect }: { isLoggedIn: boolean; onSelect?: (href: string) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', gap: 10, paddingBottom: 4, marginTop: 12, scrollbarWidth: 'none' as const, msOverflowStyle: 'none' as const }}>
       {SHORTCUTS.map((item) => {
@@ -104,15 +104,22 @@ function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 22,
+              fontSize: 26,
               background: 'rgba(255,255,255,0.45)',
             }}>
               {item.emoji}
             </div>
-            <span style={{ fontSize: 9, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
+            <span style={{ fontSize: 11, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
           </div>
         )
         if (item.disabled) return <div key={item.label} style={{ flexShrink: 0 }}>{inner}</div>
+        if (onSelect && isLoggedIn) {
+          return (
+            <div key={item.label} role="button" onClick={() => onSelect(item.href)} style={{ flexShrink: 0, cursor: 'pointer' }}>
+              {inner}
+            </div>
+          )
+        }
         return (
           <Link key={item.label} href={getHref(item.href, isLoggedIn)} style={{ textDecoration: 'none', flexShrink: 0 }}>
             {inner}
@@ -123,7 +130,7 @@ function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
   )
 }
 
-export default function HomeExtraSection() {
+export default function HomeExtraSection({ onShortcutSelect }: { onShortcutSelect?: (href: string) => void } = {}) {
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [latest, setLatest] = useState<SkinRow | null>(null)
@@ -298,7 +305,7 @@ export default function HomeExtraSection() {
           </div>
         ) : null}
 
-        <ShortcutGrid isLoggedIn={isLoggedIn} />
+        <ShortcutGrid isLoggedIn={isLoggedIn} onSelect={onShortcutSelect} />
       </div>
 
       {popKey ? (
