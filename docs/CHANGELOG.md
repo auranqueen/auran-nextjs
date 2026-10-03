@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- feat(home): 바로가기를 인스타 하이라이트 스타일로 — 네모 카드 배경·패딩 제거, 폭 72px, 60px 원형 이미지/이모지(이모지는 `item.bg` 원), 라벨 `var(--text)` 중앙 정렬
 - fix(home): 내관리 아이콘 이미지 교체 — 하단 "내관리" 글자 없는 버전(`public/icons/icon_manage.png`)
 - feat(home): 바로가기 내관리 아이콘 💆 → 커스텀 원형 이미지 `public/icons/icon_manage.png` (`SHORTCUTS.customIcon`, 없으면 기존 이모지)
 - feat(home): 홈 바로가기(내관리·스킨스타·리뷰커뮤니티) 클릭 시 페이지 이동 대신 92vh 슬라이드업 시트(`page.tsx` `homeSheet`, 기존 페이지 컴포넌트 `dynamic` 재사용, 뒤로가기=시트 닫기). `InSheetContext`로 시트 안에선 각 페이지 자체 헤더·뒤로가기 숨김·상단 여백 축소. 바로가기 이모지 22→26, 라벨 9→11. `MyManagePage`·`myworld`·`dashboard/customer/community` 라이트모드(배경·글자·테두리 변수화). MyWorld 헤더 "MY WORLD" 18→16px·줄바꿈 방지, 상단 패딩 12→8px

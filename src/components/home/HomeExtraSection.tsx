@@ -85,33 +85,37 @@ function ShortcutGrid({ isLoggedIn, onSelect }: { isLoggedIn: boolean; onSelect?
       {SHORTCUTS.map((item) => {
         const inner = (
           <div style={{
-            width: 80,
+            width: 72,
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            padding: '10px 4px',
-            borderRadius: 16,
-            background: item.bg,
+            background: 'transparent',
             opacity: item.disabled ? 0.35 : 1,
             pointerEvents: item.disabled ? 'none' as const : 'auto' as const,
           }}>
-            <div style={{
-              width: 50,
-              height: 50,
-              borderRadius: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 26,
-              background: 'rgba(255,255,255,0.45)',
-            }}>
-              {'customIcon' in item
-                ? <img src={item.customIcon} alt={item.label} width={50} height={50} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                : item.emoji}
-            </div>
-            <span style={{ fontSize: 11, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
+            {'customIcon' in item ? (
+              <img src={item.customIcon} alt={item.label} width={60} height={60} style={{
+                borderRadius: '50%',
+                objectFit: 'cover',
+                display: 'block',
+              }} />
+            ) : (
+              <div style={{
+                width: 60,
+                height: 60,
+                borderRadius: '50%',
+                background: item.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 26,
+              }}>
+                {item.emoji}
+              </div>
+            )}
+            <span style={{ fontSize: 11, color: 'var(--text)', fontWeight: 500, textAlign: 'center' }}>{item.label}</span>
           </div>
         )
         if (item.disabled) return <div key={item.label} style={{ flexShrink: 0 }}>{inner}</div>
