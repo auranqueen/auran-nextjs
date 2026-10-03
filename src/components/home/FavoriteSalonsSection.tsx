@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const PURPLE = '#7B5EA7'
-const CARD = 'rgba(255,255,255,0.05)'
-const BORDER = 'rgba(255,255,255,0.08)'
-const TEXT = '#ffffff'
-const TEXT_SUB = 'rgba(255,255,255,0.55)'
+const PURPLE = 'var(--purple)'
+const CARD = 'rgba(var(--fg-rgb),0.05)'
+const BORDER = 'rgba(var(--fg-rgb),0.08)'
+const TEXT = 'var(--text)'
+const TEXT_SUB = 'rgba(var(--fg-rgb),0.55)'
 
 type SalonCard = {
   id: string
