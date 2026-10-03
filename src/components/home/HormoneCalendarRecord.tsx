@@ -27,40 +27,56 @@ function parseCheckinCondition(raw: string | null | undefined): { period: string
 }
 
 function RecordModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const [entered, setEntered] = useState(false)
+  const [closing, setClosing] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  const requestClose = () => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(() => onClose(), 300)
+  }
+
   return (
     <div
-      onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 999,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'flex-end',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999,
+        background: '#0F0D0C',
+        display: 'flex',
+        flexDirection: 'column',
+        transform: entered && !closing ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 300ms ease',
       }}
     >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 480, margin: '0 auto',
-          background: '#1A1714',
-          borderRadius: '20px 20px 0 0',
-          padding: '0 20px calc(24px + env(safe-area-inset-bottom, 0px))',
-          maxHeight: '90vh', overflowY: 'auto',
-        }}
-      >
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 0 12px', position: 'sticky', top: 0,
-          background: '#1A1714', zIndex: 1,
-        }}>
-          <span style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>{title}</span>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 24, color: 'rgba(255,255,255,0.6)',
-              padding: '4px 8px', lineHeight: 1,
-            }}
-          >✕</button>
-        </div>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flexShrink: 0,
+        padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px 12px',
+      }}>
+        <button
+          type="button"
+          onClick={requestClose}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 22, color: 'rgba(255,255,255,0.75)',
+            padding: '4px 8px', lineHeight: 1,
+          }}
+        >←</button>
+        <span style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>{title}</span>
+      </div>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '0 20px calc(24px + env(safe-area-inset-bottom, 0px))',
+      }}>
         {children}
       </div>
     </div>

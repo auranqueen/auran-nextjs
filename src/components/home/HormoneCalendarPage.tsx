@@ -11,11 +11,9 @@ import {
   useHormoneCalendarRecord,
 } from '@/components/home/HormoneCalendarRecord'
 import { calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
-import { computeComposite, computeSkinAge } from '@/lib/skinAge'
 
 const BG = '#0D0B09'
 const P = '#7B5EA7'
-const GOLD = '#C9A96E'
 
 const PHASE_COLORS: Record<string, string> = {
   '달빛기': '#c4a8ff',
@@ -69,44 +67,6 @@ function ModeBadge({ text, color }: { text: string; color: string }) {
 
 function phaseColor(phase: string): string {
   return PHASE_COLORS[phase] || P
-}
-
-function getNextPhases(cycleDay: number, cycleLen: number): { phase: string; dday: number }[] {
-  const transitions = [
-    { day: 6, phase: '황금기' },
-    { day: 14, phase: '만개기' },
-    { day: 17, phase: '물들기' },
-    { day: cycleLen + 1, phase: '달빛기' },
-  ]
-  const list = transitions
-    .map((t) => ({ phase: t.phase, dday: t.day - cycleDay }))
-    .filter((x) => x.dday > 0)
-  if (list.length >= 3) return list.slice(0, 3)
-  const extra = { phase: '달빛기', dday: cycleLen - cycleDay + 1 }
-  return [...list, extra].slice(0, 3)
-}
-
-function skinAgeOf(r: {
-  skin_age: number | null
-  skin_score: number | null
-  moisture_score: number | null
-  oil_score: number | null
-  sensitivity_score: number | null
-  elasticity_score: number | null
-  pigmentation_score: number | null
-  pore_score: number | null
-  age_at_analysis: number | null
-}): number | null {
-  if (r.skin_age != null) return r.skin_age
-  const comp = r.skin_score != null ? r.skin_score : computeComposite({
-    moisture: r.moisture_score ?? undefined,
-    oil: r.oil_score ?? undefined,
-    sensitivity: r.sensitivity_score ?? undefined,
-    elasticity: r.elasticity_score ?? undefined,
-    pigmentation: r.pigmentation_score ?? undefined,
-    pore: r.pore_score ?? undefined,
-  } as Parameters<typeof computeComposite>[0])
-  return computeSkinAge(comp, r.age_at_analysis)
 }
 
 function Modal({
@@ -174,11 +134,8 @@ export default function HormoneCalendarPage() {
   const [hca, setHca] = useState<boolean | null>(null)
   const [cycleType, setCycleType] = useState('')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
-  const [skinLatest, setSkinLatest] = useState<any>(null)
   const [tipOpen, setTipOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'calendar' | 'record' | 'analysis'>('calendar')
-  const [analysisOpen, setAnalysisOpen] = useState(false)
   const [maleExercise, setMaleExercise] = useState('')
   const [maleFatigue, setMaleFatigue] = useState('')
   const [maleStress, setMaleStress] = useState('')
@@ -204,19 +161,13 @@ export default function HormoneCalendarPage() {
       setAuthChecked(true)
       setAuthId(user.id)
 
-      const [profileRes, hcRes, skinRes] = await Promise.all([
+      const [profileRes, hcRes] = await Promise.all([
         sb
           .from('profiles')
           .select('cycle_type, gender, hormone_cycle_applicable, birth_date, full_name')
           .eq('auth_id', user.id)
           .maybeSingle(),
         sb.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
-        sb
-          .from('skin_analyses')
-          .select('skin_age, skin_score, moisture_score, oil_score, elasticity_score, sensitivity_score, pigmentation_score, pore_score, age_at_analysis')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1),
       ])
 
       const profile = profileRes.data
@@ -235,10 +186,8 @@ export default function HormoneCalendarPage() {
       }
 
       setHormoneCycle(hcRes.data ?? null)
-      setSkinLatest((skinRes.data as any[])?.[0] ?? null)
     } catch {
       setHormoneCycle(null)
-      setSkinLatest(null)
     } finally {
       setLoading(false)
     }
@@ -291,7 +240,6 @@ export default function HormoneCalendarPage() {
     hasCalendar: recordActive,
     viewY: viewYM.y,
     viewM: viewYM.m,
-    onCloseTab: () => setActiveTab('calendar'),
   })
 
   useEffect(() => {
@@ -341,8 +289,6 @@ export default function HormoneCalendarPage() {
     return days
   }, [hormoneCycle, calendarActive, viewYM])
 
-  const nextPhases = hasCalendar && cycleDay > 0 ? getNextPhases(cycleDay, cycleLen) : []
-
   const saveMaleRecord = () => {
     record.setRecordPeriod(maleExercise)
     record.setRecordCondition([maleFatigue, maleStress, maleSleep].filter(Boolean).join(' / '))
@@ -366,12 +312,6 @@ export default function HormoneCalendarPage() {
     color: '#fff',
     fontSize: 13,
     fontFamily: 'inherit',
-  }
-
-  const onTab = (tab: 'calendar' | 'record' | 'analysis') => {
-    setActiveTab(tab)
-    if (tab === 'record') record.openTodayRecord()
-    if (tab === 'analysis') setAnalysisOpen(true)
   }
 
   if (loading) {
@@ -455,36 +395,9 @@ export default function HormoneCalendarPage() {
         </div>
       ) : null}
 
-      <div style={{ margin: '14px 16px 0', display: 'flex', gap: 8 }}>
-        {(['calendar', 'record', 'analysis'] as const).map((tab) => {
-          const label = tab === 'calendar' ? '달력' : tab === 'record' ? '기록' : '분석'
-          const on = activeTab === tab
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => onTab(tab)}
-              style={{
-                flex: 1,
-                padding: '10px 0',
-                borderRadius: 10,
-                border: on ? `1px solid ${P}` : '1px solid rgba(255,255,255,0.1)',
-                background: on ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.04)',
-                color: on ? '#d8c4f0' : 'rgba(255,255,255,0.55)',
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
       {!hasCalendar ? (
         <>
-          {isPregnant && activeTab === 'calendar' ? (
+          {isPregnant ? (
             <div style={{ margin: '16px 16px 0', padding: '18px 16px', borderRadius: 14, background: 'rgba(232,123,155,0.1)', border: '0.5px solid rgba(232,123,155,0.35)' }}>
               <div style={{ fontSize: 14, color: '#f5dce6', lineHeight: 1.65, marginBottom: 12 }}>
                 임신 중엔 미백 레이저·레티놀·살리실산은 피해주세요.
@@ -499,7 +412,7 @@ export default function HormoneCalendarPage() {
             </div>
           ) : null}
 
-          {isPostpartum && activeTab === 'calendar' ? (
+          {isPostpartum ? (
             <div style={{ margin: '16px 16px 0', padding: '18px 16px', borderRadius: 14, background: 'rgba(123,94,167,0.1)', border: '0.5px solid rgba(123,94,167,0.35)' }}>
               <div style={{ fontSize: 14, color: '#e8dff5', lineHeight: 1.65 }}>
                 출산 후 호르몬이 회복 중이에요. 순한 케어로 시작해요.
@@ -507,7 +420,7 @@ export default function HormoneCalendarPage() {
             </div>
           ) : null}
 
-          {isMale && activeTab === 'calendar' ? (
+          {isMale ? (
             <div style={{ margin: '16px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>주간 케어 체크리스트</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -532,7 +445,7 @@ export default function HormoneCalendarPage() {
             </div>
           ) : null}
 
-          {isIrregular && activeTab === 'calendar' ? (
+          {isIrregular ? (
             <div style={{ margin: '16px 16px 0', padding: '18px 16px', borderRadius: 14, background: 'rgba(196,168,255,0.1)', border: '0.5px solid rgba(196,168,255,0.35)' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
                 생리가 시작되면 기록해주세요. 오렌이 다시 리셋해드려요.
@@ -561,7 +474,7 @@ export default function HormoneCalendarPage() {
         </>
       ) : null}
       {/* ── 공통 달력 (일반+갱년기 통합) ── */}
-      {calendarActive && activeTab === 'calendar' ? (
+      {calendarActive ? (
         <div style={{ margin: '14px 16px 0', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div
@@ -702,31 +615,6 @@ export default function HormoneCalendarPage() {
         </div>
       )}
 
-      {hasCalendar && nextPhases.length > 0 && !isIrregular ? (
-        <div style={{ margin: '14px 16px 0' }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>다음 페이즈 예고</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {nextPhases.map((item) => (
-              <div
-                key={`${item.phase}-${item.dday}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 14px',
-                  borderRadius: 12,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '0.5px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <span style={{ fontSize: 13, color: phaseColor(item.phase) }}>{item.phase}</span>
-                <span style={{ fontSize: 12, color: GOLD }}>D-{item.dday}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {showRhythmFix ? <RhythmFix /> : null}
 
       {!isMale && !isMenopause ? (
@@ -795,33 +683,6 @@ export default function HormoneCalendarPage() {
         supabaseClient={supabase}
         onRefreshCycle={() => void load()}
       />
-
-      {analysisOpen ? (
-        <Modal title="분석" onClose={() => { setAnalysisOpen(false); setActiveTab('calendar') }}>
-          {skinLatest ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: '피부나이', value: skinAgeOf(skinLatest) != null ? `${skinAgeOf(skinLatest)}세` : '—' },
-                  { label: '수분', value: skinLatest.moisture_score != null ? `${skinLatest.moisture_score}%` : '—' },
-                  { label: '유분', value: skinLatest.oil_score != null ? `${skinLatest.oil_score}%` : '—' },
-                  { label: '탄력', value: skinLatest.elasticity_score != null ? `${skinLatest.elasticity_score}%` : '—' },
-                ].map((m) => (
-                  <div key={m.label} style={{ padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>{m.label}</div>
-                    <div style={{ fontSize: 18, color: GOLD, fontFamily: 'Georgia, serif' }}>{m.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, textAlign: 'center', padding: '12px 0' }}>
-              피부 분석 데이터가 없어요.<br />
-              <a href="/skin-analysis" style={{ color: P, textDecoration: 'none' }}>피부 분석하러 가기 →</a>
-            </div>
-          )}
-        </Modal>
-      ) : null}
 
       {phasePopup && PHASE_INFO[phasePopup] && (() => {
         const info = PHASE_INFO[phasePopup]

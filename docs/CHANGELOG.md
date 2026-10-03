@@ -4,6 +4,9 @@
 ---
 
 ## 2026-10-03
+- ui: `HormoneSheet`에서 페이즈 탭 6개·가이드 문구·admin_settings 편집을 제거하고 시작일(`last_period_date`/`period-start`)·종료일(`period_end_date`)과 저장만 남김. 제목은 「사이클 설정」. props 시그니처는 유지
+- ui: `HormoneCalendarRecord` `RecordModal`을 하단 시트에서 전체화면 슬라이드업으로 교체 (`#0F0D0C`, translateY 300ms, 닫힘 300ms 후 unmount). 기록 입력 UI는 그대로
+- ui: `/my/hormone`에서 달력/기록/분석 탭, 다음 페이즈 예고, 분석 모달과 `activeTab`·`analysisOpen` 제거. 달력·모드 안내는 탭 조건 없이 표시. 분석 전용 `skin_analyses` 조회도 이 화면에서 삭제
 - ui: 홈 HormoneSheet 열림 시 아래에서 올라오는 `hormoneSheetUp` 애니메이션 추가 (0.28s). 닫힘 애니메이션은 없음
 - ui: HormoneSheet 닫힘 시 `hormoneSheetRight`로 오른쪽 슬라이드 후 260ms 뒤 `onClose` (바깥 클릭·닫기 버튼). Escape는 즉시 `onClose`. `isClosing`이면 `handleClose`가 바로 반환해 연타로 타이머가 겹치지 않음
 - feat(hormone): /my/hormone — 타임라인 바·라벨 클릭 시 페이즈 설명 팝업(PHASE_INFO, slideUpIn), 시작일 없으면 currentPhase 빈값 → 달력 물들기·배지·범례 제거, 시작일 없음/기존 고객 안내 문구, 갱년기 고객 「생리가 완전히 끝났어요」/「다시 시작됐어요」 버튼(confirm + 신규 `POST /api/hormone/track` post_menopause|resume → hormone_cycle·profiles 갱신, resume 후 period-start), 실패 시 alert + period-start 응답 확인 + json() catch
