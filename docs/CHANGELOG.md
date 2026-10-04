@@ -3,6 +3,17 @@
 
 ---
 
+## [미배포] 2026-10-04
+### Added
+- 체크아웃 슬라이드업 시트 (7개 진입점)
+- 배송지·쿠폰 선택 시트 전환
+- 오렌페이 차감 시 4줄 금액 구조
+### Changed
+- 체크아웃 헤더 명조체 제거, 시트에서 열 때 safe-area-inset-top 제거
+- 타이포그래피 전면 정리 (섹션제목 uppercase 11px, 금액행 12px, 최종금액 20px/700, 결제버튼 13px/700)
+- 등급·토스트 할인 배지 추가
+- 쿠폰 조건 두 번째 줄 표시
+
 ## 2026-10-04
 - feat(checkout): Checkout pages (B-track, booking, salons) light mode support via CSS variables — `CustomerDashboardShell` bg-[#0D0B09]→bg-[var(--bg)], `layout.tsx` body 인라인 배경 #0a0c0f 제거, `CheckoutPageView` 약 78줄·`checkout/booking` 상수(BG/TEXT/TEXT_SUB/BORDER/CARD/SURFACE)·`salons/checkout` 기본 배경, Cart/Diary/BookingSalonList/AnalysisHub·booking/analysis 페이지 흰 글씨·흰 반투명→var(--text/--text2/--text3/--border/--border2/--bg2), #11161b 시트→var(--bg). 보라/골드 버튼 흰 글씨 유지
 - feat(magazine): Magazine detail opens as slide-up sheet (SlideUpSheet component) — `SlideUpSheet`(95dvh, 배경 탭 닫기, popstate 뒤로가기, 닫힘 애니메이션 320ms 후 내용 제거), `magazine/page.tsx`·홈 `page.tsx` 카드 탭 시 시트 오픈, `MagazineDetailClient` id prop·시트 안 관련 글 이동·공유 URL 수정·minHeight 100vh→95dvh, `magazine/page.tsx` 미사용 useRouter 제거
