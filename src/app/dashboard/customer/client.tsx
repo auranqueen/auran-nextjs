@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
@@ -266,6 +267,8 @@ function HomeProductRowCard({
   )
 }
 
+const CheckoutSheet = dynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+
 export default function CustomerDashboardClient({
   profile,
   notifications: _notifications,
@@ -274,6 +277,7 @@ export default function CustomerDashboardClient({
   featuredProducts: _featuredProducts,
 }: Props) {
   const router = useRouter()
+  const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const supabase = createClient()
   const { getSettingNum, getSetting } = useAdminSettings()
 
@@ -817,7 +821,7 @@ export default function CustomerDashboardClient({
                     onAddToCart={addToCart}
                     onBuyClick={id => {
                       logAction('buy_click', { productId: id, source: 'timesale' })
-                      router.push(`/checkout?products=${id}`)
+                      setCheckoutParams(`products=${id}`)
                     }}
                   />
                 ))}
@@ -1126,7 +1130,7 @@ export default function CustomerDashboardClient({
                           e.preventDefault()
                           e.stopPropagation()
                           logAction('buy_click', { productId: p.id, source: 'all-products' })
-                          router.push(`/checkout?products=${p.id}`)
+                          setCheckoutParams(`products=${p.id}`)
                         }}
                         style={{
                           border: '1px solid rgba(201,168,76,0.45)',
@@ -1237,6 +1241,7 @@ export default function CustomerDashboardClient({
         </div>
       )}
 
+      <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
     </div>
   )
 }

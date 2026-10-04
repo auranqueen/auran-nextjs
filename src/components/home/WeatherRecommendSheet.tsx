@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
@@ -208,6 +209,8 @@ export type WeatherRecommendSheetProps = {
   showEditChrome?: boolean
 }
 
+const CheckoutSheet = dynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+
 export default function WeatherRecommendSheet({
   isOpen,
   onClose,
@@ -219,6 +222,7 @@ export default function WeatherRecommendSheet({
   showEditChrome = false,
 }: WeatherRecommendSheetProps) {
   const router = useRouter()
+  const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const cart = useCart()
   const [rows, setRows] = useState<MappingRow[]>([])
   const [routineProducts, setRoutineProducts] = useState<Record<string, MappingRow['products'] | null>>({})
@@ -1726,7 +1730,7 @@ export default function WeatherRecommendSheet({
                           .map(row => row.products?.id)
                           .filter(Boolean)
                           .join(',')
-                        router.push(ids ? `/checkout?products=${ids}` : '/checkout')
+                        if (ids) setCheckoutParams(`products=${ids}`)
                       }}
                       style={{
                         background: '#7B5EA7',
@@ -1748,6 +1752,7 @@ export default function WeatherRecommendSheet({
           </div>
         </div>
       </div>
+      <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
     </div>
   )
 }

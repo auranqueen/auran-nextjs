@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import nextDynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/context/CartContext'
 import ProductClient from '@/app/(customer)/products/[id]/client'
@@ -52,8 +53,11 @@ function Btn3({ id, name, price, thumb_img, router, onBuy }: any) {
   )
 }
 
+const CheckoutSheet = nextDynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+
 function SkinAnalysisResultPageContent() {
   const router = useRouter()
+  const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const supabase = createClient()
 
@@ -170,7 +174,7 @@ function SkinAnalysisResultPageContent() {
         localStorage.removeItem('pending_payment')
         localStorage.removeItem('pending_payment_ctx')
       } catch {}
-      router.push(`/checkout?product_id=${pid}&qty=1`)
+      setCheckoutParams(`product_id=${pid}&qty=1`)
     }
     void run()
   }, [router])
@@ -187,7 +191,7 @@ function SkinAnalysisResultPageContent() {
       setPayLoginSheet(true)
       return
     }
-    router.push(`/checkout?product_id=${productId}&qty=1`)
+    setCheckoutParams(`product_id=${productId}&qty=1`)
   }
 
   const getSkinLabel = () => {
@@ -496,6 +500,7 @@ function SkinAnalysisResultPageContent() {
         </div>
       )}
 
+      <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
     </div>
   )
 }

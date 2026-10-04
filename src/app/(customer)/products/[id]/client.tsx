@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { useCart } from '@/context/CartContext'
 import { createClient } from '@/lib/supabase/client'
 import { logUserBehavior } from '@/lib/skinAnalytics'
@@ -75,6 +76,8 @@ interface Product {
   skin_tags?: string[] | null
 }
 
+const CheckoutSheet = dynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+
 export default function ProductDetailClient({
   product,
   exclusiveLocked = false,
@@ -83,6 +86,7 @@ export default function ProductDetailClient({
   exclusiveLocked?: boolean
 }) {
   const router = useRouter()
+  const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const { addToCart, addItem, total: cartTotal } = useCart()
   const supabase = createClient()
   // [AI 분석카드] ? 아이콘 탭 시 카드 열고 닫기
@@ -247,7 +251,7 @@ export default function ProductDetailClient({
       category_id: product.category_id ?? null,
       price,
     })
-    router.push(`/checkout?${params.toString()}`)
+    setCheckoutParams(params.toString())
   }
 
   const handleBuy = async () => {
@@ -3497,6 +3501,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           </button>
         </div>
       ) : null}
+      <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
     </div>
   )
 }

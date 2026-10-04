@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import CartPageView from '@/components/ui/CartPageView'
@@ -11,8 +11,10 @@ import { useCart } from '@/context/CartContext'
 
 type SearchHit = { id: string; name: string; email: string }
 
+const CheckoutSheet = dynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+
 export default function CartPage() {
-  const router = useRouter()
+  const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const supabase = createClient()
   const {
     items,
@@ -59,9 +61,9 @@ export default function CartPage() {
       params.set('products', lines.map((r) => r.product_id).join(','))
       params.set('qty', lines.map((r) => r.quantity).join(','))
       if (giftTo) params.set('gift_to', giftTo)
-      router.push(`/checkout?${params.toString()}`)
+      setCheckoutParams(params.toString())
     },
-    [router, selectedLines]
+    [selectedLines]
   )
 
   const onBuyClick = () => goCheckout()
@@ -132,6 +134,7 @@ export default function CartPage() {
         onBuy={onBuyClick}
         onOpenGift={openGiftModal}
       />
+      <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
     </CustomerDashboardShell>
   )
 }

@@ -85,7 +85,7 @@ export default function SlideUpSheet({ open, onClose, children }: Props) {
           background: 'var(--bg, #fff)',
           borderRadius: '16px 16px 0 0',
           overflowY: 'auto',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          transform: open ? 'none' : 'translateY(100%)',
           transition: 'transform 0.32s cubic-bezier(0.32,0,0,1)',
         }}
       >
