@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ConsultChat from '@/components/ConsultChat'
 
-const BG = '#0D0B09'
+const BG = 'var(--bg)'
 
 function looksLikeHtml(s: string) {
   const t = String(s || '').trim()
@@ -21,10 +21,10 @@ function mdToSafeHtml(md: string): string {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
       l = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      if (l.startsWith('## ')) return `<h2 style="font-size:18px;margin:16px 0 8px;color:#fff">${l.slice(3)}</h2>`
-      if (l.startsWith('# ')) return `<h1 style="font-size:22px;margin:16px 0 8px;color:#fff">${l.slice(2)}</h1>`
+      if (l.startsWith('## ')) return `<h2 style="font-size:18px;margin:16px 0 8px;color:var(--text)">${l.slice(3)}</h2>`
+      if (l.startsWith('# ')) return `<h1 style="font-size:22px;margin:16px 0 8px;color:var(--text)">${l.slice(2)}</h1>`
       if (!l.trim()) return '<br/>'
-      return `<p style="margin:0 0 10px;line-height:1.65;color:rgba(255,255,255,0.82)">${l}</p>`
+      return `<p style="margin:0 0 10px;line-height:1.65;color:rgba(var(--fg-rgb),0.82)">${l}</p>`
     })
     .join('')
 }
@@ -189,7 +189,7 @@ export default function MagazineDetailClient() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24 }}>
+      <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24 }}>
         불러오는 중…
       </div>
     )
@@ -197,9 +197,9 @@ export default function MagazineDetailClient() {
 
   if (!row) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 0 }}>
+      <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 0 }}>
         <p style={{ fontSize: 14 }}>글을 찾을 수 없어요</p>
-        <button type="button" onClick={() => router.push('/magazine')} style={{ marginTop: 16, border: '1px solid rgba(196,167,231,0.4)', background: 'transparent', color: '#c4a7e7', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
+        <button type="button" onClick={() => router.push('/magazine')} style={{ marginTop: 16, border: '1px solid rgba(196,167,231,0.4)', background: 'transparent', color: 'var(--purple)', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
           목록으로
         </button>
       </div>
@@ -209,25 +209,25 @@ export default function MagazineDetailClient() {
   const rt = readTimeMin(String(row.content || ''))
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', paddingBottom: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer', padding: 4 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid rgba(var(--fg-rgb),0.08)' }}>
+        <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 18, cursor: 'pointer', padding: 4 }}>
           ←
         </button>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button type="button" onClick={() => void share()} style={{ border: 'none', background: 'transparent', color: '#c4a7e7', fontSize: 13, cursor: 'pointer' }}>
+          <button type="button" onClick={() => void share()} style={{ border: 'none', background: 'transparent', color: 'var(--purple)', fontSize: 13, cursor: 'pointer' }}>
             공유
           </button>
           <span
             title="공유하면 🍓 딸기잼이 적립돼요!"
-            style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', cursor: 'help', marginLeft: 4 }}
+            style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.4)', cursor: 'help', marginLeft: 4 }}
           >
             ?
           </span>
         </div>
       </div>
 
-      <div style={{ width: '100%', aspectRatio: '16/9', background: '#222' }}>
+      <div style={{ width: '100%', aspectRatio: '16/9', background: 'var(--bg3)' }}>
         {row.thumbnail_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={row.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -242,34 +242,34 @@ export default function MagazineDetailClient() {
             padding: '4px 10px',
             borderRadius: 8,
             background: 'rgba(196,167,231,0.2)',
-            color: '#c4a7e7',
+            color: 'var(--purple)',
           }}
         >
           {row.category || '매거진'}
         </span>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: '14px 0 8px', lineHeight: 1.35 }}>{row.title}</h1>
-        {row.subtitle ? <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.5 }}>{row.subtitle}</p> : null}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 12 }}>
+        {row.subtitle ? <p style={{ fontSize: 14, color: 'rgba(var(--fg-rgb),0.6)', margin: 0, lineHeight: 1.5 }}>{row.subtitle}</p> : null}
+        <div style={{ fontSize: 12, color: 'rgba(var(--fg-rgb),0.45)', marginTop: 12 }}>
           {formatDate(row.published_at)} · 조회 {Number(row.view_count || 0).toLocaleString()} · 약 {rt}분 읽기
         </div>
       </div>
 
       <div style={{ padding: '20px 16px' }}>
-        <div style={{ fontSize: 14, lineHeight: 1.7, color: 'rgba(255,255,255,0.88)' }} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+        <div style={{ fontSize: 14, lineHeight: 1.7, color: 'rgba(var(--fg-rgb),0.88)' }} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       </div>
 
       <div style={{ display: 'flex', gap: 8, padding: '0 16px 20px' }}>
         <button
           type="button"
           onClick={() => void share()}
-          style={{ flex: 1, border: '1px solid rgba(196,167,231,0.35)', background: 'rgba(196,167,231,0.1)', color: '#c4a7e7', borderRadius: 10, padding: '11px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          style={{ flex: 1, border: '1px solid rgba(196,167,231,0.35)', background: 'rgba(196,167,231,0.1)', color: 'var(--purple)', borderRadius: 10, padding: '11px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
         >
           카카오 공유
         </button>
         <button
           type="button"
           onClick={() => void copyLink()}
-          style={{ flex: 1, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#fff', borderRadius: 10, padding: '11px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          style={{ flex: 1, border: '1px solid rgba(var(--fg-rgb),0.15)', background: 'transparent', color: 'var(--text)', borderRadius: 10, padding: '11px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
         >
           링크 복사
         </button>
@@ -277,39 +277,33 @@ export default function MagazineDetailClient() {
 
       {tagProducts.length > 0 ? (
         <div style={{ padding: '0 0 20px' }}>
-          <div style={{ padding: '0 16px 10px', fontSize: 13, fontWeight: 700, color: '#c4a7e7' }}>💜 이 글의 추천 제품</div>
+          <div style={{ padding: '0 16px 10px', fontSize: 13, fontWeight: 700, color: 'var(--purple)' }}>💜 이 글의 추천 제품</div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px', WebkitOverflowScrolling: 'touch' }}>
             {tagProducts.map((p) => (
               <div
                 key={p.id}
-                style={{ flexShrink: 0, width: 140, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}
+                onClick={() => {
+                  if (p.brand_id === '90175aa9-70c8-4568-865a-195f11bd7859') {
+                    setConsultProduct(p)
+                    setConsultOpen(true)
+                  } else {
+                    router.push(`/products/${p.id}`)
+                  }
+                }}
+                style={{ flexShrink: 0, width: 140, borderRadius: 12, border: '1px solid rgba(var(--fg-rgb),0.08)', background: 'var(--bg2)', overflow: 'hidden', cursor: 'pointer' }}
               >
-                <div style={{ width: '100%', aspectRatio: '1', background: '#222' }}>
+                <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg3)' }}>
                   {p.thumb_img ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : null}
                 </div>
                 <div style={{ padding: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.3, color: 'var(--text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>
                     ₩
                     {Number(Number(p.sale_price ?? 0) > 0 ? p.sale_price : p.retail_price ?? 0).toLocaleString()}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (p.brand_id === '90175aa9-70c8-4568-865a-195f11bd7859') {
-                        setConsultProduct(p)
-                        setConsultOpen(true)
-                      } else {
-                        router.push(`/products/${p.id}`)
-                      }
-                    }}
-                    style={{ marginTop: 8, width: '100%', border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 10, fontWeight: 700, padding: '7px 0', cursor: 'pointer' }}
-                  >
-                    구매하기
-                  </button>
                 </div>
               </div>
             ))}
@@ -326,15 +320,15 @@ export default function MagazineDetailClient() {
                 key={r.id}
                 type="button"
                 onClick={() => router.push(`/magazine/${r.id}`)}
-                style={{ flexShrink: 0, width: 160, border: 'none', padding: 0, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}
+                style={{ flexShrink: 0, width: 160, border: 'none', padding: 0, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(var(--fg-rgb),0.05)', textAlign: 'left' }}
               >
-                <div style={{ width: '100%', aspectRatio: '16/10', background: '#222' }}>
+                <div style={{ width: '100%', aspectRatio: '16/10', background: 'var(--bg3)' }}>
                   {r.thumbnail_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : null}
                 </div>
-                <div style={{ padding: 8, fontSize: 11, fontWeight: 600, lineHeight: 1.35, color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.title}</div>
+                <div style={{ padding: 8, fontSize: 11, fontWeight: 600, lineHeight: 1.35, color: 'var(--text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.title}</div>
               </button>
             ))}
           </div>
