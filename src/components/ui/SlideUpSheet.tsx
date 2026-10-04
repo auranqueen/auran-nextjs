@@ -7,12 +7,19 @@ interface Props {
   open: boolean
   onClose: () => void
   children: React.ReactNode
+  height?: string
+  maxHeight?: string
+  zIndex?: number
 }
 
-export default function SlideUpSheet({ open, onClose, children }: Props) {
+let sheetSeq = 0
+
+export default function SlideUpSheet({ open, onClose, children, height = '95dvh', maxHeight, zIndex = 9999 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  const idRef = useRef(0)
+  if (!idRef.current) idRef.current = ++sheetSeq
   const lastChildrenRef = useRef<React.ReactNode>(null)
   const [keepContent, setKeepContent] = useState(false)
   if (open) lastChildrenRef.current = children
@@ -31,16 +38,22 @@ export default function SlideUpSheet({ open, onClose, children }: Props) {
 
   useEffect(() => {
     if (!open) return
+    const id = idRef.current
+    const prevState = window.history.state ?? {}
+    const stack: number[] = Array.isArray(prevState.slideUpSheets) ? prevState.slideUpSheets : []
     let closedByPop = false
-    window.history.pushState({ ...(window.history.state ?? {}), slideUpSheet: true }, '')
-    const handler = () => {
+    window.history.pushState({ ...prevState, slideUpSheets: [...stack, id] }, '')
+    const handler = (e: PopStateEvent) => {
+      const now = e.state?.slideUpSheets
+      if (Array.isArray(now) && now.includes(id)) return
       closedByPop = true
       onCloseRef.current()
     }
     window.addEventListener('popstate', handler)
     return () => {
       window.removeEventListener('popstate', handler)
-      if (!closedByPop && window.history.state?.slideUpSheet) window.history.back()
+      const top = window.history.state?.slideUpSheets
+      if (!closedByPop && Array.isArray(top) && top[top.length - 1] === id) window.history.back()
     }
   }, [open])
 
@@ -60,7 +73,7 @@ export default function SlideUpSheet({ open, onClose, children }: Props) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999,
+        zIndex,
         pointerEvents: open ? 'auto' : 'none',
       }}
     >
@@ -81,7 +94,8 @@ export default function SlideUpSheet({ open, onClose, children }: Props) {
           left: 0,
           right: 0,
           bottom: 0,
-          height: '95dvh',
+          height,
+          maxHeight,
           background: 'var(--bg, #fff)',
           borderRadius: '16px 16px 0 0',
           overflowY: 'auto',

@@ -571,7 +571,7 @@ export default function CheckoutFlow({ query, onClose }: { query?: string; onClo
 
   return (
     <CustomerDashboardShell>
-      <DashboardHeader title="체크아웃" right={<CartHeaderButton />} />
+      <DashboardHeader title="체크아웃" right={<CartHeaderButton />} serif={false} safeAreaTop={query === undefined} />
       <CheckoutPageView
         toast={toast}
         loading={loading}

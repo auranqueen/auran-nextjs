@@ -7,10 +7,14 @@ export default function DashboardHeader({
   title,
   right,
   onBack,
+  safeAreaTop = true,
+  serif = true,
 }: {
   title: string
   right?: React.ReactNode
   onBack?: () => void
+  safeAreaTop?: boolean
+  serif?: boolean
 }) {
   const router = useRouter()
 
@@ -22,7 +26,7 @@ export default function DashboardHeader({
         zIndex: 20,
         background: 'var(--bg)',
         borderBottom: '1px solid var(--border)',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 0.875rem) 1rem 0.875rem',
+        padding: safeAreaTop ? 'calc(env(safe-area-inset-top, 0px) + 0.875rem) 1rem 0.875rem' : '0.875rem 1rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -31,7 +35,7 @@ export default function DashboardHeader({
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <Link href="/" style={{
-          fontFamily: "'Noto Serif KR', serif",
+          fontFamily: serif ? "'Noto Serif KR', serif" : undefined,
           fontSize: '0.875rem',
           fontWeight: 500,
           color: '#7B5EA7',
@@ -60,7 +64,7 @@ export default function DashboardHeader({
         </button>
         <div
           style={{
-            fontFamily: "'Noto Serif KR', serif",
+            fontFamily: serif ? "'Noto Serif KR', serif" : undefined,
             fontSize: '1rem',
             fontWeight: 700,
             color: 'var(--text)',
