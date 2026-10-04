@@ -4,6 +4,8 @@
 ---
 
 ## [미배포] 2026-10-04
+### Removed
+- 미사용 PayApp 중간 페이지 `src/app/payment/payapp/page.tsx` 삭제 (`/payment/payapp` 라우트 제거, 연결 경로 0곳 확인)
 ### Added
 - 상품 상세 슬라이드업 시트 `ProductSheet` (13개 파일 진입점, 직접 URL `/products/[id]`는 기존 페이지 유지)
 - 체크아웃 슬라이드업 시트 (7개 진입점)
