@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-04
+- feat(magazine): 매거진 목록(`magazine/page.tsx`) 라이트모드 전환 — BG·기본 글씨·헤더(var(--purple), 18→15)·카테고리 탭·로딩/빈 상태·대표/일반 글 카드 배경·배지·제목·날짜를 CSS 변수로 교체. 사진 위 그라데이션(132)·흰 제목(149)·조회수(150)는 가독성 위해 유지
 - feat(brand): 브랜드사 대시보드 라이트모드 전환 — `dashboard/brand/client.tsx` 헤더 그라데이션·입력칸(#121212)·카드·라벨·구분선, `tabs/BrandTabHome.tsx` CARD/TEXT/SUB 상수·KPI #fff·구분선·게이지 바탕을 var(--bg2/--text/--text2)·rgba(var(--fg-rgb),x)로 교체. 포인트색·PURPLE/GOLD·로직 유지
 - feat(magazine): 매거진 상세(`MagazineDetailClient.tsx`) 라이트/다크 대응 — BG·#fff·#222·rgba(255,255,255,x)·#c4a7e7·#C9A96E 및 mdToSafeHtml 인라인 색을 var(--bg/--text/--bg2/--bg3/--purple/--gold)·rgba(var(--fg-rgb),x)로 교체, 추천 제품 카드 전체 클릭(onClick 카드 div 이동) + 구매하기 버튼 제거
 - feat(home): 홈 매거진 섹션을 인스타 스토리 스타일로 — 세로 카드 목록 → 가로 스크롤 72px 원형 썸네일(그라데이션 링)·제목 2줄 말줄임. 클릭은 기존 `/magazine/[id]` 이동 유지, fetch 변경 없음. `globals.css`에 `.no-scrollbar` 추가

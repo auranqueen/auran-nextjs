@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const BG = '#0D0B09'
+const BG = 'var(--bg)'
 
 const TABS = ['전체', '피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -56,14 +56,14 @@ export default function MagazinePage() {
   const rest = filtered.slice(1)
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <div style={{ padding: '20px 16px 12px', textAlign: 'center' }}>
         <div
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
-            color: '#c4a7e7',
+            color: 'var(--purple)',
             letterSpacing: 6,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: 600,
           }}
         >
@@ -79,9 +79,9 @@ export default function MagazinePage() {
             onClick={() => setTab(t)}
             style={{
               flexShrink: 0,
-              border: tab === t ? '1px solid rgba(196,167,231,0.5)' : '1px solid rgba(255,255,255,0.1)',
-              background: tab === t ? 'rgba(196,167,231,0.12)' : 'transparent',
-              color: tab === t ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+              border: tab === t ? '1px solid rgba(var(--purple-rgb, 123,94,167),0.5)' : '1px solid rgba(var(--fg-rgb),0.1)',
+              background: tab === t ? 'rgba(var(--fg-rgb),0.06)' : 'transparent',
+              color: tab === t ? 'var(--purple)' : 'var(--text2)',
               borderRadius: 999,
               padding: '7px 14px',
               fontSize: 11,
@@ -96,9 +96,9 @@ export default function MagazinePage() {
 
       <div style={{ padding: '0 16px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>불러오는 중…</div>
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text2)', fontSize: 13 }}>불러오는 중…</div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 16px', fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>
+          <div style={{ textAlign: 'center', padding: '48px 16px', fontSize: 13, color: 'var(--text2)', lineHeight: 1.7 }}>
             아직 매거진 콘텐츠가 없어요
             <br />
             곧 업데이트될 예정이에요 💜
@@ -118,10 +118,10 @@ export default function MagazinePage() {
                   overflow: 'hidden',
                   cursor: 'pointer',
                   display: 'block',
-                  background: '#1a1520',
+                  background: 'var(--bg2)',
                 }}
               >
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#222' }}>
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: 'var(--bg3)' }}>
                   {featured.thumbnail_url ? (
                     <img src={featured.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   ) : null}
@@ -139,8 +139,8 @@ export default function MagazinePage() {
                         fontSize: 10,
                         padding: '3px 8px',
                         borderRadius: 8,
-                        background: 'rgba(196,167,231,0.25)',
-                        color: '#e8d6ff',
+                        background: 'rgba(var(--fg-rgb),0.2)',
+                        color: 'var(--purple)',
                         marginBottom: 8,
                       }}
                     >
@@ -167,11 +167,11 @@ export default function MagazinePage() {
                     borderRadius: 12,
                     overflow: 'hidden',
                     cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'rgba(var(--fg-rgb),0.05)',
                     textAlign: 'left',
                   }}
                 >
-                  <div style={{ width: '100%', aspectRatio: '4/3', background: '#222' }}>
+                  <div style={{ width: '100%', aspectRatio: '4/3', background: 'var(--bg3)' }}>
                     {m.thumbnail_url ? (
                       <img src={m.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     ) : null}
@@ -182,8 +182,8 @@ export default function MagazinePage() {
                         fontSize: 9,
                         padding: '2px 6px',
                         borderRadius: 6,
-                        background: 'rgba(196,167,231,0.2)',
-                        color: '#c4a7e7',
+                        background: 'rgba(var(--fg-rgb),0.08)',
+                        color: 'var(--purple)',
                       }}
                     >
                       {m.category || '-'}
@@ -193,7 +193,7 @@ export default function MagazinePage() {
                         fontSize: 12,
                         fontWeight: 700,
                         marginTop: 6,
-                        color: '#fff',
+                        color: 'var(--text)',
                         lineHeight: 1.35,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
@@ -203,7 +203,7 @@ export default function MagazinePage() {
                     >
                       {m.title}
                     </div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+                    <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 6 }}>
                       {formatDate(m.published_at)} · {Number(m.view_count || 0).toLocaleString()}
                     </div>
                   </div>
