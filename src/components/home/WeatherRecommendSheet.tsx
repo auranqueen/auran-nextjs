@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
+
 const CARD_BG = 'var(--bg3)'
 const ROUTINE_BG = 'var(--bg3)'
 const REASON_BOX = 'var(--bg2)'
@@ -222,6 +224,7 @@ export default function WeatherRecommendSheet({
   showEditChrome = false,
 }: WeatherRecommendSheetProps) {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
   const cart = useCart()
   const [rows, setRows] = useState<MappingRow[]>([])
@@ -967,7 +970,7 @@ export default function WeatherRecommendSheet({
                   {displayThree.length > 0 ? (
                     <div style={{ position: 'relative', marginBottom: 8 }}>
                       <div
-                        onClick={() => router.push(`/products/${displayThree[0].products?.id}`)}
+                        onClick={() => setProductSheetId(displayThree[0].products?.id ?? null)}
                         style={{
                           background: CARD_BG,
                           border: '0.5px solid rgba(123,94,167,0.5)',
@@ -1359,7 +1362,7 @@ export default function WeatherRecommendSheet({
                         return (
                           <div
                             key={rid}
-                            onClick={() => router.push(`/products/${p?.id}`)}
+                            onClick={() => setProductSheetId(p?.id ?? null)}
                             style={{
                               background: CARD_BG,
                               border: '0.5px solid rgba(var(--fg-rgb),0.07)',
@@ -1753,6 +1756,7 @@ export default function WeatherRecommendSheet({
         </div>
       </div>
       <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

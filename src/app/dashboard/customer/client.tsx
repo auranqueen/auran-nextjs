@@ -88,13 +88,13 @@ function SkeletonCard() {
 function TimesaleProductCard({
   product: p,
   showTimer,
-  router,
+  onOpenProduct,
   onAddToCart,
   onBuyClick,
 }: {
   product: any
   showTimer?: boolean
-  router: ReturnType<typeof useRouter>
+  onOpenProduct: (id: string) => void
   onAddToCart: (id: string) => void
   onBuyClick: (id: string) => void
 }) {
@@ -111,7 +111,7 @@ function TimesaleProductCard({
         overflow: 'hidden',
       }}
     >
-      <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+      <div onClick={() => onOpenProduct(p.id)} style={{ cursor: 'pointer' }}>
         <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
           <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
           {showTimer && p.timesale_ends_at ? (
@@ -177,12 +177,12 @@ function TimesaleProductCard({
 
 function HomeProductRowCard({
   p,
-  router,
+  onOpenProduct,
   onCart,
   newBadge,
 }: {
   p: any
-  router: ReturnType<typeof useRouter>
+  onOpenProduct: (id: string) => void
   onCart: (id: string) => void
   newBadge?: boolean
 }) {
@@ -198,7 +198,7 @@ function HomeProductRowCard({
         overflow: 'hidden',
       }}
     >
-      <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+      <div onClick={() => onOpenProduct(p.id)} style={{ cursor: 'pointer' }}>
         <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
           <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
           {newBadge ? (
@@ -268,6 +268,7 @@ function HomeProductRowCard({
 }
 
 const CheckoutSheet = dynamic(() => import('@/components/checkout/CheckoutSheet'), { ssr: false })
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 export default function CustomerDashboardClient({
   profile,
@@ -278,6 +279,7 @@ export default function CustomerDashboardClient({
 }: Props) {
   const router = useRouter()
   const [checkoutParams, setCheckoutParams] = useState<string | null>(null)
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
   const { getSettingNum, getSetting } = useAdminSettings()
 
@@ -817,7 +819,7 @@ export default function CustomerDashboardClient({
                     key={p.id}
                     product={p}
                     showTimer
-                    router={router}
+                    onOpenProduct={setProductSheetId}
                     onAddToCart={addToCart}
                     onBuyClick={id => {
                       logAction('buy_click', { productId: id, source: 'timesale' })
@@ -910,7 +912,7 @@ export default function CustomerDashboardClient({
                     <div style={{ fontSize: 12, color: 'var(--text3)' }}>이 섹션에 표시할 상품이 없어요</div>
                   ) : (
                     cProducts.map(p => (
-                      <HomeProductRowCard key={p.id} p={p} router={router} onCart={addToCart} />
+                      <HomeProductRowCard key={p.id} p={p} onOpenProduct={setProductSheetId} onCart={addToCart} />
                     ))
                   )}
                 </div>
@@ -931,7 +933,7 @@ export default function CustomerDashboardClient({
           ) : (
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none' }}>
               {newProducts.map(p => (
-                <HomeProductRowCard key={p.id} p={p} router={router} onCart={addToCart} newBadge />
+                <HomeProductRowCard key={p.id} p={p} onOpenProduct={setProductSheetId} onCart={addToCart} newBadge />
               ))}
             </div>
           )}
@@ -949,7 +951,7 @@ export default function CustomerDashboardClient({
               {recentReviews.map(r => (
                 <div
                   key={r.id}
-                  onClick={() => r.target_id && router.push(`/products/${r.target_id}`)}
+                  onClick={() => r.target_id && setProductSheetId(r.target_id)}
                   style={{
                     border: '1px solid var(--border)',
                     borderRadius: 12,
@@ -1073,7 +1075,7 @@ export default function CustomerDashboardClient({
                 ))
               : filteredProducts.map((p: any) => (
                   <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-                    <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+                    <div onClick={() => setProductSheetId(p.id)} style={{ cursor: 'pointer' }}>
                       <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
                         <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                       </div>
@@ -1242,6 +1244,7 @@ export default function CustomerDashboardClient({
       )}
 
       <CheckoutSheet query={checkoutParams} onClose={() => setCheckoutParams(null)} />
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

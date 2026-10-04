@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { applyReviewLikeReward } from '@/lib/community/reviewLikeReward'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const GOLD = '#C9A96E'
 const CARD_BG = 'rgba(255,255,255,0.03)'
@@ -72,6 +75,7 @@ function categoryLabel(cat: string) {
 export default function CommunityPostDetailPage() {
   const supabase = createClient()
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const params = useParams<{ id: string }>()
   const postId = params?.id
 
@@ -519,7 +523,7 @@ export default function CommunityPostDetailPage() {
                         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                           <button
                             type="button"
-                            onClick={() => router.push(`/products/${pr.id}`)}
+                            onClick={() => setProductSheetId(pr.id)}
                             style={{ padding: '7px 10px', borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
                           >
                             구매하기
@@ -749,6 +753,7 @@ export default function CommunityPostDetailPage() {
           {toast}
         </div>
       ) : null}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

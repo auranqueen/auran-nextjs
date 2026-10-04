@@ -3,6 +3,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const CARD_BG = 'var(--bg)'
 const BADGE_STEP_BG = 'var(--bg3)'
@@ -143,6 +146,7 @@ export default function SeasonRecommendSection({
   hormonePhase,
 }: SeasonRecommendSectionProps) {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const [rows, setRows] = useState<MappingRow[]>([])
   const [isAuto, setIsAuto] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -705,7 +709,7 @@ export default function SeasonRecommendSection({
               <button
                 key={row.id}
                 type="button"
-                onClick={() => router.push(`/products/${p.id}`)}
+                onClick={() => setProductSheetId(p.id)}
                 style={{
                   position: 'relative',
                   width: 128,
@@ -1109,6 +1113,7 @@ export default function SeasonRecommendSection({
           </div>
         </div>
       ) : null}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

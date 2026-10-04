@@ -5,6 +5,9 @@ import { calcHormoneBriefing } from '@/lib/hormoneUtils'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const SHOP_HOOK: Record<string, string[]> = {
   male_active:  ['오늘도 열심히 했죠? 피부도 같이 💪', '번들거림 없는 하루 만들어요 ✨', '클렌징이 전부예요 남자 피부는 💆'],
@@ -70,6 +73,7 @@ function dramaticLine(p: Row, phase: string, focus: string, hormoneMatch: boolea
 
 export default function ProductsListClient() {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const sp = useSearchParams()
   const supabase = createClient()
   const [rows, setRows] = useState<Row[]>([])
@@ -317,7 +321,7 @@ export default function ProductsListClient() {
               {rows.slice(0, 3).map(p => (
                 <div
                   key={p.id}
-                  onClick={() => router.push(`/products/${p.id}`)}
+                  onClick={() => setProductSheetId(p.id)}
                   style={{ flexShrink: 0, width: 100, cursor: 'pointer' }}
                 >
                   <div style={{ width: 100, height: 100, borderRadius: 10, overflow: 'hidden', background: 'var(--bg2)', marginBottom: 6 }}>
@@ -592,6 +596,7 @@ export default function ProductsListClient() {
           </section>
         ))
       )}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

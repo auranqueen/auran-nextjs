@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ConsultChat from '@/components/ConsultChat'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = 'var(--bg)'
 
@@ -48,6 +51,7 @@ export default function MagazineDetailClient({ id: idProp, onNavigate }: { id?: 
   const params = useParams()
   const id = String(idProp || params?.id || '')
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
   const [row, setRow] = useState<any | null>(null)
   const [related, setRelated] = useState<any[]>([])
@@ -287,7 +291,7 @@ export default function MagazineDetailClient({ id: idProp, onNavigate }: { id?: 
                     setConsultProduct(p)
                     setConsultOpen(true)
                   } else {
-                    router.push(`/products/${p.id}`)
+                    setProductSheetId(p.id)
                   }
                 }}
                 style={{ flexShrink: 0, width: 140, borderRadius: 12, border: '1px solid rgba(var(--fg-rgb),0.08)', background: 'var(--bg2)', overflow: 'hidden', cursor: 'pointer' }}
@@ -348,6 +352,7 @@ export default function MagazineDetailClient({ id: idProp, onNavigate }: { id?: 
         />
       ) : null}
 
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

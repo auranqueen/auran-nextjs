@@ -9,6 +9,9 @@ import Avatar from '@/components/ui/Avatar'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { calcHormoneBriefing } from '@/lib/hormoneUtils'
 import { useInSheet } from '@/components/home/InSheetContext'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = 'var(--bg)'
 const GOLD = '#C9A96E'
@@ -26,6 +29,7 @@ function toKoreanSkinType(raw: string | null | undefined) {
 
 export default function MyWorldPage() {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const inSheet = useInSheet()
   const supabase = createClient()
   const { profile: userProfile } = useUserProfile()
@@ -757,7 +761,7 @@ export default function MyWorldPage() {
           <div style={{ margin: '14px 16px 0', fontSize: 12, color: 'rgba(var(--fg-rgb),0.6)' }}>🪞 내 화장대</div>
           <div style={{ margin: '8px 16px 0', display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {vanityItems.length > 0 ? vanityItems.map((v: any) => (
-              <div key={v.id} onClick={() => router.push(`/products/${v.id}`)} style={{ minWidth: 80, background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 10, padding: 6, cursor: 'pointer' }}>
+              <div key={v.id} onClick={() => setProductSheetId(v.id)} style={{ minWidth: 80, background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.07)', borderRadius: 10, padding: 6, cursor: 'pointer' }}>
                 <div style={{ height: 56, borderRadius: 8, background: 'rgba(var(--fg-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {v.thumb ? <img src={v.thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 24 }}>🧴</span>}
                 </div>
@@ -1651,6 +1655,7 @@ export default function MyWorldPage() {
           </div>
         </div>
       ) : null}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

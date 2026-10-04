@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = '#0a0a0a'
 const CARD = '#1a1a1a'
@@ -43,6 +46,7 @@ function uid() {
 
 export default function CommunityWritePage() {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
@@ -413,7 +417,7 @@ export default function CommunityWritePage() {
               {productTags.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => router.push(`/products/${p.id}`)}
+                  onClick={() => setProductSheetId(p.id)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -581,6 +585,7 @@ export default function CommunityWritePage() {
           </div>
         </div>
       )}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

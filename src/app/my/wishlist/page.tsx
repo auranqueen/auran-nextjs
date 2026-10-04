@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -25,6 +28,7 @@ type WishlistRow = {
 
 export default function MyWishlistPage() {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
   const [rows, setRows] = useState<WishlistRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,7 +91,7 @@ export default function MyWishlistPage() {
                   <div style={{ fontSize: 12, minHeight: 32, marginBottom: 6 }}>{row.products?.name || '제품'}</div>
                   <div style={{ fontSize: 13, marginBottom: 8 }}>{(row.products?.price || 0).toLocaleString()}원</div>
                   <button
-                    onClick={() => router.push(`/products/${row.products?.id || row.product_id}`)}
+                    onClick={() => setProductSheetId(row.products?.id || row.product_id)}
                     style={{ width: '100%', border: '1px solid rgba(201,169,110,0.3)', color: GOLD, background: 'rgba(201,169,110,0.1)', borderRadius: 8, padding: '7px 0', fontSize: 11, cursor: 'pointer', marginBottom: 6 }}
                   >
                     구매하기
@@ -104,6 +108,7 @@ export default function MyWishlistPage() {
           </div>
         ) : null}
       </div>
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

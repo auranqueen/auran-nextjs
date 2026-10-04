@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -12,6 +15,7 @@ const TEXT_MUTED = 'rgba(255,255,255,0.5)'
 
 export default function BrandProductsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const brandId = params.id
   const [brand, setBrand] = useState<any>(null)
   const [products, setProducts] = useState<any[]>([])
@@ -127,7 +131,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
           {filtered.map((p) => (
             <div
               key={p.id}
-              onClick={() => router.push(`/products/${p.id}`)}
+              onClick={() => setProductSheetId(p.id)}
               style={{
                 background: CARD_BG,
                 border: CARD_BORDER,
@@ -212,7 +216,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      router.push(`/products/${p.id}`)
+                      setProductSheetId(p.id)
                     }}
                     style={{
                       flex: 1,
@@ -234,6 +238,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
           ))}
         </div>
       </div>
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

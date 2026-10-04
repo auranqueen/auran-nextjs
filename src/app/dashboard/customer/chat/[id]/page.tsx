@@ -4,6 +4,9 @@ import { compressImage } from '@/lib/imageUpload'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
@@ -76,6 +79,7 @@ function toastLabel(type: string, source: string) {
 export default function CustomerChatRoomPage() {
   const supabase = createClient()
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const params = useParams<{ id: string }>()
   const channelId = params?.id ? String(params.id) : ''
 
@@ -1420,11 +1424,11 @@ export default function CustomerChatRoomPage() {
                           key={it.id || String(idx)}
                           role="button"
                           tabIndex={0}
-                          onClick={() => it.id && router.push('/products/' + it.id)}
+                          onClick={() => it.id && setProductSheetId(it.id)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault()
-                              if (it.id) router.push('/products/' + it.id)
+                              if (it.id) setProductSheetId(it.id)
                             }
                           }}
                           style={{
@@ -1536,7 +1540,8 @@ export default function CustomerChatRoomPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          router.push(`/products/${productItems[0]?.id ?? ''}`)
+                          if (productItems[0]?.id) setProductSheetId(productItems[0].id)
+                          else router.push('/products/')
                         }}
                         style={{
                           flex: 1,
@@ -2261,7 +2266,7 @@ export default function CustomerChatRoomPage() {
                   {recommendedProducts.map((p, i) => (
                     <div
                       key={i}
-                      onClick={() => p.product_id && router.push('/products/' + p.product_id)}
+                      onClick={() => p.product_id && setProductSheetId(p.product_id)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -2731,6 +2736,7 @@ export default function CustomerChatRoomPage() {
           display: none;
         }
       `}</style>
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

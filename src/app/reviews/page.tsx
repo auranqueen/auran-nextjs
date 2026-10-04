@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const PHASE_OPTIONS = ['전체', '달빛기', '황금기', '만개기', '물들기'] as const
 const PHASE_LABELS: Record<string, string> = {
@@ -22,6 +25,7 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [sourceTab, setSourceTab] = useState<'auran'|'duchess'>('auran')
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -144,7 +148,7 @@ export default function ReviewsPage() {
             </div>
             <button
               type="button"
-              onClick={() => router.push(`/products/${review.target_id}?buy=true`)}
+              onClick={() => setProductSheetId(review.target_id)}
               style={{
                 background: '#7B5EA7',
                 border: 'none',
@@ -409,6 +413,7 @@ export default function ReviewsPage() {
           10개 더 보기
         </button>
       ) : null}
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

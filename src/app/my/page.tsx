@@ -11,6 +11,9 @@ import MyBookingStatus from '@/components/customer/MyBookingStatus'
 import WalletCard from '@/components/WalletCard'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import FavoriteSalonsSection from '@/components/home/FavoriteSalonsSection'
+import dynamic from 'next/dynamic'
+
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const GOLD = 'var(--gold)'
 const BG = 'var(--bg)'
@@ -21,6 +24,7 @@ const TEXT_DIM = 'rgba(var(--fg-rgb),0.25)'
 
 export default function MyPage() {
   const router = useRouter()
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   const supabase = createClient()
   const [myOwnerName, setMyOwnerName] = useState<string>('담당 원장님')
 
@@ -757,7 +761,7 @@ export default function MyPage() {
               </div>
               {item.started_at && item.status !== '주문확인' && item.status !== '발송준비' && item.status !== '배송중' ? (
                 <div
-                  onClick={() => router.push(`/products/${item.product_id}`)}
+                  onClick={() => setProductSheetId(item.product_id)}
                   style={{
                     padding: '5px 10px',
                     background: 'rgba(220,150,60,0.15)',
@@ -934,7 +938,7 @@ export default function MyPage() {
                 <div style={{ padding: '7px 8px' }}>
                   <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand || '—'}</div>
                   <div style={{ fontSize: '10px', color: 'rgba(var(--fg-rgb),0.7)', marginBottom: '5px' }}>{item.name}</div>
-                  <div onClick={() => router.push(`/products/${item.productId}`)} style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
+                  <div onClick={() => setProductSheetId(item.productId)} style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
                 </div>
               </div>
             ))
@@ -1111,6 +1115,7 @@ export default function MyPage() {
         payload={sharePayload}
       />
 
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
     </div>
   )
 }

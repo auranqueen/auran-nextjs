@@ -25,6 +25,7 @@ const MyWorldSheet = dynamic(() => import('@/app/myworld/page'), { ssr: false })
 const CommunitySheet = dynamic(() => import('@/app/dashboard/customer/community/page'), { ssr: false })
 const SlideUpSheet = dynamic(() => import('@/components/ui/SlideUpSheet'), { ssr: false })
 const MagazineDetailClient = dynamic(() => import('./magazine/[id]/MagazineDetailClient'), { ssr: false })
+const ProductSheet = dynamic(() => import('@/components/product/ProductSheet'), { ssr: false })
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -465,6 +466,7 @@ export default function CustomerHomePage() {
   const [priveSpinning, setPriveSpinning] = useState(false)
   const [priveVideoOpen, setPriveVideoOpen] = useState(false)
   const [magazineOpenId, setMagazineOpenId] = useState<string | null>(null)
+  const [productSheetId, setProductSheetId] = useState<string | null>(null)
   useEffect(() => {
     const sb = createClient()
     sb.from('prive_config')
@@ -2539,7 +2541,7 @@ export default function CustomerHomePage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '4px 0' }}>
                   {searchResults.map((p: any) => (
-                    <div key={p.id} onClick={() => { logProductNav(p); router.push(`/products/${p.id}`); setSearchKeyword(''); setSearchResults([]) }}
+                    <div key={p.id} onClick={() => { logProductNav(p); setProductSheetId(p.id); setSearchKeyword(''); setSearchResults([]) }}
                       style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(var(--fg-rgb),0.04)', cursor: 'pointer' }}>
                       <div style={{ aspectRatio: '1', background: 'rgba(var(--fg-rgb),0.06)', overflow: 'hidden' }}>
                         {(p.storage_thumb_url || p.thumb_img) &&
@@ -3043,7 +3045,7 @@ export default function CustomerHomePage() {
               key={p.id ?? i}
               onClick={() => {
                 logProductNav(p)
-                router.push(`/products/${p.id}`)
+                setProductSheetId(p.id)
               }}
               style={{
                 width: 140, background: CARD_BG, border: CARD_BORDER,
@@ -3386,7 +3388,7 @@ export default function CustomerHomePage() {
                   }
                   if (rp?.id) {
                     logProductNav(rp)
-                    router.push(`/products/${rp.id}`)
+                    setProductSheetId(rp.id)
                   }
                   else setHomeToast('바로구매할 제품이 없어요')
                 }}
@@ -3520,7 +3522,7 @@ export default function CustomerHomePage() {
               onClick={() => {
                 if (!p.id) return
                 logProductNav(p)
-                router.push(`/products/${p.id}`)
+                setProductSheetId(p.id)
               }}
               style={{
               width: 140, background: CARD_BG, border: CARD_BORDER,
@@ -3610,7 +3612,7 @@ export default function CustomerHomePage() {
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
-              <div key={i} onClick={() => { logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price, sale_price: item.product?.sale_price, is_timesale: item.product?.is_timesale, categories: item.product?.categories }); router.push(`/products/${item.id}`) }} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => { logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price, sale_price: item.product?.sale_price, is_timesale: item.product?.is_timesale, categories: item.product?.categories }); setProductSheetId(item.id) }} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '120px',
@@ -3690,10 +3692,10 @@ export default function CustomerHomePage() {
                     logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price })
                     const { data: { session } } = await supabase.auth.getSession()
                     if (!session) {
-                      router.push(`/products/${item.id}`)
+                      setProductSheetId(item.id)
                       return
                     }
-                    router.push(`/products/${item.id}`)
+                    setProductSheetId(item.id)
                   }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#FFF', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
                 </div>
               </div>
@@ -3717,7 +3719,7 @@ export default function CustomerHomePage() {
               return (
               <div
                 key={i}
-                onClick={() => { logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }}
+                onClick={() => { logProductNav({ ...(item.product || {}), id: pid }); setProductSheetId(pid) }}
                 style={{ width: 150, flexShrink: 0, cursor: 'pointer' }}
               >
                 <div style={{
@@ -3923,7 +3925,7 @@ export default function CustomerHomePage() {
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {newList.map((item: any, i: number) => (
-          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ width: 140, background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+          <div key={i} onClick={() => { logProductNav(item); setProductSheetId(item.id) }} style={{ width: 140, background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{
               width: 140,
               height: 140,
@@ -4104,7 +4106,7 @@ export default function CustomerHomePage() {
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px 16px' }}>
                   {brandProducts.map((p: any) => (
-                    <div key={p.id} onClick={() => router.push(`/products/${p.id}`)}
+                    <div key={p.id} onClick={() => setProductSheetId(p.id)}
                       style={{ background: 'rgba(var(--fg-rgb),0.04)', border: '1px solid rgba(var(--fg-rgb),0.08)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
                       <div style={{ aspectRatio: '1', background: 'rgba(var(--fg-rgb),0.06)', overflow: 'hidden' }}>
                         {(p.storage_thumb_url || p.thumb_img) ? (
@@ -5035,6 +5037,8 @@ export default function CustomerHomePage() {
       <SlideUpSheet open={!!magazineOpenId} onClose={() => setMagazineOpenId(null)}>
         {magazineOpenId && <MagazineDetailClient id={magazineOpenId} onNavigate={setMagazineOpenId} />}
       </SlideUpSheet>
+
+      <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
 
     </div>
   )
