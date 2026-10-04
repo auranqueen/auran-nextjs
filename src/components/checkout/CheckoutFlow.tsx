@@ -550,6 +550,7 @@ export default function CheckoutFlow({ query, onClose }: { query?: string; onClo
           address: (address || '') + (addressDetail ? ' ' + addressDetail : '') || null,
           coupon_discount: Math.max(0, Math.floor(Number(couponDiscount) || 0)),
           user_coupon_id: (selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : null,
+          charge_used: oranUsed,
         }),
       })
       const orderData = await orderRes.json().catch(() => ({}))

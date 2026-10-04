@@ -12,6 +12,7 @@
 - 배송지·쿠폰 선택 시트 전환
 - 오렌페이 차감 시 4줄 금액 구조
 ### Changed
+- PayApp 주문 생성에 `charge_used` 전달 (`CheckoutFlow` 요청 본문에 `oranUsed`, `/api/payment/request` INSERT에 `charge_used` 저장) — 웹훅이 오렌페이 사용분을 차감할 수 있게 됨. `toast_used`는 이번 범위 제외
 - PayApp 결제 흐름을 `CheckoutFlow`에 인라인 (`/payment/payapp` 중간 페이지 경유 제거, 잔액부족 팝업 경로도 동일 처리로 통일해 `user_coupon_id` 누락 해소). 실패 시 홈 이동 대신 체크아웃에 남아 토스트 안내
 - 체크아웃 최종 결제 금액 13px/400, 할인·배송비 행 9px (주문금액 행 12px 유지)
 - 체크아웃 최종 결제 금액 15px/400, 레이블 13px/400 (기존 20px/700·13px/700)
