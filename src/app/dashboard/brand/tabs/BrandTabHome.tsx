@@ -9,11 +9,11 @@ import GroupRevenueChart from '../components/GroupRevenueChart'
 import ShopOrderRanking from '../components/ShopOrderRanking'
 import PendingOrdersDetail from '../components/PendingOrdersDetail'
 import HomeSalesTrendChart from '../components/HomeSalesTrendChart'
-const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
+const CARD: CSSProperties = { background: 'rgba(var(--fg-rgb),0.03)', border: '1px solid rgba(var(--fg-rgb),0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
-const TEXT = 'rgba(255,255,255,0.65)'
-const SUB = 'rgba(255,255,255,0.3)'
+const TEXT = 'var(--text)'
+const SUB = 'var(--text2)'
 function dayKey(iso: string) {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -245,9 +245,9 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const nowForPeriod = new Date()
   const salesPeriodLabel = `${nowForPeriod.getMonth() + 1}월 1일~${new Date(nowForPeriod.getFullYear(), nowForPeriod.getMonth() + 1, 0).getDate()}일`
   const kpis: Array<{ key: string; label: string; value: string; color: string; sublabel?: string }> = [
-    { key: 'sales', label: '이달 판매액', sublabel: salesPeriodLabel, value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
-    { key: 'pending', label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },
-    { key: 'lots', label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : '#fff' },
+    { key: 'sales', label: '이달 판매액', sublabel: salesPeriodLabel, value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: 'var(--text)' },
+    { key: 'pending', label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : 'var(--text)' },
+    { key: 'lots', label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : 'var(--text)' },
     { key: 'owners', label: '활성 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
     { key: 'products', label: '등록 제품', value: loading ? '-' : `${productCount ?? 0}개`, color: GOLD },
   ]
@@ -316,7 +316,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {brandChatSummary.map((t, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 10, background: 'rgba(var(--fg-rgb),0.03)' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 13, color: TEXT }}>{t.owner_name}</span>
@@ -357,7 +357,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>모든 설정이 완료됐어요 💜</div>
         ) : (
           alerts.map((a, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < alerts.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < alerts.length - 1 ? '0.5px solid rgba(var(--fg-rgb),0.05)' : 'none' }}>
               <span style={{ fontSize: 12, color: TEXT }}>{a.text}</span>
               <button
                 type="button"
@@ -379,7 +379,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           {recentOrders.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>주문 없음</div>
           ) : recentOrders.map((o, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < recentOrders.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < recentOrders.length - 1 ? '1px solid rgba(var(--fg-rgb),0.04)' : 'none' }}>
               <div style={{ fontSize: 9, color: SUB, width: 44, flexShrink: 0 }}>{o.order_no}</div>
               <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.product_name}</div>
               <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: o.status === 'pending' ? 'rgba(232,165,0,0.15)' : 'rgba(60,184,100,0.12)', color: o.status === 'pending' ? '#e8a500' : '#3db864', flexShrink: 0 }}>
@@ -396,9 +396,9 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           {expiringLots.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>재고 없음</div>
           ) : expiringLots.slice(0, 4).map((l, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < Math.min(expiringLots.length, 4) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < Math.min(expiringLots.length, 4) - 1 ? '1px solid rgba(var(--fg-rgb),0.04)' : 'none' }}>
               <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.product_name}</div>
-              <div style={{ width: 40, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 40, height: 3, borderRadius: 2, background: 'rgba(var(--fg-rgb),0.08)', flexShrink: 0 }}>
                 <div style={{ height: 3, borderRadius: 2, width: `${Math.min(100, l.remaining_qty / 10)}%`, background: l.days <= 30 ? '#e85555' : l.days <= 90 ? '#e8a500' : '#3db864' }} />
               </div>
               <div style={{ fontSize: 9, color: l.days <= 30 ? '#e85555' : l.days <= 90 ? '#e8a500' : '#3db864', flexShrink: 0 }}>D-{l.days}</div>
@@ -478,7 +478,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           {sampleRequests.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>샘플 요청 없음</div>
           ) : sampleRequests.map((s, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < sampleRequests.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < sampleRequests.length - 1 ? '1px solid rgba(var(--fg-rgb),0.04)' : 'none' }}>
               <div style={{ fontSize: 10, color: TEXT, flex: 1 }}>{s.owner_name}</div>
               <div style={{ fontSize: 9, color: SUB, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.product_name}</div>
               <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: s.status === 'requested' ? 'rgba(232,165,0,0.15)' : 'rgba(60,184,100,0.12)', color: s.status === 'requested' ? '#e8a500' : '#3db864', flexShrink: 0 }}>

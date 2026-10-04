@@ -90,17 +90,17 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <div style={{ background: 'linear-gradient(160deg,#0a180a,#0d1a0d)', borderBottom: '1px solid rgba(76,173,126,0.18)', padding: '20px 20px 16px' }}>
+      <div style={{ background: 'var(--bg2)', borderBottom: '1px solid rgba(76,173,126,0.18)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: 'rgba(76,173,126,0.5)', letterSpacing: '0.2em', marginBottom: 4 }}>BRAND DASHBOARD</div>
-            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: '#fff' }}>{brand?.name || profile.brand_name || profile.name}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{brand?.origin || profile.brand_origin || '-'} · {profile.email}</div>
+            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)' }}>{brand?.name || profile.brand_name || profile.name}</div>
+            <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 2 }}>{brand?.origin || profile.brand_origin || '-'} · {profile.email}</div>
           </div>
           <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
             <span style={{ fontSize: 9, padding: '3px 10px', background: isActive ? 'rgba(76,173,126,0.15)' : 'rgba(201,168,76,0.12)', color: isActive ? '#4cad7e' : 'var(--gold)', border: `1px solid ${isActive ? 'rgba(76,173,126,0.3)' : 'rgba(201,168,76,0.3)'}`, borderRadius: 18, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{isActive ? '입점 활성' : '심사 중'}</span>
             <NoticeBell />
-            <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
+            <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(var(--fg-rgb),0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>
 
@@ -133,47 +133,47 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
           </div>
         ) : (
           <div>
-            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', marginBottom: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>✨ 브랜드 스토리/프로모션</div>
+            <div style={{ background: 'rgba(var(--fg-rgb),0.04)', border: '1px solid rgba(var(--fg-rgb),0.10)', borderRadius: 14, padding: '14px 14px', marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>✨ 브랜드 스토리/프로모션</div>
               <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6, marginBottom: 12 }}>
                 고객이 <span style={{ color: 'var(--gold)', fontWeight: 800 }}>제품추천</span>에서 브랜드 버튼을 눌렀을 때 상단에 표시됩니다.
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>브랜드 스토리 제목</div>
-                  <input value={storyTitle} onChange={e => setStoryTitle(e.target.value)} placeholder="예: 피부관리실이 선택한 이유" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>브랜드 스토리 제목</div>
+                  <input value={storyTitle} onChange={e => setStoryTitle(e.target.value)} placeholder="예: 피부관리실이 선택한 이유" style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12 }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>브랜드 스토리 내용</div>
-                  <textarea value={storyBody} onChange={e => setStoryBody(e.target.value)} placeholder="브랜드 철학, 핵심 성분/기술, 대표 라인업, AURAN 입점 이유 등을 작성해 주세요." rows={6} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>브랜드 스토리 내용</div>
+                  <textarea value={storyBody} onChange={e => setStoryBody(e.target.value)} placeholder="브랜드 철학, 핵심 성분/기술, 대표 라인업, AURAN 입점 이유 등을 작성해 주세요." rows={6} style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12, resize: 'vertical' }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>스토리 이미지 URL (선택)</div>
-                  <input value={storyImageUrl} onChange={e => setStoryImageUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>스토리 이미지 URL (선택)</div>
+                  <input value={storyImageUrl} onChange={e => setStoryImageUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12 }} />
                 </div>
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+                <div style={{ height: 1, background: 'rgba(var(--fg-rgb),0.08)', margin: '4px 0' }} />
 
-                <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12, color: '#fff', fontWeight: 800 }}>
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12, color: 'var(--text)', fontWeight: 800 }}>
                   <input type="checkbox" checked={promoEnabled} onChange={e => setPromoEnabled(e.target.checked)} />
                   프로모션 게시하기 {promoNowActive ? <span style={{ fontSize: 10, color: '#4cad7e', fontWeight: 800 }}>(노출 중)</span> : null}
                 </label>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>프로모션 제목</div>
-                  <input value={promoTitle} onChange={e => setPromoTitle(e.target.value)} placeholder="예: 신규 입점 기념 혜택" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>프로모션 제목</div>
+                  <input value={promoTitle} onChange={e => setPromoTitle(e.target.value)} placeholder="예: 신규 입점 기념 혜택" style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12 }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>프로모션 내용</div>
-                  <textarea value={promoBody} onChange={e => setPromoBody(e.target.value)} placeholder="혜택/기간/대상 등을 작성해 주세요." rows={4} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>프로모션 내용</div>
+                  <textarea value={promoBody} onChange={e => setPromoBody(e.target.value)} placeholder="혜택/기간/대상 등을 작성해 주세요." rows={4} style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12, resize: 'vertical' }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>프로모션 이미지 URL (선택)</div>
-                  <input value={promoImageUrl} onChange={e => setPromoImageUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>프로모션 이미지 URL (선택)</div>
+                  <input value={promoImageUrl} onChange={e => setPromoImageUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12 }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>프로모션 링크 URL (선택)</div>
-                  <input value={promoLinkUrl} onChange={e => setPromoLinkUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>프로모션 링크 URL (선택)</div>
+                  <input value={promoLinkUrl} onChange={e => setPromoLinkUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: 'var(--bg2)', border: '1px solid rgba(var(--fg-rgb),0.12)', borderRadius: 10, padding: '10px 11px', color: 'var(--text)', fontSize: 12 }} />
                 </div>
 
                 <button
