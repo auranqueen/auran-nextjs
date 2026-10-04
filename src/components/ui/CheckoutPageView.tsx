@@ -733,14 +733,14 @@ export default function CheckoutPageView({
                   </div>
                   <div style={{ height: 1, background: 'var(--border)', margin: '10px 0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, color: 'var(--text)' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>최종 결제</span>
-                    <span style={{ fontSize: 20, fontWeight: 700 }}>₩{needCharge.toLocaleString()}</span>
+                    <span style={{ fontSize: 13, fontWeight: 400 }}>최종 결제</span>
+                    <span style={{ fontSize: 15, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 12, color: 'var(--text)' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>최종 결제 필요금액</span>
-                  <span style={{ fontSize: 20, fontWeight: 700 }}>₩{needCharge.toLocaleString()}</span>
+                  <span style={{ fontSize: 13, fontWeight: 400 }}>최종 결제 필요금액</span>
+                  <span style={{ fontSize: 15, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
                 </div>
               )}
               {/* ===== [또또복권] 미달 안내 섹션 ===== */}
