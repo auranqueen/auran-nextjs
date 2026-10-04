@@ -12,7 +12,7 @@ const ROLE_META: Record<string, { label: string; icon: string; accent: string; b
   customer: { label: '고객', icon: '💧', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '피부 분석·제품 추천·살롱 예약', brand: 'AURAN' },
   partner:  { label: '파트너스', icon: '💼', accent: '#B8AF80', border: 'rgba(184,175,128,0.35)', bg: 'rgba(184,175,128,0.08)', hint: '추천 링크·커미션 수익', brand: 'AURAN PARTNERS' },
   owner:    { label: '원장님', icon: '🏥', accent: '#D4A97A', border: 'rgba(212,169,122,0.35)', bg: 'rgba(212,169,122,0.08)', hint: '예약·스토어·매출 관리', brand: 'AURAN PRO' },
-  brand:    { label: '브랜드사', icon: '🏭', accent: '#C4A0B8', border: 'rgba(196,160,184,0.35)', bg: 'rgba(196,160,184,0.08)', hint: '입점·납품·AI 추천 노출', brand: 'AURAN BRAND HUB' },
+  brand:    { label: '브랜드사', icon: '🏭', accent: '#8B5E8B', border: 'rgba(196,160,184,0.35)', bg: 'rgba(196,160,184,0.08)', hint: '입점·납품·AI 추천 노출', brand: 'AURAN BRAND HUB' },
   admin:    { label: '관리자', icon: '⚙️', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '플랫폼 전체 관리', brand: 'AURAN' },
 }
 
@@ -509,7 +509,7 @@ function LoginForm() {
           </button>
           <div style={{textAlign:'right', marginTop:8}}>
             <button type="button" onClick={() => setShowFindModal(true)}
-              style={{fontSize:12, color:'rgba(255,255,255,0.4)', background:'none', border:'none', cursor:'pointer', padding:0}}>
+              style={{fontSize:12, color:'var(--text2)', background:'none', border:'none', cursor:'pointer', padding:0}}>
               아이디/비밀번호를 잊으셨나요?
             </button>
           </div>
