@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-04
+- feat(checkout): Checkout pages (B-track, booking, salons) light mode support via CSS variables — `CustomerDashboardShell` bg-[#0D0B09]→bg-[var(--bg)], `layout.tsx` body 인라인 배경 #0a0c0f 제거, `CheckoutPageView` 약 78줄·`checkout/booking` 상수(BG/TEXT/TEXT_SUB/BORDER/CARD/SURFACE)·`salons/checkout` 기본 배경, Cart/Diary/BookingSalonList/AnalysisHub·booking/analysis 페이지 흰 글씨·흰 반투명→var(--text/--text2/--text3/--border/--border2/--bg2), #11161b 시트→var(--bg). 보라/골드 버튼 흰 글씨 유지
+- feat(magazine): Magazine detail opens as slide-up sheet (SlideUpSheet component) — `SlideUpSheet`(95dvh, 배경 탭 닫기, popstate 뒤로가기, 닫힘 애니메이션 320ms 후 내용 제거), `magazine/page.tsx`·홈 `page.tsx` 카드 탭 시 시트 오픈, `MagazineDetailClient` id prop·시트 안 관련 글 이동·공유 URL 수정·minHeight 100vh→95dvh, `magazine/page.tsx` 미사용 useRouter 제거
 - feat(login): 브랜드사 로그인 라이트모드 개선 — `login/page.tsx` ROLE_META.brand.accent `#C4A0B8`→`#8B5E8B`, "아이디/비밀번호를 잊으셨나요?" 글씨 rgba(255,255,255,0.4)→var(--text2) (전 역할 공통 버튼)
 - feat(magazine): 매거진 목록(`magazine/page.tsx`) 라이트모드 전환 — BG·기본 글씨·헤더(var(--purple), 18→15)·카테고리 탭·로딩/빈 상태·대표/일반 글 카드 배경·배지·제목·날짜를 CSS 변수로 교체. 사진 위 그라데이션(132)·흰 제목(149)·조회수(150)는 가독성 위해 유지
 - feat(brand): 브랜드사 대시보드 라이트모드 전환 — `dashboard/brand/client.tsx` 헤더 그라데이션·입력칸(#121212)·카드·라벨·구분선, `tabs/BrandTabHome.tsx` CARD/TEXT/SUB 상수·KPI #fff·구분선·게이지 바탕을 var(--bg2/--text/--text2)·rgba(var(--fg-rgb),x)로 교체. 포인트색·PURPLE/GOLD·로직 유지

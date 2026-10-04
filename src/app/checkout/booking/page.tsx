@@ -5,15 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createPayAppPayment } from '@/lib/payments/payapp'
 
-const BG = '#0D0B09'
+const BG = 'var(--bg)'
 const PURPLE = '#7B5EA7'
 const PURPLE_LIGHT = 'rgba(123,94,167,0.15)'
 const GOLD = '#C9A96E'
-const TEXT = '#ffffff'
-const TEXT_SUB = 'rgba(255,255,255,0.55)'
-const BORDER = 'rgba(255,255,255,0.08)'
-const CARD = 'rgba(255,255,255,0.05)'
-const SURFACE = 'rgba(255,255,255,0.08)'
+const TEXT = 'var(--text)'
+const TEXT_SUB = 'var(--text2)'
+const BORDER = 'var(--border)'
+const CARD = 'var(--bg2)'
+const SURFACE = 'var(--bg2)'
 
 const SESSION_OPTS = [
   { sessions: 1, label: '1회권', discount: 0 },
@@ -221,7 +221,7 @@ function BookingCheckoutInner() {
                   )}
                   <div style={{ fontSize: 12, fontWeight: 500, color: TEXT, marginBottom: 4 }}>{opt.label}</div>
                   {opt.discount > 0 ? (
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', marginBottom: 2 }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', textDecoration: 'line-through', marginBottom: 2 }}>
                       ₩{optBase.toLocaleString()}
                     </div>
                   ) : null}
@@ -370,7 +370,7 @@ function BookingCheckoutInner() {
             border: 'none',
             borderRadius: 12,
             background: paying || finalPrice < 1000 ? SURFACE : PURPLE,
-            color: paying || finalPrice < 1000 ? 'rgba(255,255,255,0.3)' : '#fff',
+            color: paying || finalPrice < 1000 ? 'var(--text3)' : '#fff',
             fontSize: 15,
             fontWeight: 500,
             cursor: paying || finalPrice < 1000 ? 'default' : 'pointer',
@@ -388,7 +388,7 @@ function BookingCheckoutInner() {
             transform: 'translateX(-50%)',
             bottom: 88,
             background: PURPLE,
-            color: TEXT,
+            color: '#fff',
             borderRadius: 12,
             padding: '10px 16px',
             fontSize: 13,

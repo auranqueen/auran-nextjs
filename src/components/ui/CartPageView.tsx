@@ -81,7 +81,7 @@ export default function CartPageView({
           </div>
         ) : (
           <>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, fontSize: 13, color: '#fff', fontWeight: 800 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, fontSize: 13, color: 'var(--text)', fontWeight: 800 }}>
               <input type="checkbox" checked={allSelected} onChange={e => onSetAllSelected(e.target.checked)} />
               전체 선택
             </label>
@@ -97,16 +97,16 @@ export default function CartPageView({
                       padding: 12,
                       borderRadius: 14,
                       border: '1px solid var(--border)',
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'var(--bg2)',
                     }}
                   >
                     <input type="checkbox" checked={checked} onChange={e => onSetSelected(r.id, e.target.checked)} style={{ marginTop: 4 }} />
-                    <div style={{ position: 'relative', width: 64, height: 64, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.25)', flexShrink: 0 }}>
+                    <div style={{ position: 'relative', width: 64, height: 64, borderRadius: 10, overflow: 'hidden', background: 'var(--bg2)', flexShrink: 0 }}>
                       <ProductThumbImage src={r.thumb_img} alt={r.name} fill sizes="64px" />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>{r.brand_name}</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 2 }}>{r.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{r.name}</div>
                       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: 'var(--gold)', marginTop: 4 }}>
                         ₩{(r.price * r.quantity).toLocaleString()}
                       </div>
@@ -119,13 +119,13 @@ export default function CartPageView({
                             height: 28,
                             borderRadius: 8,
                             border: '1px solid var(--border)',
-                            background: 'rgba(255,255,255,0.04)',
-                            color: '#fff',
+                            background: 'var(--bg2)',
+                            color: 'var(--text)',
                           }}
                         >
                           −
                         </button>
-                        <span style={{ fontSize: 13, color: '#fff', fontWeight: 800, minWidth: 20, textAlign: 'center' }}>{r.quantity}</span>
+                        <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 800, minWidth: 20, textAlign: 'center' }}>{r.quantity}</span>
                         <button
                           type="button"
                           onClick={() => onQuantity(r.id, r.quantity + 1)}
@@ -134,8 +134,8 @@ export default function CartPageView({
                             height: 28,
                             borderRadius: 8,
                             border: '1px solid var(--border)',
-                            background: 'rgba(255,255,255,0.04)',
-                            color: '#fff',
+                            background: 'var(--bg2)',
+                            color: 'var(--text)',
                           }}
                         >
                           +
@@ -168,12 +168,12 @@ export default function CartPageView({
             maxWidth: 480,
             zIndex: 45,
             padding: '10px 14px 14px',
-            background: 'rgba(10,12,15,0.96)',
+            background: 'rgba(var(--bg-rgb),0.96)',
             backdropFilter: 'blur(12px)',
             borderTop: '1px solid var(--border)',
           }}
         >
-          <div style={{ fontSize: 13, color: '#fff', fontWeight: 800, marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 800, marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
             <span>
               선택 {selectedCount}개{selectedCount ? ` · ₩${selectedSubtotal.toLocaleString()}` : ''}
             </span>
@@ -225,14 +225,14 @@ export default function CartPageView({
               bottom: 0,
               width: '100%',
               maxWidth: 480,
-              background: '#11161b',
+              background: 'var(--bg)',
               borderTopLeftRadius: 18,
               borderTopRightRadius: 18,
               borderTop: '1px solid var(--border)',
               padding: 16,
             }}
           >
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 10 }}>🎁 선물할 회원 검색</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', marginBottom: 10 }}>🎁 선물할 회원 검색</div>
             <input
               value={giftQ}
               onChange={e => onGiftQChange(e.target.value)}
@@ -243,8 +243,8 @@ export default function CartPageView({
                 padding: '12px 12px',
                 borderRadius: 10,
                 border: '1px solid var(--border)',
-                background: 'rgba(255,255,255,0.04)',
-                color: '#fff',
+                background: 'var(--bg2)',
+                color: 'var(--text)',
                 fontSize: 14,
               }}
             />
@@ -261,12 +261,12 @@ export default function CartPageView({
                       padding: 10,
                       borderRadius: 10,
                       border: giftPick === u.id ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)',
-                      background: giftPick === u.id ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.04)',
+                      background: giftPick === u.id ? 'rgba(201,168,76,0.1)' : 'var(--bg2)',
                       cursor: 'pointer',
                     }}
                   >
                     <input type="radio" name="giftu" checked={giftPick === u.id} onChange={() => onGiftPick(u.id)} />
-                    <div style={{ fontSize: 13, color: '#fff' }}>
+                    <div style={{ fontSize: 13, color: 'var(--text)' }}>
                       {u.name} · {u.email}
                     </div>
                   </label>

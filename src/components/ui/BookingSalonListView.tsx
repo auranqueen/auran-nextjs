@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
-const TEXT_DIM = 'rgba(255,255,255,0.25)'
+const CARD_BG = 'var(--bg2)'
+const CARD_BORDER = '1px solid var(--border)'
+const TEXT_MUTED = 'var(--text3)'
+const TEXT_DIM = 'var(--text3)'
 
 export type SalonRow = {
   id: string
@@ -52,11 +52,11 @@ export default function BookingSalonListView({ loading, salons, searchQuery, onS
           value={searchQuery}
           onChange={e => onSearch(e.target.value)}
           style={{
-            background: '#181520',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--bg2)',
+            border: '1px solid var(--border)',
             borderRadius: 10,
             padding: '10px 14px 10px 36px',
-            color: 'rgba(255,255,255,0.85)',
+            color: 'var(--text)',
             fontSize: 13,
             width: '100%',
             boxSizing: 'border-box',
@@ -121,7 +121,7 @@ export default function BookingSalonListView({ loading, salons, searchQuery, onS
                     {initial}
                   </div>
                 )}
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>{s.name || '살롱'}</div>
+                <div style={{ fontSize: 14, color: 'var(--text)' }}>{s.name || '살롱'}</div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flexWrap: 'wrap' }}>

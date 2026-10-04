@@ -125,7 +125,7 @@ export default function BrandCheckoutPage() {
     }
   }
   return (
-    <div>
+    <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100dvh' }}>
       {checkoutItems.map(item => (
         <div key={item.brand_product_id}>
           <span>{item.salon_name} · {item.name} × {item.quantity}</span>

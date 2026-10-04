@@ -1,8 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
+import MagazineDetailClient from './[id]/MagazineDetailClient'
+
+const SlideUpSheet = dynamic(() => import('@/components/ui/SlideUpSheet'), { ssr: false })
 
 const BG = 'var(--bg)'
 
@@ -18,11 +21,11 @@ function formatDate(iso: string | null | undefined) {
 }
 
 export default function MagazinePage() {
-  const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<any[]>([])
   const [tab, setTab] = useState<(typeof TABS)[number]>('전체')
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -108,7 +111,7 @@ export default function MagazinePage() {
             {featured ? (
               <button
                 type="button"
-                onClick={() => router.push(`/magazine/${featured.id}`)}
+                onClick={() => setOpenId(String(featured.id))}
                 style={{
                   width: '100%',
                   border: 'none',
@@ -160,7 +163,7 @@ export default function MagazinePage() {
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => router.push(`/magazine/${m.id}`)}
+                  onClick={() => setOpenId(String(m.id))}
                   style={{
                     border: 'none',
                     padding: 0,
@@ -213,6 +216,10 @@ export default function MagazinePage() {
           </>
         )}
       </div>
+
+      <SlideUpSheet open={!!openId} onClose={() => setOpenId(null)}>
+        {openId && <MagazineDetailClient id={openId} onNavigate={setOpenId} />}
+      </SlideUpSheet>
     </div>
   )
 }

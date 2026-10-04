@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     gtag('config', 'G-MRMP1GB6GJ');
   `}
       </Script>
-      <body style={{ margin: 0, padding: 0, background: '#0a0c0f' }}>
+      <body style={{ margin: 0, padding: 0 }}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -45,13 +45,13 @@ export default function AnalysisPage() {
             marginBottom: 14,
             padding: '12px 14px',
             borderRadius: 16,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--bg2)',
+            border: '1px solid var(--border)',
           }}
         >
-          <p style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: '1.5px', color: 'rgba(255,255,255,0.25)', margin: 0 }}>AI SKIN LAB</p>
-          <p style={{ margin: '6px 0 0', fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.85)' }}>분석 · 추천 허브</p>
-          <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 300, lineHeight: 1.6, color: 'rgba(255,255,255,0.4)' }}>
+          <p style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: '1.5px', color: 'var(--text3)', margin: 0 }}>AI SKIN LAB</p>
+          <p style={{ margin: '6px 0 0', fontSize: 15, fontWeight: 400, color: 'var(--text)' }}>분석 · 추천 허브</p>
+          <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 300, lineHeight: 1.6, color: 'var(--text3)' }}>
             프로필 확인 후 피부 분석을 시작할 수 있어요.
           </p>
         </div>

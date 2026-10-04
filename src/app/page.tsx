@@ -23,6 +23,8 @@ const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRec
 const MyManageSheet = dynamic(() => import('@/components/home/MyManagePage'), { ssr: false })
 const MyWorldSheet = dynamic(() => import('@/app/myworld/page'), { ssr: false })
 const CommunitySheet = dynamic(() => import('@/app/dashboard/customer/community/page'), { ssr: false })
+const SlideUpSheet = dynamic(() => import('@/components/ui/SlideUpSheet'), { ssr: false })
+const MagazineDetailClient = dynamic(() => import('./magazine/[id]/MagazineDetailClient'), { ssr: false })
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -462,6 +464,7 @@ export default function CustomerHomePage() {
   })
   const [priveSpinning, setPriveSpinning] = useState(false)
   const [priveVideoOpen, setPriveVideoOpen] = useState(false)
+  const [magazineOpenId, setMagazineOpenId] = useState<string | null>(null)
   useEffect(() => {
     const sb = createClient()
     sb.from('prive_config')
@@ -3968,7 +3971,7 @@ export default function CustomerHomePage() {
             {magazines.map((m: any) => (
               <div
                 key={m.id}
-                onClick={() => router.push(`/magazine/${m.id}`)}
+                onClick={() => setMagazineOpenId(String(m.id))}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -5028,6 +5031,10 @@ export default function CustomerHomePage() {
       />
 
       <CheckinTracker />
+
+      <SlideUpSheet open={!!magazineOpenId} onClose={() => setMagazineOpenId(null)}>
+        {magazineOpenId && <MagazineDetailClient id={magazineOpenId} onNavigate={setMagazineOpenId} />}
+      </SlideUpSheet>
 
     </div>
   )

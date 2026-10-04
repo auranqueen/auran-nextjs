@@ -44,9 +44,9 @@ function formatDate(iso: string | null | undefined) {
   }
 }
 
-export default function MagazineDetailClient() {
+export default function MagazineDetailClient({ id: idProp, onNavigate }: { id?: string; onNavigate?: (id: string) => void } = {}) {
   const params = useParams()
-  const id = String(params?.id || '')
+  const id = String(idProp || params?.id || '')
   const router = useRouter()
   const supabase = createClient()
   const [row, setRow] = useState<any | null>(null)
@@ -159,7 +159,7 @@ export default function MagazineDetailClient() {
   }
 
   const share = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : ''
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/magazine/${id}` : ''
     try {
       if (navigator.share) {
         await navigator.share({ title: row?.title, text: row?.subtitle || '', url })
@@ -180,7 +180,7 @@ export default function MagazineDetailClient() {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '')
+      await navigator.clipboard.writeText(typeof window !== 'undefined' ? `${window.location.origin}/magazine/${id}` : '')
       alert('링크가 복사됐어요 💜')
     } catch {
       /* ignore */
@@ -189,7 +189,7 @@ export default function MagazineDetailClient() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24 }}>
+      <div style={{ minHeight: '95dvh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24 }}>
         불러오는 중…
       </div>
     )
@@ -197,7 +197,7 @@ export default function MagazineDetailClient() {
 
   if (!row) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 0 }}>
+      <div style={{ minHeight: '95dvh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 0 }}>
         <p style={{ fontSize: 14 }}>글을 찾을 수 없어요</p>
         <button type="button" onClick={() => router.push('/magazine')} style={{ marginTop: 16, border: '1px solid rgba(196,167,231,0.4)', background: 'transparent', color: 'var(--purple)', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
           목록으로
@@ -209,7 +209,7 @@ export default function MagazineDetailClient() {
   const rt = readTimeMin(String(row.content || ''))
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', paddingBottom: 0 }}>
+    <div style={{ minHeight: '95dvh', background: BG, color: 'var(--text)', maxWidth: 480, margin: '0 auto', paddingBottom: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid rgba(var(--fg-rgb),0.08)' }}>
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 18, cursor: 'pointer', padding: 4 }}>
           ←
@@ -319,7 +319,7 @@ export default function MagazineDetailClient() {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => router.push(`/magazine/${r.id}`)}
+                onClick={() => (onNavigate ? onNavigate(String(r.id)) : router.push(`/magazine/${r.id}`))}
                 style={{ flexShrink: 0, width: 160, border: 'none', padding: 0, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(var(--fg-rgb),0.05)', textAlign: 'left' }}
               >
                 <div style={{ width: '100%', aspectRatio: '16/10', background: 'var(--bg3)' }}>

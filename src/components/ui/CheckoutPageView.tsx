@@ -258,7 +258,7 @@ export default function CheckoutPageView({
                 const lineTotal = lineUnit * lineQty
                 const retailLine = retail * lineQty
                 return (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
                       <div
                         style={{
@@ -268,20 +268,20 @@ export default function CheckoutPageView({
                           borderRadius: 10,
                           overflow: 'hidden',
                           flexShrink: 0,
-                          background: 'rgba(0,0,0,0.2)',
+                          background: 'var(--bg2)',
                           animation: 'float 3s ease-in-out infinite',
                         }}
                       >
                         <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                       </div>
-                      <div style={{ color: '#fff', fontSize: 13, fontWeight: 500, minWidth: 0 }}>
+                      <div style={{ color: 'var(--text)', fontSize: 13, fontWeight: 500, minWidth: 0 }}>
                         {p.name} · {lineQty}개
                       </div>
                     </div>
                     <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 500, flexShrink: 0, textAlign: 'right' }}>
                       {showPromo && retailLine > lineTotal ? (
                         <span>
-                          <span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.45)', marginRight: 6 }}>₩{retailLine.toLocaleString()}</span>
+                          <span style={{ textDecoration: 'line-through', color: 'var(--text3)', marginRight: 6 }}>₩{retailLine.toLocaleString()}</span>
                           ₩{lineTotal.toLocaleString()}
                         </span>
                       ) : (
@@ -295,10 +295,10 @@ export default function CheckoutPageView({
 
             {!!giftTo && <div style={{ marginBottom: 10, fontSize: 12, color: '#bcd6ff' }}>🎁 선물 주문 · 받는 분 ID: {giftTo}</div>}
 
-            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>배송 정보</div>
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg2)' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>배송 정보</div>
               {savedAddresses.length > 0 ? (
-                <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg2)' }}>
                   {(() => {
                     const defaultRow = savedAddresses.find((a: any) => a.is_default === true) || savedAddresses[0]
                     const defName = String(defaultRow?.recipient_name || defaultRow?.name || '-')
@@ -309,12 +309,12 @@ export default function CheckoutPageView({
                       <>
                         <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>기본 배송지</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                          <span style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{defName}</span>
-                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>· {defPhone}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{defName}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text)' }}>· {defPhone}</span>
                         </div>
-                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{defAddr}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.5 }}>{defAddr}</div>
                         {defDetail ? (
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginTop: 4 }}>{defDetail}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, marginTop: 4 }}>{defDetail}</div>
                         ) : null}
                       </>
                     )
@@ -326,7 +326,7 @@ export default function CheckoutPageView({
                       width: '100%',
                       marginTop: 10,
                       marginBottom: 10,
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      border: '1px solid var(--border2)',
                       background: 'transparent',
                       color: '#d9c7ff',
                       fontSize: 12,
@@ -350,11 +350,11 @@ export default function CheckoutPageView({
                       width: '100%',
                       boxSizing: 'border-box',
                       marginTop: 8,
-                      background: 'rgba(0,0,0,0.25)',
-                      border: `1px solid ${addressDetail.trim() ? 'rgba(255,255,255,0.12)' : 'rgba(220,80,80,0.6)'}`,
+                      background: 'var(--bg2)',
+                      border: `1px solid ${addressDetail.trim() ? 'var(--border)' : 'rgba(220,80,80,0.6)'}`,
                       borderRadius: 10,
                       padding: '10px 12px',
-                      color: '#fff',
+                      color: 'var(--text)',
                       fontSize: 13,
                     }}
                   />
@@ -367,15 +367,15 @@ export default function CheckoutPageView({
                 </div>
               ) : (
                 <>
-                  <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
-                  <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
+                  <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)' }} />
+                  <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)' }} />
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <input
                       type="text"
                       readOnly
                       placeholder="주소"
                       value={address}
-                      style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13 }}
+                      style={{ flex: 1, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13 }}
                     />
                     <button
                       type="button"
@@ -395,15 +395,15 @@ export default function CheckoutPageView({
                     placeholder="상세주소 (동/호수 등)"
                     value={addressDetail}
                     onChange={(e) => setAddressDetail(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13 }}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13 }}
                   />
                 </>
               )}
             </div>
 
-            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>금액 확인</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#fff', fontSize: 13 }}>
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg2)' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>금액 확인</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'var(--text)', fontSize: 13 }}>
                 <span>주문금액</span>
                 <span>₩{subtotal.toLocaleString()}</span>
               </div>
@@ -470,7 +470,7 @@ export default function CheckoutPageView({
                     <div
                       style={{
                         marginTop: 6,
-                        background: 'rgba(255,255,255,0.04)',
+                        background: 'var(--bg2)',
                         border: '0.5px solid rgba(255,180,50,0.25)',
                         borderRadius: 8,
                         padding: '10px 12px',
@@ -482,12 +482,12 @@ export default function CheckoutPageView({
                           display: 'flex',
                           justifyContent: 'space-between',
                           padding: '4px 0',
-                          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
-                          color: 'rgba(255,255,255,0.6)',
+                          borderBottom: '0.5px solid var(--border)',
+                          color: 'var(--text2)',
                         }}
                       >
                         <span>보유 토스트</span>
-                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>{toastTBalance.toLocaleString()}T</span>
+                        <span style={{ color: 'var(--text)' }}>{toastTBalance.toLocaleString()}T</span>
                       </div>
                       {!['LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE'].includes(gradeName) ? (
                         <div
@@ -495,12 +495,12 @@ export default function CheckoutPageView({
                             display: 'flex',
                             justifyContent: 'space-between',
                             padding: '4px 0',
-                            borderBottom: '0.5px solid rgba(255,255,255,0.06)',
-                            color: 'rgba(255,255,255,0.6)',
+                            borderBottom: '0.5px solid var(--border)',
+                            color: 'var(--text2)',
                           }}
                         >
                           <span>사용 한도 (보유의 50%)</span>
-                          <span style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          <span style={{ color: 'var(--text)' }}>
                             {Math.floor(toastTBalance * 0.5).toLocaleString()}T
                           </span>
                         </div>
@@ -513,14 +513,14 @@ export default function CheckoutPageView({
                   ) : null}
                 </div>
               ) : null}
-              <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>🎟 쿠폰 선택</div>
+              <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>🎟 쿠폰 선택</div>
                 {hasTimesaleOrGroupbuy && (
                   <div style={{ fontSize: 11, color: 'rgba(255,180,100,0.8)', background: 'rgba(255,150,50,0.08)', border: '1px solid rgba(255,150,50,0.2)', borderRadius: 8, padding: '6px 10px', marginBottom: 8 }}>
                     타임세일·공구 상품은 쿠폰 사용이 불가해요
                   </div>
                 )}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 12, color: 'rgba(255,255,255,0.9)', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 12, color: 'var(--text)', cursor: 'pointer' }}>
                   <input type="radio" name="checkout_coupon" checked={selectedUserCouponId === null} onChange={() => setSelectedUserCouponId(null)} />
                   <span>쿠폰 적용 안 함</span>
                 </label>
@@ -538,11 +538,11 @@ export default function CheckoutPageView({
                         gap: 10,
                         marginBottom: 10,
                         fontSize: 12,
-                        color: 'rgba(255,255,255,0.92)',
+                        color: 'var(--text)',
                         cursor: 'pointer',
                         padding: '8px 10px',
                         borderRadius: 10,
-                        border: selectedUserCouponId === uc.id ? '1px solid rgba(201,168,76,0.55)' : '1px solid rgba(255,255,255,0.08)',
+                        border: selectedUserCouponId === uc.id ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)',
                         background: selectedUserCouponId === uc.id ? 'rgba(201,168,76,0.08)' : 'transparent',
                       }}
                     >
@@ -578,7 +578,7 @@ export default function CheckoutPageView({
                   ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'rgba(255,255,255,0.88)', fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'var(--text)', fontSize: 13 }}>
                 <span>배송비</span>
                 <span>{shippingFee > 0 ? `₩${shippingFee.toLocaleString()}` : '무료'}</span>
               </div>
@@ -590,12 +590,12 @@ export default function CheckoutPageView({
               )}
             </div>
 
-            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg2)' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
 
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithOran ? 8 : 0 }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>💳 오렌페이 · 잔액 ₩{balance.toLocaleString()}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text)' }}>💳 오렌페이 · 잔액 ₩{balance.toLocaleString()}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -603,7 +603,7 @@ export default function CheckoutPageView({
                       if (next) setOranDraftWon(null)
                       setPayWithOran(next)
                     }}
-                    style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: payWithOran ? '#7B5EA7' : 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
+                    style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: payWithOran ? '#7B5EA7' : 'var(--border2)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
                   >
                     <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: payWithOran ? 18 : 2, transition: 'left 0.2s' }} />
                   </button>
@@ -614,7 +614,7 @@ export default function CheckoutPageView({
                       <button
                         type="button"
                         onClick={() => setOranDraftWon(null)}
-                        style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: oranDraftWon === null ? 'rgba(201,168,110,0.2)' : 'transparent', color: '#fff', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}
+                        style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid var(--border)', background: oranDraftWon === null ? 'rgba(201,168,110,0.2)' : 'transparent', color: 'var(--text)', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}
                       >
                         전액 사용
                       </button>
@@ -628,7 +628,7 @@ export default function CheckoutPageView({
                         const raw = e.target.value.replace(/\D/g, '')
                         setOranDraftWon(raw === '' ? 0 : Math.floor(Number(raw)))
                       }}
-                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }}
+                      style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px', color: 'var(--text)', fontSize: 12 }}
                     />
                     <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>₩{oranUsed.toLocaleString()} 차감 예정</div>
                   </div>
@@ -637,7 +637,7 @@ export default function CheckoutPageView({
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>🏦 무통장 입금</span>
+                  <span style={{ fontSize: 12, color: 'var(--text)' }}>🏦 무통장 입금</span>
                   <button
                     type="button"
                     onClick={() => setUseBankTransfer(!useBankTransfer)}
@@ -646,7 +646,7 @@ export default function CheckoutPageView({
                       height: 20,
                       borderRadius: 10,
                       border: 'none',
-                      background: useBankTransfer ? '#7B5EA7' : 'rgba(255,255,255,0.12)',
+                      background: useBankTransfer ? '#7B5EA7' : 'var(--border2)',
                       cursor: 'pointer',
                       position: 'relative',
                       transition: 'background 0.2s',
@@ -672,10 +672,10 @@ export default function CheckoutPageView({
                       marginTop: 10,
                       padding: 10,
                       borderRadius: 10,
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border)',
                       fontSize: 12,
-                      color: 'rgba(255,255,255,0.9)',
+                      color: 'var(--text)',
                       lineHeight: 1.5,
                     }}
                   >
@@ -695,11 +695,11 @@ export default function CheckoutPageView({
                           width: '100%',
                           marginTop: 8,
                           boxSizing: 'border-box',
-                          background: 'rgba(0,0,0,0.25)',
-                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'var(--bg2)',
+                          border: '1px solid var(--border)',
                           borderRadius: 10,
                           padding: '8px 10px',
-                          color: '#fff',
+                          color: 'var(--text)',
                           fontSize: 12,
                         }}
                       />
@@ -709,8 +709,8 @@ export default function CheckoutPageView({
               </div>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: '#fff', fontSize: 15, fontWeight: 500 }}>
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--text)', fontSize: 15, fontWeight: 500 }}>
                 <span>최종 결제 필요금액</span>
                 <span>₩{needCharge.toLocaleString()}</span>
               </div>
@@ -807,13 +807,13 @@ export default function CheckoutPageView({
       {addressSheetOpen && (
         <>
           <div onClick={() => setAddressSheetOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 199, background: 'rgba(0,0,0,0.55)' }} />
-          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, maxHeight: '75vh', overflowY: 'auto', zIndex: 200, background: '#11161b', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTop: '1px solid var(--border)', padding: 14 }}>
-            <div style={{ fontSize: 15, fontWeight: 500, color: '#fff', marginBottom: 10 }}>배송지 선택</div>
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, maxHeight: '75vh', overflowY: 'auto', zIndex: 200, background: 'var(--bg)', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTop: '1px solid var(--border)', padding: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>배송지 선택</div>
             {savedAddresses.map((row) => {
               const lineAddress = String(row.address || '')
               const selected = lineAddress === String(address || '') && String(row.recipient_name || row.name || '') === String(recipientName || '')
               return (
-                <label key={row.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, border: selected ? '1px solid rgba(201,168,76,0.6)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 10, marginBottom: 8, cursor: 'pointer' }}>
+                <label key={row.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, border: selected ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', borderRadius: 10, padding: 10, marginBottom: 8, cursor: 'pointer' }}>
                   <input
                     type="radio"
                     name="saved_address_pick"
@@ -827,12 +827,12 @@ export default function CheckoutPageView({
                     }}
                   />
                   <span style={{ lineHeight: 1.45 }}>
-                    <span style={{ fontWeight: 500, color: '#fff' }}>{row.label || '배송지'}</span>
+                    <span style={{ fontWeight: 500, color: 'var(--text)' }}>{row.label || '배송지'}</span>
                     {row.is_default === true ? <span style={{ marginLeft: 6, fontSize: 10, color: '#fff', background: '#7B5EA7', borderRadius: 999, padding: '2px 7px' }}>기본</span> : null}
                     <br />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.86)' }}>{String(row.recipient_name || row.name || '-')} · {String(row.phone || row.recipient_phone || '-')}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text)' }}>{String(row.recipient_name || row.name || '-')} · {String(row.phone || row.recipient_phone || '-')}</span>
                     <br />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>{lineAddress || '-'}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{lineAddress || '-'}</span>
                   </span>
                 </label>
               )
@@ -840,30 +840,30 @@ export default function CheckoutPageView({
             <button
               type="button"
               onClick={() => setNewAddressOpen((v) => !v)}
-              style={{ width: '100%', marginTop: 4, marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)', background: 'transparent', color: 'var(--text3)', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: 4, marginBottom: 8, border: '1px dashed var(--border2)', background: 'transparent', color: 'var(--text3)', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}
             >
               + 새 주소 추가
             </button>
             {newAddressOpen && (
-              <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
+              <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: newAddrStep === 1 ? '#fff' : 'rgba(255,255,255,0.45)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 1 ? '#7B5EA7' : 'rgba(255,255,255,0.06)' }}>
+                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: newAddrStep === 1 ? '#fff' : 'var(--text3)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 1 ? '#7B5EA7' : 'var(--bg2)' }}>
                     1. 주소
                   </div>
-                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: newAddrStep === 2 ? '#fff' : 'rgba(255,255,255,0.45)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 2 ? '#7B5EA7' : 'rgba(255,255,255,0.06)' }}>
+                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 500, color: newAddrStep === 2 ? '#fff' : 'var(--text3)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 2 ? '#7B5EA7' : 'var(--bg2)' }}>
                     2. 받는 분
                   </div>
                 </div>
                 {newAddrStep === 1 ? (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>주소를 입력해주세요</div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>주소를 입력해주세요</div>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                       <input
                         type="text"
                         readOnly
                         placeholder="주소"
                         value={newAddress}
-                        style={{ flex: 1, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }}
+                        style={{ flex: 1, boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 12 }}
                       />
                       <button type="button" onClick={() => openAddressSearch((addr) => setNewAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
                         주소찾기
@@ -874,7 +874,7 @@ export default function CheckoutPageView({
                       placeholder="상세주소"
                       value={newAddressDetail}
                       onChange={(e) => setNewAddressDetail(e.target.value)}
-                      style={{ width: '100%', marginBottom: 10, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }}
+                      style={{ width: '100%', marginBottom: 10, boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 12 }}
                     />
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
@@ -883,7 +883,7 @@ export default function CheckoutPageView({
                           setNewAddressOpen(false)
                           setNewAddrStep(1)
                         }}
-                        style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.85)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}
+                        style={{ flex: 1, border: '1px solid var(--border2)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}
                       >
                         취소
                       </button>
@@ -899,13 +899,13 @@ export default function CheckoutPageView({
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>받는 분 정보</div>
-                    <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(123, 94, 167, 0.35)', border: '1px solid rgba(123, 94, 167, 0.5)', fontSize: 12, color: 'rgba(255,255,255,0.95)', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 10 }}>받는 분 정보</div>
+                    <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(123, 94, 167, 0.35)', border: '1px solid rgba(123, 94, 167, 0.5)', fontSize: 12, color: 'var(--text)', lineHeight: 1.5 }}>
                       {`${newAddress.trim()} ${newAddressDetail.trim()}`.trim() || '-'}
                     </div>
-                    <input type="text" placeholder="이름" value={newRecipientName} onChange={(e) => setNewRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                    <input type="tel" placeholder="전화번호" value={newRecipientPhone} onChange={(e) => setNewRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>배송지 이름</div>
+                    <input type="text" placeholder="이름" value={newRecipientName} onChange={(e) => setNewRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 12 }} />
+                    <input type="tel" placeholder="전화번호" value={newRecipientPhone} onChange={(e) => setNewRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 12 }} />
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>배송지 이름</div>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                       {(['집', '회사', '기타'] as const).map((chip) => (
                         <button
@@ -914,10 +914,10 @@ export default function CheckoutPageView({
                           onClick={() => setNewAddressLabel(chip)}
                           style={{
                             flex: 1,
-                            border: newAddressLabel === chip ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                            border: newAddressLabel === chip ? 'none' : '1px solid var(--border2)',
                             borderRadius: 999,
                             background: newAddressLabel === chip ? '#7B5EA7' : 'transparent',
-                            color: '#fff',
+                            color: newAddressLabel === chip ? '#fff' : 'var(--text)',
                             fontSize: 11,
                             fontWeight: 500,
                             padding: '6px 0',
@@ -929,7 +929,7 @@ export default function CheckoutPageView({
                       ))}
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" onClick={() => setNewAddrStep(1)} style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.85)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}>
+                      <button type="button" onClick={() => setNewAddrStep(1)} style={{ flex: 1, border: '1px solid var(--border2)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}>
                         ← 이전
                       </button>
                       <button
@@ -988,15 +988,15 @@ export default function CheckoutPageView({
       )}
       {couponSheetOpen && (
         <div onClick={() => setCouponSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 131 }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, maxHeight: '72vh', overflow: 'auto', background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
-            <div style={{ fontSize: 15, color: '#fff', fontWeight: 500, marginBottom: 10 }}>쿠폰 선택</div>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, maxHeight: '72vh', overflow: 'auto', background: 'var(--bg)', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
+            <div style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500, marginBottom: 10 }}>쿠폰 선택</div>
             <button type="button" onClick={() => { setSelectedUserCouponId(null); setCouponSheetOpen(false) }} style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}>
               쿠폰 적용 안 함
             </button>
             {userCoupons.map(uc => {
               const c = uc.coupons
               if (!c) return (
-                <div key={uc.id} style={{ width: '100%', padding: 12, marginBottom: 8, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--text3)', fontSize: 12 }}>
+                <div key={uc.id} style={{ width: '100%', padding: 12, marginBottom: 8, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', fontSize: 12 }}>
                   쿠폰 정보를 불러오지 못했어요.
                 </div>
               )
@@ -1049,7 +1049,7 @@ export default function CheckoutPageView({
                     setSelectedUserCouponId(finalId)
                     setCouponSheetOpen(false)
                   }}
-                  style={{ width: '100%', textAlign: 'left', padding: 12, marginBottom: 8, borderRadius: 12, border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)', color: ok ? '#fff' : 'rgba(255,255,255,0.35)', cursor: ok ? 'pointer' : 'not-allowed' }}>
+                  style={{ width: '100%', textAlign: 'left', padding: 12, marginBottom: 8, borderRadius: 12, border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', background: ok ? 'rgba(201,168,76,0.08)' : 'var(--bg2)', color: ok ? 'var(--text)' : 'var(--text3)', cursor: ok ? 'pointer' : 'not-allowed' }}>
                   <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name}</div>
                   <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>{discLabel}</div>
                   {!ok && <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>{expired ? '기간 만료' : subFail ? `₩${minO.toLocaleString()} 이상 구매시 적용` : '이 상품에 적용 불가'}</div>}

@@ -8,11 +8,11 @@ type Props = {
   paddingBottom?: number
 }
 
-/** 고객 대시보드 공통: 배경 #0D0B09, max 390px, 하단 네비 여유 */
+/** 고객 대시보드 공통: 배경 var(--bg), max 390px, 하단 네비 여유 */
 export default function CustomerDashboardShell({ children, paddingBottom }: Props) {
   return (
     <div
-      className={`mx-auto min-h-screen w-full max-w-[390px] bg-[#0D0B09] ${paddingBottom === undefined ? 'pb-24' : ''}`}
+      className={`mx-auto min-h-screen w-full max-w-[390px] bg-[var(--bg)] ${paddingBottom === undefined ? 'pb-24' : ''}`}
       style={paddingBottom !== undefined ? { paddingBottom } : undefined}
     >
       {children}

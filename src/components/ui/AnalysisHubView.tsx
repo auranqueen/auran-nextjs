@@ -1,10 +1,10 @@
 'use client'
 
 const GOLD = '#C9A96E'
-const CARD_BG = 'rgba(255,255,255,0.03)'
-const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
-const TEXT_MUTED = 'rgba(255,255,255,0.4)'
-const TEXT_DIM = 'rgba(255,255,255,0.25)'
+const CARD_BG = 'var(--bg2)'
+const CARD_BORDER = '1px solid var(--border)'
+const TEXT_MUTED = 'var(--text3)'
+const TEXT_DIM = 'var(--text3)'
 
 type Profile = {
   name?: string | null
@@ -53,11 +53,11 @@ export default function AnalysisHubView({ loading, profile, analysisPoint, onSta
           >
             MY SKIN PROFILE
           </div>
-          <div style={{ fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.85)' }}>{profile.name || '사용자'}</div>
+          <div style={{ fontSize: 15, fontWeight: 400, color: 'var(--text)' }}>{profile.name || '사용자'}</div>
           <div style={{ marginTop: 10, fontSize: 12, color: TEXT_MUTED, lineHeight: 1.75 }}>
             피부 타입: <span style={{ color: GOLD, fontWeight: 600 }}>{profile.skin_type || '미설정'}</span>
             <br />
-            피부 고민: <span style={{ color: 'rgba(255,255,255,0.78)' }}>{concernsText(profile.skin_concerns)}</span>
+            피부 고민: <span style={{ color: 'var(--text2)' }}>{concernsText(profile.skin_concerns)}</span>
           </div>
         </div>
       ) : (
