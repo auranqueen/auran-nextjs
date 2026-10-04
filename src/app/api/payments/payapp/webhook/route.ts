@@ -621,6 +621,15 @@ export async function POST(req: NextRequest) {
               reference_id: orderRow.id,
             } as any)
             if (ttUseErr) console.warn('[toast_transactions use]', ttUseErr)
+            const { data: toastBuyer } = await client
+              .from('users')
+              .select('points')
+              .eq('id', orderRow.customer_id)
+              .maybeSingle()
+            if (toastBuyer) {
+              const nextToastPoints = Math.max(0, Number(toastBuyer.points || 0) - toastUsedOrder)
+              await client.from('users').update({ points: nextToastPoints }).eq('id', orderRow.customer_id)
+            }
           }
           const { count: _priorPaidCount } = await client
             .from('orders')
@@ -977,14 +986,15 @@ export async function POST(req: NextRequest) {
       if (intent.status === 'paid' && intent.kind === 'order' && intent.target_id) {
         const { data: orderRow } = await client
           .from('orders')
-          .select('id,customer_id,point_used,charge_used,payment_applied')
+          .select('id,customer_id,point_used,charge_used,toast_used,payment_applied')
           .eq('id', intent.target_id)
           .maybeSingle()
         if (orderRow?.id) {
           if (orderRow.payment_applied) {
             const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
             const chargeUsed = Math.max(0, Number(orderRow.charge_used || 0))
-            if (pointUsed > 0 || chargeUsed > 0) {
+            const toastUsedCancel = Math.max(0, Number((orderRow as { toast_used?: unknown }).toast_used || 0))
+            if (pointUsed > 0 || chargeUsed > 0 || toastUsedCancel > 0) {
               const { data: buyer } = await client
                 .from('users')
                 .select('points,charge_balance')
@@ -994,11 +1004,22 @@ export async function POST(req: NextRequest) {
                 await client
                   .from('users')
                   .update({
-                    points: Number(buyer.points || 0) + pointUsed,
+                    points: Number(buyer.points || 0) + pointUsed + toastUsedCancel,
                     charge_balance: Number(buyer.charge_balance || 0) + chargeUsed,
                   })
                   .eq('id', orderRow.customer_id)
               }
+            }
+            if (toastUsedCancel > 0) {
+              const { error: ttRefundErr } = await client.from('toast_transactions').insert({
+                user_id: orderRow.customer_id,
+                amount: toastUsedCancel,
+                transaction_type: 'refund',
+                source_type: 'order',
+                source_id: orderRow.id,
+                reference_id: orderRow.id,
+              } as any)
+              if (ttRefundErr) console.warn('[toast_transactions refund]', ttRefundErr)
             }
           }
           const { restoreUserCouponForOrder } = await import('@/lib/coupon/restoreForOrder')
