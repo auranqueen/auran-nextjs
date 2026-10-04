@@ -414,25 +414,25 @@ export default function CheckoutPageView({
                 <span style={{ fontWeight: 500 }}>₩{subtotal.toLocaleString()}</span>
               </div>
               {timesaleDiscount > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#7ec8e8', fontSize: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#7ec8e8', fontSize: 9 }}>
                   <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>타임세일 할인</span>
                   <span style={{ fontWeight: 500 }}>-₩{timesaleDiscount.toLocaleString()}</span>
                 </div>
               ) : null}
               {groupbuyDiscount > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#9ecfff', fontSize: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#9ecfff', fontSize: 9 }}>
                   <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>공구 할인</span>
                   <span style={{ fontWeight: 500 }}>-₩{groupbuyDiscount.toLocaleString()}</span>
                 </div>
               ) : null}
               {isFounder && founderDiscountAmt > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#C9A96E', fontSize: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#C9A96E', fontSize: 9 }}>
                   <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>👑 Founders 2% 할인</span>
                   <span style={{ fontWeight: 500 }}>-₩{founderDiscountAmt.toLocaleString()}</span>
                 </div>
               ) : null}
               {gradeDiscountAmt > 0 && gradeName ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: 'var(--purple)', fontSize: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: 'var(--purple)', fontSize: 9 }}>
                   <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>
                     <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 20, fontWeight: 600, whiteSpace: 'nowrap', background: 'rgba(123,94,167,0.12)', color: 'var(--purple)', marginRight: 4 }}>{gradeName}</span>
                     등급 {gradeDiscount}% 할인
@@ -447,7 +447,7 @@ export default function CheckoutPageView({
               )}
               {toastUsed > 0 ? (
                 <div style={{ paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, color: 'var(--purple)', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, color: 'var(--purple)', fontSize: 9 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text2)', wordBreak: 'keep-all' }}>
                       <span><span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 20, fontWeight: 600, whiteSpace: 'nowrap', background: 'rgba(123,94,167,0.12)', color: 'var(--purple)', marginRight: 4 }}>🍞 토스트</span>할인</span>
                       <button
@@ -585,12 +585,12 @@ export default function CheckoutPageView({
                   ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: 'var(--text)', fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: 'var(--text)', fontSize: 9 }}>
                 <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>배송비</span>
                 <span style={{ fontWeight: 500 }}>{shippingFee > 0 ? `₩${shippingFee.toLocaleString()}` : '무료'}</span>
               </div>
               {extraShippingFee > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#9ecfff', fontSize: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 5, paddingBottom: 5, borderBottom: '1px solid var(--border2)', color: '#9ecfff', fontSize: 9 }}>
                   <span style={{ color: 'var(--text2)', wordBreak: 'keep-all' }}>제주·산간 추가</span>
                   <span style={{ fontWeight: 500 }}>+₩{extraShippingFee.toLocaleString()}</span>
                 </div>
@@ -734,13 +734,13 @@ export default function CheckoutPageView({
                   <div style={{ height: 1, background: 'var(--border)', margin: '10px 0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, color: 'var(--text)' }}>
                     <span style={{ fontSize: 13, fontWeight: 400 }}>최종 결제</span>
-                    <span style={{ fontSize: 15, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
+                    <span style={{ fontSize: 13, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 12, color: 'var(--text)' }}>
                   <span style={{ fontSize: 13, fontWeight: 400 }}>최종 결제 필요금액</span>
-                  <span style={{ fontSize: 15, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
+                  <span style={{ fontSize: 13, fontWeight: 400 }}>₩{needCharge.toLocaleString()}</span>
                 </div>
               )}
               {/* ===== [또또복권] 미달 안내 섹션 ===== */}
