@@ -488,9 +488,96 @@ export default function CheckoutFlow({ query, onClose }: { query?: string; onClo
       setIsPaying(false)
       return
     }
+    const lockKey = `payapp_lock_${orderedProducts.map(p => p.id).join(',')}_${payAppAmount}`
+    if (sessionStorage.getItem(lockKey)) {
+      setIsPaying(false)
+      return
+    }
+    sessionStorage.setItem(lockKey, '1')
+    setTimeout(() => sessionStorage.removeItem(lockKey), 5000)
+    if (!Number.isFinite(payAppAmount) || payAppAmount <= 0) {
+      setToast('결제 금액을 확인해주세요')
+      setIsPaying(false)
+      return
+    }
     try {
-      router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        const duplicateOrderPromise = supabase
+          .from('orders')
+          .select('id, order_no, users!orders_customer_id_fkey!inner(auth_id)')
+          .eq('users.auth_id', authUser.id)
+          .eq('payment_applied', false)
+          .eq('final_amount', payAppAmount)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const [{ data: urow }, { data: existing }] = await Promise.all([
+          supabase.from('users').select('id').eq('auth_id', authUser.id).maybeSingle(),
+          duplicateOrderPromise,
+        ])
+        if (urow?.id && existing?.id) {
+          await supabase.from('orders')
+            .update({ status: '취소' })
+            .eq('id', existing.id)
+        }
+      }
+
+      const representName = orderedProducts.length > 1
+        ? `${orderedProducts[0]?.name} 외 ${orderedProducts.length - 1}개`
+        : orderedProducts[0]?.name
+      const orderRes = await fetch('/api/payment/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          product_id: orderedProducts[0]?.id,
+          quantity: Math.max(1, Number(qtyList[0]) || 1),
+          products: orderedProducts.map((p, i) => ({
+            product_id: p.id,
+            quantity: Math.max(1, Number(qtyList[i]) || 1),
+          })),
+          represent_name: representName,
+          payment_method: 'payapp',
+          total_amount: payAppAmount,
+          final_amount: payAppAmount,
+          shipping_fee: Math.max(0, Math.floor(Number(shippingFee) || 0)),
+          grade_discount: Math.max(0, Math.floor(Number(gradeDiscountAmt) || 0)),
+          subtotal: Math.max(0, Math.floor(Number(subtotal) || 0)),
+          recipient_name: recipientName || null,
+          recipient_phone: recipientPhone || null,
+          address: (address || '') + (addressDetail ? ' ' + addressDetail : '') || null,
+          coupon_discount: Math.max(0, Math.floor(Number(couponDiscount) || 0)),
+          user_coupon_id: (selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : null,
+        }),
+      })
+      const orderData = await orderRes.json().catch(() => ({}))
+      if (!orderData?.orderId) {
+        setToast('주문 생성에 실패했어요. 다시 시도해주세요')
+        setIsPaying(false)
+        return
+      }
+
+      const res = await fetch('/api/payments/payapp/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          kind: 'order',
+          amount: payAppAmount,
+          target_id: orderData.orderId,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (json?.ok && json?.pay_url) {
+        window.location.href = json.pay_url
+        return
+      }
+      setToast('결제 요청 실패: ' + (json?.error || '알 수 없는 오류'))
+      setIsPaying(false)
     } catch {
+      setToast('결제 요청 중 오류가 발생했어요. 다시 시도해주세요')
       setIsPaying(false)
     }
   }
@@ -650,7 +737,7 @@ export default function CheckoutFlow({ query, onClose }: { query?: string; onClo
               충전하고 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
-            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`) }}
+            <button onClick={() => { setPayModal(false); setEarnToast(false); void onPay() }}
               disabled={settingsLoading || isPaying}
               style={{width:'100%',background:'var(--bg3)',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
