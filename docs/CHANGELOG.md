@@ -3,8 +3,14 @@
 
 ---
 
-## 2026-10-05
+## [미배포] 2026-10-05
+### Added
+- 어드민 매거진(`admin/magazine/page.tsx`)에 `🛒 공구 등록` 버튼 추가, `GroupBuyCreateSheet` 연결 (`gbOpen` 상태, 등록 후 `onCreated={load}`)
+- 어드민 공구 등록 슬라이드업 `src/components/admin/GroupBuyCreateSheet.tsx` (props `isOpen`/`onClose`/`onCreated`, 아직 미연결). `groupbuys/page.tsx`의 `syncProductGroupBuy`·상품 검색·가격 자동계산·`createGroupBuy` 로직 이식, 달성 보상 종류 select → 버튼 그룹, 에디터 수수료 `editor_commission_type`(pct/fixed)·`editor_commission_value` 입력 추가(pct 100 초과 차단), 딤 배경 클릭·× 버튼 닫기
+- 마이그레이션 `209_group_buys_editor_commission.sql` (운영 DB 적용 완료): `group_buys`에 운영 DB에만 있던 6개 컬럼(`gift_title`, `gift_description`, `gift_points`, `achievement_reward_type`, `achievement_reward_value`, `achievement_message`)을 `ADD COLUMN IF NOT EXISTS`로 기록, 에디터 수수료 전용 `editor_commission_type`(`pct`/`fixed`)·`editor_commission_value` 추가
 - feat(editor): 상품/매거진 본문 에디터 이미지 삽입 시 alt 입력 — 사진 버튼·드래그 드롭 모두 `window.prompt`로 설명(기본값 확장자 뺀 파일명)을 받아 `setImage({ src, alt })`에 넣음. 취소·빈 입력은 `||`로 파일명 전체
+### Removed
+- 어드민 사이드바 공동구매 메뉴 2곳(PRODUCT `공동구매 관리`, HOME `공동구매`)과 페이지 제목 매핑 1줄 삭제 (`AdminChrome.tsx`). `admin/marketing/groupbuys/page.tsx`·`group_buys` 데이터·고객 홈 공구 섹션·결제 로직은 유지, 주소 직접 입력 시 페이지 접근 가능
 
 ## [미배포] 2026-10-04
 ### Removed

@@ -67,7 +67,6 @@ const MENU = [
       { label: '카테고리 관리', href: '/admin/settings/categories', icon: '📂' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
       { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
-      { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
       { label: '외부고객 카드 v2', href: '/admin/marketing/external-cards-v2', icon: '🆕' },
       { label: '채팅 배너 관리', href: '/dashboard/admin/chat-banner', icon: '📢' },
       { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
@@ -79,7 +78,6 @@ const MENU = [
       { label: '홈 큐레이션', href: '/admin/home-curation', icon: '🏠' },
       { label: '세그먼트 케어', href: '/admin/segment-care', icon: '🌗' },
       { label: '케어카드', href: '/admin/marketing/care-cards', icon: '💜' },
-      { label: '공동구매', href: '/admin/marketing/groupbuys', icon: '👥' },
       { label: '타임세일', href: '/admin/settings/flash-sale', icon: '⚡' },
       { label: '매거진', href: '/admin/magazine', icon: '📖' },
       { label: '스킨스타 영상', href: '/admin/marketing/skinstar', icon: '🌸' },
@@ -155,7 +153,6 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
-  if (path.startsWith('/admin/marketing/groupbuys')) return '공동구매 관리'
   if (path.startsWith('/admin/marketing/external-cards-v2')) return '외부고객 케어카드 v2'
   if (path.startsWith('/admin/marketing/external-cards')) return '외부고객 케어카드'
   if (path.startsWith('/admin/marketing/care-cards')) return '케어카드 관리'

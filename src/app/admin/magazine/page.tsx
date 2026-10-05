@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
 import ProductDetailEditor from '@/components/admin/ProductDetailEditor'
 import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
+import GroupBuyCreateSheet from '@/components/admin/GroupBuyCreateSheet'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -50,6 +51,7 @@ export default function AdminMagazinePage() {
   const [prodSearch, setProdSearch] = useState('')
   const [prodHits, setProdHits] = useState<any[]>([])
   const [kpi, setKpi] = useState({ total: 0, published: 0, views: 0 })
+  const [gbOpen, setGbOpen] = useState(false)
   const modalRowRef = useRef(modal.row)
 
   useEffect(() => {
@@ -242,6 +244,7 @@ export default function AdminMagazinePage() {
       <button type="button" className="btn btn-gr" onClick={openNew} style={{ marginBottom: 16 }}>
         + 새 글 작성
       </button>
+      <button className="btn btn-gd" onClick={() => setGbOpen(true)}>🛒 공구 등록</button>
 
       {loading ? (
         <div style={{ color: 'var(--text3)' }}>불러오는 중…</div>
@@ -471,6 +474,7 @@ export default function AdminMagazinePage() {
           {toast}
         </div>
       ) : null}
+      <GroupBuyCreateSheet isOpen={gbOpen} onClose={() => setGbOpen(false)} onCreated={load} />
     </div>
   )
 }
