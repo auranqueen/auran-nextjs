@@ -92,7 +92,8 @@ export default function ProductDetailEditor({ value, onChange, onImageUpload, on
     if (!file) return
     if (file.type.startsWith('image/') && onImageUpload) {
       const url = await onImageUpload(file)
-      editor.chain().focus().setImage({ src: url }).run()
+      const alt = window.prompt('이미지 설명 입력 (SEO alt 텍스트)', file.name.replace(/\.[^.]+$/, ''))
+      editor.chain().focus().setImage({ src: url, alt: alt || file.name }).run()
     } else if (file.type.startsWith('video/') && onVideoUpload) {
       const url = await onVideoUpload(file)
       editor.chain().focus().insertContent(`<video src="${url}" controls style="max-width:100%;border-radius:8px"></video>`).run()
@@ -194,7 +195,8 @@ export default function ProductDetailEditor({ value, onChange, onImageUpload, on
       <input ref={imageRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
         const f = e.target.files?.[0]; if (!f || !onImageUpload) return
         const url = await onImageUpload(f)
-        editor.chain().focus().setImage({ src: url }).run()
+        const alt = window.prompt('이미지 설명 입력 (SEO alt 텍스트)', f.name.replace(/\.[^.]+$/, ''))
+        editor.chain().focus().setImage({ src: url, alt: alt || f.name }).run()
         e.target.value = ''
       }} />
       <input ref={videoRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={async e => {

@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-05
+- feat(editor): 상품/매거진 본문 에디터 이미지 삽입 시 alt 입력 — 사진 버튼·드래그 드롭 모두 `window.prompt`로 설명(기본값 확장자 뺀 파일명)을 받아 `setImage({ src, alt })`에 넣음. 취소·빈 입력은 `||`로 파일명 전체
+
 ## [미배포] 2026-10-04
 ### Removed
 - 미사용 PayApp 중간 페이지 `src/app/payment/payapp/page.tsx` 삭제 (`/payment/payapp` 라우트 제거, 연결 경로 0곳 확인)
