@@ -6,6 +6,7 @@ import { compressImage } from '@/lib/imageUpload'
 import ProductDetailEditor from '@/components/admin/ProductDetailEditor'
 import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
 import GroupBuyCreateSheet from '@/components/admin/GroupBuyCreateSheet'
+import GroupBuyRequestsSheet, { type GroupBuyRequestRow } from '@/components/admin/GroupBuyRequestsSheet'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -52,6 +53,20 @@ export default function AdminMagazinePage() {
   const [prodHits, setProdHits] = useState<any[]>([])
   const [kpi, setKpi] = useState({ total: 0, published: 0, views: 0 })
   const [gbOpen, setGbOpen] = useState(false)
+  // [ANCHOR: gb-requests-state]
+  const [requestsOpen, setRequestsOpen] = useState(false)
+  const [preselectedProductId, setPreselectedProductId] = useState<string | undefined>(undefined)
+  const [pendingCount, setPendingCount] = useState(0)
+  const loadPendingCount = async () => {
+    const { count } = await supabase.from('group_buy_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+    setPendingCount(count ?? 0)
+  }
+  useEffect(() => { void loadPendingCount() }, [])
+  const openFromRequest = (r: GroupBuyRequestRow) => {
+    setRequestsOpen(false)
+    setPreselectedProductId(r.product_id)
+    setGbOpen(true)
+  }
   const modalRowRef = useRef(modal.row)
 
   useEffect(() => {
@@ -245,6 +260,8 @@ export default function AdminMagazinePage() {
         + 새 글 작성
       </button>
       <button className="btn btn-gd" onClick={() => setGbOpen(true)} style={{ marginLeft: 8 }}>🛒 공구 등록</button>
+      {/* [ANCHOR: gb-requests-button] */}
+      <button className="btn btn-gy" onClick={() => setRequestsOpen(true)} style={{ marginLeft: 8 }}>📋 공구 요청 {pendingCount > 0 && `(${pendingCount})`}</button>
 
       {loading ? (
         <div style={{ color: 'var(--text3)' }}>불러오는 중…</div>
@@ -474,7 +491,9 @@ export default function AdminMagazinePage() {
           {toast}
         </div>
       ) : null}
-      <GroupBuyCreateSheet isOpen={gbOpen} onClose={() => setGbOpen(false)} onCreated={load} />
+      <GroupBuyCreateSheet isOpen={gbOpen} onClose={() => { setGbOpen(false); setPreselectedProductId(undefined) }} onCreated={load} preselectedProductId={preselectedProductId} />
+      {/* [ANCHOR: gb-requests-sheet] */}
+      <GroupBuyRequestsSheet isOpen={requestsOpen} onClose={() => setRequestsOpen(false)} onApprove={openFromRequest} onChanged={() => void loadPendingCount()} />
     </div>
   )
 }

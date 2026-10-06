@@ -5,6 +5,9 @@
 
 ## [미배포] 2026-10-06
 ### Added
+- 마이그레이션 `213_group_buy_requests_rls.sql`: `group_buy_requests` RLS 활성화 — 본인 요청 INSERT·SELECT(`auth.uid() = requester_id`), `profiles.role = 'admin'`은 전체 권한
+- 공구 오픈 요청: 마이그레이션 `212_group_buy_requests.sql`(`group_buy_requests` 테이블, 운영 DB 적용 완료), 에디터용 요청 시트 `src/components/editor/GroupBuyRequestSheet.tsx`(제품 검색·판매가·희망기간·어필 메시지 → `status: 'pending'` INSERT, 아직 화면 미연결), 어드민 요청 목록 시트 `src/components/admin/GroupBuyRequestsSheet.tsx`(대기중/승인/거절 탭, 승인·거절 사유 입력 업데이트, 요청자 이름 `profiles.auth_id` 조회)
+- 어드민 매거진에 `📋 공구 요청 (대기 수)` 버튼·요청 시트 연결, 승인 시 `GroupBuyCreateSheet`가 `preselectedProductId`로 해당 제품 자동 선택해 열림
 - 마이그레이션 `211_group_buys_enable_jam_reward.sql`: `group_buys.enable_jam_reward boolean NOT NULL DEFAULT false` (운영 DB 적용 완료)
 - 어드민 `GroupBuyCreateSheet` 🍓 고객 공유 딸기잼 보상 토글(`enableJamReward`) — 켜면 INSERT에 `enable_jam_reward: true` 포함, 제품 선택 시 `products.share_points`로 "현재 제품 딸기잼 설정: ○P" 표시
 ### Changed

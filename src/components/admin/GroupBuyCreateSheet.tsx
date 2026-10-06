@@ -86,10 +86,12 @@ export default function GroupBuyCreateSheet({
   isOpen,
   onClose,
   onCreated,
+  preselectedProductId,
 }: {
   isOpen: boolean
   onClose: () => void
   onCreated: () => void
+  preselectedProductId?: string
 }) {
   const supabase = createClient()
   const [creating, setCreating] = useState(false)
@@ -153,6 +155,19 @@ export default function GroupBuyCreateSheet({
     setPickOpen(false)
     setPq(p.name)
   }
+
+  // [ANCHOR: preselect-product]
+  useEffect(() => {
+    if (!isOpen || !preselectedProductId) return
+    void supabase
+      .from('products')
+      .select('*')
+      .eq('id', preselectedProductId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) pickProduct(data as ProductPick)
+      })
+  }, [isOpen, preselectedProductId])
 
   const onDiscountChange = (v: number) => {
     setDiscountRate(v)
