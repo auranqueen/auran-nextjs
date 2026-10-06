@@ -27,7 +27,7 @@ function defaultEndsAtLocal(): string {
 }
 
 const label = (t: string, sz: number) => (
-  <div style={{ fontSize: sz, color: '#666666', marginBottom: 4 }}>{t}</div>
+  <div style={{ backgroundColor: '#ffffff', fontSize: sz, color: '#666666', marginBottom: 4 }}>{t}</div>
 )
 
 const inp = {
@@ -237,16 +237,17 @@ export default function GroupBuyCreateSheet({
           maxHeight: '90vh',
           overflowY: 'auto',
           zIndex: 221,
-          background: '#ffffff',
+          backgroundColor: '#ffffff',
           borderTop: '1px solid #e5e5e5',
           borderRadius: '16px 16px 0 0',
           color: '#111111',
+          colorScheme: 'light',
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 18px 28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontSize: 16, color: '#c9a84c' }}>공구 등록</div>
+        <div style={{ backgroundColor: '#ffffff', maxWidth: 560, margin: '0 auto', padding: '18px 18px 28px' }}>
+          <div style={{ backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ backgroundColor: '#ffffff', fontSize: 16, color: '#c9a84c' }}>공구 등록</div>
             <button
               type="button"
               aria-label="닫기"
@@ -257,7 +258,7 @@ export default function GroupBuyCreateSheet({
             </button>
           </div>
 
-          <div style={{ position: 'relative', marginBottom: 14 }}>
+          <div style={{ backgroundColor: '#ffffff', position: 'relative', marginBottom: 14 }}>
             {label('제품명 검색', 11)}
             <input
               value={pq}
@@ -315,13 +316,13 @@ export default function GroupBuyCreateSheet({
           </div>
 
           {sel && (
-            <div style={{ fontSize: 12, color: '#c9a84c', marginBottom: 16 }}>
+            <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#c9a84c', marginBottom: 16 }}>
               선택: {sel.name} · 정가 {Number(sel.retail_price ?? 0).toLocaleString()}원
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-            <div>
+          <div style={{ backgroundColor: '#ffffff', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('목표 인원', 11)}
               <input
                 type="number"
@@ -330,7 +331,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('현재 인원', 11)}
               <input
                 type="number"
@@ -339,7 +340,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('할인율 (%)', 11)}
               <input
                 type="number"
@@ -348,7 +349,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('할인 금액 (원)', 11)}
               <input
                 type="number"
@@ -366,7 +367,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('정가 (원)', 11)}
               <input
                 type="number"
@@ -375,7 +376,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('공구가 (원)', 11)}
               <input
                 type="number"
@@ -384,15 +385,15 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('마감 (일시)', 11)}
               <input type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)} style={inp} />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('선물 설명', 11)}
               <input value={giftDescription} onChange={e => setGiftDescription(e.target.value)} style={inp} />
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label('토스트 (T)', 11)}
               <input
                 type="number"
@@ -401,9 +402,9 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('달성 보상 종류', 11)}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ backgroundColor: '#ffffff', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {REWARD_TYPES.map(r => (
                   <button
                     key={r.value}
@@ -416,7 +417,7 @@ export default function GroupBuyCreateSheet({
                 ))}
               </div>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('보상 수량/내용', 11)}
               <input
                 type="text"
@@ -425,7 +426,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('달성 멘트', 11)}
               <input
                 type="text"
@@ -435,9 +436,9 @@ export default function GroupBuyCreateSheet({
                 placeholder="함께라서 가능했어요, 딸기잼 선물이에요 🎉"
               />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('에디터 수수료 방식', 11)}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ backgroundColor: '#ffffff', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {COMMISSION_TYPES.map(c => (
                   <button
                     key={c.value}
@@ -450,7 +451,7 @@ export default function GroupBuyCreateSheet({
                 ))}
               </div>
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               {label(editorCommissionType === 'pct' ? '에디터 수수료 (%)' : '에디터 수수료 (원)', 11)}
               <input
                 type="number"
@@ -461,7 +462,7 @@ export default function GroupBuyCreateSheet({
                 style={inp}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <div style={{ backgroundColor: '#ffffff', display: 'flex', alignItems: 'flex-end', gap: 8 }}>
               <label style={{ fontSize: 12, color: '#666666', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="checkbox" checked={isActiveNew} onChange={e => setIsActiveNew(e.target.checked)} />
                 공개
@@ -469,7 +470,7 @@ export default function GroupBuyCreateSheet({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+          <div style={{ backgroundColor: '#ffffff', display: 'flex', gap: 8, marginTop: 18 }}>
             <button
               type="button"
               onClick={onClose}
