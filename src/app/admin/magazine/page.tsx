@@ -244,7 +244,7 @@ export default function AdminMagazinePage() {
       <button type="button" className="btn btn-gr" onClick={openNew} style={{ marginBottom: 16 }}>
         + 새 글 작성
       </button>
-      <button className="btn btn-gd" onClick={() => setGbOpen(true)}>🛒 공구 등록</button>
+      <button className="btn btn-gd" onClick={() => setGbOpen(true)} style={{ marginLeft: 8 }}>🛒 공구 등록</button>
 
       {loading ? (
         <div style={{ color: 'var(--text3)' }}>불러오는 중…</div>

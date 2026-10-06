@@ -27,16 +27,16 @@ function defaultEndsAtLocal(): string {
 }
 
 const label = (t: string, sz: number) => (
-  <div style={{ fontSize: sz, color: 'var(--text3)', marginBottom: 4 }}>{t}</div>
+  <div style={{ fontSize: sz, color: '#666666', marginBottom: 4 }}>{t}</div>
 )
 
 const inp = {
   width: '100%' as const,
   padding: '10px 12px',
   borderRadius: 8,
-  background: 'var(--bg3)',
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
+  background: '#f8f8f8',
+  border: '1px solid #e5e5e5',
+  color: '#111111',
   fontSize: 13,
   fontWeight: 400,
   boxSizing: 'border-box' as const,
@@ -45,9 +45,9 @@ const inp = {
 const chip = (active: boolean) => ({
   padding: '8px 12px',
   borderRadius: 8,
-  border: active ? '1px solid var(--gold)' : '1px solid var(--border)',
-  background: active ? 'rgba(201,169,110,0.15)' : 'var(--bg3)',
-  color: active ? 'var(--gold)' : 'var(--text)',
+  border: active ? '1px solid #c9a84c' : '1px solid #e5e5e5',
+  background: active ? 'rgba(201,169,110,0.15)' : '#f8f8f8',
+  color: active ? '#c9a84c' : '#111111',
   fontSize: 12,
   fontWeight: 400,
   cursor: 'pointer',
@@ -237,21 +237,21 @@ export default function GroupBuyCreateSheet({
           maxHeight: '90vh',
           overflowY: 'auto',
           zIndex: 221,
-          background: 'var(--bg2)',
-          borderTop: '1px solid var(--border)',
+          background: '#ffffff',
+          borderTop: '1px solid #e5e5e5',
           borderRadius: '16px 16px 0 0',
-          color: 'var(--text)',
+          color: '#111111',
           boxSizing: 'border-box',
         }}
       >
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 18px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontSize: 16, color: 'var(--gold)' }}>공구 등록</div>
+            <div style={{ fontSize: 16, color: '#c9a84c' }}>공구 등록</div>
             <button
               type="button"
               aria-label="닫기"
               onClick={onClose}
-              style={{ border: 'none', background: 'transparent', color: 'var(--text3)', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: 4 }}
+              style={{ border: 'none', background: 'transparent', color: '#666666', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: 4 }}
             >
               ×
             </button>
@@ -280,8 +280,8 @@ export default function GroupBuyCreateSheet({
                   marginTop: 4,
                   maxHeight: 220,
                   overflow: 'auto',
-                  background: 'var(--bg2)',
-                  border: '1px solid var(--border)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e5e5',
                   borderRadius: 8,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                 }}
@@ -298,14 +298,14 @@ export default function GroupBuyCreateSheet({
                       padding: '10px 12px',
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid var(--border)',
-                      color: 'var(--text)',
+                      borderBottom: '1px solid #e5e5e5',
+                      color: '#111111',
                       fontSize: 12,
                       cursor: 'pointer',
                     }}
                   >
                     <span style={{ fontSize: 13 }}>{p.name}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>
+                    <span style={{ fontSize: 11, color: '#666666', marginLeft: 8 }}>
                       {Number(p.retail_price ?? 0).toLocaleString()}원
                     </span>
                   </button>
@@ -315,7 +315,7 @@ export default function GroupBuyCreateSheet({
           </div>
 
           {sel && (
-            <div style={{ fontSize: 12, color: 'var(--gold)', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#c9a84c', marginBottom: 16 }}>
               선택: {sel.name} · 정가 {Number(sel.retail_price ?? 0).toLocaleString()}원
             </div>
           )}
@@ -462,7 +462,7 @@ export default function GroupBuyCreateSheet({
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-              <label style={{ fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ fontSize: 12, color: '#666666', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="checkbox" checked={isActiveNew} onChange={e => setIsActiveNew(e.target.checked)} />
                 공개
               </label>
@@ -477,9 +477,9 @@ export default function GroupBuyCreateSheet({
                 flex: 1,
                 padding: '12px 20px',
                 borderRadius: 10,
-                border: '1px solid var(--border)',
+                border: '1px solid #e5e5e5',
                 background: 'transparent',
-                color: 'var(--text)',
+                color: '#111111',
                 fontSize: 13,
                 fontWeight: 400,
                 cursor: 'pointer',
