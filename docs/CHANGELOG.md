@@ -4,6 +4,8 @@
 ---
 
 ## [미배포] 2026-10-06
+### Fixed
+- 마이그레이션 `214_group_buy_requests_rls_super.sql` (운영 DB 적용 완료): `group_buy_requests` 어드민 보완 정책 — 213번이 `profiles.role`만 확인해 `users.role = 'admin'`·`super_admin`(JWT `app_metadata.role`) 어드민이 요청 목록·승인·거절에서 막히던 문제 보완
 ### Added
 - 마이그레이션 `213_group_buy_requests_rls.sql`: `group_buy_requests` RLS 활성화 — 본인 요청 INSERT·SELECT(`auth.uid() = requester_id`), `profiles.role = 'admin'`은 전체 권한
 - 공구 오픈 요청: 마이그레이션 `212_group_buy_requests.sql`(`group_buy_requests` 테이블, 운영 DB 적용 완료), 에디터용 요청 시트 `src/components/editor/GroupBuyRequestSheet.tsx`(제품 검색·판매가·희망기간·어필 메시지 → `status: 'pending'` INSERT, 아직 화면 미연결), 어드민 요청 목록 시트 `src/components/admin/GroupBuyRequestsSheet.tsx`(대기중/승인/거절 탭, 승인·거절 사유 입력 업데이트, 요청자 이름 `profiles.auth_id` 조회)
