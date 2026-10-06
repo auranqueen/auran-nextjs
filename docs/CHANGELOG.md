@@ -3,6 +3,12 @@
 
 ---
 
+## [미배포] 2026-10-06
+### Changed
+- 어드민 `GroupBuyCreateSheet` 다크모드 대응: 시트 루트 `background` → `backgroundColor: '#ffffff'`, `colorScheme: 'light'` 추가(날짜·숫자 입력 등 네이티브 컨트롤 라이트 고정), 배경 없던 하위 div 26곳에 `backgroundColor: '#ffffff'` inline 지정 (`d5dcf0e5`)
+- 어드민 `GroupBuyCreateSheet` CSS 변수 → 라이트모드 하드코딩 색상 교체(`#ffffff` 시트·드롭다운, `#f8f8f8` 입력칸, `#e5e5e5` 테두리, `#111111` 글씨, `#666666` 보조 글씨, `#c9a84c` 골드). 어드민 매거진 `🛒 공구 등록` 버튼에 `marginLeft: 8` 간격 추가 (`5643894f`)
+- docs: 10-06 누락분 CHANGELOG·윰탱 로그 보충, `.cursor/rules/changelog-and-yoomtang.mdc`에 "다른 파일 건드리지 마"여도 두 문서는 예외로 항상 갱신·커밋 조항 추가
+
 ## [미배포] 2026-10-05
 ### Added
 - 어드민 매거진(`admin/magazine/page.tsx`)에 `🛒 공구 등록` 버튼 추가, `GroupBuyCreateSheet` 연결 (`gbOpen` 상태, 등록 후 `onCreated={load}`)
