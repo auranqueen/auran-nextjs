@@ -5,6 +5,15 @@
 
 ## [미배포] 2026-10-06
 ### Changed
+- 어드민 `GroupBuyCreateSheet` 할인금액 입력칸 표시값도 상한 적용(`setDiscountAmount(safeAmt)`, `safeAmt` 선언을 `if` 블록 위로 이동)
+- 어드민 `GroupBuyCreateSheet` 할인금액 입력 상한 `safeAmt`(0 ~ 기준가)로 할인율·공구가 계산(마이너스 공구가 방지), `group_buys.original_price` 저장값을 판매가 우선(`salePrice > 0 ? salePrice : originalPrice`)으로 변경
+- 어드민 `GroupBuyCreateSheet` 공구가 계산 기준을 판매가(`salePrice`)로 통일, 판매가 0이면 정가(`originalPrice`)로 대체 — 할인율 변경 시 `기준가 × (1 − 할인율/100)`, 할인금액 입력 시 `기준가 − 할인금액`, 제품 선택·정가 수정 시에도 같은 기준 적용, 할인금액 자동계산도 같은 기준가 사용
+### Removed
+- 어드민 `GroupBuyCreateSheet` 정가 기준 `할인 금액 (원)` 입력칸 삭제 — 판매가 기준 `할인금액 (판매가 기준, 원)` 칸 하나로 통일
+### Added
+- 어드민 `GroupBuyCreateSheet` 입력 확장: 안내 멘트(`description`) 입력칸·INSERT(값 있을 때만 전송), 제품 선택 시 판매가(`products.price`)·고객 딸기잼(`share_toast_amount`) 읽기전용 표시, 판매가 기준 할인금액(원) 입력(↔ 할인율·공구가 자동계산), 제품에 에디터 수수료 값이 있으면 자동 세팅. 제품 검색 select `id, name, retail_price` → `*`(없는 컬럼으로 검색 실패 방지)
+- 마이그레이션 `210_group_buys_description.sql`: `group_buys`에 `description text` 컬럼 `ADD COLUMN IF NOT EXISTS` (파일만 생성, 운영 DB 미실행, 등록 시트·고객 화면 미연결)
+### Changed
 - 어드민 `GroupBuyCreateSheet` 다크모드 대응: 시트 루트 `background` → `backgroundColor: '#ffffff'`, `colorScheme: 'light'` 추가(날짜·숫자 입력 등 네이티브 컨트롤 라이트 고정), 배경 없던 하위 div 26곳에 `backgroundColor: '#ffffff'` inline 지정 (`d5dcf0e5`)
 - 어드민 `GroupBuyCreateSheet` CSS 변수 → 라이트모드 하드코딩 색상 교체(`#ffffff` 시트·드롭다운, `#f8f8f8` 입력칸, `#e5e5e5` 테두리, `#111111` 글씨, `#666666` 보조 글씨, `#c9a84c` 골드). 어드민 매거진 `🛒 공구 등록` 버튼에 `marginLeft: 8` 간격 추가 (`5643894f`)
 - docs: 10-06 누락분 CHANGELOG·윰탱 로그 보충, `.cursor/rules/changelog-and-yoomtang.mdc`에 "다른 파일 건드리지 마"여도 두 문서는 예외로 항상 갱신·커밋 조항 추가

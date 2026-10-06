@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type ProductPick = { id: string; name: string; retail_price: number | null }
+type ProductPick = {
+  id: string
+  name: string
+  retail_price: number | null
+  price?: number | null
+  share_toast_amount?: number | null
+  editor_commission_type?: string | null
+  editor_commission_value?: number | null
+}
 
 type CommissionType = 'pct' | 'fixed'
 
@@ -109,6 +117,10 @@ export default function GroupBuyCreateSheet({
   )
   const [editorCommissionType, setEditorCommissionType] = useState<CommissionType>('pct')
   const [editorCommissionValue, setEditorCommissionValue] = useState(0)
+  const [description, setDescription] = useState('')
+  const [salePrice, setSalePrice] = useState(0)
+  const [shareToastAmount, setShareToastAmount] = useState<number | null>(null)
+  const [discountAmount, setDiscountAmount] = useState(0)
 
   useEffect(() => {
     const q = pq.trim()
@@ -119,7 +131,7 @@ export default function GroupBuyCreateSheet({
     const t = setTimeout(() => {
       void supabase
         .from('products')
-        .select('id, name, retail_price')
+        .select('*')
         .ilike('name', `%${q}%`)
         .eq('is_active', true)
         .limit(12)
@@ -132,21 +144,29 @@ export default function GroupBuyCreateSheet({
 
   const pickProduct = (p: ProductPick) => {
     setSel(p)
+    setSalePrice(Number(p.price ?? 0))
+    setShareToastAmount(p.share_toast_amount ?? null)
+    const base = Number(p.price ?? 0) > 0 ? Number(p.price) : Number(p.retail_price ?? 0)
+    setDiscountAmount(Math.round(base * discountRate / 100))
+    if (p.editor_commission_type === 'pct' || p.editor_commission_type === 'fixed') setEditorCommissionType(p.editor_commission_type)
+    if (p.editor_commission_value) setEditorCommissionValue(Number(p.editor_commission_value))
     const r = Number(p.retail_price ?? 0)
     setOriginalPrice(r)
-    setGroupPrice(Math.round(r * (1 - discountRate / 100)))
+    setGroupPrice(Math.round(base * (1 - discountRate / 100)))
     setPickOpen(false)
     setPq(p.name)
   }
 
   const onDiscountChange = (v: number) => {
     setDiscountRate(v)
-    setGroupPrice(Math.round(originalPrice * (1 - v / 100)))
+    const base = salePrice > 0 ? salePrice : originalPrice
+    setGroupPrice(Math.round(base * (1 - v / 100)))
+    setDiscountAmount(Math.round(base * v / 100))
   }
 
   const onOriginalChange = (v: number) => {
     setOriginalPrice(v)
-    setGroupPrice(Math.round(v * (1 - discountRate / 100)))
+    setGroupPrice(Math.round((salePrice > 0 ? salePrice : v) * (1 - discountRate / 100)))
   }
 
   const createGroupBuy = async () => {
@@ -174,7 +194,7 @@ export default function GroupBuyCreateSheet({
       target_count: targetCount,
       current_count: currentCount,
       discount_rate: discountRate,
-      original_price: originalPrice,
+      original_price: salePrice > 0 ? salePrice : originalPrice,
       group_price: groupPrice,
       ends_at: endsIso,
       gift_description: giftDescription.trim() || null,
@@ -185,6 +205,7 @@ export default function GroupBuyCreateSheet({
       achievement_message: achievementMessage,
       editor_commission_type: editorCommissionType,
       editor_commission_value: commissionValue,
+      ...(description.trim() ? { description: description.trim() } : {}),
     } as any)
     setCreating(false)
     if (error) {
@@ -213,6 +234,10 @@ export default function GroupBuyCreateSheet({
     setAchievementMessage('함께라서 가능했어요, 딸기잼 선물이에요 🎉')
     setEditorCommissionType('pct')
     setEditorCommissionValue(0)
+    setDescription('')
+    setSalePrice(0)
+    setShareToastAmount(null)
+    setDiscountAmount(0)
     alert('공구가 등록되었습니다.')
     onCreated()
     onClose()
@@ -320,6 +345,8 @@ export default function GroupBuyCreateSheet({
               선택: {sel.name} · 정가 {Number(sel.retail_price ?? 0).toLocaleString()}원
             </div>
           )}
+          {salePrice > 0 && <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666', marginBottom: 4 }}>판매가 {salePrice.toLocaleString()}원</div>}
+          {salePrice > 0 && <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666', marginBottom: 16 }}>고객 딸기잼 {shareToastAmount ? shareToastAmount + 'T' : '미설정'}</div>}
 
           <div style={{ backgroundColor: '#ffffff', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
             <div style={{ backgroundColor: '#ffffff' }}>
@@ -350,19 +377,20 @@ export default function GroupBuyCreateSheet({
               />
             </div>
             <div style={{ backgroundColor: '#ffffff' }}>
-              {label('할인 금액 (원)', 11)}
+              {label('할인금액 (판매가 기준, 원)', 11)}
               <input
                 type="number"
-                disabled={originalPrice === 0}
-                value={originalPrice === 0 ? '' : originalPrice - groupPrice}
+                placeholder="할인금액 (원)"
+                value={discountAmount}
                 onChange={e => {
-                  const op = originalPrice
-                  if (!op) return
-                  const raw = Number(e.target.value)
-                  if (Number.isNaN(raw)) return
-                  const amt = Math.max(0, Math.min(raw, op))
-                  setGroupPrice(op - amt)
-                  setDiscountRate(Math.round((amt / op) * 100))
+                  const amt = Number(e.target.value)
+                  const base = salePrice > 0 ? salePrice : originalPrice
+                  const safeAmt = Math.max(0, Math.min(amt, salePrice > 0 ? salePrice : originalPrice))
+                  setDiscountAmount(safeAmt)
+                  if (base > 0) {
+                    setDiscountRate(Math.round(safeAmt / base * 100))
+                    setGroupPrice(base - safeAmt)
+                  }
                 }}
                 style={inp}
               />
@@ -434,6 +462,16 @@ export default function GroupBuyCreateSheet({
                 onChange={e => setAchievementMessage(e.target.value)}
                 style={inp}
                 placeholder="함께라서 가능했어요, 딸기잼 선물이에요 🎉"
+              />
+            </div>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
+              {label('안내 멘트', 11)}
+              <input
+                type="text"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                style={inp}
+                placeholder="공구 안내 문구"
               />
             </div>
             <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
