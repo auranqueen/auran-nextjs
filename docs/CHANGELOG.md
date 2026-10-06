@@ -4,7 +4,11 @@
 ---
 
 ## [미배포] 2026-10-06
+### Added
+- 마이그레이션 `211_group_buys_enable_jam_reward.sql`: `group_buys.enable_jam_reward boolean NOT NULL DEFAULT false` (운영 DB 적용 완료)
+- 어드민 `GroupBuyCreateSheet` 🍓 고객 공유 딸기잼 보상 토글(`enableJamReward`) — 켜면 INSERT에 `enable_jam_reward: true` 포함, 제품 선택 시 `products.share_points`로 "현재 제품 딸기잼 설정: ○P" 표시
 ### Changed
+- 어드민 `GroupBuyCreateSheet` 판매가 자동표시를 `products.sale_price`(없으면 `retail_price`) 기준으로 수정, 고객 딸기잼 표시를 `share_points`로 교체, 제품 타입에서 실제 없는 컬럼(`price`, `share_toast_amount`, `editor_commission_*`) 제거, 제품 기반 에디터 수수료 자동채우기 제거(`group_buys` 기본값 유지)
 - 어드민 `GroupBuyCreateSheet` 할인금액 입력칸 표시값도 상한 적용(`setDiscountAmount(safeAmt)`, `safeAmt` 선언을 `if` 블록 위로 이동)
 - 어드민 `GroupBuyCreateSheet` 할인금액 입력 상한 `safeAmt`(0 ~ 기준가)로 할인율·공구가 계산(마이너스 공구가 방지), `group_buys.original_price` 저장값을 판매가 우선(`salePrice > 0 ? salePrice : originalPrice`)으로 변경
 - 어드민 `GroupBuyCreateSheet` 공구가 계산 기준을 판매가(`salePrice`)로 통일, 판매가 0이면 정가(`originalPrice`)로 대체 — 할인율 변경 시 `기준가 × (1 − 할인율/100)`, 할인금액 입력 시 `기준가 − 할인금액`, 제품 선택·정가 수정 시에도 같은 기준 적용, 할인금액 자동계산도 같은 기준가 사용

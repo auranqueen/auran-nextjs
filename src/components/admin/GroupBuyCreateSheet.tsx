@@ -7,10 +7,8 @@ type ProductPick = {
   id: string
   name: string
   retail_price: number | null
-  price?: number | null
-  share_toast_amount?: number | null
-  editor_commission_type?: string | null
-  editor_commission_value?: number | null
+  sale_price?: number | null
+  share_points?: number | null
 }
 
 type CommissionType = 'pct' | 'fixed'
@@ -119,8 +117,9 @@ export default function GroupBuyCreateSheet({
   const [editorCommissionValue, setEditorCommissionValue] = useState(0)
   const [description, setDescription] = useState('')
   const [salePrice, setSalePrice] = useState(0)
-  const [shareToastAmount, setShareToastAmount] = useState<number | null>(null)
+  const [sharePoints, setSharePoints] = useState<number | null>(null)
   const [discountAmount, setDiscountAmount] = useState(0)
+  const [enableJamReward, setEnableJamReward] = useState(false)
 
   useEffect(() => {
     const q = pq.trim()
@@ -144,12 +143,10 @@ export default function GroupBuyCreateSheet({
 
   const pickProduct = (p: ProductPick) => {
     setSel(p)
-    setSalePrice(Number(p.price ?? 0))
-    setShareToastAmount(p.share_toast_amount ?? null)
-    const base = Number(p.price ?? 0) > 0 ? Number(p.price) : Number(p.retail_price ?? 0)
+    setSalePrice(Number(p.sale_price ?? p.retail_price ?? 0))
+    setSharePoints(p.share_points ?? null)
+    const base = Number(p.sale_price ?? 0) > 0 ? Number(p.sale_price) : Number(p.retail_price ?? 0)
     setDiscountAmount(Math.round(base * discountRate / 100))
-    if (p.editor_commission_type === 'pct' || p.editor_commission_type === 'fixed') setEditorCommissionType(p.editor_commission_type)
-    if (p.editor_commission_value) setEditorCommissionValue(Number(p.editor_commission_value))
     const r = Number(p.retail_price ?? 0)
     setOriginalPrice(r)
     setGroupPrice(Math.round(base * (1 - discountRate / 100)))
@@ -206,6 +203,7 @@ export default function GroupBuyCreateSheet({
       editor_commission_type: editorCommissionType,
       editor_commission_value: commissionValue,
       ...(description.trim() ? { description: description.trim() } : {}),
+      ...(enableJamReward ? { enable_jam_reward: true } : {}),
     } as any)
     setCreating(false)
     if (error) {
@@ -236,7 +234,8 @@ export default function GroupBuyCreateSheet({
     setEditorCommissionValue(0)
     setDescription('')
     setSalePrice(0)
-    setShareToastAmount(null)
+    setSharePoints(null)
+    setEnableJamReward(false)
     setDiscountAmount(0)
     alert('공구가 등록되었습니다.')
     onCreated()
@@ -346,7 +345,7 @@ export default function GroupBuyCreateSheet({
             </div>
           )}
           {salePrice > 0 && <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666', marginBottom: 4 }}>판매가 {salePrice.toLocaleString()}원</div>}
-          {salePrice > 0 && <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666', marginBottom: 16 }}>고객 딸기잼 {shareToastAmount ? shareToastAmount + 'T' : '미설정'}</div>}
+          {salePrice > 0 && <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666', marginBottom: 16 }}>고객 딸기잼 {sharePoints ? sharePoints.toLocaleString() + 'P' : '미설정'}</div>}
 
           <div style={{ backgroundColor: '#ffffff', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
             <div style={{ backgroundColor: '#ffffff' }}>
@@ -473,6 +472,19 @@ export default function GroupBuyCreateSheet({
                 style={inp}
                 placeholder="공구 안내 문구"
               />
+            </div>
+            <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
+              {label('🍓 고객 공유 딸기잼 보상', 11)}
+              <div style={{ backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => setEnableJamReward(v => !v)} style={chip(enableJamReward)}>
+                  {enableJamReward ? '보상 켜짐' : '보상 꺼짐'}
+                </button>
+                {sel && (
+                  <div style={{ backgroundColor: '#ffffff', fontSize: 12, color: '#666666' }}>
+                    현재 제품 딸기잼 설정: {sharePoints != null ? sharePoints.toLocaleString() + 'P' : '미설정'}
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
               {label('에디터 수수료 방식', 11)}
