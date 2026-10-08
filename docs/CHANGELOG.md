@@ -3,6 +3,10 @@
 
 ---
 
+## [미배포] 2026-10-08
+### Added
+- 마이그레이션 `215_add_curator_role.sql`: `user_role` enum에 `'curator'` 값 추가 (`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'curator'`, 운영 DB 실행 완료 — 파일은 기록용, 이 역할을 쓰는 코드는 아직 없음)
+
 ## [미배포] 2026-10-06
 ### Fixed
 - 마이그레이션 `214_group_buy_requests_rls_super.sql` (운영 DB 적용 완료): `group_buy_requests` 어드민 보완 정책 — 213번이 `profiles.role`만 확인해 `users.role = 'admin'`·`super_admin`(JWT `app_metadata.role`) 어드민이 요청 목록·승인·거절에서 막히던 문제 보완
