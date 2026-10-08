@@ -5,6 +5,10 @@
 
 ## [미배포] 2026-10-08
 ### Added
+- 큐레이터 대시보드 신규: `src/app/dashboard/curator/page.tsx`(서버 — 로그인 + `profiles.active_role` > `profiles.role` > `users.role`이 `curator`/`admin`만 통과, 그 외 `/login`), `client.tsx`(라이트 고정·액센트 `#e8845a`, 헤더·목표 진행바·공구 링크 복사·예상수수료·실시간 알림·공구 캘린더·요청 현황·링크 통계·내 채널·랭킹·콘텐츠 만들기·정산 내역 13개 섹션, FAB → `SlideUpSheet` 공구신청 시트(zIndex 9000) + 제품선택 시트(9100, Civasan/Bollayon/ITACA 탭·검색·모바일 2열/PC 3열)). 데이터·신청 API는 전부 목업/TODO, 기존 `GroupBuyRequestSheet`는 자체 오버레이 구조라 감싸지 않고 미사용
+### Changed
+- 미들웨어 `src/middleware.ts`: `curator` 역할 라우팅 추가 — 로그인 후 홈(`/`) 진입 시 `/dashboard/curator`로 이동(`[ANCHOR: curator-home-redirect]`), 대시보드 역할 맵에 `curator: '/dashboard/curator'` 추가(`[ANCHOR: curator-dashboard-map]`). `/dashboard/curator` 페이지는 아직 없음
+### Added
 - 마이그레이션 `215_add_curator_role.sql`: `user_role` enum에 `'curator'` 값 추가 (`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'curator'`, 운영 DB 실행 완료 — 파일은 기록용, 이 역할을 쓰는 코드는 아직 없음)
 
 ## [미배포] 2026-10-06

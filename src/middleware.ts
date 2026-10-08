@@ -336,6 +336,9 @@ export async function middleware(req: NextRequest) {
       return redirectWithCache(NextResponse.redirect(new URL('/dashboard/brand', req.url)))
     if (normalizedRole === 'salon' || normalizedRole === 'owner')
       return redirectWithCache(NextResponse.redirect(new URL('/dashboard/owner', req.url)))
+    // [ANCHOR: curator-home-redirect]
+    if (normalizedRole === 'curator')
+      return redirectWithCache(NextResponse.redirect(new URL('/dashboard/curator', req.url)))
     if (normalizedRole === 'partner')
       return redirectWithCache(NextResponse.redirect(new URL('/dashboard/partner', req.url)))
   }
@@ -383,6 +386,8 @@ export async function middleware(req: NextRequest) {
       partner: '/dashboard/partner',
       salon: '/dashboard/owner',
       brand: '/dashboard/brand',
+      // [ANCHOR: curator-dashboard-map]
+      curator: '/dashboard/curator',
       admin: '/admin',
     }
     const target = normalizedRole && map[normalizedRole] ? map[normalizedRole] : '/dashboard/customer'
