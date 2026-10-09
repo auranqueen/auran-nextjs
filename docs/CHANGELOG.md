@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- fix(admin): 큐레이터 숨김 마무리 — `loadCurator` select에 `hidden_reason, hidden_at` 추가, `togglePublish`가 `is_published === true`일 때 `hidden_reason`/`hidden_at`을 null로 초기화(재발행 시 예전 숨김 사유 제거). `CuratorPostsTab` 타입에 두 필드 추가, 목록 카드에서 미발행 + `hidden_reason`이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' 배지와 그 아래 사유 한 줄(12px 회색, 말줄임). 상세 시트 배지는 범위 밖이라 유지
 - feat(magazine): 어드민 큐레이터 글 노출 숨김 + 사유 전달 — 마이그레이션 `217_magazines_hidden_reason.sql`(`hidden_reason text`, `hidden_at timestamptz`, 운영 DB 직접 실행 완료·파일만 추가). `/api/admin/magazine`에 `hidePost` action(`[ANCHOR: hide-post]`, 기존 togglePublish와 같은 서비스롤 `svc`, 사유 공백이면 400 `reason_required`, `is_published: false` + `hidden_reason`(1000자) + `hidden_at`). `CuratorPostsTab` 발행 글 카드에 `노출 숨김` 버튼 → 카드 안 인라인 사유 폼(흰 배경, 확인/취소, 클릭·키 이벤트 전파 차단, 실패 시 폼 안 에러) → 성공 시 `load()` 재조회
 - 큐레이터 측: `GET /api/curator/magazine` select에 `hidden_reason, hidden_at` 추가. `MyContributions` 카드에 미발행 + `hidden_reason` 있으면 빨간 `노출 숨김` 배지·숨김일, 카드 아래 "숨김 사유" 박스(`[ANCHOR: hidden-reason]`), 미리보기 시트도 배지·사유 표시. 어드민이 다시 발행하면 `hidden_reason`은 남지만 발행 상태가 우선이라 숨김 표시 안 함
 - fix(curator): `ContributionSheet.tsx` 하단 안내 문구를 즉시 발행 동작에 맞게 "제출 즉시 매거진에 발행됩니다."로 변경(문구 1줄)

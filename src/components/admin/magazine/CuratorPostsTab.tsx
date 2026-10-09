@@ -14,6 +14,8 @@ type CuratorPost = {
   created_at: string
   slug: string | null
   author_name?: string | null
+  hidden_reason: string | null
+  hidden_at: string | null
 }
 
 const fmtDate = (s: string | null | undefined) => (s ? new Date(s).toLocaleString('ko-KR') : '-')
@@ -208,9 +210,18 @@ export default function CuratorPostsTab() {
           >
             <div style={{ flex: 1, minWidth: 180 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <StatusBadge published={!!r.is_published} />
+                {r.hidden_reason && !r.is_published ? (
+                  <span style={{ background: '#f8d7da', color: '#842029', borderRadius: 12, padding: '2px 10px', fontSize: 11 }}>🚫 숨김</span>
+                ) : (
+                  <StatusBadge published={!!r.is_published} />
+                )}
                 <span style={{ fontSize: 11, color: '#6c757d' }}>{r.category || '-'}</span>
               </div>
+              {r.hidden_reason && !r.is_published && (
+                <div style={{ fontSize: 12, color: '#6c757d', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  사유: {r.hidden_reason}
+                </div>
+              )}
               <div style={{ fontSize: 14, color: '#212529' }}>{r.title || '(제목 없음)'}</div>
               <div style={{ fontSize: 11, color: '#6c757d', marginTop: 4 }}>
                 {authorName(r)} · {fmtDate(r.created_at)}

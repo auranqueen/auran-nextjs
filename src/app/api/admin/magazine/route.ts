@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (action === 'loadCurator') {
     const { data, error } = await svc
       .from('magazines')
-      .select('id, title, category, is_published, author_type, created_by, created_at, slug')
+      .select('id, title, category, is_published, author_type, created_by, created_at, slug, hidden_reason, hidden_at')
       .eq('author_type', 'curator')
       .order('created_at', { ascending: false })
       .limit(200)
@@ -81,6 +81,10 @@ export async function POST(req: Request) {
   if (action === 'togglePublish') {
     const patch: Record<string, unknown> = { is_published }
     if (published_at !== undefined) patch.published_at = published_at
+    if (is_published === true) {
+      patch.hidden_reason = null
+      patch.hidden_at = null
+    }
     const { error } = await svc.from('magazines').update(patch).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
