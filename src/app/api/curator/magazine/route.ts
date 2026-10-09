@@ -60,7 +60,8 @@ export async function POST(req: Request) {
       author_type: 'curator',
       created_by: userId,
       author_owner_id: userId,
-      is_published: false,
+      is_published: true,
+      published_at: new Date().toISOString(),
     })
     .select('id')
     .single()

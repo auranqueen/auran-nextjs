@@ -341,7 +341,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
         onClose={() => setContribOpen(false)}
         onSubmitted={() => {
           setPostsKey(k => k + 1)
-          setToast('기고가 접수됐어요! 검토 후 발행됩니다 ✅')
+          setToast('기고가 발행됐어요! 매거진에서 확인해보세요 ✅')
           later(() => setToast(''), 2000)
         }}
       />
