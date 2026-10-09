@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-10-09
+- feat(live): `POST /api/live/create-stream` 신규 — Mux 라이브 스트림 생성(public playback, 녹화 asset public) 후 `oren_live_broadcasts`에 `status: 'upcoming'`으로 insert. Supabase는 `tryCreateAdminClient()` 사용. `@mux/mux-node@15.5.0` 추가. 인증·권한 검사 없음(후속 필요), 테이블은 저장소에 정의 없음
+- feat(live): customer 하단 탭을 홈·샵·커뮤니티·라이브(`/live`)로 변경(AI·MyWorld 제거), 빈 상태 라이브 페이지 `src/app/live/page.tsx` 신규(진행 중/예정/지난 방송 탭, 데이터 TODO), 고객홈 상단 바 아래 `LiveBanner` 자리 추가(현재 `activeBroadcast = null`이라 렌더링 없음)
+
 ## [미배포] 2026-10-08
 ### Added
 - 큐레이터 대시보드 신규: `src/app/dashboard/curator/page.tsx`(서버 — 로그인 + `profiles.active_role` > `profiles.role` > `users.role`이 `curator`/`admin`만 통과, 그 외 `/login`), `client.tsx`(라이트 고정·액센트 `#e8845a`, 헤더·목표 진행바·공구 링크 복사·예상수수료·실시간 알림·공구 캘린더·요청 현황·링크 통계·내 채널·랭킹·콘텐츠 만들기·정산 내역 13개 섹션, FAB → `SlideUpSheet` 공구신청 시트(zIndex 9000) + 제품선택 시트(9100, Civasan/Bollayon/ITACA 탭·검색·모바일 2열/PC 3열)). 데이터·신청 API는 전부 목업/TODO, 기존 `GroupBuyRequestSheet`는 자체 오버레이 구조라 감싸지 않고 미사용

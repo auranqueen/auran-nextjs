@@ -19,9 +19,8 @@ const NAV: Record<Role, NavItem[]> = {
   customer: [
     { icon: '🏠', label: '홈', href: '/' },
     { icon: '🛍️', label: '샵', href: '/products' },
-    { icon: '🔬', label: 'AI', href: '/skin-analysis' },
     { icon: '💬', label: '커뮤니티', href: '/community' },
-    { icon: '🌙', label: 'MyWorld', href: '/myworld' },
+    { icon: '📺', label: '라이브', href: '/live' },
   ],
   partner: [
     { icon: '🏠', label: '홈', href: '/dashboard/partner' },
