@@ -13,10 +13,8 @@ type CuratorPost = {
   created_by: string | null
   created_at: string
   slug: string | null
+  author_name?: string | null
 }
-
-const nameOf = (p: Record<string, unknown>) =>
-  String(p.full_name || p.name || p.nickname || p.email || '-')
 
 const fmtDate = (s: string | null | undefined) => (s ? new Date(s).toLocaleString('ko-KR') : '-')
 
@@ -51,39 +49,30 @@ function StatusBadge({ published }: { published: boolean }) {
 export default function CuratorPostsTab() {
   const supabase = createClient()
   const [rows, setRows] = useState<CuratorPost[]>([])
-  const [names, setNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [selected, setSelected] = useState<CuratorPost | null>(null)
 
+  // [ANCHOR: fetch-posts]
   const load = async () => {
     setLoading(true)
     setLoadError(false)
-    const { data, error } = await supabase
-      .from('magazines')
-      .select('id, title, category, is_published, author_type, created_by, created_at, slug')
-      .eq('author_type', 'curator')
-      .order('created_at', { ascending: false })
-    if (error) {
-      console.error('[CuratorPostsTab] load error', error)
+    const res = await fetch('/api/admin/magazine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'loadCurator' }),
+    }).catch(() => null)
+    const json = (await res?.json().catch(() => null)) as unknown as { items?: CuratorPost[]; error?: string } | null
+    if (!res?.ok || !json?.items) {
+      console.error('[CuratorPostsTab] load error', json?.error ?? res?.status ?? 'network')
       setLoadError(true)
       setLoading(false)
       return
     }
-    const list = (data as CuratorPost[]) || []
+    const list = json.items
     setRows(list)
     setSelected(prev => (prev ? list.find(r => r.id === prev.id) ?? null : null))
-    const authorIds = Array.from(new Set(list.map(r => r.created_by).filter((v): v is string => !!v)))
-    if (authorIds.length > 0) {
-      const { data: profs, error: profErr } = await supabase.from('profiles').select('*').in('auth_id', authorIds)
-      if (profErr) console.error('[CuratorPostsTab] profiles error', profErr)
-      const map: Record<string, string> = {}
-      for (const p of (profs as Record<string, unknown>[]) || []) map[String(p.auth_id)] = nameOf(p)
-      setNames(map)
-    } else {
-      setNames({})
-    }
     setLoading(false)
   }
 
@@ -103,7 +92,7 @@ export default function CuratorPostsTab() {
     void load()
   }
 
-  const authorName = (r: CuratorPost) => (r.created_by ? names[r.created_by] || '-' : '-')
+  const authorName = (r: CuratorPost) => r.author_name || '-'
 
   const actionButton = (r: CuratorPost) =>
     r.is_published ? (

@@ -22,6 +22,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ items: data || [] })
   }
 
+  // [ANCHOR: load-curator]
+  if (action === 'loadCurator') {
+    const { data, error } = await svc
+      .from('magazines')
+      .select('id, title, category, is_published, author_type, created_by, created_at, slug')
+      .eq('author_type', 'curator')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const rows = (data || []) as unknown as { created_by: string | null }[]
+    const ids = Array.from(new Set(rows.map((r) => r.created_by).filter((v): v is string => !!v)))
+    const names: Record<string, string> = {}
+    if (ids.length > 0) {
+      const { data: profs } = await svc.from('profiles').select('*').in('auth_id', ids)
+      for (const p of (profs || []) as unknown as Record<string, unknown>[]) {
+        names[String(p.auth_id)] = String(p.full_name || p.name || p.nickname || p.email || '-')
+      }
+    }
+    return NextResponse.json({
+      items: rows.map((r) => ({ ...r, author_name: r.created_by ? names[r.created_by] || '-' : '-' })),
+    })
+  }
+
   if (action === 'saveContent') {
     const { error } = await svc.from('magazines').update({ content }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
