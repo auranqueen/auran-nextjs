@@ -7,6 +7,7 @@ import ProductDetailEditor from '@/components/admin/ProductDetailEditor'
 import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
 import GroupBuyCreateSheet from '@/components/admin/GroupBuyCreateSheet'
 import GroupBuyRequestsSheet, { type GroupBuyRequestRow } from '@/components/admin/GroupBuyRequestsSheet'
+import CuratorPostsTab from '@/components/admin/magazine/CuratorPostsTab'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -53,6 +54,7 @@ export default function AdminMagazinePage() {
   const [prodHits, setProdHits] = useState<any[]>([])
   const [kpi, setKpi] = useState({ total: 0, published: 0, views: 0 })
   const [gbOpen, setGbOpen] = useState(false)
+  const [magazineTab, setMagazineTab] = useState<'articles' | 'curator'>('articles')
   // [ANCHOR: gb-requests-state]
   const [requestsOpen, setRequestsOpen] = useState(false)
   const [preselectedProductId, setPreselectedProductId] = useState<string | undefined>(undefined)
@@ -241,6 +243,30 @@ export default function AdminMagazinePage() {
 
   return (
     <div style={{ maxWidth: 960 }}>
+      {/* [ANCHOR: magazine-tabs] */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {(['articles', 'curator'] as const).map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setMagazineTab(t)}
+            style={{
+              padding: '6px 16px',
+              borderRadius: 7,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: 'none',
+              background: magazineTab === t ? 'var(--green)' : 'var(--bg3)',
+              color: magazineTab === t ? '#fff' : 'var(--text2)',
+            }}
+          >
+            {t === 'articles' ? '📄 글 목록' : '✍️ 큐레이터 기고'}
+          </button>
+        ))}
+      </div>
+      {magazineTab === 'articles' && (
+        <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 18 }}>
         <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 11, color: 'var(--text3)' }}>전체 글</div>
@@ -300,6 +326,9 @@ export default function AdminMagazinePage() {
           ))}
         </div>
       )}
+        </>
+      )}
+      {magazineTab === 'curator' && <CuratorPostsTab />}
 
       {modal.open ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>

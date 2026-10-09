@@ -4,6 +4,10 @@
 ---
 
 ## 2026-10-09
+- feat(admin): 매거진 관리에 서브탭 추가 — `📄 글 목록`(기존 KPI·버튼·글 목록을 `magazineTab === 'articles'`로 감쌈, 코드 이동 없음) / `✍️ 큐레이터 기고`(`[ANCHOR: magazine-tabs]`). `src/app/admin/magazine/page.tsx` 추가만 29줄, 파일 528줄로 500줄 규칙 초과
+- feat(admin): `src/components/admin/magazine/CuratorPostsTab.tsx` 신규 — `magazines`에서 `author_type = 'curator'` 글 조회(브라우저 클라이언트), 작성자명은 `profiles`(`auth_id` = `created_by`)에서 `full_name`→`name`→`nickname`→`email` 순, 발행(`is_published: true` + `published_at`) / 발행취소(`is_published: false`) 후 재조회
+- 상세는 `SlideUpSheet`(zIndex 9500) + 내부 흰 배경 직접 지정(어드민 `--bg` 다크 회피), 라이트 고정 색상값만 사용, 빈 상태·로딩·"데이터를 불러올 수 없습니다" 표시, 카드 안 버튼은 `stopPropagation`
+- 전제: `magazines.author_type`·`created_by` 컬럼은 저장소 마이그레이션·기존 코드에 없음(운영 DB 존재 가정). `magazines` SELECT RLS가 미발행 글을 막으면 검토 대기 글이 안 보일 수 있음(기존 글 목록은 서비스롤 API 사용)
 - fix(live): `POST /api/live/create-stream` 인증 추가 — 기존 `api/owner/*` 패턴대로 `@/lib/supabase/server` `auth.getUser()` 실패 시 401 `not_logged_in`, `users.role !== 'owner'`면 403 `owner_only`(Mux 호출 전 검사). `owner_id`는 요청 본문 대신 `users.id`(`me.id`), 응답 `broadcast`에서 `mux_rtmp_key` 제거(DB에만 저장), `playback_ids` 없으면 `hls_url: null`
 - feat(live): `POST /api/live/create-stream` 신규 — Mux 라이브 스트림 생성(public playback, 녹화 asset public) 후 `oren_live_broadcasts`에 `status: 'upcoming'`으로 insert. Supabase는 `tryCreateAdminClient()` 사용. `@mux/mux-node@15.5.0` 추가. 인증·권한 검사 없음(후속 필요), 테이블은 저장소에 정의 없음
 - feat(live): customer 하단 탭을 홈·샵·커뮤니티·라이브(`/live`)로 변경(AI·MyWorld 제거), 빈 상태 라이브 페이지 `src/app/live/page.tsx` 신규(진행 중/예정/지난 방송 탭, 데이터 TODO), 고객홈 상단 바 아래 `LiveBanner` 자리 추가(현재 `activeBroadcast = null`이라 렌더링 없음)
