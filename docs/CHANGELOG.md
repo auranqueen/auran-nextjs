@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- fix(admin): 큐레이터 기고 발행/발행취소를 서비스롤 `togglePublish` action으로 전환 — `CuratorPostsTab` `setPublished`가 브라우저 `magazines.update` 대신 `/api/admin/magazine`에 `{ action: 'togglePublish', id, is_published, published_at? }` 전송(route의 실제 body 키에 맞춤). 쓰기 RLS(`users.role = 'admin'`/`super_admin`)에 막히던 profiles 기준 어드민도 발행 가능
 - fix(admin): 큐레이터 기고 목록 조회를 서비스롤로 전환 — `/api/admin/magazine`에 `action: 'loadCurator'` 추가(`[ANCHOR: load-curator]`, `magazines.author_type = 'curator'` 최신순 200건 + `profiles.auth_id = created_by`로 작성자명 `author_name` 병합, FK가 없어 embed join 대신 2회 조회). `CuratorPostsTab` `load`(`[ANCHOR: fetch-posts]`)는 브라우저 직접 쿼리 대신 이 API를 호출, 발행/발행취소는 기존 브라우저 클라이언트 유지
 - feat(admin): 매거진 관리에 서브탭 추가 — `📄 글 목록`(기존 KPI·버튼·글 목록을 `magazineTab === 'articles'`로 감쌈, 코드 이동 없음) / `✍️ 큐레이터 기고`(`[ANCHOR: magazine-tabs]`). `src/app/admin/magazine/page.tsx` 추가만 29줄, 파일 528줄로 500줄 규칙 초과
 - feat(admin): `src/components/admin/magazine/CuratorPostsTab.tsx` 신규 — `magazines`에서 `author_type = 'curator'` 글 조회(브라우저 클라이언트), 작성자명은 `profiles`(`auth_id` = `created_by`)에서 `full_name`→`name`→`nickname`→`email` 순, 발행(`is_published: true` + `published_at`) / 발행취소(`is_published: false`) 후 재조회

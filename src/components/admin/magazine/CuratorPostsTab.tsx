@@ -82,11 +82,18 @@ export default function CuratorPostsTab() {
 
   const setPublished = async (id: string, publish: boolean) => {
     setBusyId(id)
-    const patch = publish ? { is_published: true, published_at: new Date().toISOString() } : { is_published: false }
-    const { error } = await supabase.from('magazines').update(patch).eq('id', id)
+    const body = publish
+      ? { action: 'togglePublish', id, is_published: true, published_at: new Date().toISOString() }
+      : { action: 'togglePublish', id, is_published: false }
+    const res = await fetch('/api/admin/magazine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(() => null)
+    const json = (await res?.json().catch(() => null)) as unknown as { ok?: boolean; error?: string } | null
     setBusyId(null)
-    if (error) {
-      console.error('[CuratorPostsTab] update error', error)
+    if (!res?.ok || !json?.ok) {
+      console.error('[CuratorPostsTab] update error', json?.error ?? res?.status ?? 'network')
       return
     }
     void load()
