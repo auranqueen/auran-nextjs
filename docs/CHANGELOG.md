@@ -4,6 +4,9 @@
 ---
 
 ## 2026-10-09
+- feat(curator): 큐레이터 매거진 기고 INSERT 연결 — `POST /api/curator/magazine` 신규(로그인 확인 → 서비스롤로 `profiles.active_role`→`role`→`users.role` 조회, `curator`만 허용 → `magazines` insert `author_type: 'curator'`, `created_by`/`author_owner_id` = auth uid, `is_published: false`). 브라우저 쓰기 RLS(`magazines_admin_write`, admin 전용) 때문에 서버 경유
+- 본문은 매거진 상세가 `dangerouslySetInnerHTML`로 렌더링하므로 서버에서 HTML 이스케이프 후 `<p>` 문단·`<br />`로만 저장, 카테고리는 5종 화이트리스트, 썸네일은 `http(s)://`만 허용
+- `src/app/dashboard/curator/ContributionSheet.tsx` 신규(SlideUpSheet zIndex 9000, 흰 배경, × 닫기, 제목 필수·부제·카테고리 칩·본문·썸네일 URL, 실패 시 시트 안 에러 문구). `client.tsx` 12번 '콘텐츠 만들기'에 `✍️ 매거진 기고하기` 버튼(`[ANCHOR: curator-contribution-button]`)과 시트 렌더(`[ANCHOR: curator-contribution-sheet]`) 추가만, 기존 MOCK·카드 4개 TODO 유지
 - fix(admin): 큐레이터 기고 발행/발행취소를 서비스롤 `togglePublish` action으로 전환 — `CuratorPostsTab` `setPublished`가 브라우저 `magazines.update` 대신 `/api/admin/magazine`에 `{ action: 'togglePublish', id, is_published, published_at? }` 전송(route의 실제 body 키에 맞춤). 쓰기 RLS(`users.role = 'admin'`/`super_admin`)에 막히던 profiles 기준 어드민도 발행 가능
 - fix(admin): 큐레이터 기고 목록 조회를 서비스롤로 전환 — `/api/admin/magazine`에 `action: 'loadCurator'` 추가(`[ANCHOR: load-curator]`, `magazines.author_type = 'curator'` 최신순 200건 + `profiles.auth_id = created_by`로 작성자명 `author_name` 병합, FK가 없어 embed join 대신 2회 조회). `CuratorPostsTab` `load`(`[ANCHOR: fetch-posts]`)는 브라우저 직접 쿼리 대신 이 API를 호출, 발행/발행취소는 기존 브라우저 클라이언트 유지
 - feat(admin): 매거진 관리에 서브탭 추가 — `📄 글 목록`(기존 KPI·버튼·글 목록을 `magazineTab === 'articles'`로 감쌈, 코드 이동 없음) / `✍️ 큐레이터 기고`(`[ANCHOR: magazine-tabs]`). `src/app/admin/magazine/page.tsx` 추가만 29줄, 파일 528줄로 500줄 규칙 초과

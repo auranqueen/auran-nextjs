@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import SlideUpSheet from '@/components/ui/SlideUpSheet'
+import ContributionSheet from './ContributionSheet'
 
 type Brand = 'Civasan' | 'Bollayon' | 'ITACA'
 type Product = { id: string; brand: Brand; emoji: string; name: string; price: number }
@@ -115,6 +116,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
   const [brand, setBrand] = useState<Brand>('Civasan')
   const [query, setQuery] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [contribOpen, setContribOpen] = useState(false)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
@@ -332,6 +334,14 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
 
         {/* 12. 콘텐츠 만들기 */}
         <SecTitle>콘텐츠 만들기</SecTitle>
+        {/* [ANCHOR: curator-contribution-button] */}
+        <button
+          type="button"
+          onClick={() => setContribOpen(true)}
+          style={{ width: '100%', border: `2px dashed ${ACCENT}`, borderRadius: 12, padding: '12px 16px', background: '#fff', color: ACCENT, fontSize: 14, cursor: 'pointer', marginBottom: 8 }}
+        >
+          ✍️ 매거진 기고하기
+        </button>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
           {[
             { emoji: '🖼️', label: '공유카드' },
@@ -450,6 +460,16 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
           </div>
         </div>
       </SlideUpSheet>
+
+      {/* [ANCHOR: curator-contribution-sheet] */}
+      <ContributionSheet
+        open={contribOpen}
+        onClose={() => setContribOpen(false)}
+        onSubmitted={() => {
+          setToast('기고가 접수됐어요! 검토 후 발행됩니다 ✅')
+          later(() => setToast(''), 2000)
+        }}
+      />
 
       {toast && (
         <div style={{ position: 'fixed', left: '50%', bottom: 160, transform: 'translateX(-50%)', zIndex: 9200, background: 'rgba(34,34,34,0.92)', color: '#fff', borderRadius: 12, padding: '10px 16px', fontSize: 13, whiteSpace: 'nowrap' }}>
