@@ -1,27 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import SlideUpSheet from '@/components/ui/SlideUpSheet'
 import ContributionSheet from './ContributionSheet'
 import MyContributions from './MyContributions'
-
-type Brand = 'Civasan' | 'Bollayon' | 'ITACA'
-type Product = { id: string; brand: Brand; emoji: string; name: string; price: number }
+import GroupBuySheet from './GroupBuySheet'
 
 const ACCENT = '#e8845a'
-const BRANDS: Brand[] = ['Civasan', 'Bollayon', 'ITACA']
 
-// TODO: products + brands 테이블 연결 (현재 목업)
-const MOCK_PRODUCTS: Product[] = [
-  { id: 'c1', brand: 'Civasan', emoji: '🧴', name: '메쓰크림', price: 89000 },
-  { id: 'c2', brand: 'Civasan', emoji: '💧', name: '하이드라 앰플', price: 72000 },
-  { id: 'c3', brand: 'Civasan', emoji: '🌿', name: '카밍 토너', price: 48000 },
-  { id: 'b1', brand: 'Bollayon', emoji: '✨', name: '글로우 세럼', price: 65000 },
-  { id: 'b2', brand: 'Bollayon', emoji: '🫧', name: '클렌징 폼', price: 32000 },
-  { id: 'b3', brand: 'Bollayon', emoji: '🌙', name: '나이트 크림', price: 58000 },
-  { id: 'i1', brand: 'ITACA', emoji: '🌸', name: '로즈 미스트', price: 38000 },
-  { id: 'i2', brand: 'ITACA', emoji: '🍯', name: '허니 마스크', price: 42000 },
-]
 // TODO: 실시간 알림 데이터 연결 (현재 목업)
 const MOCK_ALERTS = ['🛒 방금 내 링크로 2건 구매', '🔥 메쓰크림 공구 마감 D-2', '💬 새 문의 3개']
 // TODO: 공구 일정 데이터 연결 (현재 목업)
@@ -60,17 +45,6 @@ const card = {
   marginBottom: 12,
 } as const
 
-const inp = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: 10,
-  background: '#faf8f6',
-  border: '1px solid #f0ece8',
-  color: '#222',
-  fontSize: 13,
-  boxSizing: 'border-box',
-} as const
-
 const chip = {
   flex: '0 0 auto',
   background: '#fff7f4',
@@ -86,37 +60,11 @@ function SecTitle({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: 14, fontWeight: 500, color: '#222', margin: '20px 0 10px' }}>{children}</div>
 }
 
-function SheetHead({ title, onClose }: { title: string; onClose: () => void }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-      <div style={{ fontSize: 16, fontWeight: 500, color: '#222' }}>{title}</div>
-      <button
-        type="button"
-        aria-label="닫기"
-        onClick={onClose}
-        style={{ border: 'none', background: 'transparent', color: '#888', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: 4 }}
-      >
-        ×
-      </button>
-    </div>
-  )
-}
-
 export default function CuratorDashClient({ profile }: { profile: any }) {
   const [isMobile, setIsMobile] = useState(true)
   const [requestOpen, setRequestOpen] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [title, setTitle] = useState('')
-  const [startAt, setStartAt] = useState('')
-  const [endAt, setEndAt] = useState('')
-  const [desc, setDesc] = useState('')
-  const [pickError, setPickError] = useState(false)
   const [toast, setToast] = useState('')
   const [copied, setCopied] = useState(false)
-  const [brand, setBrand] = useState<Brand>('Civasan')
-  const [query, setQuery] = useState('')
-  const [highlightId, setHighlightId] = useState<string | null>(null)
   const [contribOpen, setContribOpen] = useState(false)
   const [postsKey, setPostsKey] = useState(0)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -136,36 +84,6 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
     timers.current.push(setTimeout(fn, ms))
   }
 
-  const resetForm = () => {
-    setSelectedProduct(null)
-    setTitle('')
-    setStartAt('')
-    setEndAt('')
-    setDesc('')
-  }
-
-  const submitRequest = () => {
-    if (selectedProduct === null) {
-      setPickError(true)
-      later(() => setPickError(false), 500)
-      return
-    }
-    // TODO: API 연결 — group_buy_requests INSERT (product_id, desired_start_at, desired_end_at, message)
-    setToast('신청 완료! 검토 후 승인됩니다 ✅')
-    later(() => setToast(''), 2000)
-    setRequestOpen(false)
-    resetForm()
-  }
-
-  const onSelect = (p: Product) => {
-    setHighlightId(p.id)
-    later(() => {
-      setHighlightId(null)
-      setSelectedProduct(p)
-      setPickerOpen(false)
-    }, 200)
-  }
-
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(MOCK_LINK)
@@ -183,11 +101,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
     later(() => setCopied(false), 1500)
   }
 
-  const q = query.trim().toLowerCase()
-  const filtered = MOCK_PRODUCTS.filter(p => p.brand === brand && (!q || p.name.toLowerCase().includes(q)))
   const name = String(profile?.name || '큐레이터')
-
-  const productBtnBorder = pickError ? '2px solid red' : selectedProduct ? `2px solid ${ACCENT}` : `2px dashed ${ACCENT}`
 
   return (
     <div style={{ minHeight: '100dvh', background: '#faf8f6', color: '#222', colorScheme: 'light', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -391,80 +305,16 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
         ＋
       </button>
 
-      {/* 공구신청 시트 */}
-      <SlideUpSheet open={requestOpen} onClose={() => setRequestOpen(false)} zIndex={9000} height="auto" maxHeight="90dvh">
-        <div style={{ background: '#fff', color: '#222', colorScheme: 'light', padding: '18px 18px 28px', maxWidth: 560, margin: '0 auto' }}>
-          <SheetHead title="공구 신청" onClose={() => setRequestOpen(false)} />
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            style={{ border: productBtnBorder, borderRadius: 12, padding: '12px 16px', background: '#fff', color: ACCENT, width: '100%', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
-          >
-            {selectedProduct ? (
-              <>
-                <span style={{ color: '#222' }}>{selectedProduct.emoji} {selectedProduct.name} {selectedProduct.price.toLocaleString()}원</span>
-                <span style={{ fontSize: 12 }}>변경 ▼</span>
-              </>
-            ) : (
-              <span style={{ width: '100%', textAlign: 'center' }}>🛍️ 제품 불러오기</span>
-            )}
-          </button>
-          <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>제목</div>
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="공구 제목" style={{ ...inp, marginBottom: 14 }} />
-          <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>희망 기간</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <input type="date" value={startAt} onChange={e => setStartAt(e.target.value)} style={inp} />
-            <span style={{ fontSize: 12, color: '#888' }}>~</span>
-            <input type="date" value={endAt} min={startAt || undefined} onChange={e => setEndAt(e.target.value)} style={inp} />
-          </div>
-          <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>설명</div>
-          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="이 제품 추천 이유를 적어주세요" rows={3} style={{ ...inp, resize: 'vertical', minHeight: 72, marginBottom: 18 }} />
-          <button
-            type="button"
-            onClick={submitRequest}
-            style={{ width: '100%', border: 'none', borderRadius: 12, padding: '14px 16px', background: ACCENT, color: '#fff', fontSize: 14, cursor: 'pointer' }}
-          >
-            신청하기
-          </button>
-        </div>
-      </SlideUpSheet>
-
-      {/* 제품선택 시트 */}
-      <SlideUpSheet open={pickerOpen} onClose={() => setPickerOpen(false)} zIndex={9100} height="80dvh">
-        <div style={{ background: '#fff', color: '#222', colorScheme: 'light', padding: '18px 18px 28px', minHeight: '100%', boxSizing: 'border-box' }}>
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            <SheetHead title="제품 선택" onClose={() => setPickerOpen(false)} />
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              {BRANDS.map(b => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => setBrand(b)}
-                  style={{ border: `1px solid ${brand === b ? ACCENT : '#f0ece8'}`, background: brand === b ? '#fff7f4' : '#fff', color: brand === b ? ACCENT : '#555', borderRadius: 20, padding: '6px 14px', fontSize: 12, cursor: 'pointer' }}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="제품명 검색" style={{ ...inp, marginBottom: 14 }} />
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 10 }}>
-              {filtered.map(p => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => onSelect(p)}
-                  style={{ border: highlightId === p.id ? `2px solid ${ACCENT}` : '2px solid #f0ece8', borderRadius: 12, background: '#fff', padding: '14px 10px', cursor: 'pointer', textAlign: 'center', transition: 'border-color 0.15s' }}
-                >
-                  <div style={{ fontSize: 30, marginBottom: 6 }}>{p.emoji}</div>
-                  <div style={{ fontSize: 13, color: '#222' }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: ACCENT, marginTop: 2 }}>{p.price.toLocaleString()}원</div>
-                </button>
-              ))}
-            </div>
-            {filtered.length === 0 && <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: '24px 0' }}>검색 결과가 없어요</div>}
-          </div>
-        </div>
-      </SlideUpSheet>
+      {/* [ANCHOR: curator-groupbuy-sheet] */}
+      <GroupBuySheet
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        isMobile={isMobile}
+        onSubmitted={() => {
+          setToast('공구 신청이 접수됐어요! 검토 후 연락드릴게요 ✅')
+          later(() => setToast(''), 2000)
+        }}
+      />
 
       {/* [ANCHOR: curator-contribution-sheet] */}
       <ContributionSheet

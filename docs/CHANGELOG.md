@@ -4,6 +4,10 @@
 ---
 
 ## 2026-10-09
+- feat(curator): 큐레이터 공구신청 INSERT 연결 — `src/app/api/curator/groupbuy/route.ts` 신규. GET은 서비스롤로 `products`(`is_active = true`, 이름순 300건) `id, name, retail_price, thumb_img` → `{ items }`. POST는 `requester_id`를 세션 auth uid로 강제, `product_id` UUID 형식 검증(400) + 활성 제품 존재 확인(404), `desired_start_at/end_at`은 `YYYY-MM-DD`만·역순 400, 같은 요청자+제품+`pending` 중복 시 409(`[ANCHOR: groupbuy-duplicate-check]`), `group_buy_requests` insert `status: 'pending'`
+- 큐레이터 공통 인증을 `src/app/api/curator/_auth.ts` `requireCurator()`로 분리(미인증 401·비큐레이터 403·서비스롤 없음 500), `/api/curator/magazine`도 이 헬퍼를 import(동작 변경 없음)
+- `src/app/dashboard/curator/GroupBuySheet.tsx` 신규 — 기존 공구신청 시트·제품선택 시트 UI를 옮기고 MOCK 제품 대신 실제 API 사용(제품선택 시트 첫 오픈 시 1회 조회, 로딩/실패/빈 목록/검색 없음 문구, 썸네일 `thumb_img`), 제목은 `[제목]` 형태로 `message` 앞줄에 합쳐 저장(테이블에 제목 컬럼 없음), 실패·중복은 시트 안 에러 문구. 브랜드 탭(Civasan/Bollayon/ITACA)은 실제 브랜드명 데이터가 없어 제거하고 이름 검색만 유지
+- `client.tsx`는 `MOCK_PRODUCTS`·브랜드 타입·시트 state/핸들러·`inp`·`SheetHead`·두 시트 JSX를 걷어내고 `[ANCHOR: curator-groupbuy-sheet]` 렌더로 교체(487 → 337줄), 성공 토스트 "공구 신청이 접수됐어요! 검토 후 연락드릴게요 ✅"
 - feat(curator): 큐레이터 내 기고 목록 — `GET /api/curator/magazine` 추가(401/403은 POST와 같은 `requireCurator()` 공용 헬퍼로 판정, 서비스롤로 `magazines` `created_by = auth uid` + `author_type = 'curator'` 최신순 20건, `id, title, is_published, published_at, created_at, thumbnail_url` → `{ items }`, `force-dynamic`). POST 동작 변경 없음
 - `src/app/dashboard/curator/MyContributions.tsx` 신규(`[ANCHOR: fetch-my-posts]` 마운트·`refreshKey` 변경 시 `no-store` fetch, 로딩/빈/실패 문구, 발행됨·검토 중 배지, 발행 글만 `/magazine/[id]` 링크). `client.tsx`는 '콘텐츠 만들기' 아래 `[ANCHOR: curator-my-posts]` 렌더 + 기고 성공 시 `setPostsKey`로 새로고침, 6줄 추가만(487줄). 기존 기고 목록 MOCK은 없었음
 - feat(curator): 큐레이터 매거진 기고 INSERT 연결 — `POST /api/curator/magazine` 신규(로그인 확인 → 서비스롤로 `profiles.active_role`→`role`→`users.role` 조회, `curator`만 허용 → `magazines` insert `author_type: 'curator'`, `created_by`/`author_owner_id` = auth uid, `is_published: false`). 브라우저 쓰기 RLS(`magazines_admin_write`, admin 전용) 때문에 서버 경유
