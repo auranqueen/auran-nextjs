@@ -283,7 +283,11 @@ export default function CuratorPostsTab() {
           {selected && (
             <div style={{ maxWidth: 560, margin: '0 auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <StatusBadge published={!!selected.is_published} />
+                {selected.hidden_reason && !selected.is_published ? (
+                  <span style={{ background: '#f8d7da', color: '#842029', borderRadius: 12, padding: '2px 10px', fontSize: 11 }}>🚫 숨김</span>
+                ) : (
+                  <StatusBadge published={!!selected.is_published} />
+                )}
                 <button
                   type="button"
                   aria-label="닫기"
@@ -293,6 +297,11 @@ export default function CuratorPostsTab() {
                   ×
                 </button>
               </div>
+              {selected.hidden_reason && !selected.is_published && (
+                <div style={{ fontSize: 12, color: '#6c757d', marginTop: -8, marginBottom: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  사유: {selected.hidden_reason}
+                </div>
+              )}
               <div style={{ fontSize: 18, color: '#212529', marginBottom: 14, lineHeight: 1.4 }}>{selected.title || '(제목 없음)'}</div>
               {[
                 { label: '카테고리', value: selected.category || '-' },
