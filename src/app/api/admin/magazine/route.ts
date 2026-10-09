@@ -86,5 +86,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
+  // [ANCHOR: hide-post]
+  if (action === 'hidePost') {
+    const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) : ''
+    if (!reason) return NextResponse.json({ error: 'reason_required' }, { status: 400 })
+    const { error } = await svc
+      .from('magazines')
+      .update({ is_published: false, hidden_reason: reason, hidden_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
   return NextResponse.json({ error: 'unknown action' }, { status: 400 })
 }

@@ -38,6 +38,16 @@ const cancelBtn = {
   cursor: 'pointer',
 } as const
 
+const hideBtn = {
+  border: '1px solid #dc3545',
+  background: '#ffffff',
+  color: '#dc3545',
+  borderRadius: 7,
+  padding: '5px 14px',
+  fontSize: 12,
+  cursor: 'pointer',
+} as const
+
 function StatusBadge({ published }: { published: boolean }) {
   return published ? (
     <span style={{ background: '#d1e7dd', color: '#0a3622', borderRadius: 12, padding: '2px 10px', fontSize: 11 }}>✅ 발행됨</span>
@@ -53,6 +63,9 @@ export default function CuratorPostsTab() {
   const [loadError, setLoadError] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [selected, setSelected] = useState<CuratorPost | null>(null)
+  const [hideFormId, setHideFormId] = useState<string | null>(null)
+  const [hideReason, setHideReason] = useState('')
+  const [hideError, setHideError] = useState('')
 
   // [ANCHOR: fetch-posts]
   const load = async () => {
@@ -96,6 +109,38 @@ export default function CuratorPostsTab() {
       console.error('[CuratorPostsTab] update error', json?.error ?? res?.status ?? 'network')
       return
     }
+    void load()
+  }
+
+  const openHideForm = (id: string) => {
+    setHideFormId(id)
+    setHideReason('')
+    setHideError('')
+  }
+
+  // [ANCHOR: hide-post-submit]
+  const hidePost = async (id: string) => {
+    const reason = hideReason.trim()
+    if (!reason) {
+      setHideError('숨김 사유를 입력해 주세요.')
+      return
+    }
+    setBusyId(id)
+    setHideError('')
+    const res = await fetch('/api/admin/magazine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'hidePost', id, reason }),
+    }).catch(() => null)
+    const json = (await res?.json().catch(() => null)) as unknown as { ok?: boolean; error?: string } | null
+    setBusyId(null)
+    if (!res?.ok || !json?.ok) {
+      console.error('[CuratorPostsTab] hide error', json?.error ?? res?.status ?? 'network')
+      setHideError('숨김 처리하지 못했어요. 잠시 후 다시 시도해 주세요.')
+      return
+    }
+    setHideFormId(null)
+    setHideReason('')
     void load()
   }
 
@@ -172,6 +217,52 @@ export default function CuratorPostsTab() {
               </div>
             </div>
             {actionButton(r)}
+            {r.is_published && hideFormId !== r.id && (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  openHideForm(r.id)
+                }}
+                style={hideBtn}
+              >
+                노출 숨김
+              </button>
+            )}
+            {hideFormId === r.id && (
+              <div
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.stopPropagation()}
+                style={{ flexBasis: '100%', background: '#ffffff', border: '1px solid #f1aeb5', borderRadius: 8, padding: 10, cursor: 'default' }}
+              >
+                <textarea
+                  value={hideReason}
+                  onChange={e => setHideReason(e.target.value)}
+                  placeholder="숨김 사유를 입력하세요 (큐레이터에게 전달됩니다)"
+                  rows={3}
+                  maxLength={1000}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #dee2e6', borderRadius: 6, padding: 8, fontSize: 13, color: '#212529', background: '#ffffff', resize: 'vertical' }}
+                />
+                {hideError && <div style={{ fontSize: 12, color: '#842029', marginTop: 6 }}>{hideError}</div>}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setHideFormId(null)}
+                    style={{ border: '1px solid #dee2e6', background: '#ffffff', color: '#495057', borderRadius: 7, padding: '5px 14px', fontSize: 12, cursor: 'pointer' }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === r.id}
+                    onClick={() => void hidePost(r.id)}
+                    style={{ border: 'none', background: '#dc3545', color: '#fff', borderRadius: 7, padding: '5px 14px', fontSize: 12, cursor: 'pointer' }}
+                  >
+                    {busyId === r.id ? '처리 중…' : '확인'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))
       )}

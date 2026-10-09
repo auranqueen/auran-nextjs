@@ -26,7 +26,7 @@ export async function GET() {
 
   const { data, error } = await auth.svc
     .from('magazines')
-    .select('id, title, subtitle, category, content, is_published, published_at, created_at, thumbnail_url')
+    .select('id, title, subtitle, category, content, is_published, published_at, created_at, thumbnail_url, hidden_reason, hidden_at')
     .eq('created_by', auth.userId)
     .eq('author_type', 'curator')
     .order('created_at', { ascending: false })

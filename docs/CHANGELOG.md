@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-09
+- feat(magazine): 어드민 큐레이터 글 노출 숨김 + 사유 전달 — 마이그레이션 `217_magazines_hidden_reason.sql`(`hidden_reason text`, `hidden_at timestamptz`, 운영 DB 직접 실행 완료·파일만 추가). `/api/admin/magazine`에 `hidePost` action(`[ANCHOR: hide-post]`, 기존 togglePublish와 같은 서비스롤 `svc`, 사유 공백이면 400 `reason_required`, `is_published: false` + `hidden_reason`(1000자) + `hidden_at`). `CuratorPostsTab` 발행 글 카드에 `노출 숨김` 버튼 → 카드 안 인라인 사유 폼(흰 배경, 확인/취소, 클릭·키 이벤트 전파 차단, 실패 시 폼 안 에러) → 성공 시 `load()` 재조회
+- 큐레이터 측: `GET /api/curator/magazine` select에 `hidden_reason, hidden_at` 추가. `MyContributions` 카드에 미발행 + `hidden_reason` 있으면 빨간 `노출 숨김` 배지·숨김일, 카드 아래 "숨김 사유" 박스(`[ANCHOR: hidden-reason]`), 미리보기 시트도 배지·사유 표시. 어드민이 다시 발행하면 `hidden_reason`은 남지만 발행 상태가 우선이라 숨김 표시 안 함
 - fix(curator): `ContributionSheet.tsx` 하단 안내 문구를 즉시 발행 동작에 맞게 "제출 즉시 매거진에 발행됩니다."로 변경(문구 1줄)
 - feat(curator): 큐레이터 기고 즉시 발행 — `POST /api/curator/magazine` insert를 `is_published: true` + `published_at: new Date().toISOString()`로 변경(어드민 검토 단계 생략). 성공 토스트는 실제 위치인 `client.tsx` `ContributionSheet` `onSubmitted`에서 "기고가 발행됐어요! 매거진에서 확인해보세요 ✅"로 변경. `ContributionSheet.tsx` 안내 문구 "제출한 글은 운영팀 검토 후 발행됩니다."는 수정 범위 밖이라 유지(현재 동작과 불일치)
 - feat(curator): 내 기고 글 중 검토 중 글 미리보기 시트 — `GET /api/curator/magazine`(`[ANCHOR: get-handler]` 신규 표기) select에 `subtitle, category, content` 추가. `MyContributions.tsx`에 `selectedPost` state + `SlideUpSheet`(zIndex 9200, 내부 `#ffffff` 고정, × + 바깥 클릭 닫기), 검토 중 카드만 클릭 시 열림(`[ANCHOR: pending-post-preview]`), 발행 글 `Link`는 그대로. 제목·검토 중/카테고리 배지·제출일·부제·썸네일·본문 표시, 본문은 저장된 `<p>`/`<br />`를 줄바꿈 텍스트로 바꿔 React 텍스트로만 렌더링(`dangerouslySetInnerHTML` 미사용)

@@ -16,6 +16,8 @@ type Post = {
   published_at: string | null
   created_at: string | null
   thumbnail_url: string | null
+  hidden_reason: string | null
+  hidden_at: string | null
 }
 
 const ymd = (iso: string | null) => (iso ? iso.slice(0, 10).replace(/-/g, '.') : '')
@@ -75,33 +77,42 @@ export default function MyContributions({ refreshKey }: { refreshKey: number }) 
           <div style={{ fontSize: 13, color: '#999', padding: '16px 0', textAlign: 'center' }}>아직 기고한 글이 없어요</div>
         ) : (
           items.map(p => {
+            const hidden = !p.is_published && !!p.hidden_reason
             const row = (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: '1px solid #f5f2ef' }}>
-                {p.thumbnail_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.thumbnail_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flex: '0 0 auto', background: '#faf8f6' }} />
-                ) : (
-                  <div style={{ width: 44, height: 44, borderRadius: 8, flex: '0 0 auto', background: '#faf8f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✍️</div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
-                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
-                    {p.is_published ? `발행 ${ymd(p.published_at || p.created_at)}` : `제출 ${ymd(p.created_at)}`}
+              <div style={{ padding: '12px 0', borderBottom: '1px solid #f5f2ef' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {p.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.thumbnail_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flex: '0 0 auto', background: '#faf8f6' }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, borderRadius: 8, flex: '0 0 auto', background: '#faf8f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✍️</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                      {p.is_published ? `발행 ${ymd(p.published_at || p.created_at)}` : hidden ? `숨김 ${ymd(p.hidden_at || p.created_at)}` : `제출 ${ymd(p.created_at)}`}
+                    </div>
                   </div>
+                  <span
+                    style={{
+                      flex: '0 0 auto',
+                      fontSize: 11,
+                      borderRadius: 20,
+                      padding: '4px 10px',
+                      background: hidden ? '#fff5f5' : p.is_published ? '#f0faf5' : '#fff7f4',
+                      color: hidden ? '#d93025' : p.is_published ? '#3db87a' : ACCENT,
+                      border: `1px solid ${hidden ? '#d93025' : p.is_published ? '#3db87a' : ACCENT}`,
+                    }}
+                  >
+                    {hidden ? '노출 숨김' : p.is_published ? '발행됨' : '검토 중'}
+                  </span>
                 </div>
-                <span
-                  style={{
-                    flex: '0 0 auto',
-                    fontSize: 11,
-                    borderRadius: 20,
-                    padding: '4px 10px',
-                    background: p.is_published ? '#f0faf5' : '#fff7f4',
-                    color: p.is_published ? '#3db87a' : ACCENT,
-                    border: `1px solid ${p.is_published ? '#3db87a' : ACCENT}`,
-                  }}
-                >
-                  {p.is_published ? '발행됨' : '검토 중'}
-                </span>
+                {/* [ANCHOR: hidden-reason] */}
+                {hidden && (
+                  <div style={{ marginTop: 8, background: '#fff5f5', border: '1px solid #f5c2c7', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#842029', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    숨김 사유: {p.hidden_reason}
+                  </div>
+                )}
               </div>
             )
             return p.is_published ? (
@@ -133,12 +144,21 @@ export default function MyContributions({ refreshKey }: { refreshKey: number }) 
               </button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#fff7f4', color: ACCENT, border: `1px solid ${ACCENT}` }}>검토 중</span>
+              {selectedPost?.hidden_reason ? (
+                <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#fff5f5', color: '#d93025', border: '1px solid #d93025' }}>노출 숨김</span>
+              ) : (
+                <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#fff7f4', color: ACCENT, border: `1px solid ${ACCENT}` }}>검토 중</span>
+              )}
               {selectedPost?.category && (
                 <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#faf8f6', color: '#555', border: '1px solid #f0ece8' }}>{selectedPost.category}</span>
               )}
               <span style={{ fontSize: 11, color: '#999' }}>제출 {ymd(selectedPost?.created_at ?? null)}</span>
             </div>
+            {selectedPost?.hidden_reason && (
+              <div style={{ background: '#fff5f5', border: '1px solid #f5c2c7', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#842029', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 12 }}>
+                숨김 사유: {selectedPost.hidden_reason}
+              </div>
+            )}
             {selectedPost?.subtitle && <div style={{ fontSize: 13, color: '#666', marginBottom: 14, lineHeight: 1.5 }}>{selectedPost.subtitle}</div>}
             {selectedPost?.thumbnail_url && (
               // eslint-disable-next-line @next/next/no-img-element
