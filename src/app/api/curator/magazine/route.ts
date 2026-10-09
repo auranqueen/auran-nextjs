@@ -19,13 +19,14 @@ const toSafeHtml = (raw: string) =>
     .map((para) => `<p>${escapeHtml(para).replace(/\n/g, '<br />')}</p>`)
     .join('')
 
+// [ANCHOR: get-handler]
 export async function GET() {
   const auth = await requireCurator()
   if ('res' in auth) return auth.res
 
   const { data, error } = await auth.svc
     .from('magazines')
-    .select('id, title, is_published, published_at, created_at, thumbnail_url')
+    .select('id, title, subtitle, category, content, is_published, published_at, created_at, thumbnail_url')
     .eq('created_by', auth.userId)
     .eq('author_type', 'curator')
     .order('created_at', { ascending: false })

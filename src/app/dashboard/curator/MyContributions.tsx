@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import SlideUpSheet from '@/components/ui/SlideUpSheet'
 
 const ACCENT = '#e8845a'
 
 type Post = {
   id: string
   title: string
+  subtitle: string | null
+  category: string | null
+  content: string | null
   is_published: boolean | null
   published_at: string | null
   created_at: string | null
@@ -16,10 +20,24 @@ type Post = {
 
 const ymd = (iso: string | null) => (iso ? iso.slice(0, 10).replace(/-/g, '.') : '')
 
+/** 저장된 문단 HTML(<p>, <br />)을 화면 표시용 일반 텍스트로 변환 — React 텍스트로만 렌더링 */
+const toPlainText = (html: string | null) =>
+  (html ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .trim()
+
 export default function MyContributions({ refreshKey }: { refreshKey: number }) {
   const [items, setItems] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
 
   // [ANCHOR: fetch-my-posts]
   useEffect(() => {
@@ -42,6 +60,8 @@ export default function MyContributions({ refreshKey }: { refreshKey: number }) 
       alive = false
     }
   }, [refreshKey])
+
+  const previewText = toPlainText(selectedPost?.content ?? null)
 
   return (
     <>
@@ -89,11 +109,47 @@ export default function MyContributions({ refreshKey }: { refreshKey: number }) 
                 {row}
               </Link>
             ) : (
-              <div key={p.id}>{row}</div>
+              // [ANCHOR: pending-post-preview]
+              <div key={p.id} onClick={() => setSelectedPost(p)} style={{ cursor: 'pointer' }}>
+                {row}
+              </div>
             )
           })
         )}
       </div>
+
+      <SlideUpSheet open={selectedPost !== null} onClose={() => setSelectedPost(null)} zIndex={9200} height="auto" maxHeight="90dvh">
+        <div style={{ background: '#ffffff', color: '#222', colorScheme: 'light', minHeight: '100%', padding: '24px 16px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: 560, margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 17, color: '#222', lineHeight: 1.4, wordBreak: 'break-word' }}>{selectedPost?.title}</div>
+              <button
+                type="button"
+                aria-label="닫기"
+                onClick={() => setSelectedPost(null)}
+                style={{ flex: '0 0 auto', border: 'none', background: 'transparent', color: '#888', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: 4 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#fff7f4', color: ACCENT, border: `1px solid ${ACCENT}` }}>검토 중</span>
+              {selectedPost?.category && (
+                <span style={{ fontSize: 11, borderRadius: 20, padding: '4px 10px', background: '#faf8f6', color: '#555', border: '1px solid #f0ece8' }}>{selectedPost.category}</span>
+              )}
+              <span style={{ fontSize: 11, color: '#999' }}>제출 {ymd(selectedPost?.created_at ?? null)}</span>
+            </div>
+            {selectedPost?.subtitle && <div style={{ fontSize: 13, color: '#666', marginBottom: 14, lineHeight: 1.5 }}>{selectedPost.subtitle}</div>}
+            {selectedPost?.thumbnail_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={selectedPost.thumbnail_url} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 12, background: '#faf8f6', marginBottom: 14, display: 'block' }} />
+            )}
+            <div style={{ fontSize: 14, color: '#333', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {previewText || '본문이 없습니다.'}
+            </div>
+          </div>
+        </div>
+      </SlideUpSheet>
     </>
   )
 }

@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- feat(curator): 내 기고 글 중 검토 중 글 미리보기 시트 — `GET /api/curator/magazine`(`[ANCHOR: get-handler]` 신규 표기) select에 `subtitle, category, content` 추가. `MyContributions.tsx`에 `selectedPost` state + `SlideUpSheet`(zIndex 9200, 내부 `#ffffff` 고정, × + 바깥 클릭 닫기), 검토 중 카드만 클릭 시 열림(`[ANCHOR: pending-post-preview]`), 발행 글 `Link`는 그대로. 제목·검토 중/카테고리 배지·제출일·부제·썸네일·본문 표시, 본문은 저장된 `<p>`/`<br />`를 줄바꿈 텍스트로 바꿔 React 텍스트로만 렌더링(`dangerouslySetInnerHTML` 미사용)
 - 마이그레이션 `216_group_buy_requests_unique_index.sql`(운영 DB 미적용, 윰탱 직접 실행 예정): `group_buy_requests (requester_id, product_id) WHERE status = 'pending'` 부분 고유 인덱스 `idx_gbr_requester_product_pending` — `/api/curator/groupbuy` POST의 조회 후 409 체크가 동시 클릭에 뚫리는 경우를 DB에서 차단. 기존 pending 중복 행이 있으면 인덱스 생성이 실패하므로 적용 전 중복 확인 필요
 - fix(curator): 공구 요청 현황 조회 실패 시 `MOCK_REQUESTS`(3·2·1) 대신 `setReqCounts(null)`로 '-' 유지 — 가짜 숫자가 실제 건수처럼 보이던 문제 방지(1줄)
 - feat(curator): 큐레이터 공구 요청 현황 실제 집계 — `GET /api/curator/groupbuy?type=status`(`[ANCHOR: groupbuy-status-counts]`)가 세션 `requester_id` 기준 `pending`·`approved`·`rejected` 건수(`count: 'exact', head: true` 3회 병렬)를 `{ pending, approved, rejected }`로 반환, 기본 GET(제품 목록) 변경 없음. `client.tsx` 8번 섹션은 마운트 시 조회, 로딩 중 '-', 실패 시 기존 `MOCK_REQUESTS` 숫자 유지(콘솔 에러만), 공구 신청 성공 시 재조회
