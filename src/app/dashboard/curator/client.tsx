@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import SlideUpSheet from '@/components/ui/SlideUpSheet'
 import ContributionSheet from './ContributionSheet'
+import MyContributions from './MyContributions'
 
 type Brand = 'Civasan' | 'Bollayon' | 'ITACA'
 type Product = { id: string; brand: Brand; emoji: string; name: string; price: number }
@@ -117,6 +118,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
   const [query, setQuery] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const [contribOpen, setContribOpen] = useState(false)
+  const [postsKey, setPostsKey] = useState(0)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
@@ -361,6 +363,9 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
           ))}
         </div>
 
+        {/* [ANCHOR: curator-my-posts] */}
+        <MyContributions refreshKey={postsKey} />
+
         {/* 13. 최근 정산 내역 — TODO: settlements 테이블 연결 */}
         <SecTitle>최근 정산 내역</SecTitle>
         <div style={{ ...card, padding: '4px 16px' }}>
@@ -466,6 +471,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
         open={contribOpen}
         onClose={() => setContribOpen(false)}
         onSubmitted={() => {
+          setPostsKey(k => k + 1)
           setToast('기고가 접수됐어요! 검토 후 발행됩니다 ✅')
           later(() => setToast(''), 2000)
         }}

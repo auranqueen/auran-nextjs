@@ -4,6 +4,8 @@
 ---
 
 ## 2026-10-09
+- feat(curator): 큐레이터 내 기고 목록 — `GET /api/curator/magazine` 추가(401/403은 POST와 같은 `requireCurator()` 공용 헬퍼로 판정, 서비스롤로 `magazines` `created_by = auth uid` + `author_type = 'curator'` 최신순 20건, `id, title, is_published, published_at, created_at, thumbnail_url` → `{ items }`, `force-dynamic`). POST 동작 변경 없음
+- `src/app/dashboard/curator/MyContributions.tsx` 신규(`[ANCHOR: fetch-my-posts]` 마운트·`refreshKey` 변경 시 `no-store` fetch, 로딩/빈/실패 문구, 발행됨·검토 중 배지, 발행 글만 `/magazine/[id]` 링크). `client.tsx`는 '콘텐츠 만들기' 아래 `[ANCHOR: curator-my-posts]` 렌더 + 기고 성공 시 `setPostsKey`로 새로고침, 6줄 추가만(487줄). 기존 기고 목록 MOCK은 없었음
 - feat(curator): 큐레이터 매거진 기고 INSERT 연결 — `POST /api/curator/magazine` 신규(로그인 확인 → 서비스롤로 `profiles.active_role`→`role`→`users.role` 조회, `curator`만 허용 → `magazines` insert `author_type: 'curator'`, `created_by`/`author_owner_id` = auth uid, `is_published: false`). 브라우저 쓰기 RLS(`magazines_admin_write`, admin 전용) 때문에 서버 경유
 - 본문은 매거진 상세가 `dangerouslySetInnerHTML`로 렌더링하므로 서버에서 HTML 이스케이프 후 `<p>` 문단·`<br />`로만 저장, 카테고리는 5종 화이트리스트, 썸네일은 `http(s)://`만 허용
 - `src/app/dashboard/curator/ContributionSheet.tsx` 신규(SlideUpSheet zIndex 9000, 흰 배경, × 닫기, 제목 필수·부제·카테고리 칩·본문·썸네일 URL, 실패 시 시트 안 에러 문구). `client.tsx` 12번 '콘텐츠 만들기'에 `✍️ 매거진 기고하기` 버튼(`[ANCHOR: curator-contribution-button]`)과 시트 렌더(`[ANCHOR: curator-contribution-sheet]`) 추가만, 기존 MOCK·카드 4개 TODO 유지
