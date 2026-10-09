@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- feat(curator): `GroupBuySheet` 선택된 제품 버튼에 브랜드명 — 제품명·가격 위에 `brand_name_kr || name`(11px 회색, 말줄임) 한 줄, 브랜드 없으면 렌더링 안 해 제품명만 표시. 기존 제품명 줄·'변경 ▼'·버튼 스타일 유지
 - feat(curator): 공구신청 제품 목록에 브랜드명 — `GET /api/curator/groupbuy` 제품 select에 `brand:brands(name, brand_name_kr)` 조인(FK `products.brand_id → brands.id`, 응답 키 `brand`). `GroupBuySheet` `Product` 타입에 `brand` 추가, 제품 카드 썸네일 아래·제품명 위에 `brand_name_kr || name` 한 줄(12px 회색, 브랜드 없으면 빈 줄 높이 유지)
 - fix(admin): `CuratorPostsTab` 상세 시트 배지도 목록 카드와 같은 조건(미발행 + `hidden_reason`)이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' + 헤더 아래 사유 한 줄(12px 회색, 말줄임), 그 외는 기존 `StatusBadge` 유지
 - fix(admin): 큐레이터 숨김 마무리 — `loadCurator` select에 `hidden_reason, hidden_at` 추가, `togglePublish`가 `is_published === true`일 때 `hidden_reason`/`hidden_at`을 null로 초기화(재발행 시 예전 숨김 사유 제거). `CuratorPostsTab` 타입에 두 필드 추가, 목록 카드에서 미발행 + `hidden_reason`이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' 배지와 그 아래 사유 한 줄(12px 회색, 말줄임). 상세 시트 배지는 범위 밖이라 유지

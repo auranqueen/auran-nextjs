@@ -180,8 +180,15 @@ export default function GroupBuySheet({
           >
             {selectedProduct ? (
               <>
-                <span style={{ color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {selectedProduct.name} {selectedProduct.retail_price.toLocaleString()}원
+                <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                  {(selectedProduct.brand?.brand_name_kr || selectedProduct.brand?.name) && (
+                    <span style={{ fontSize: 11, color: '#999', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedProduct.brand?.brand_name_kr || selectedProduct.brand?.name}
+                    </span>
+                  )}
+                  <span style={{ color: '#222', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedProduct.name} {selectedProduct.retail_price.toLocaleString()}원
+                  </span>
                 </span>
                 <span style={{ fontSize: 12, flex: '0 0 auto', marginLeft: 8 }}>변경 ▼</span>
               </>
