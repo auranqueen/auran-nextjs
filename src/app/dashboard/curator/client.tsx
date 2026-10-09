@@ -15,7 +15,7 @@ const MOCK_CALENDAR = [
   { title: 'Bollayon 글로우 세럼', dDay: 5 },
   { title: 'ITACA 로즈 미스트', dDay: 9 },
 ]
-// TODO: group_buy_requests 테이블 연결 (현재 목업)
+// 공구 요청 현황 API 실패 시 대체값 (현재 목업)
 const MOCK_REQUESTS = { approved: 3, pending: 2, rejected: 1 }
 // TODO: 실제 링크 통계 데이터 연결 (현재 목업)
 const MOCK_LINK_STATS = { clicks: 1284, purchases: 86, rate: 12 }
@@ -67,6 +67,8 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
   const [copied, setCopied] = useState(false)
   const [contribOpen, setContribOpen] = useState(false)
   const [postsKey, setPostsKey] = useState(0)
+  const [reqCounts, setReqCounts] = useState<typeof MOCK_REQUESTS | null>(null)
+  const [reqCountsKey, setReqCountsKey] = useState(0)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
@@ -79,6 +81,22 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
       pending.forEach(clearTimeout)
     }
   }, [])
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/curator/groupbuy?type=status', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((json: Partial<typeof MOCK_REQUESTS>) => {
+        if (alive) setReqCounts({ approved: Number(json.approved) || 0, pending: Number(json.pending) || 0, rejected: Number(json.rejected) || 0 })
+      })
+      .catch(err => {
+        console.error('[CuratorDash] groupbuy status load error', err)
+        if (alive) setReqCounts(MOCK_REQUESTS)
+      })
+    return () => {
+      alive = false
+    }
+  }, [reqCountsKey])
 
   const later = (fn: () => void, ms: number) => {
     timers.current.push(setTimeout(fn, ms))
@@ -187,13 +205,13 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
           ))}
         </div>
 
-        {/* 8. 공구 요청 현황 — TODO: group_buy_requests 테이블 연결 */}
+        {/* 8. 공구 요청 현황 — [ANCHOR: groupbuy-status-counts] /api/curator/groupbuy?type=status, 로딩 중 '-' */}
         <SecTitle>공구 요청 현황</SecTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {[
-            { label: '승인됨', n: MOCK_REQUESTS.approved, bg: '#f0faf5', bd: '#3db87a' },
-            { label: '검토중', n: MOCK_REQUESTS.pending, bg: '#fff7f4', bd: ACCENT },
-            { label: '미승인', n: MOCK_REQUESTS.rejected, bg: '#fff5f5', bd: '#e57373' },
+            { label: '승인됨', n: reqCounts?.approved ?? '-', bg: '#f0faf5', bd: '#3db87a' },
+            { label: '검토중', n: reqCounts?.pending ?? '-', bg: '#fff7f4', bd: ACCENT },
+            { label: '미승인', n: reqCounts?.rejected ?? '-', bg: '#fff5f5', bd: '#e57373' },
           ].map(r => (
             <div key={r.label} style={{ background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, color: r.bd }}>{r.n}</div>
@@ -311,6 +329,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
         onClose={() => setRequestOpen(false)}
         isMobile={isMobile}
         onSubmitted={() => {
+          setReqCountsKey(k => k + 1)
           setToast('공구 신청이 접수됐어요! 검토 후 연락드릴게요 ✅')
           later(() => setToast(''), 2000)
         }}

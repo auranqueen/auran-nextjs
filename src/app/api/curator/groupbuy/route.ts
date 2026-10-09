@@ -8,9 +8,28 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 const dateOrNull = (v: unknown) => (typeof v === 'string' && DATE_RE.test(v) ? v : null)
 
-export async function GET() {
+const STATUSES = ['pending', 'approved', 'rejected'] as const
+
+export async function GET(req: Request) {
   const auth = await requireCurator()
   if ('res' in auth) return auth.res
+
+  // [ANCHOR: groupbuy-status-counts]
+  if (new URL(req.url).searchParams.get('type') === 'status') {
+    const results = await Promise.all(
+      STATUSES.map(status =>
+        auth.svc
+          .from('group_buy_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('requester_id', auth.userId)
+          .eq('status', status),
+      ),
+    )
+    const failed = results.find(r => r.error)
+    if (failed?.error) return NextResponse.json({ error: failed.error.message }, { status: 500 })
+    const [pending, approved, rejected] = results.map(r => r.count ?? 0)
+    return NextResponse.json({ pending, approved, rejected })
+  }
 
   const { data, error } = await auth.svc
     .from('products')
