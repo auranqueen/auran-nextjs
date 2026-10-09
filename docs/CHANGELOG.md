@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- fix(curator): 공구 요청 현황 조회 실패 시 `MOCK_REQUESTS`(3·2·1) 대신 `setReqCounts(null)`로 '-' 유지 — 가짜 숫자가 실제 건수처럼 보이던 문제 방지(1줄)
 - feat(curator): 큐레이터 공구 요청 현황 실제 집계 — `GET /api/curator/groupbuy?type=status`(`[ANCHOR: groupbuy-status-counts]`)가 세션 `requester_id` 기준 `pending`·`approved`·`rejected` 건수(`count: 'exact', head: true` 3회 병렬)를 `{ pending, approved, rejected }`로 반환, 기본 GET(제품 목록) 변경 없음. `client.tsx` 8번 섹션은 마운트 시 조회, 로딩 중 '-', 실패 시 기존 `MOCK_REQUESTS` 숫자 유지(콘솔 에러만), 공구 신청 성공 시 재조회
 - feat(curator): 큐레이터 공구신청 INSERT 연결 — `src/app/api/curator/groupbuy/route.ts` 신규. GET은 서비스롤로 `products`(`is_active = true`, 이름순 300건) `id, name, retail_price, thumb_img` → `{ items }`. POST는 `requester_id`를 세션 auth uid로 강제, `product_id` UUID 형식 검증(400) + 활성 제품 존재 확인(404), `desired_start_at/end_at`은 `YYYY-MM-DD`만·역순 400, 같은 요청자+제품+`pending` 중복 시 409(`[ANCHOR: groupbuy-duplicate-check]`), `group_buy_requests` insert `status: 'pending'`
 - 큐레이터 공통 인증을 `src/app/api/curator/_auth.ts` `requireCurator()`로 분리(미인증 401·비큐레이터 403·서비스롤 없음 500), `/api/curator/magazine`도 이 헬퍼를 import(동작 변경 없음)

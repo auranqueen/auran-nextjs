@@ -91,7 +91,7 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
       })
       .catch(err => {
         console.error('[CuratorDash] groupbuy status load error', err)
-        if (alive) setReqCounts(MOCK_REQUESTS)
+        if (alive) setReqCounts(null)
       })
     return () => {
       alive = false
