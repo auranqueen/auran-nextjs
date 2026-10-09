@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await auth.svc
     .from('products')
-    .select('id, name, retail_price, thumb_img')
+    .select('id, name, retail_price, thumb_img, brand:brands(name, brand_name_kr)')
     .eq('is_active', true)
     .order('name', { ascending: true })
     .limit(300)

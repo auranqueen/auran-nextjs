@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- feat(curator): 공구신청 제품 목록에 브랜드명 — `GET /api/curator/groupbuy` 제품 select에 `brand:brands(name, brand_name_kr)` 조인(FK `products.brand_id → brands.id`, 응답 키 `brand`). `GroupBuySheet` `Product` 타입에 `brand` 추가, 제품 카드 썸네일 아래·제품명 위에 `brand_name_kr || name` 한 줄(12px 회색, 브랜드 없으면 빈 줄 높이 유지)
 - fix(admin): `CuratorPostsTab` 상세 시트 배지도 목록 카드와 같은 조건(미발행 + `hidden_reason`)이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' + 헤더 아래 사유 한 줄(12px 회색, 말줄임), 그 외는 기존 `StatusBadge` 유지
 - fix(admin): 큐레이터 숨김 마무리 — `loadCurator` select에 `hidden_reason, hidden_at` 추가, `togglePublish`가 `is_published === true`일 때 `hidden_reason`/`hidden_at`을 null로 초기화(재발행 시 예전 숨김 사유 제거). `CuratorPostsTab` 타입에 두 필드 추가, 목록 카드에서 미발행 + `hidden_reason`이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' 배지와 그 아래 사유 한 줄(12px 회색, 말줄임). 상세 시트 배지는 범위 밖이라 유지
 - feat(magazine): 어드민 큐레이터 글 노출 숨김 + 사유 전달 — 마이그레이션 `217_magazines_hidden_reason.sql`(`hidden_reason text`, `hidden_at timestamptz`, 운영 DB 직접 실행 완료·파일만 추가). `/api/admin/magazine`에 `hidePost` action(`[ANCHOR: hide-post]`, 기존 togglePublish와 같은 서비스롤 `svc`, 사유 공백이면 400 `reason_required`, `is_published: false` + `hidden_reason`(1000자) + `hidden_at`). `CuratorPostsTab` 발행 글 카드에 `노출 숨김` 버튼 → 카드 안 인라인 사유 폼(흰 배경, 확인/취소, 클릭·키 이벤트 전파 차단, 실패 시 폼 안 에러) → 성공 시 `load()` 재조회

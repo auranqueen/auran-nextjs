@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import SlideUpSheet from '@/components/ui/SlideUpSheet'
 
-type Product = { id: string; name: string; retail_price: number; thumb_img: string | null }
+type Product = {
+  id: string
+  name: string
+  retail_price: number
+  thumb_img: string | null
+  brand: { name: string; brand_name_kr: string | null } | null
+}
 
 const ACCENT = '#e8845a'
 
@@ -228,6 +234,7 @@ export default function GroupBuySheet({
                       <div style={{ marginBottom: 6 }}>
                         <Thumb src={p.thumb_img} size={56} />
                       </div>
+                      <div style={{ fontSize: 12, color: '#999', lineHeight: '16px', minHeight: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.brand?.brand_name_kr || p.brand?.name || ''}</div>
                       <div style={{ fontSize: 13, color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                       <div style={{ fontSize: 12, color: ACCENT, marginTop: 2 }}>{p.retail_price.toLocaleString()}원</div>
                     </button>
