@@ -132,7 +132,7 @@ export default function ContributionSheet({
 
         {error && <div style={{ fontSize: 12, color: '#d93025', marginBottom: 12 }}>{error}</div>}
 
-        <div style={{ fontSize: 11, color: '#999', marginBottom: 12 }}>제출한 글은 운영팀 검토 후 발행됩니다.</div>
+        <div style={{ fontSize: 11, color: '#999', marginBottom: 12 }}>제출 즉시 매거진에 발행됩니다.</div>
 
         <button
           type="button"
