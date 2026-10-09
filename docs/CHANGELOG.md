@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- fix(live): `POST /api/live/create-stream` 인증 추가 — 기존 `api/owner/*` 패턴대로 `@/lib/supabase/server` `auth.getUser()` 실패 시 401 `not_logged_in`, `users.role !== 'owner'`면 403 `owner_only`(Mux 호출 전 검사). `owner_id`는 요청 본문 대신 `users.id`(`me.id`), 응답 `broadcast`에서 `mux_rtmp_key` 제거(DB에만 저장), `playback_ids` 없으면 `hls_url: null`
 - feat(live): `POST /api/live/create-stream` 신규 — Mux 라이브 스트림 생성(public playback, 녹화 asset public) 후 `oren_live_broadcasts`에 `status: 'upcoming'`으로 insert. Supabase는 `tryCreateAdminClient()` 사용. `@mux/mux-node@15.5.0` 추가. 인증·권한 검사 없음(후속 필요), 테이블은 저장소에 정의 없음
 - feat(live): customer 하단 탭을 홈·샵·커뮤니티·라이브(`/live`)로 변경(AI·MyWorld 제거), 빈 상태 라이브 페이지 `src/app/live/page.tsx` 신규(진행 중/예정/지난 방송 탭, 데이터 TODO), 고객홈 상단 바 아래 `LiveBanner` 자리 추가(현재 `activeBroadcast = null`이라 렌더링 없음)
 
