@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-09
+- chore(admin): `CuratorPostsTab.tsx` 미사용 브라우저 Supabase 클라이언트 제거 — `import { createClient }`와 `const supabase = createClient()` 2줄 삭제(목록·발행·숨김 모두 `/api/admin/magazine` 사용). `tsc --noUnusedLocals`로 이 파일의 다른 미사용 항목 없음 확인
 - feat(curator): `GroupBuySheet` 선택된 제품 버튼에 브랜드명 — 제품명·가격 위에 `brand_name_kr || name`(11px 회색, 말줄임) 한 줄, 브랜드 없으면 렌더링 안 해 제품명만 표시. 기존 제품명 줄·'변경 ▼'·버튼 스타일 유지
 - feat(curator): 공구신청 제품 목록에 브랜드명 — `GET /api/curator/groupbuy` 제품 select에 `brand:brands(name, brand_name_kr)` 조인(FK `products.brand_id → brands.id`, 응답 키 `brand`). `GroupBuySheet` `Product` 타입에 `brand` 추가, 제품 카드 썸네일 아래·제품명 위에 `brand_name_kr || name` 한 줄(12px 회색, 브랜드 없으면 빈 줄 높이 유지)
 - fix(admin): `CuratorPostsTab` 상세 시트 배지도 목록 카드와 같은 조건(미발행 + `hidden_reason`)이면 '⏳ 검토 대기' 대신 빨간 '🚫 숨김' + 헤더 아래 사유 한 줄(12px 회색, 말줄임), 그 외는 기존 `StatusBadge` 유지

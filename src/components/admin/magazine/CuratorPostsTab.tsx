@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import SlideUpSheet from '@/components/ui/SlideUpSheet'
 
 type CuratorPost = {
@@ -59,7 +58,6 @@ function StatusBadge({ published }: { published: boolean }) {
 }
 
 export default function CuratorPostsTab() {
-  const supabase = createClient()
   const [rows, setRows] = useState<CuratorPost[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
