@@ -26,4 +26,4 @@ create policy "curator_applications_select_own"
   using (auth.uid() = user_id);
 create policy "curator_applications_insert_own"
   on curator_applications for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = user_id and status = 'pending');
