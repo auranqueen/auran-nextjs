@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-10
+- feat(live): Mux 웹훅 `POST /api/live/webhook` 추가 — raw body(`req.text()`)로 `mux.webhooks.verifySignature` 서명 검증(실패 401, `MUX_WEBHOOK_SECRET` 없으면 경고 로그 후 스킵), `video.live_stream.active` → `oren_live_broadcasts` status `live` + `started_at`(현재 `upcoming`인 행만), `video.live_stream.idle` → `ended` + `ended_at`(현재 `live`인 행만), 그 외 이벤트는 200 `{ ok: true }`. `tryCreateAdminClient()` 사용, 응답 `{ ok, error }` 통일
 - refactor(home): `src/app/page.tsx` 맨 아래 인라인 `LiveBanner` 함수(주석 2줄 포함)를 `src/components/live/LiveBanner.tsx`('use client', default export)로 이동하고 page.tsx는 import로 교체. 로직·JSX 변경 없음(선언부 `export default`만 추가), 역할 카드 zIndex 등 LOCKED 영역 미변경
 - feat(curator): 공구 거절 사유 표시 — `GET /api/curator/groupbuy?type=status` 응답에 `rejectedList`(본인 `rejected` 최신 20건: `id, admin_note, created_at, products(name)`) 추가. 큐레이터 대시보드 '미승인' 카드 클릭 시 카드 아래 인라인 "거절된 공구 신청" 목록(제품명·사유(없으면 "사유 없음")·날짜, × 닫기, `#fff5f5` light-fixed). 건수 fetch가 `rejectedList`도 state에 담도록 함께 수정
 - fix(migration): `219_curator_applications.sql` insert RLS 정책 `curator_applications_insert_own`을 `with check (auth.uid() = user_id and status = 'pending')`로 강화 — 고객이 anon 클라이언트로 `approved`/`rejected` 상태 행을 직접 넣지 못하게 함(파일만 수정, DB 미실행)
