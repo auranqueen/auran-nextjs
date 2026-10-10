@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-10
+- fix(admin): `GroupBuyRequestsSheet` 카드 요청자 이름 기본값(`names[r.requester_id] || ...`, 프로필 행이 없을 때) '에디터' → '큐레이터'(1줄)
 - fix(admin): `GroupBuyRequestsSheet` 문구·브랜드 — `nameOf` 기본값 '에디터' → '큐레이터', 거절 사유 placeholder "큐레이터에게 전달될 거절 사유를 입력하세요", `load` select를 `products(name, brand_id, brands(name, brand_name_kr))`로 확장하고 `GroupBuyRequestRow.products`에 `brand_id`·`brands` 타입 추가, 카드 제품명 위에 `brand_name_kr || name`(12px 회색, 브랜드 없으면 미표시). 카드의 `names[...] || '에디터'`(프로필 자체가 없을 때) 기본값은 범위 밖이라 유지
 - 마이그레이션 `218_group_buy_requests_date_columns.sql`(운영 DB 직접 실행 완료·파일만 추가): `group_buy_requests`에 `desired_start_at date`, `desired_end_at date`, `admin_note text`를 `ADD COLUMN IF NOT EXISTS`로 보강. 212번 파일에 정의돼 있었지만 운영 DB에 빠져 있던 컬럼(큐레이터 공구신청 POST의 희망 기간 저장·어드민 거절 사유가 이 컬럼 사용)
 

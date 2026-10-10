@@ -206,7 +206,7 @@ export default function GroupBuyRequestsSheet({
                     희망기간 {r.desired_start_at || '-'} ~ {r.desired_end_at || '-'}
                   </div>
                   <div style={{ backgroundColor: '#f8f8f8', fontSize: 12, color: '#111111', marginTop: 8 }}>
-                    {names[r.requester_id] || '에디터'}
+                    {names[r.requester_id] || '큐레이터'}
                     <span style={{ fontSize: 11, color: '#666666', marginLeft: 6 }}>{new Date(r.created_at).toLocaleDateString('ko-KR')}</span>
                   </div>
                   {r.message ? (
