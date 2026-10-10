@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-10
+- 마이그레이션 `218_group_buy_requests_date_columns.sql`(운영 DB 직접 실행 완료·파일만 추가): `group_buy_requests`에 `desired_start_at date`, `desired_end_at date`, `admin_note text`를 `ADD COLUMN IF NOT EXISTS`로 보강. 212번 파일에 정의돼 있었지만 운영 DB에 빠져 있던 컬럼(큐레이터 공구신청 POST의 희망 기간 저장·어드민 거절 사유가 이 컬럼 사용)
+
 ## 2026-10-09
 - chore(admin): `CuratorPostsTab.tsx` 미사용 브라우저 Supabase 클라이언트 제거 — `import { createClient }`와 `const supabase = createClient()` 2줄 삭제(목록·발행·숨김 모두 `/api/admin/magazine` 사용). `tsc --noUnusedLocals`로 이 파일의 다른 미사용 항목 없음 확인
 - feat(curator): `GroupBuySheet` 선택된 제품 버튼에 브랜드명 — 제품명·가격 위에 `brand_name_kr || name`(11px 회색, 말줄임) 한 줄, 브랜드 없으면 렌더링 안 해 제품명만 표시. 기존 제품명 줄·'변경 ▼'·버튼 스타일 유지
