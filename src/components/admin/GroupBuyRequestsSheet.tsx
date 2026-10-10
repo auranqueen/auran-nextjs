@@ -15,7 +15,11 @@ export type GroupBuyRequestRow = {
   status: RequestStatus
   admin_note: string | null
   created_at: string
-  products: { name: string | null } | null
+  products: {
+    name: string | null
+    brand_id: string | null
+    brands: { name: string | null; brand_name_kr: string | null } | null
+  } | null
 }
 
 const TABS: { value: RequestStatus; label: string }[] = [
@@ -47,7 +51,7 @@ const actionBtn = (bg: string, color: string) => ({
 })
 
 const nameOf = (p: Record<string, unknown> | undefined) =>
-  String(p?.full_name || p?.name || p?.nickname || p?.email || '에디터')
+  String(p?.full_name || p?.name || p?.nickname || p?.email || '큐레이터')
 
 export default function GroupBuyRequestsSheet({
   isOpen,
@@ -73,7 +77,7 @@ export default function GroupBuyRequestsSheet({
     setLoading(true)
     const { data, error } = await supabase
       .from('group_buy_requests')
-      .select('id, requester_id, product_id, message, desired_start_at, desired_end_at, status, admin_note, created_at, products(name)')
+      .select('id, requester_id, product_id, message, desired_start_at, desired_end_at, status, admin_note, created_at, products(name, brand_id, brands(name, brand_name_kr))')
       .eq('status', tab)
       .order('created_at', { ascending: false })
     if (error) {
@@ -192,6 +196,11 @@ export default function GroupBuyRequestsSheet({
             <div style={{ backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {rows.map(r => (
                 <div key={r.id} style={{ backgroundColor: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: 10, padding: 12 }}>
+                  {(r.products?.brands?.brand_name_kr || r.products?.brands?.name) && (
+                    <div style={{ backgroundColor: '#f8f8f8', fontSize: 12, color: '#888888', marginBottom: 2 }}>
+                      {r.products?.brands?.brand_name_kr || r.products?.brands?.name}
+                    </div>
+                  )}
                   <div style={{ backgroundColor: '#f8f8f8', fontSize: 13, color: '#111111' }}>{r.products?.name || '제품 정보 없음'}</div>
                   <div style={{ backgroundColor: '#f8f8f8', fontSize: 11, color: '#666666', marginTop: 4 }}>
                     희망기간 {r.desired_start_at || '-'} ~ {r.desired_end_at || '-'}
@@ -231,7 +240,7 @@ export default function GroupBuyRequestsSheet({
                       <input
                         value={note}
                         onChange={e => setNote(e.target.value)}
-                        placeholder="거절 사유 (에디터에게 보일 메모)"
+                        placeholder="큐레이터에게 전달될 거절 사유를 입력하세요"
                         style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: '#ffffff', border: '1px solid #e5e5e5', color: '#111111', fontSize: 12, boxSizing: 'border-box' }}
                       />
                       <div style={{ backgroundColor: '#f8f8f8', display: 'flex', gap: 6, marginTop: 6 }}>
