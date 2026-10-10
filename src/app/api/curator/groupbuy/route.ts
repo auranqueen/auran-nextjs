@@ -16,6 +16,7 @@ export async function GET(req: Request) {
 
   // [ANCHOR: groupbuy-status-counts]
   if (new URL(req.url).searchParams.get('type') === 'status') {
+    // 건수
     const results = await Promise.all(
       STATUSES.map(status =>
         auth.svc
@@ -28,7 +29,16 @@ export async function GET(req: Request) {
     const failed = results.find(r => r.error)
     if (failed?.error) return NextResponse.json({ error: failed.error.message }, { status: 500 })
     const [pending, approved, rejected] = results.map(r => r.count ?? 0)
-    return NextResponse.json({ pending, approved, rejected })
+    // 거절 목록 (제품명 + 사유 + 날짜)
+    const { data: rejectedList, error: rErr } = await auth.svc
+      .from('group_buy_requests')
+      .select('id, admin_note, created_at, products(name)')
+      .eq('requester_id', auth.userId)
+      .eq('status', 'rejected')
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 })
+    return NextResponse.json({ pending, approved, rejected, rejectedList })
   }
 
   const { data, error } = await auth.svc

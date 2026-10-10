@@ -17,6 +17,7 @@ const MOCK_CALENDAR = [
 ]
 // 공구 요청 현황 API 실패 시 대체값 (현재 목업)
 const MOCK_REQUESTS = { approved: 3, pending: 2, rejected: 1 }
+type RejectedGroupBuy = { id: string; admin_note: string | null; created_at: string; products: { name: string } | null }
 // TODO: 실제 링크 통계 데이터 연결 (현재 목업)
 const MOCK_LINK_STATS = { clicks: 1284, purchases: 86, rate: 12 }
 // TODO: 실제 링크 데이터 연결 (현재 목업)
@@ -67,8 +68,9 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
   const [copied, setCopied] = useState(false)
   const [contribOpen, setContribOpen] = useState(false)
   const [postsKey, setPostsKey] = useState(0)
-  const [reqCounts, setReqCounts] = useState<typeof MOCK_REQUESTS | null>(null)
+  const [reqCounts, setReqCounts] = useState<(typeof MOCK_REQUESTS & { rejectedList?: RejectedGroupBuy[] }) | null>(null)
   const [reqCountsKey, setReqCountsKey] = useState(0)
+  const [showRejected, setShowRejected] = useState(false)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
@@ -86,8 +88,8 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
     let alive = true
     fetch('/api/curator/groupbuy?type=status', { cache: 'no-store' })
       .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((json: Partial<typeof MOCK_REQUESTS>) => {
-        if (alive) setReqCounts({ approved: Number(json.approved) || 0, pending: Number(json.pending) || 0, rejected: Number(json.rejected) || 0 })
+      .then((json: Partial<typeof MOCK_REQUESTS> & { rejectedList?: RejectedGroupBuy[] }) => {
+        if (alive) setReqCounts({ approved: Number(json.approved) || 0, pending: Number(json.pending) || 0, rejected: Number(json.rejected) || 0, rejectedList: Array.isArray(json.rejectedList) ? json.rejectedList : [] })
       })
       .catch(err => {
         console.error('[CuratorDash] groupbuy status load error', err)
@@ -211,14 +213,42 @@ export default function CuratorDashClient({ profile }: { profile: any }) {
           {[
             { label: '승인됨', n: reqCounts?.approved ?? '-', bg: '#f0faf5', bd: '#3db87a' },
             { label: '검토중', n: reqCounts?.pending ?? '-', bg: '#fff7f4', bd: ACCENT },
-            { label: '미승인', n: reqCounts?.rejected ?? '-', bg: '#fff5f5', bd: '#e57373' },
+            { label: '미승인', n: reqCounts?.rejected ?? '-', bg: '#fff5f5', bd: '#e57373', onClick: () => setShowRejected(true) },
           ].map(r => (
-            <div key={r.label} style={{ background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
+            <div key={r.label} onClick={r.onClick} style={{ background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: r.onClick ? 'pointer' : 'default' }}>
               <div style={{ fontSize: 20, color: r.bd }}>{r.n}</div>
               <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{r.label}</div>
             </div>
           ))}
         </div>
+
+        {/* [ANCHOR: groupbuy-rejected-list] '미승인' 카드 클릭 시 인라인 거절 목록 */}
+        {showRejected && (
+          <div style={{ backgroundColor: '#fff5f5', border: '1px solid #f3c4c4', borderRadius: 12, padding: '14px 14px 6px', marginTop: 8, colorScheme: 'light' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ fontSize: 14, color: '#333333' }}>거절된 공구 신청</div>
+              <button
+                type="button"
+                aria-label="닫기"
+                onClick={() => setShowRejected(false)}
+                style={{ border: 'none', background: 'transparent', color: '#999999', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: 2 }}
+              >
+                ×
+              </button>
+            </div>
+            {(reqCounts?.rejectedList ?? []).length === 0 ? (
+              <div style={{ fontSize: 12, color: '#999999', padding: '10px 0 12px' }}>거절된 신청이 없어요</div>
+            ) : (
+              (reqCounts?.rejectedList ?? []).map((item, i, arr) => (
+                <div key={item.id} style={{ padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #f3d6d6' : 'none' }}>
+                  <div style={{ fontSize: 13, color: '#333333' }}>{item.products?.name || '(삭제된 제품)'}</div>
+                  <div style={{ fontSize: 12, color: '#c0504d', marginTop: 4, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{item.admin_note || '사유 없음'}</div>
+                  <div style={{ fontSize: 11, color: '#999999', marginTop: 4 }}>{new Date(item.created_at).toLocaleDateString('ko-KR')}</div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* 9. 내 공구 링크 통계 — TODO: 실제 데이터 연결 */}
         <SecTitle>내 공구 링크 통계</SecTitle>

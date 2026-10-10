@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-10
+- feat(curator): 공구 거절 사유 표시 — `GET /api/curator/groupbuy?type=status` 응답에 `rejectedList`(본인 `rejected` 최신 20건: `id, admin_note, created_at, products(name)`) 추가. 큐레이터 대시보드 '미승인' 카드 클릭 시 카드 아래 인라인 "거절된 공구 신청" 목록(제품명·사유(없으면 "사유 없음")·날짜, × 닫기, `#fff5f5` light-fixed). 건수 fetch가 `rejectedList`도 state에 담도록 함께 수정
 - fix(migration): `219_curator_applications.sql` insert RLS 정책 `curator_applications_insert_own`을 `with check (auth.uid() = user_id and status = 'pending')`로 강화 — 고객이 anon 클라이언트로 `approved`/`rejected` 상태 행을 직접 넣지 못하게 함(파일만 수정, DB 미실행)
 - feat(curator): 큐레이터 신청 플로우 — 마이그레이션 `219_curator_applications.sql`(파일만, DB 미실행: 테이블 + RLS 본인 select/insert), `POST/GET /api/curator/apply`(서비스롤, 서버 검증·pending/approved 중복 409, GET은 최근 신청 상태+로그인 이메일만 반환), `GET/POST /api/admin/curator-applications`(admin/super_admin 확인, 목록은 주민번호 제외, pending만 승인/거절 처리·아니면 409, 승인 시 `profiles.active_role='curator'` + `roles` 배열에 curator 추가, 프로필 갱신 실패 시 신청 상태 pending 롤백), `CuratorApplySheet`(SlideUpSheet, 분야 복수선택·자기소개 30자 카운터·은행 커스텀 드롭다운·주민번호 앞6+뒤1·필수 동의 3개·완료/검토중/승인/반려 상태 화면), `/my` 메뉴 맨 앞 '✦ 큐레이터 신청' + 시트 렌더, 어드민 매거진 '🙋 신청 관리' 탭 + `CuratorApplicationsTab`(표: 신청일·활동명·이메일·분야·상태, 행 클릭 상세 시트에서 승인/거절 사유)
 - fix(admin): `GroupBuyRequestsSheet` 카드 요청자 이름 기본값(`names[r.requester_id] || ...`, 프로필 행이 없을 때) '에디터' → '큐레이터'(1줄)
