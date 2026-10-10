@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-10
+- feat(curator): 큐레이터 신청 플로우 — 마이그레이션 `219_curator_applications.sql`(파일만, DB 미실행: 테이블 + RLS 본인 select/insert), `POST/GET /api/curator/apply`(서비스롤, 서버 검증·pending/approved 중복 409, GET은 최근 신청 상태+로그인 이메일만 반환), `GET/POST /api/admin/curator-applications`(admin/super_admin 확인, 목록은 주민번호 제외, pending만 승인/거절 처리·아니면 409, 승인 시 `profiles.active_role='curator'` + `roles` 배열에 curator 추가, 프로필 갱신 실패 시 신청 상태 pending 롤백), `CuratorApplySheet`(SlideUpSheet, 분야 복수선택·자기소개 30자 카운터·은행 커스텀 드롭다운·주민번호 앞6+뒤1·필수 동의 3개·완료/검토중/승인/반려 상태 화면), `/my` 메뉴 맨 앞 '✦ 큐레이터 신청' + 시트 렌더, 어드민 매거진 '🙋 신청 관리' 탭 + `CuratorApplicationsTab`(표: 신청일·활동명·이메일·분야·상태, 행 클릭 상세 시트에서 승인/거절 사유)
 - fix(admin): `GroupBuyRequestsSheet` 카드 요청자 이름 기본값(`names[r.requester_id] || ...`, 프로필 행이 없을 때) '에디터' → '큐레이터'(1줄)
 - fix(admin): `GroupBuyRequestsSheet` 문구·브랜드 — `nameOf` 기본값 '에디터' → '큐레이터', 거절 사유 placeholder "큐레이터에게 전달될 거절 사유를 입력하세요", `load` select를 `products(name, brand_id, brands(name, brand_name_kr))`로 확장하고 `GroupBuyRequestRow.products`에 `brand_id`·`brands` 타입 추가, 카드 제품명 위에 `brand_name_kr || name`(12px 회색, 브랜드 없으면 미표시). 카드의 `names[...] || '에디터'`(프로필 자체가 없을 때) 기본값은 범위 밖이라 유지
 - 마이그레이션 `218_group_buy_requests_date_columns.sql`(운영 DB 직접 실행 완료·파일만 추가): `group_buy_requests`에 `desired_start_at date`, `desired_end_at date`, `admin_note text`를 `ADD COLUMN IF NOT EXISTS`로 보강. 212번 파일에 정의돼 있었지만 운영 DB에 빠져 있던 컬럼(큐레이터 공구신청 POST의 희망 기간 저장·어드민 거절 사유가 이 컬럼 사용)

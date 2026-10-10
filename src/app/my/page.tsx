@@ -8,6 +8,7 @@ import { TOOLTIP_FALLBACKS, isPeriodTrack } from '@/lib/hormoneUtils'
 import RhythmFix from '@/components/home/RhythmFix'
 import SkinReportCard from '@/components/my/SkinReportCard'
 import MyBookingStatus from '@/components/customer/MyBookingStatus'
+import CuratorApplySheet from '@/components/customer/CuratorApplySheet'
 import WalletCard from '@/components/WalletCard'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import FavoriteSalonsSection from '@/components/home/FavoriteSalonsSection'
@@ -51,6 +52,7 @@ export default function MyPage() {
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [notifSound, setNotifSound] = useState('violet')
   const [soundSheetOpen, setSoundSheetOpen] = useState(false)
+  const [curatorSheetOpen, setCuratorSheetOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
   const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
@@ -308,6 +310,7 @@ export default function MyPage() {
   }, [])
 
   const menuItems = [
+    { icon: '✦', label: '큐레이터 신청', action: () => setCuratorSheetOpen(true), badge: 0 },
     { icon: '❤️', label: '찜 목록', path: '/my/wishlist', badge: 0 },
     { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: orders.filter((o: any) => !(o.reviews?.length) && o.status === '구매확정').length },
     { icon: '🔔', label: '채팅 알림음', action: () => setSoundSheetOpen(true), badge: 0 },
@@ -1116,6 +1119,10 @@ export default function MyPage() {
       />
 
       <ProductSheet productId={productSheetId} onClose={() => setProductSheetId(null)} />
+      <CuratorApplySheet
+        open={curatorSheetOpen}
+        onClose={() => setCuratorSheetOpen(false)}
+      />
     </div>
   )
 }

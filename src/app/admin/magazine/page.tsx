@@ -8,6 +8,7 @@ import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
 import GroupBuyCreateSheet from '@/components/admin/GroupBuyCreateSheet'
 import GroupBuyRequestsSheet, { type GroupBuyRequestRow } from '@/components/admin/GroupBuyRequestsSheet'
 import CuratorPostsTab from '@/components/admin/magazine/CuratorPostsTab'
+import CuratorApplicationsTab from '@/components/admin/magazine/CuratorApplicationsTab'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -54,7 +55,7 @@ export default function AdminMagazinePage() {
   const [prodHits, setProdHits] = useState<any[]>([])
   const [kpi, setKpi] = useState({ total: 0, published: 0, views: 0 })
   const [gbOpen, setGbOpen] = useState(false)
-  const [magazineTab, setMagazineTab] = useState<'articles' | 'curator'>('articles')
+  const [magazineTab, setMagazineTab] = useState<'articles' | 'curator' | 'applications'>('articles')
   // [ANCHOR: gb-requests-state]
   const [requestsOpen, setRequestsOpen] = useState(false)
   const [preselectedProductId, setPreselectedProductId] = useState<string | undefined>(undefined)
@@ -245,7 +246,7 @@ export default function AdminMagazinePage() {
     <div style={{ maxWidth: 960 }}>
       {/* [ANCHOR: magazine-tabs] */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {(['articles', 'curator'] as const).map(t => (
+        {(['articles', 'curator', 'applications'] as const).map(t => (
           <button
             key={t}
             type="button"
@@ -261,7 +262,7 @@ export default function AdminMagazinePage() {
               color: magazineTab === t ? '#fff' : 'var(--text2)',
             }}
           >
-            {t === 'articles' ? '📄 글 목록' : '✍️ 큐레이터 기고'}
+            {t === 'articles' ? '📄 글 목록' : t === 'curator' ? '✍️ 큐레이터 기고' : '🙋 신청 관리'}
           </button>
         ))}
       </div>
@@ -329,6 +330,7 @@ export default function AdminMagazinePage() {
         </>
       )}
       {magazineTab === 'curator' && <CuratorPostsTab />}
+      {magazineTab === 'applications' && <CuratorApplicationsTab />}
 
       {modal.open ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
