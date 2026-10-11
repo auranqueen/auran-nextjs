@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-11
+- fix(live): `create-stream` title 검증(비었거나 문자열 아니면 Mux 생성 전 400 `title_required`) + 원장 판정 테이블 `users` → `profiles`(`auth_id` 컬럼 확인: 003_profiles.sql). `me.id`가 `profiles.id`로 바뀌어 `owner_id` 기준이 profiles.id가 되므로(181·182·186·187 마이그레이션과 같은 규칙) `stream-key`의 판정 줄도 동일하게 `profiles`로 맞춤(안 맞추면 새 방송 송출키 조회가 항상 404)
 - fix(live): `create-stream` 500 응답에서 내부 에러 메시지(`err.message`) 노출 제거 → `{ ok: false, error: 'internal_error' }`(1줄, 상세 원인은 기존 `console.error` 서버 로그에만 남음)
 - fix(live): `create-stream` catch의 Mux 스트림 삭제 실패를 무시하지 않고 `console.error('Mux 스트림 삭제 실패 (수동 삭제 필요):', createdStreamId, e)`로 기록(1곳)
 - fix(live): `create-stream`에서 Mux 스트림 생성 후 DB 저장 등이 실패하면 catch에서 `mux.video.liveStreams.delete()`로 방금 만든 스트림 삭제(삭제 실패는 무시하고 원래 500 응답 유지). 기존 `stream`은 try 안 `const`라 catch에서 안 보여서 try 앞 `let createdStreamId` 선언 + 생성 직후 대입으로 처리(추가 5줄, 기존 줄 변경 없음)

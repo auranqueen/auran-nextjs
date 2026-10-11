@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return fail('not_logged_in', 401)
 
-  const { data: me } = await supabase.from('users').select('id, role').eq('auth_id', user.id).maybeSingle()
+  const { data: me } = await supabase.from('profiles').select('id, role').eq('auth_id', user.id).maybeSingle()
   if (!me?.id || me.role !== 'owner') return fail('owner_only', 403)
 
   const broadcastId = req.nextUrl.searchParams.get('broadcast_id')

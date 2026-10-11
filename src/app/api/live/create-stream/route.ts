@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
 
-  const { data: me } = await supabase.from('users').select('id, role').eq('auth_id', user.id).maybeSingle()
+  const { data: me } = await supabase.from('profiles').select('id, role').eq('auth_id', user.id).maybeSingle()
   if (!me?.id || me.role !== 'owner') {
     return NextResponse.json({ ok: false, error: 'owner_only' }, { status: 403 })
   }
@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
     const db = svc ?? supabase
 
     const { title, description, scheduled_at } = await req.json().catch(() => ({}))
+    if (!title || typeof title !== 'string' || title.trim() === '') {
+      return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
+    }
 
     // Mux 라이브 스트림 생성
     const stream = await mux.video.liveStreams.create({
