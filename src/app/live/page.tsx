@@ -68,7 +68,7 @@ export default function LiveListPage() {
 
   const load = useCallback(async () => {
     const { data } = await supabase
-      .from('oren_live_broadcasts')
+      .from('oren_live_broadcasts_public')
       .select('id, owner_id, title, description, scheduled_at, status, started_at')
       .in('status', ['upcoming', 'live'])
       .order('scheduled_at', { ascending: true })

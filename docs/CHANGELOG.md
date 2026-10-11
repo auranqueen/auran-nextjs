@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-11
+- fix(live): 고객 `/live` 목록·`/live/[id]` 시청 조회를 `oren_live_broadcasts` → `oren_live_broadcasts_public` 뷰로 전환(송출키 격리). 원장 `OwnerLiveSection`과 서버 API(create-stream·stream-key·webhook)는 원본 테이블 유지. 뷰는 DB에 직접 생성된 것으로 마이그레이션 파일은 없음
 - feat(live): 라이브 방송 Phase 1 MVP — 클로드 패치(`67e5edf`) 적용. 원장 `/dashboard/owner/live`(`OwnerLiveSection`: 방송 생성·목록·송출키 조회), 고객 `/live` 목록, `/live/[id]` 시청(hls.js), `OwnerQuickMenu` 라이브 메뉴, `.gitignore`에 `tsconfig.tsbuildinfo`. 실제 DB 컬럼에 맞춰 수정: `playback_id`·`mux_stream_id` → `mux_live_stream_id`·`hls_url`, 없는 `profiles(display_name, salon_name)` 조인 제거 → `profiles.owner_store_name`/`full_name` 별도 조회. `oren_live_broadcasts.id`가 bigint라 `stream-key`의 UUID 검사를 양의 정수 검사로 교체, `hls.js` 의존성 추가. 패치의 tsbuildinfo 삭제 hunk는 이미 untrack(`5bb7a31f`)이라 제외
 - fix(live): `stream-key` DB 조회 오류 서버 로그 추가 — `if (error) console.error('[live/stream-key] query error', error)` 1줄(기존 `fail('internal_error', 500)` 줄은 그대로, 정상 요청에서는 로그 안 남도록 `if (error)` 조건)
 - fix(live): `stream-key`·`webhook` DB 오류 500 응답에서 `error.message` 노출 제거 → `fail('internal_error', 500)`(각 1줄). webhook의 `console.error` 서버 로그는 유지, `service_unavailable` 500은 고정 문구라 그대로

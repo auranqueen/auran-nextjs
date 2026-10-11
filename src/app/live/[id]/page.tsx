@@ -67,7 +67,7 @@ export default function LiveWatchPage() {
   useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
-        .from('oren_live_broadcasts')
+        .from('oren_live_broadcasts_public')
         .select('id, owner_id, title, description, status, hls_url, scheduled_at, started_at')
         .eq('id', id)
         .maybeSingle()
