@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-11
+- feat(live): 고객 `/live` 시트 2종을 아래→위 바텀시트에서 오른쪽→왼쪽 풀스크린(`fixed inset-0`, `translate-x-full` → `translate-x-0`, duration-300·z-50 유지)으로 전환. 딤 배경 제거, × 대신 sticky `←` 뒤로가기 헤더, 내부 `overflow-y-auto`, 닫힌 상태 `pointer-events-none`. 원장 `OwnerLiveSection` 방송 만들기 폼 개편: 16:9 썸네일 업로드 영역(로컬 `createObjectURL` 미리보기·`revokeObjectURL` 정리, API엔 `thumbnail_url: ''`), `datetime-local` → 방송 날짜(`date`, 기본 오늘·다음 정각) + 방송 시간(시 0~23·분 00/30 select, 사용자 승인 예외), 지난 시간 차단, `scheduled_at`을 `toISOString()`으로 보내 시간대 없는 값이 UTC로 저장되던 9시간 어긋남 수정, 성공 후 초기화, `useCallback` deps `[supabase, router]` → `[router]`
 - fix(live): 고객 `/live` 조회 정렬 `scheduled_at` 오름차순 → 내림차순(최신순), `limit` 30 → 50. 종료 방송이 쌓여도 최신 예정·라이브가 빠지지 않게. 예정 방송 가로 스크롤은 기존처럼 가까운 날짜 먼저 보이도록 화면에서 오름차순 재정렬
 - feat(live): 고객 `/live` UI 전면 개편(네이버 쇼핑라이브 스타일, Tailwind, `page.tsx` 단일 파일) — sticky 헤더(탭·카테고리 칩, 선택 상태만), 라이브 띠 배너, 지금 라이브 2열 그리드, 예정 방송 가로 스크롤(D-day), 인기 랭킹 top5(`viewer_count` 내림차순, 동률은 예정 시간순), 다시보기 2열 그리드, 라이브/예정 슬라이드업 시트(×·배경 닫기, 알림 신청 로컬 토글, `navigator.share`·링크 복사). 쿼리는 select에 `viewer_count, thumbnail_url` 추가·상태에 `ended` 추가만, `useCallback` deps `[supabase]` → `[]`. 채팅수·방송 제품은 자리만 표시, 썸네일 없으면 그라디언트, import 변경 없음
 - fix(live): 고객 `/live` 목록·`/live/[id]` 시청 조회를 `oren_live_broadcasts` → `oren_live_broadcasts_public` 뷰로 전환(송출키 격리). 원장 `OwnerLiveSection`과 서버 API(create-stream·stream-key·webhook)는 원본 테이블 유지. 뷰는 DB에 직접 생성된 것으로 마이그레이션 파일은 없음

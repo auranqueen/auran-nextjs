@@ -212,13 +212,6 @@ export default function LiveListPage() {
     }
   }
 
-  const closeButton = (
-    <button type="button" aria-label="닫기" onClick={closeSheet}
-      className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-lg text-white">
-      ×
-    </button>
-  )
-
   return (
     <div className="min-h-screen bg-white pb-20 text-gray-900">
       <div className="mx-auto max-w-[390px]">
@@ -346,14 +339,18 @@ export default function LiveListPage() {
         )}
       </div>
 
-      <div onClick={closeSheet}
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${sheetOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
-      <div className={`fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[390px] rounded-t-2xl bg-white transition-transform duration-300 ${sheetOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+      <div className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ${sheetOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`}>
         {sheetB && (
-          <div className="max-h-[85vh] overflow-y-auto pb-6">
+          <div className="mx-auto h-full max-w-[390px] overflow-y-auto pb-6">
+            <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-gray-100 bg-white px-2 py-2">
+              <button type="button" aria-label="뒤로가기" onClick={closeSheet}
+                className="flex h-9 w-9 items-center justify-center text-xl text-gray-900">
+                ←
+              </button>
+              <span className="truncate text-sm text-gray-900">{sheetB.status === 'live' ? '라이브 방송' : '예정 방송'}</span>
+            </div>
             <div className="relative">
-              {closeButton}
-              <Thumb b={sheetB} className="aspect-video w-full rounded-t-2xl">
+              <Thumb b={sheetB} className="aspect-video w-full">
                 {sheetB.status === 'live' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 pl-1 text-2xl text-purple-600">▶</span>

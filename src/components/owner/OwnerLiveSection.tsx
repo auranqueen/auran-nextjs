@@ -28,7 +28,21 @@ interface BroadcastRow {
   ended_at: string | null
 }
 
-const EMPTY = { title: '', description: '', scheduled_at: '' }
+const EMPTY = { title: '', description: '' }
+const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))
+const MINUTES = ['00', '30']
+const FIELD = { width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' as const, background: '#fff', color: TEXT }
+
+function toDateStr(d: Date) {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+function defaultSchedule() {
+  const d = new Date()
+  d.setHours(d.getHours() + 1, 0, 0, 0)
+  return { date: toDateStr(d), hour: String(d.getHours()).padStart(2, '0'), minute: '00' }
+}
 
 export default function OwnerLiveSection() {
   const router = useRouter()
@@ -37,6 +51,8 @@ export default function OwnerLiveSection() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [draft, setDraft] = useState(EMPTY)
+  const [schedule, setSchedule] = useState(defaultSchedule)
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [streamKey, setStreamKey] = useState<{ rtmp_url: string; rtmp_key: string } | null>(null)
@@ -58,12 +74,23 @@ export default function OwnerLiveSection() {
       .limit(20)
     setBroadcasts((data || []) as BroadcastRow[])
     setLoading(false)
-  }, [supabase, router])
+  }, [router])
 
   useEffect(() => { void loadBroadcasts() }, [loadBroadcasts])
 
+  useEffect(() => () => { if (thumbPreview) URL.revokeObjectURL(thumbPreview) }, [thumbPreview])
+
+  const pickThumb = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) setThumbPreview(URL.createObjectURL(file))
+  }
+
   const submit = async () => {
     if (!draft.title.trim()) { showToast('방송 제목을 입력해주세요'); return }
+    const scheduledAt = new Date(`${schedule.date}T${schedule.hour}:${schedule.minute}:00`)
+    if (Number.isNaN(scheduledAt.getTime())) { showToast('방송 날짜를 선택해주세요'); return }
+    if (scheduledAt.getTime() < Date.now()) { showToast('지난 시간은 선택할 수 없어요'); return }
     setSaving(true)
     try {
       const res = await fetch('/api/live/create-stream', {
@@ -73,7 +100,8 @@ export default function OwnerLiveSection() {
         body: JSON.stringify({
           title: draft.title.trim(),
           description: draft.description.trim() || null,
-          scheduled_at: draft.scheduled_at || null,
+          scheduled_at: scheduledAt.toISOString(),
+          thumbnail_url: '',
         }),
       })
       const json = await res.json().catch(() => ({}))
@@ -81,6 +109,8 @@ export default function OwnerLiveSection() {
       showToast('방송이 만들어졌어요!')
       setShowForm(false)
       setDraft(EMPTY)
+      setSchedule(defaultSchedule())
+      setThumbPreview(null)
       await loadBroadcasts()
     } finally {
       setSaving(false)
@@ -128,6 +158,14 @@ export default function OwnerLiveSection() {
       {showForm && (
         <div style={{ margin: '0 16px 16px', background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 12 }}>새 방송 만들기</div>
+          <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: 12, border: '2px dashed #d8b4fe', background: '#faf5ff', overflow: 'hidden', cursor: 'pointer', marginBottom: 12 }}>
+            <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
+            {thumbPreview ? (
+              <img src={thumbPreview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: PURPLE }}>📷 방송 썸네일 추가</div>
+            )}
+          </label>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 제목 *</div>
           <input
             value={draft.title}
@@ -143,13 +181,23 @@ export default function OwnerLiveSection() {
             rows={2}
             style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, marginBottom: 10, boxSizing: 'border-box', background: '#fff', resize: 'none' }}
           />
-          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>예정 시작 시각 (선택)</div>
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 날짜</div>
           <input
-            type="datetime-local"
-            value={draft.scheduled_at}
-            onChange={(e) => setDraft((p) => ({ ...p, scheduled_at: e.target.value }))}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, marginBottom: 14, boxSizing: 'border-box', background: '#fff' }}
+            type="date"
+            value={schedule.date}
+            min={toDateStr(new Date())}
+            onChange={(e) => setSchedule((p) => ({ ...p, date: e.target.value }))}
+            style={{ ...FIELD, marginBottom: 10 }}
           />
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 시간</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            <select value={schedule.hour} onChange={(e) => setSchedule((p) => ({ ...p, hour: e.target.value }))} style={{ ...FIELD, flex: 1 }}>
+              {HOURS.map((h) => <option key={h} value={h}>{h}시</option>)}
+            </select>
+            <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))} style={{ ...FIELD, flex: 1 }}>
+              {MINUTES.map((m) => <option key={m} value={m}>{m}분</option>)}
+            </select>
+          </div>
           <button
             type="button"
             disabled={saving}
