@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     .eq('id', broadcastId)
     .eq('owner_id', me.id)
     .maybeSingle()
+  if (error) console.error('[live/stream-key] query error', error)
   if (error) return fail('internal_error', 500)
   if (!data) return fail('not_found', 404)
   if (typeof data.mux_rtmp_key !== 'string' || typeof data.mux_rtmp_url !== 'string') {
