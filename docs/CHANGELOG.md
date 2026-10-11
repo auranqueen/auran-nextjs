@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-11
+- fix(live): `create-stream` 응답 형식을 다른 라이브 API와 통일 — 성공 `{ success: true, broadcast }` → `{ ok: true, broadcast }`, 500 `{ error }` → `{ ok: false, error }`(2줄, 호출하는 화면 없음 확인)
 - feat(live): 원장 송출키 조회 API `GET /api/live/stream-key?broadcast_id=` 추가 — 로그인(401)·`users.role='owner'`(403) 확인은 create-stream과 동일 패턴, `broadcast_id` 없으면 400(`missing_broadcast_id`)·UUID 형식 아니면 400, `oren_live_broadcasts`를 `id` + `owner_id=me.id`로 조회(본인 방송만, 없으면 404), 응답 `{ ok, rtmp_url, rtmp_key }` + `Cache-Control: no-store`. DB는 `tryCreateAdminClient()`
 
 ## 2026-10-10

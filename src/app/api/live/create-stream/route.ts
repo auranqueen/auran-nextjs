@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
     if (error) throw error
 
     const { mux_rtmp_key: _rtmpKey, ...broadcast } = data
-    return NextResponse.json({ success: true, broadcast })
+    return NextResponse.json({ ok: true, broadcast })
   } catch (err: any) {
     console.error('라이브 스트림 생성 오류:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
   }
 }
