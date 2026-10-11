@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     .eq('status', patch.status === 'live' ? 'upcoming' : 'live')
   if (error) {
     console.error('[live/webhook] update error', error.message)
-    return fail(error.message, 500)
+    return fail('internal_error', 500)
   }
 
   return NextResponse.json({ ok: true })
