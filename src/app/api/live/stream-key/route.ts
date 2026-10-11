@@ -4,7 +4,7 @@ import { tryCreateAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const ID_RE = /^[1-9]\d*$/
 
 const fail = (error: string, status: number) => NextResponse.json({ ok: false, error }, { status })
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const broadcastId = req.nextUrl.searchParams.get('broadcast_id')
   if (!broadcastId) return fail('missing_broadcast_id', 400)
-  if (!UUID_RE.test(broadcastId)) return fail('invalid_broadcast_id', 400)
+  if (!ID_RE.test(broadcastId)) return fail('invalid_broadcast_id', 400)
 
   const svc = tryCreateAdminClient()
   if (!svc) return fail('service_unavailable', 500)

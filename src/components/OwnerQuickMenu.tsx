@@ -16,6 +16,7 @@ export default function OwnerQuickMenu() {
         { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner' },
         { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
         { icon: '📋', label: '시술차트', color: 'rgba(123,94,167,0.1)', border: 'rgba(123,94,167,0.3)', tc: '#7B5EA7', href: '/dashboard/owner/charts-v2' },
+        { icon: '📹', label: '라이브 방송', color: 'rgba(163,45,45,0.08)', border: 'rgba(163,45,45,0.25)', tc: '#A32D2D', href: '/dashboard/owner/live' },
         { icon: '🧬', label: 'AI 학습', color: 'rgba(123,94,167,0.1)', border: 'rgba(123,94,167,0.3)', tc: '#7B5EA7', href: '/admin/hormone-phases' },
       ].map(m => (
         <button
