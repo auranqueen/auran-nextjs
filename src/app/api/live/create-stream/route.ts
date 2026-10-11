@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'owner_only' }, { status: 403 })
   }
 
+  let createdStreamId: string | null = null
   try {
     const svc = tryCreateAdminClient()
     const db = svc ?? supabase
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
       playback_policy: ['public'],
       new_asset_settings: { playback_policy: ['public'] },
     })
+    createdStreamId = stream.id
 
     const rtmpUrl = 'rtmps://global-live.mux.com:443/app'
     const rtmpKey = stream.stream_key!
@@ -60,6 +62,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, broadcast })
   } catch (err: any) {
     console.error('라이브 스트림 생성 오류:', err)
+    if (createdStreamId) {
+      await mux.video.liveStreams.delete(createdStreamId).catch(() => {})
+    }
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
   }
 }
