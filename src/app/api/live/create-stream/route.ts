@@ -63,7 +63,9 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('라이브 스트림 생성 오류:', err)
     if (createdStreamId) {
-      await mux.video.liveStreams.delete(createdStreamId).catch(() => {})
+      await mux.video.liveStreams.delete(createdStreamId).catch((e) => {
+        console.error('Mux 스트림 삭제 실패 (수동 삭제 필요):', createdStreamId, e)
+      })
     }
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
   }
