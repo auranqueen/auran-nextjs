@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-11
+- feat(live): 원장 송출키 조회 API `GET /api/live/stream-key?broadcast_id=` 추가 — 로그인(401)·`users.role='owner'`(403) 확인은 create-stream과 동일 패턴, `broadcast_id` 없으면 400(`missing_broadcast_id`)·UUID 형식 아니면 400, `oren_live_broadcasts`를 `id` + `owner_id=me.id`로 조회(본인 방송만, 없으면 404), 응답 `{ ok, rtmp_url, rtmp_key }` + `Cache-Control: no-store`. DB는 `tryCreateAdminClient()`
+
 ## 2026-10-10
 - feat(live): Mux 웹훅 `POST /api/live/webhook` 추가 — raw body(`req.text()`)로 `mux.webhooks.verifySignature` 서명 검증(실패 401, `MUX_WEBHOOK_SECRET` 없으면 경고 로그 후 스킵), `video.live_stream.active` → `oren_live_broadcasts` status `live` + `started_at`(현재 `upcoming`인 행만), `video.live_stream.idle` → `ended` + `ended_at`(현재 `live`인 행만), 그 외 이벤트는 200 `{ ok: true }`. `tryCreateAdminClient()` 사용, 응답 `{ ok, error }` 통일
 - refactor(home): `src/app/page.tsx` 맨 아래 인라인 `LiveBanner` 함수(주석 2줄 포함)를 `src/components/live/LiveBanner.tsx`('use client', default export)로 이동하고 page.tsx는 import로 교체. 로직·JSX 변경 없음(선언부 `export default`만 추가), 역할 카드 zIndex 등 LOCKED 영역 미변경
