@@ -67,6 +67,6 @@ export async function POST(req: NextRequest) {
         console.error('Mux 스트림 삭제 실패 (수동 삭제 필요):', createdStreamId, e)
       })
     }
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
   }
 }
