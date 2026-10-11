@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-11
+- fix(live): 고객 `/live` 조회 정렬 `scheduled_at` 오름차순 → 내림차순(최신순), `limit` 30 → 50. 종료 방송이 쌓여도 최신 예정·라이브가 빠지지 않게. 예정 방송 가로 스크롤은 기존처럼 가까운 날짜 먼저 보이도록 화면에서 오름차순 재정렬
 - feat(live): 고객 `/live` UI 전면 개편(네이버 쇼핑라이브 스타일, Tailwind, `page.tsx` 단일 파일) — sticky 헤더(탭·카테고리 칩, 선택 상태만), 라이브 띠 배너, 지금 라이브 2열 그리드, 예정 방송 가로 스크롤(D-day), 인기 랭킹 top5(`viewer_count` 내림차순, 동률은 예정 시간순), 다시보기 2열 그리드, 라이브/예정 슬라이드업 시트(×·배경 닫기, 알림 신청 로컬 토글, `navigator.share`·링크 복사). 쿼리는 select에 `viewer_count, thumbnail_url` 추가·상태에 `ended` 추가만, `useCallback` deps `[supabase]` → `[]`. 채팅수·방송 제품은 자리만 표시, 썸네일 없으면 그라디언트, import 변경 없음
 - fix(live): 고객 `/live` 목록·`/live/[id]` 시청 조회를 `oren_live_broadcasts` → `oren_live_broadcasts_public` 뷰로 전환(송출키 격리). 원장 `OwnerLiveSection`과 서버 API(create-stream·stream-key·webhook)는 원본 테이블 유지. 뷰는 DB에 직접 생성된 것으로 마이그레이션 파일은 없음
 - feat(live): 라이브 방송 Phase 1 MVP — 클로드 패치(`67e5edf`) 적용. 원장 `/dashboard/owner/live`(`OwnerLiveSection`: 방송 생성·목록·송출키 조회), 고객 `/live` 목록, `/live/[id]` 시청(hls.js), `OwnerQuickMenu` 라이브 메뉴, `.gitignore`에 `tsconfig.tsbuildinfo`. 실제 DB 컬럼에 맞춰 수정: `playback_id`·`mux_stream_id` → `mux_live_stream_id`·`hls_url`, 없는 `profiles(display_name, salon_name)` 조인 제거 → `profiles.owner_store_name`/`full_name` 별도 조회. `oren_live_broadcasts.id`가 bigint라 `stream-key`의 UUID 검사를 양의 정수 검사로 교체, `hls.js` 의존성 추가. 패치의 tsbuildinfo 삭제 hunk는 이미 untrack(`5bb7a31f`)이라 제외

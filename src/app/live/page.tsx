@@ -143,8 +143,8 @@ export default function LiveListPage() {
       .from('oren_live_broadcasts_public')
       .select('id, owner_id, title, description, scheduled_at, status, started_at, viewer_count, thumbnail_url')
       .in('status', ['upcoming', 'live', 'ended'])
-      .order('scheduled_at', { ascending: true })
-      .limit(30)
+      .order('scheduled_at', { ascending: false })
+      .limit(50)
     const rows: BroadcastRow[] = (data || []).map((r) => ({ ...r, owner_name: null }))
     const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter((v): v is string => !!v)))
     if (ownerIds.length > 0) {
@@ -165,7 +165,9 @@ export default function LiveListPage() {
   useEffect(() => { void load() }, [load])
 
   const liveBroadcasts = broadcasts.filter((b) => b.status === 'live')
-  const upcomingBroadcasts = broadcasts.filter((b) => b.status === 'upcoming')
+  const upcomingBroadcasts = broadcasts
+    .filter((b) => b.status === 'upcoming')
+    .sort((a, b) => timeOf(a.scheduled_at, Number.MAX_SAFE_INTEGER) - timeOf(b.scheduled_at, Number.MAX_SAFE_INTEGER))
   const endedBroadcasts = broadcasts
     .filter((b) => b.status === 'ended')
     .sort((a, b) => timeOf(b.started_at || b.scheduled_at, 0) - timeOf(a.started_at || a.scheduled_at, 0))
