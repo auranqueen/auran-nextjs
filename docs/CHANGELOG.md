@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- feat(live): `DELETE /api/live/delete-broadcast?broadcast_id=` 신규 — `stream-key`와 같은 인증 흐름(로그인 401 `not_logged_in`, `profiles.role='owner'` 아니면 403 `owner_only`, id 누락·형식 400). `tryCreateAdminClient()`로 본인(`owner_id = profiles.id`) 방송 조회, 없으면 404 `not_found`, `status !== 'upcoming'`이면 409 `not_deletable`. 삭제는 `id`+`owner_id`+`status='upcoming'` 조건(조회 후 웹훅이 live로 바꾼 경우 방지), FK 위반 `23503`은 409 `has_related_data`, 삭제 0행은 409 `not_deletable`. DB 삭제 성공 후에만 `mux.video.liveStreams.delete()`(실패는 "수동 삭제 필요" 로그만, 응답은 성공). 응답 `{ ok: true }` + `no-store`. 화면 연결·`live-thumbnails` 파일 정리는 아직 없음
 - style(live): 고객 `/live` 글자 크기 통일 — 헤더·탭·섹션 제목·카드 제목·CTA 버튼 13px(`text-lg`/`text-sm`/`text-base`/`text-[15px]` → `text-[13px]`), 호스트명·카테고리 칩·설명·빈 상태·토스트·시트 날짜 11px, 띠 배너 시청수 10px. 시트 D-day `text-3xl` → 22px, 재생 ▶ `text-2xl` → 20px, 랭킹 숫자 `text-lg` → 13px. 기존 `text-[11px]`·배지 `text-[10px]` 유지, 레이아웃·로직 변경 없음
 - feat(live): 원장 라이브 목록 카드를 가로 배치로 전환 — 왼쪽 9:16 썸네일(가로 60, 그라디언트 칸 후 이미지), 오른쪽 배지·날짜 10px, 제목 13px(말줄임), 설명 11px(말줄임). 예정·라이브는 수정/삭제/송출키 10px, 종료는 버튼 대신 `viewer_count`. `BroadcastRow.viewer_count` 추가. `deleteConfirm` 확인 UI 유지
 - fix(live): 원장 라이브 목록 컨테이너에 `maxWidth: 600`, `margin: '0 auto'` 추가 — PC에서 카드·썸네일이 화면 전체 너비로 늘어나던 문제. 패딩 `0 16px`은 유지
