@@ -53,6 +53,7 @@ export default function OwnerLiveSection() {
   const [draft, setDraft] = useState(EMPTY)
   const [schedule, setSchedule] = useState(defaultSchedule)
   const [thumbPreview, setThumbPreview] = useState<string | null>(null)
+  const [thumbFile, setThumbFile] = useState(null as File | null)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [streamKey, setStreamKey] = useState<{ rtmp_url: string; rtmp_key: string } | null>(null)
@@ -96,7 +97,10 @@ export default function OwnerLiveSection() {
   const pickThumb = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (file) setThumbPreview(URL.createObjectURL(file))
+    if (file) {
+      setThumbFile(file)
+      setThumbPreview(URL.createObjectURL(file))
+    }
   }
 
   const submit = async () => {
@@ -106,6 +110,29 @@ export default function OwnerLiveSection() {
     if (scheduledAt.getTime() < Date.now()) { showToast('지난 시간은 선택할 수 없어요'); return }
     setSaving(true)
     try {
+      let thumbnailUrl = ''
+      if (thumbFile) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          const { data: profile } = user
+            ? await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+            : { data: null }
+          const userId = profile?.id
+          if (userId) {
+            const path = `${userId}/live/${Date.now()}_${thumbFile.name}`
+            const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, thumbFile, { upsert: true })
+            if (uploadError) {
+              console.error('[OwnerLiveSection] 썸네일 업로드 실패', uploadError)
+            } else {
+              const { data: pub } = supabase.storage.from('live-thumbnails').getPublicUrl(path)
+              thumbnailUrl = pub?.publicUrl || ''
+            }
+          }
+        } catch (e) {
+          console.error('[OwnerLiveSection] 썸네일 업로드 실패', e)
+          thumbnailUrl = ''
+        }
+      }
       const res = await fetch('/api/live/create-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +141,7 @@ export default function OwnerLiveSection() {
           title: draft.title.trim(),
           description: draft.description.trim() || null,
           scheduled_at: scheduledAt.toISOString(),
-          thumbnail_url: '',
+          thumbnail_url: thumbnailUrl,
         }),
       })
       const json = await res.json().catch(() => ({}))
@@ -124,6 +151,7 @@ export default function OwnerLiveSection() {
       setDraft(EMPTY)
       setSchedule(defaultSchedule())
       setThumbPreview(null)
+      setThumbFile(null)
       await loadBroadcasts()
     } finally {
       setSaving(false)

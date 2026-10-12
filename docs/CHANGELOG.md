@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- feat(live): 원장 방송 만들기 썸네일을 `live-thumbnails`에 업로드하고 URL을 저장 — `OwnerLiveSection`에 `thumbFile` 추가, 선택 파일을 `${profiles.id}/live/${Date.now()}_${파일명}`으로 업로드(`upsert: true`) 후 `getPublicUrl`. 업로드 실패·프로필 id 없으면 `thumbnail_url: ''`로 방송 생성은 계속. `POST /api/live/create-stream`는 `thumbnail_url`이 문자열이고 `https://`로 시작할 때만 저장, 아니면 `null`
 - fix(live): 원장 방송 만들기 폼 PC/모바일 분기 — 768px 미만은 오른쪽 풀스크린 슬라이드 유지, 768px 이상은 중앙 카드(480px·maxHeight 90vh·radius 16·그림자, 열림 `translate(-50%,-50%)`/opacity 1 ↔ 닫힘 `translate(-40%,-50%)`/opacity 0, 0.28s) + PC 전용 딤(`rgba(0,0,0,0.3)`, zIndex 49, 클릭 시 닫힘). `isPC` 상태는 resize 리스너로 갱신, 카드 안 스크롤 영역에 `minHeight: 0`
 - fix(live): 원장 라이브 목록이 RLS에 막혀 비어 보이던 문제 — `/api/live/my-broadcasts` GET 신설(서버 클라이언트로 로그인·`profiles.role='owner'` 확인 후 `tryCreateAdminClient()`로 `owner_id = profiles.id` 최근 20개, `mux_rtmp_key` 제외 명시 컬럼, 401/403/500 구분, `no-store`). `OwnerLiveSection` 브라우저 직접 조회 → API 호출, 실패 시 빈 목록 + `console.error`, `finally`로 로딩 종료(프로필 없을 때 무한 로딩 수정). 루트 글자색 `#1a1a1a`로 라이트 고정(다크 저장 기기에서 입력 글자 안 보이던 문제). 방송 만들기 폼을 펼침 → 오른쪽에서 들어오는 풀스크린(`fixed inset-0`, zIndex 50, `translateX`, 0.28s cubic-bezier, ← 헤더, 내부 스크롤)으로 전환
 - feat(owner): 원장 대시보드(`OwnerHomeV3.tsx`) 상단 오른쪽 "내 스토어 보기" 옆에 `📺 내 라이브` 버튼 추가 → `/dashboard/owner/live`(기존 `Link` import 사용, 골드 테두리 `#C9A96E`·크림 배경 `#fff9f0`·fontSize 11·`minHeight: 52`로 스토어 버튼과 높이 맞춤, fontWeight 없음). 기본 원장 홈이 V3라 `OwnerQuickMenu`(`?v=1` 전용)의 라이브 카드가 안 보이던 문제 해소

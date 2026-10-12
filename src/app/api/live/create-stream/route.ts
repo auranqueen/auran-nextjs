@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const svc = tryCreateAdminClient()
     const db = svc ?? supabase
 
-    const { title, description, scheduled_at } = await req.json().catch(() => ({}))
+    const { title, description, scheduled_at, thumbnail_url } = await req.json().catch(() => ({}))
     if (!title || typeof title !== 'string' || title.trim() === '') {
       return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
     }
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         description,
         status: 'upcoming',
         scheduled_at: scheduled_at || null,
+        thumbnail_url: typeof thumbnail_url === 'string' && thumbnail_url.startsWith('https://') ? thumbnail_url : null,
       })
       .select()
       .single()
