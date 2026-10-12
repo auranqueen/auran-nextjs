@@ -26,6 +26,7 @@ interface BroadcastRow {
   hls_url: string | null
   started_at: string | null
   ended_at: string | null
+  thumbnail_url: string | null
 }
 
 const EMPTY = { title: '', description: '' }
@@ -59,6 +60,7 @@ export default function OwnerLiveSection() {
   const [streamKey, setStreamKey] = useState<{ rtmp_url: string; rtmp_key: string } | null>(null)
   const [keyLoading, setKeyLoading] = useState<number | null>(null)
   const [isPC, setIsPC] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null as number | null)
 
   useEffect(() => {
     const onResize = () => setIsPC(window.innerWidth >= 768)
@@ -310,6 +312,11 @@ export default function OwnerLiveSection() {
             const isKeyLoading = keyLoading === b.id
             return (
               <div key={b.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 13, padding: 14, marginBottom: 10, background: '#fff' }}>
+                {b.thumbnail_url ? (
+                  <img src={b.thumbnail_url} alt="" style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, objectFit: 'cover', marginBottom: 10 }} />
+                ) : (
+                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, marginBottom: 10, background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }} />
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, padding: '2px 9px', borderRadius: 6, background: st.bg, color: st.color, fontWeight: 600 }}>{st.label}</span>
                   {b.scheduled_at && (
@@ -320,6 +327,18 @@ export default function OwnerLiveSection() {
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{b.title}</div>
                 {b.description && <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>{b.description}</div>}
+                {deleteConfirm === b.id ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: TEXT }}>정말 삭제할까요?</span>
+                    <button type="button" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>취소</button>
+                    <button type="button" onClick={() => { setDeleteConfirm(null); showToast('삭제 기능 준비 중') }} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>확인삭제</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <button type="button" onClick={() => showToast('준비 중이에요')} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>✏️ 수정</button>
+                    <button type="button" onClick={() => setDeleteConfirm(b.id)} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>🗑️ 삭제</button>
+                  </div>
+                )}
                 {b.status !== 'ended' && (
                   <button
                     type="button"

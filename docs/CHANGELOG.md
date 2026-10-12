@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- feat(live): 원장 라이브 목록 카드에 썸네일·수정·삭제 추가 — `BroadcastRow.thumbnail_url` 추가. 있으면 16:9 `img`, 없으면 `linear-gradient(135deg, #a78bfa, #f9a8d4)`. 설명 아래 `✏️ 수정`은 `준비 중이에요` 토스트. `🗑️ 삭제`는 `deleteConfirm === b.id`일 때만 "정말 삭제할까요?"와 취소/확인삭제. `window.confirm` 없음. 확인삭제는 `/api/live/delete-broadcast`가 없어 `삭제 기능 준비 중` 토스트만
 - fix(live): 썸네일 Storage 경로에서 원본 파일명 제거 — `OwnerLiveSection` 경로를 `${userId}/live/${Date.now()}_${thumbFile.name}`에서 `${userId}/live/${Date.now()}.${ext}`로 변경. 확장자는 파일명 마지막 `.` 뒤, 없으면 `jpg`. 한글 파일명이 키에 들어가 Storage가 거부하던 문제
 - fix(live): 썸네일 업로드 경로를 `profiles.id`에서 `auth` UUID(`user.id`)로 변경 — `OwnerLiveSection` 업로드 블록의 `profiles` 조회 2줄 제거. Storage 정책이 `auth.uid()`로 첫 폴더를 검사하는데 경로가 `profiles.id`라 업로드가 거절되던 불일치 해소. 경로 형식 `${userId}/live/${Date.now()}_${파일명}`과 실패 시 방송 생성 계속은 유지
 - chore: `hls.js`를 `node_modules`에 설치하고 devDependency `@types/hls.js@^0.13.3` 추가. `tsc --noEmit`에서 `src/app/live/[id]/page.tsx`의 `Cannot find module 'hls.js'` 해소. 같이 보이던 `.next/types`의 삭제된 `payment/payapp` 참조는 생성 캐시라 로컬에서 해당 타입 폴더만 지운 뒤 재검사(저장소 파일 아님)
