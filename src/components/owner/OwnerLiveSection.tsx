@@ -63,17 +63,22 @@ export default function OwnerLiveSection() {
   const loadBroadcasts = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
-    const { data: profile } = await supabase
-      .from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
-    if (!profile?.id) return
-    const { data } = await supabase
-      .from('oren_live_broadcasts')
-      .select('id, title, description, scheduled_at, status, mux_live_stream_id, hls_url, started_at, ended_at')
-      .eq('owner_id', profile.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    setBroadcasts((data || []) as BroadcastRow[])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/live/my-broadcasts', { credentials: 'same-origin', cache: 'no-store' })
+      if (res.status === 401) { router.replace('/login?role=owner'); return }
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok || !Array.isArray(json.broadcasts)) {
+        console.error('[OwnerLiveSection] 방송 목록 조회 실패', res.status, json?.error)
+        setBroadcasts([])
+        return
+      }
+      setBroadcasts(json.broadcasts)
+    } catch (e) {
+      console.error('[OwnerLiveSection] 방송 목록 조회 오류', e)
+      setBroadcasts([])
+    } finally {
+      setLoading(false)
+    }
   }, [router])
 
   useEffect(() => { void loadBroadcasts() }, [loadBroadcasts])
@@ -136,7 +141,7 @@ export default function OwnerLiveSection() {
   }
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ background: '#fff', color: '#1a1a1a', minHeight: '100vh', paddingBottom: 80 }}>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>
           {toast}
@@ -155,9 +160,22 @@ export default function OwnerLiveSection() {
         </button>
       </div>
 
-      {showForm && (
-        <div style={{ margin: '0 16px 16px', background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 13, color: TEXT, marginBottom: 12 }}>새 방송 만들기</div>
+      <div
+        aria-hidden={!showForm}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 50, background: '#fff', color: '#1a1a1a',
+          display: 'flex', flexDirection: 'column',
+          transform: showForm ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), visibility 0.28s',
+          visibility: showForm ? 'visible' : 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'calc(14px + env(safe-area-inset-top, 0px)) 16px 14px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+          <button type="button" aria-label="뒤로가기" onClick={() => setShowForm(false)}
+            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
+          <div style={{ fontSize: 16, color: TEXT }}>방송 만들기</div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
           <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
             <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
@@ -212,7 +230,7 @@ export default function OwnerLiveSection() {
             {saving ? '만드는 중…' : '방송 만들기'}
           </button>
         </div>
-      )}
+      </div>
 
       {streamKey && (
         <div style={{ margin: '0 16px 16px', background: '#fff9f0', border: '1px solid #f5d8a0', borderRadius: 12, padding: 14 }}>
