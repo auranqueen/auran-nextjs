@@ -101,20 +101,20 @@ function Thumb({ b, className, children }: { b: BroadcastRow; className: string;
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-3 flex items-baseline gap-2 px-4">
-      <div className="text-[15px] text-gray-900">{title}</div>
-      {sub && <span className="text-xs text-gray-400">{sub}</span>}
+      <div className="text-[13px] text-gray-900">{title}</div>
+      {sub && <span className="text-[11px] text-gray-400">{sub}</span>}
     </div>
   )
 }
 
 function Empty() {
-  return <div className="mx-4 rounded-xl bg-gray-50 py-8 text-center text-xs text-gray-400">방송이 없습니다</div>
+  return <div className="mx-4 rounded-xl bg-gray-50 py-8 text-center text-[11px] text-gray-400">방송이 없습니다</div>
 }
 
 function ProductsPlaceholder({ label }: { label: string }) {
   return (
     <div className="mt-5">
-      <div className="mb-2 text-sm text-gray-900">{label}</div>
+      <div className="mb-2 text-[13px] text-gray-900">{label}</div>
       <div className="flex gap-2 overflow-x-auto [scrollbar-width:none]">
         {[0, 1, 2].map((i) => (
           <div key={i} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-[11px] text-gray-400">
@@ -217,7 +217,7 @@ export default function LiveListPage() {
       <div className="mx-auto max-w-[390px]">
         <header className="sticky top-0 z-30 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between px-4 pb-2 pt-4">
-            <div className="text-lg text-gray-900">오렌 <span className="text-purple-600">라이브</span></div>
+            <div className="text-[13px] text-gray-900">오렌 <span className="text-purple-600">라이브</span></div>
             <div className="flex items-center gap-3 text-gray-700">
               <button type="button" aria-label="검색" onClick={() => showToast('검색은 준비 중이에요')} className="p-1"><SearchIcon /></button>
               <button type="button" aria-label="알림" onClick={() => showToast('알림은 준비 중이에요')} className="p-1"><BellIcon /></button>
@@ -226,7 +226,7 @@ export default function LiveListPage() {
           <div className="flex gap-5 px-4">
             {TABS.map((t) => (
               <button key={t} type="button" onClick={() => setTab(t)}
-                className={`border-b-2 pb-2 text-sm ${tab === t ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'}`}>
+                className={`border-b-2 pb-2 text-[13px] ${tab === t ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'}`}>
                 {t}
               </button>
             ))}
@@ -234,7 +234,7 @@ export default function LiveListPage() {
           <div className="flex gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]">
             {CATEGORIES.map((c) => (
               <button key={c} type="button" onClick={() => setCategory(c)}
-                className={`shrink-0 rounded-full border px-3 py-1 text-xs ${category === c ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-200 bg-white text-gray-600'}`}>
+                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] ${category === c ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-200 bg-white text-gray-600'}`}>
                 {c}
               </button>
             ))}
@@ -244,13 +244,13 @@ export default function LiveListPage() {
         {featured && (
           <button type="button" onClick={() => openSheet(featured)} className="flex w-full items-center gap-2 bg-red-50 px-4 py-2.5 text-left">
             <LiveBadge />
-            <span className="min-w-0 flex-1 truncate text-sm text-gray-900">{featured.title}</span>
-            <span className="shrink-0 text-xs text-red-500">👀 {formatCount(featured.viewer_count ?? 0)}</span>
+            <span className="min-w-0 flex-1 truncate text-[13px] text-gray-900">{featured.title}</span>
+            <span className="shrink-0 text-[10px] text-red-500">👀 {formatCount(featured.viewer_count ?? 0)}</span>
           </button>
         )}
 
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-400">불러오는 중...</div>
+          <div className="py-16 text-center text-[13px] text-gray-400">불러오는 중...</div>
         ) : (
           <div className="space-y-8 pt-5">
             <section>
@@ -265,8 +265,8 @@ export default function LiveListPage() {
                           <span className="rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white">👀 {formatCount(b.viewer_count ?? 0)}</span>
                         </div>
                       </Thumb>
-                      <div className="mt-1.5 truncate text-xs text-purple-600">{hostName(b)}</div>
-                      <div className="line-clamp-2 text-sm text-gray-900">{b.title}</div>
+                      <div className="mt-1.5 truncate text-[11px] text-purple-600">{hostName(b)}</div>
+                      <div className="line-clamp-2 text-[13px] text-gray-900">{b.title}</div>
                     </button>
                   ))}
                 </div>
@@ -284,7 +284,7 @@ export default function LiveListPage() {
                         <span className={notified[b.id] ? 'text-purple-600' : 'text-gray-400'}><BellIcon size={16} /></span>
                       </div>
                       <div className="mt-1 text-[11px] text-gray-500">{formatDate(b.scheduled_at)}</div>
-                      <div className="mt-2 line-clamp-2 text-sm text-gray-900">{b.title}</div>
+                      <div className="mt-2 line-clamp-2 text-[13px] text-gray-900">{b.title}</div>
                       <div className="mt-1 truncate text-[11px] text-gray-400">{hostName(b)}</div>
                     </button>
                   ))}
@@ -298,14 +298,14 @@ export default function LiveListPage() {
                 <div className="space-y-2 px-4">
                   {ranking.map((b, i) => (
                     <button key={b.id} type="button" onClick={() => openSheet(b)} className="flex w-full items-center gap-3 rounded-xl border border-gray-100 p-2.5 text-left">
-                      <span className={`w-5 text-center text-lg ${i < 3 ? 'text-purple-600' : 'text-gray-400'}`}>{i + 1}</span>
+                      <span className={`w-5 text-center text-[13px] ${i < 3 ? 'text-purple-600' : 'text-gray-400'}`}>{i + 1}</span>
                       <Thumb b={b} className="h-14 w-14 shrink-0 rounded-lg" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           {b.status === 'live' ? <LiveBadge /> : <UpcomingBadge />}
                           <span className="truncate text-[11px] text-gray-500">{hostName(b)}</span>
                         </div>
-                        <div className="mt-0.5 truncate text-sm text-gray-900">{b.title}</div>
+                        <div className="mt-0.5 truncate text-[13px] text-gray-900">{b.title}</div>
                         <div className="mt-0.5 text-[11px] text-gray-400">
                           {b.status === 'live' ? `👀 ${formatCount(b.viewer_count ?? 0)}명 시청 중` : `⏰ ${formatDate(b.scheduled_at)}`}
                         </div>
@@ -328,8 +328,8 @@ export default function LiveListPage() {
                           <span className="rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white">👀 총 {formatCount(b.viewer_count ?? 0)}</span>
                         </div>
                       </Thumb>
-                      <div className="mt-1.5 truncate text-xs text-purple-600">{hostName(b)}</div>
-                      <div className="line-clamp-2 text-sm text-gray-900">{b.title}</div>
+                      <div className="mt-1.5 truncate text-[11px] text-purple-600">{hostName(b)}</div>
+                      <div className="line-clamp-2 text-[13px] text-gray-900">{b.title}</div>
                     </div>
                   ))}
                 </div>
@@ -347,18 +347,18 @@ export default function LiveListPage() {
                 className="flex h-9 w-9 items-center justify-center text-xl text-gray-900">
                 ←
               </button>
-              <span className="truncate text-sm text-gray-900">{sheetB.status === 'live' ? '라이브 방송' : '예정 방송'}</span>
+              <span className="truncate text-[13px] text-gray-900">{sheetB.status === 'live' ? '라이브 방송' : '예정 방송'}</span>
             </div>
             <div className="relative">
               <Thumb b={sheetB} className="aspect-video w-full">
                 {sheetB.status === 'live' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 pl-1 text-2xl text-purple-600">▶</span>
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 pl-1 text-[20px] text-purple-600">▶</span>
                   </div>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 text-white">
-                    <div className="text-3xl">{dDay(sheetB.scheduled_at)}</div>
-                    <div className="mt-1 text-sm">{formatDate(sheetB.scheduled_at)}</div>
+                    <div className="text-[22px]">{dDay(sheetB.scheduled_at)}</div>
+                    <div className="mt-1 text-[11px]">{formatDate(sheetB.scheduled_at)}</div>
                   </div>
                 )}
               </Thumb>
@@ -366,23 +366,23 @@ export default function LiveListPage() {
             <div className="px-4 pt-4">
               <div className="flex items-center gap-2">
                 {sheetB.status === 'live' ? <LiveBadge /> : <UpcomingBadge />}
-                <span className="truncate text-xs text-purple-600">{hostName(sheetB)}</span>
+                <span className="truncate text-[11px] text-purple-600">{hostName(sheetB)}</span>
                 {sheetB.status === 'live' && sheetB.started_at && (
                   <span className="ml-auto shrink-0 text-[11px] text-red-500">{formatElapsed(sheetB.started_at)}</span>
                 )}
               </div>
-              <div className="mt-2 text-base text-gray-900">{sheetB.title}</div>
-              {sheetB.description && <div className="mt-1 text-sm leading-relaxed text-gray-500">{sheetB.description}</div>}
+              <div className="mt-2 text-[13px] text-gray-900">{sheetB.title}</div>
+              {sheetB.description && <div className="mt-1 text-[11px] leading-relaxed text-gray-500">{sheetB.description}</div>}
 
               {sheetB.status === 'live' ? (
                 <>
-                  <div className="mt-3 flex gap-4 text-xs text-gray-500">
+                  <div className="mt-3 flex gap-4 text-[11px] text-gray-500">
                     <span>👀 시청 {formatCount(sheetB.viewer_count ?? 0)}</span>
                     <span>💬 채팅 -</span>
                   </div>
                   <ProductsPlaceholder label="방송 제품" />
                   <button type="button" onClick={() => router.push(`/live/${sheetB.id}`)}
-                    className="mt-6 w-full rounded-xl bg-red-500 py-3.5 text-sm text-white">
+                    className="mt-6 w-full rounded-xl bg-red-500 py-3.5 text-[13px] text-white">
                     지금 시청하기
                   </button>
                 </>
@@ -391,12 +391,12 @@ export default function LiveListPage() {
                   <ProductsPlaceholder label="예정 제품" />
                   <div className="mt-6 flex gap-2">
                     <button type="button" onClick={() => toggleNotify(sheetB.id)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-3.5 text-sm ${notified[sheetB.id] ? 'border border-purple-600 bg-white text-purple-600' : 'bg-purple-600 text-white'}`}>
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-3.5 text-[13px] ${notified[sheetB.id] ? 'border border-purple-600 bg-white text-purple-600' : 'bg-purple-600 text-white'}`}>
                       <BellIcon size={16} />
                       {notified[sheetB.id] ? '알림 신청됨' : '알림 신청하기'}
                     </button>
                     <button type="button" onClick={() => void share(sheetB)}
-                      className="flex-1 rounded-xl border border-gray-200 py-3.5 text-sm text-gray-700">
+                      className="flex-1 rounded-xl border border-gray-200 py-3.5 text-[13px] text-gray-700">
                       방송 공유하기
                     </button>
                   </div>
@@ -408,7 +408,7 @@ export default function LiveListPage() {
       </div>
 
       {toast && (
-        <div className="fixed left-1/2 top-4 z-[60] -translate-x-1/2 whitespace-nowrap rounded-full bg-purple-600 px-4 py-2 text-xs text-white">
+        <div className="fixed left-1/2 top-4 z-[60] -translate-x-1/2 whitespace-nowrap rounded-full bg-purple-600 px-4 py-2 text-[11px] text-white">
           {toast}
         </div>
       )}
