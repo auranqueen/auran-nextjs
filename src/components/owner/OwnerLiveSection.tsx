@@ -157,13 +157,17 @@ export default function OwnerLiveSection() {
 
       {showForm && (
         <div style={{ margin: '0 16px 16px', background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 12 }}>새 방송 만들기</div>
-          <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: 12, border: '2px dashed #d8b4fe', background: '#faf5ff', overflow: 'hidden', cursor: 'pointer', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: TEXT, marginBottom: 12 }}>새 방송 만들기</div>
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
+          <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
             <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
             {thumbPreview ? (
               <img src={thumbPreview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: PURPLE }}>📷 방송 썸네일 추가</div>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <span style={{ fontSize: 20 }}>📷</span>
+                <span style={{ fontSize: 10, color: '#bbb' }}>16:9 비율 권장</span>
+              </div>
             )}
           </label>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 제목 *</div>
@@ -181,28 +185,29 @@ export default function OwnerLiveSection() {
             rows={2}
             style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, marginBottom: 10, boxSizing: 'border-box', background: '#fff', resize: 'none' }}
           />
-          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 날짜</div>
-          <input
-            type="date"
-            value={schedule.date}
-            min={toDateStr(new Date())}
-            onChange={(e) => setSchedule((p) => ({ ...p, date: e.target.value }))}
-            style={{ ...FIELD, marginBottom: 10 }}
-          />
-          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 시간</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-            <select value={schedule.hour} onChange={(e) => setSchedule((p) => ({ ...p, hour: e.target.value }))} style={{ ...FIELD, flex: 1 }}>
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>예정 일시</div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+            <input
+              type="date"
+              value={schedule.date}
+              min={toDateStr(new Date())}
+              onChange={(e) => setSchedule((p) => ({ ...p, date: e.target.value }))}
+              style={{ flex: 2, minWidth: 0, padding: '10px 10px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT }}
+            />
+            <select value={schedule.hour} onChange={(e) => setSchedule((p) => ({ ...p, hour: e.target.value }))}
+              style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
               {HOURS.map((h) => <option key={h} value={h}>{h}시</option>)}
             </select>
-            <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))} style={{ ...FIELD, flex: 1 }}>
-              {MINUTES.map((m) => <option key={m} value={m}>{m}분</option>)}
+            <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))}
+              style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
+              {['00', '10', '20', '30', '40', '50'].map((m) => <option key={m} value={m}>{m}분</option>)}
             </select>
           </div>
           <button
             type="button"
             disabled={saving}
             onClick={() => void submit()}
-            style={{ width: '100%', padding: 12, borderRadius: 9, border: 'none', background: saving ? '#ccc' : PURPLE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}
+            style={{ width: '100%', padding: 12, borderRadius: 9, border: 'none', background: saving ? '#ccc' : '#C9A96E', color: '#fff', fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer' }}
           >
             {saving ? '만드는 중…' : '방송 만들기'}
           </button>

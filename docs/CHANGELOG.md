@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-12
+- style(live): 원장 `OwnerLiveSection` 방송 만들기 폼(showForm 블록 158~215행)만 모양 정리 — 썸네일 라벨 "썸네일 (선택)", 16:9 박스(radius 10, 골드 `#C9A96E` 1.5px 점선, 📷 + "16:9 비율 권장" 10px), 날짜·시·분 한 줄(flex 2:1:1, gap 6, select `appearance: none`), 라벨 "예정 일시", 분 선택지 00~50(10분 단위), 블록 내 `fontWeight` 제거, 만들기 버튼 골드. `schedule`·`thumbPreview` 상태와 submit(ISO 전송·지난 시간 차단)은 변경 없음
+
 ## 2026-10-11
 - feat(live): 고객 `/live` 시트 2종을 아래→위 바텀시트에서 오른쪽→왼쪽 풀스크린(`fixed inset-0`, `translate-x-full` → `translate-x-0`, duration-300·z-50 유지)으로 전환. 딤 배경 제거, × 대신 sticky `←` 뒤로가기 헤더, 내부 `overflow-y-auto`, 닫힌 상태 `pointer-events-none`. 원장 `OwnerLiveSection` 방송 만들기 폼 개편: 16:9 썸네일 업로드 영역(로컬 `createObjectURL` 미리보기·`revokeObjectURL` 정리, API엔 `thumbnail_url: ''`), `datetime-local` → 방송 날짜(`date`, 기본 오늘·다음 정각) + 방송 시간(시 0~23·분 00/30 select, 사용자 승인 예외), 지난 시간 차단, `scheduled_at`을 `toISOString()`으로 보내 시간대 없는 값이 UTC로 저장되던 9시간 어긋남 수정, 성공 후 초기화, `useCallback` deps `[supabase, router]` → `[router]`
 - fix(live): 고객 `/live` 조회 정렬 `scheduled_at` 오름차순 → 내림차순(최신순), `limit` 30 → 50. 종료 방송이 쌓여도 최신 예정·라이브가 빠지지 않게. 예정 방송 가로 스크롤은 기존처럼 가까운 날짜 먼저 보이도록 화면에서 오름차순 재정렬
