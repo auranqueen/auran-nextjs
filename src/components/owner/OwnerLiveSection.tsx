@@ -57,6 +57,14 @@ export default function OwnerLiveSection() {
   const [toast, setToast] = useState('')
   const [streamKey, setStreamKey] = useState<{ rtmp_url: string; rtmp_key: string } | null>(null)
   const [keyLoading, setKeyLoading] = useState<number | null>(null)
+  const [isPC, setIsPC] = useState(false)
+
+  useEffect(() => {
+    const onResize = () => setIsPC(window.innerWidth >= 768)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 3000) }
 
@@ -160,9 +168,20 @@ export default function OwnerLiveSection() {
         </button>
       </div>
 
+      {isPC && showForm && (
+        <div onClick={() => setShowForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 49 }} />
+      )}
       <div
         aria-hidden={!showForm}
-        style={{
+        style={isPC ? {
+          position: 'fixed', top: '50%', left: '50%', width: '480px', maxHeight: '90vh', zIndex: 50,
+          background: '#fff', color: '#1a1a1a', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+          transform: showForm ? 'translate(-50%, -50%)' : 'translate(-40%, -50%)',
+          opacity: showForm ? 1 : 0,
+          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s, visibility 0.28s',
+          visibility: showForm ? 'visible' : 'hidden',
+        } : {
           position: 'fixed', inset: 0, zIndex: 50, background: '#fff', color: '#1a1a1a',
           display: 'flex', flexDirection: 'column',
           transform: showForm ? 'translateX(0)' : 'translateX(100%)',
@@ -175,7 +194,7 @@ export default function OwnerLiveSection() {
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
           <div style={{ fontSize: 16, color: TEXT }}>방송 만들기</div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
           <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
             <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
