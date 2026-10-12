@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- feat(owner): 원장 대시보드(`OwnerHomeV3.tsx`) 상단 오른쪽 "내 스토어 보기" 옆에 `📺 내 라이브` 버튼 추가 → `/dashboard/owner/live`(기존 `Link` import 사용, 골드 테두리 `#C9A96E`·크림 배경 `#fff9f0`·fontSize 11·`minHeight: 52`로 스토어 버튼과 높이 맞춤, fontWeight 없음). 기본 원장 홈이 V3라 `OwnerQuickMenu`(`?v=1` 전용)의 라이브 카드가 안 보이던 문제 해소
 - style(live): 원장 `OwnerLiveSection` 방송 만들기 폼(showForm 블록 158~215행)만 모양 정리 — 썸네일 라벨 "썸네일 (선택)", 16:9 박스(radius 10, 골드 `#C9A96E` 1.5px 점선, 📷 + "16:9 비율 권장" 10px), 날짜·시·분 한 줄(flex 2:1:1, gap 6, select `appearance: none`), 라벨 "예정 일시", 분 선택지 00~50(10분 단위), 블록 내 `fontWeight` 제거, 만들기 버튼 골드. `schedule`·`thumbPreview` 상태와 submit(ISO 전송·지난 시간 차단)은 변경 없음
 
 ## 2026-10-11

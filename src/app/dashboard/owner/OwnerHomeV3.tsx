@@ -333,6 +333,24 @@ export default function OwnerHomeV3({
                 <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
               </a>
             ) : null}
+            <Link
+              href="/dashboard/owner/live"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 16px',
+                minHeight: 52,
+                background: '#fff9f0',
+                borderRadius: 12,
+                border: '1px solid #C9A96E',
+                textDecoration: 'none',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📺</span>
+              <span style={{ fontSize: 11, color: '#8a6520' }}>내 라이브</span>
+            </Link>
             {isSuperAdmin && (
             <button
               onClick={() => switchRole('customer')}
