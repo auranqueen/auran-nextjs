@@ -27,6 +27,7 @@ interface BroadcastRow {
   started_at: string | null
   ended_at: string | null
   thumbnail_url: string | null
+  viewer_count: number | null
 }
 
 const EMPTY = { title: '', description: '' }
@@ -311,44 +312,48 @@ export default function OwnerLiveSection() {
             const st = STATUS_MAP[b.status] || STATUS_MAP['ended']
             const isKeyLoading = keyLoading === b.id
             return (
-              <div key={b.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 13, padding: 14, marginBottom: 10, background: '#fff' }}>
-                <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, marginBottom: 10, background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)', position: 'relative', overflow: 'hidden' }}>
+              <div key={b.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 10, border: `1px solid ${BORDER}`, borderRadius: 13, marginBottom: 10, background: '#fff' }}>
+                <div style={{ width: 60, flexShrink: 0, aspectRatio: '9/16', borderRadius: 8, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
                   {b.thumbnail_url && (
                     <img src={b.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, padding: '2px 9px', borderRadius: 6, background: st.bg, color: st.color, fontWeight: 600 }}>{st.label}</span>
-                  {b.scheduled_at && (
-                    <span style={{ fontSize: 11, color: SUB }}>
-                      {new Date(b.scheduled_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 3, flexWrap: 'nowrap' }}>
+                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 5, background: st.bg, color: st.color, flexShrink: 0 }}>{st.label}</span>
+                    {b.scheduled_at && (
+                      <span style={{ fontSize: 10, color: SUB, whiteSpace: 'nowrap' }}>
+                        {new Date(b.scheduled_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, color: TEXT, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title}</div>
+                  {b.description && (
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</div>
+                  )}
+                  {b.status === 'ended' ? (
+                    <div style={{ fontSize: 10, color: SUB }}>👁️ {b.viewer_count ?? 0}명</div>
+                  ) : deleteConfirm === b.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ fontSize: 10, color: TEXT, whiteSpace: 'nowrap' }}>정말 삭제할까요?</span>
+                      <button type="button" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>취소</button>
+                      <button type="button" onClick={() => { setDeleteConfirm(null); showToast('삭제 기능 준비 중') }} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>확인삭제</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      <button type="button" onClick={() => showToast('준비 중이에요')} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>✏️ 수정</button>
+                      <button type="button" onClick={() => setDeleteConfirm(b.id)} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>🗑️ 삭제</button>
+                      <button
+                        type="button"
+                        disabled={isKeyLoading}
+                        onClick={() => void fetchStreamKey(b.id)}
+                        style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: isKeyLoading ? 'wait' : 'pointer' }}
+                      >
+                        {isKeyLoading ? '조회 중…' : '📡 송출키'}
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 3 }}>{b.title}</div>
-                {b.description && <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>{b.description}</div>}
-                {deleteConfirm === b.id ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: TEXT }}>정말 삭제할까요?</span>
-                    <button type="button" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>취소</button>
-                    <button type="button" onClick={() => { setDeleteConfirm(null); showToast('삭제 기능 준비 중') }} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>확인삭제</button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <button type="button" onClick={() => showToast('준비 중이에요')} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>✏️ 수정</button>
-                    <button type="button" onClick={() => setDeleteConfirm(b.id)} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>🗑️ 삭제</button>
-                  </div>
-                )}
-                {b.status !== 'ended' && (
-                  <button
-                    type="button"
-                    disabled={isKeyLoading}
-                    onClick={() => void fetchStreamKey(b.id)}
-                    style={{ marginTop: 4, fontSize: 12, padding: '7px 14px', borderRadius: 8, border: `1px solid ${BORDER}`, background: LIGHT, color: PURPLE, cursor: isKeyLoading ? 'wait' : 'pointer', fontWeight: 600 }}
-                  >
-                    {isKeyLoading ? '조회 중…' : '📡 송출키 보기'}
-                  </button>
-                )}
               </div>
             )
           })

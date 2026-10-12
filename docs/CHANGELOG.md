@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- feat(live): 원장 라이브 목록 카드를 가로 배치로 전환 — 왼쪽 9:16 썸네일(가로 60, 그라디언트 칸 후 이미지), 오른쪽 배지·날짜 10px, 제목 13px(말줄임), 설명 11px(말줄임). 예정·라이브는 수정/삭제/송출키 10px, 종료는 버튼 대신 `viewer_count`. `BroadcastRow.viewer_count` 추가. `deleteConfirm` 확인 UI 유지
 - fix(live): 원장 라이브 목록 컨테이너에 `maxWidth: 600`, `margin: '0 auto'` 추가 — PC에서 카드·썸네일이 화면 전체 너비로 늘어나던 문제. 패딩 `0 16px`은 유지
 - fix(live): 원장 라이브 카드 썸네일 칸을 항상 16:9로 먼저 그림 — 그라디언트 박스(`position: relative`, `overflow: hidden`) 안에 `thumbnail_url`이 있을 때만 이미지를 `absolute`로 채움. 주소가 없어도 칸 높이가 0이 되지 않음
 - feat(live): 원장 라이브 목록 카드에 썸네일·수정·삭제 추가 — `BroadcastRow.thumbnail_url` 추가. 있으면 16:9 `img`, 없으면 `linear-gradient(135deg, #a78bfa, #f9a8d4)`. 설명 아래 `✏️ 수정`은 `준비 중이에요` 토스트. `🗑️ 삭제`는 `deleteConfirm === b.id`일 때만 "정말 삭제할까요?"와 취소/확인삭제. `window.confirm` 없음. 확인삭제는 `/api/live/delete-broadcast`가 없어 `삭제 기능 준비 중` 토스트만
