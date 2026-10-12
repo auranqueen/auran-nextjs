@@ -62,6 +62,7 @@ export default function OwnerLiveSection() {
   const [keyLoading, setKeyLoading] = useState<number | null>(null)
   const [isPC, setIsPC] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null as number | null)
+  const [deleting, setDeleting] = useState(null as number | null)
 
   useEffect(() => {
     const onResize = () => setIsPC(window.innerWidth >= 768)
@@ -156,6 +157,33 @@ export default function OwnerLiveSection() {
       await loadBroadcasts()
     } finally {
       setSaving(false)
+    }
+  }
+
+  const deleteBroadcast = async (broadcastId: number) => {
+    if (deleting) return
+    setDeleting(broadcastId)
+    try {
+      const res = await fetch(`/api/live/delete-broadcast?broadcast_id=${broadcastId}`, { method: 'DELETE', credentials: 'same-origin' })
+      if (res.status === 401) { router.replace('/login?role=owner'); return }
+      const json = await res.json().catch(() => ({}))
+      if (json?.ok) {
+        showToast('방송을 삭제했어요')
+        await loadBroadcasts()
+        return
+      }
+      if (json?.error === 'not_deletable') showToast('예정 방송만 삭제할 수 있어요')
+      else if (json?.error === 'has_related_data') showToast('연결된 데이터가 있어 삭제할 수 없어요')
+      else if (json?.error === 'not_found') {
+        showToast('이미 삭제된 방송이에요')
+        await loadBroadcasts()
+      } else showToast('삭제에 실패했어요')
+    } catch (e) {
+      console.error('[OwnerLiveSection] 방송 삭제 오류', e)
+      showToast('삭제에 실패했어요')
+    } finally {
+      setDeleting(null)
+      setDeleteConfirm(null)
     }
   }
 
@@ -337,7 +365,7 @@ export default function OwnerLiveSection() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span style={{ fontSize: 10, color: TEXT, whiteSpace: 'nowrap' }}>정말 삭제할까요?</span>
                       <button type="button" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' }}>취소</button>
-                      <button type="button" onClick={() => { setDeleteConfirm(null); showToast('삭제 기능 준비 중') }} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>확인삭제</button>
+                      <button type="button" disabled={deleting === b.id} onClick={() => { void deleteBroadcast(b.id) }} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', cursor: 'pointer' }}>{deleting === b.id ? '삭제 중…' : '확인삭제'}</button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', gap: 5 }}>
