@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- fix(live): 썸네일 업로드 경로를 `profiles.id`에서 `auth` UUID(`user.id`)로 변경 — `OwnerLiveSection` 업로드 블록의 `profiles` 조회 2줄 제거. Storage 정책이 `auth.uid()`로 첫 폴더를 검사하는데 경로가 `profiles.id`라 업로드가 거절되던 불일치 해소. 경로 형식 `${userId}/live/${Date.now()}_${파일명}`과 실패 시 방송 생성 계속은 유지
 - chore: `hls.js`를 `node_modules`에 설치하고 devDependency `@types/hls.js@^0.13.3` 추가. `tsc --noEmit`에서 `src/app/live/[id]/page.tsx`의 `Cannot find module 'hls.js'` 해소. 같이 보이던 `.next/types`의 삭제된 `payment/payapp` 참조는 생성 캐시라 로컬에서 해당 타입 폴더만 지운 뒤 재검사(저장소 파일 아님)
 - feat(live): 원장 방송 만들기 썸네일을 `live-thumbnails`에 업로드하고 URL을 저장 — `OwnerLiveSection`에 `thumbFile` 추가, 선택 파일을 `${profiles.id}/live/${Date.now()}_${파일명}`으로 업로드(`upsert: true`) 후 `getPublicUrl`. 업로드 실패·프로필 id 없으면 `thumbnail_url: ''`로 방송 생성은 계속. `POST /api/live/create-stream`는 `thumbnail_url`이 문자열이고 `https://`로 시작할 때만 저장, 아니면 `null`
 - fix(live): 원장 방송 만들기 폼 PC/모바일 분기 — 768px 미만은 오른쪽 풀스크린 슬라이드 유지, 768px 이상은 중앙 카드(480px·maxHeight 90vh·radius 16·그림자, 열림 `translate(-50%,-50%)`/opacity 1 ↔ 닫힘 `translate(-40%,-50%)`/opacity 0, 0.28s) + PC 전용 딤(`rgba(0,0,0,0.3)`, zIndex 49, 클릭 시 닫힘). `isPC` 상태는 resize 리스너로 갱신, 카드 안 스크롤 영역에 `minHeight: 0`

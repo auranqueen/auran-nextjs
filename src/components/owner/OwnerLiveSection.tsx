@@ -114,10 +114,7 @@ export default function OwnerLiveSection() {
       if (thumbFile) {
         try {
           const { data: { user } } = await supabase.auth.getUser()
-          const { data: profile } = user
-            ? await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
-            : { data: null }
-          const userId = profile?.id
+          const userId = user?.id
           if (userId) {
             const path = `${userId}/live/${Date.now()}_${thumbFile.name}`
             const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, thumbFile, { upsert: true })
