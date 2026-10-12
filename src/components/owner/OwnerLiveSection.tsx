@@ -312,11 +312,11 @@ export default function OwnerLiveSection() {
             const isKeyLoading = keyLoading === b.id
             return (
               <div key={b.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 13, padding: 14, marginBottom: 10, background: '#fff' }}>
-                {b.thumbnail_url ? (
-                  <img src={b.thumbnail_url} alt="" style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, objectFit: 'cover', marginBottom: 10 }} />
-                ) : (
-                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, marginBottom: 10, background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }} />
-                )}
+                <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, marginBottom: 10, background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)', position: 'relative', overflow: 'hidden' }}>
+                  {b.thumbnail_url && (
+                    <img src={b.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, padding: '2px 9px', borderRadius: 6, background: st.bg, color: st.color, fontWeight: 600 }}>{st.label}</span>
                   {b.scheduled_at && (
