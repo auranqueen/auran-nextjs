@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-12
+- fix(live): 원장 라이브 목록 컨테이너에 `maxWidth: 600`, `margin: '0 auto'` 추가 — PC에서 카드·썸네일이 화면 전체 너비로 늘어나던 문제. 패딩 `0 16px`은 유지
 - fix(live): 원장 라이브 카드 썸네일 칸을 항상 16:9로 먼저 그림 — 그라디언트 박스(`position: relative`, `overflow: hidden`) 안에 `thumbnail_url`이 있을 때만 이미지를 `absolute`로 채움. 주소가 없어도 칸 높이가 0이 되지 않음
 - feat(live): 원장 라이브 목록 카드에 썸네일·수정·삭제 추가 — `BroadcastRow.thumbnail_url` 추가. 있으면 16:9 `img`, 없으면 `linear-gradient(135deg, #a78bfa, #f9a8d4)`. 설명 아래 `✏️ 수정`은 `준비 중이에요` 토스트. `🗑️ 삭제`는 `deleteConfirm === b.id`일 때만 "정말 삭제할까요?"와 취소/확인삭제. `window.confirm` 없음. 확인삭제는 `/api/live/delete-broadcast`가 없어 `삭제 기능 준비 중` 토스트만
 - fix(live): 썸네일 Storage 경로에서 원본 파일명 제거 — `OwnerLiveSection` 경로를 `${userId}/live/${Date.now()}_${thumbFile.name}`에서 `${userId}/live/${Date.now()}.${ext}`로 변경. 확장자는 파일명 마지막 `.` 뒤, 없으면 `jpg`. 한글 파일명이 키에 들어가 Storage가 거부하던 문제

@@ -297,7 +297,7 @@ export default function OwnerLiveSection() {
         </div>
       )}
 
-      <div style={{ padding: '0 16px' }}>
+      <div style={{ padding: '0 16px', maxWidth: 600, margin: '0 auto' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 50, color: SUB, fontSize: 13 }}>불러오는 중...</div>
         ) : broadcasts.length === 0 ? (
