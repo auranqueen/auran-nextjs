@@ -116,7 +116,8 @@ export default function OwnerLiveSection() {
           const { data: { user } } = await supabase.auth.getUser()
           const userId = user?.id
           if (userId) {
-            const path = `${userId}/live/${Date.now()}_${thumbFile.name}`
+            const ext = thumbFile.name.split('.').pop() || 'jpg'
+            const path = `${userId}/live/${Date.now()}.${ext}`
             const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, thumbFile, { upsert: true })
             if (uploadError) {
               console.error('[OwnerLiveSection] 썸네일 업로드 실패', uploadError)
