@@ -29,7 +29,7 @@ export interface BroadcastActions {
   deleteConfirm: number | null
   deleting: number | null
   onStreamKey: (id: number) => void
-  onEdit: () => void
+  onEdit: (b: BroadcastRow) => void
   onAskDelete: (id: number | null) => void
   onDelete: (id: number) => void
 }
@@ -39,6 +39,20 @@ export type DateMarks = Record<string, { past: boolean; upcoming: boolean }>
 export function toDateStr(d: Date) {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+export const EMPTY = { title: '', description: '' }
+
+export function defaultSchedule() {
+  const d = new Date()
+  d.setHours(d.getHours() + 1, 0, 0, 0)
+  return { date: toDateStr(d), hour: String(d.getHours()).padStart(2, '0'), minute: '00' }
+}
+
+export function scheduleFromIso(iso: string) {
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return { date: toDateStr(d), hour: p(d.getHours()), minute: p(Math.floor(d.getMinutes() / 10) * 10) }
 }
 
 function timeOf(b: BroadcastRow, fallback: number) {

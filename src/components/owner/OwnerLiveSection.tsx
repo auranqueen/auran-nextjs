@@ -3,19 +3,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import { GOLD, SUB, TEXT, buildDateMarks, filterByDate, pickHero, splitBroadcasts, toDateStr, type BroadcastActions, type BroadcastRow } from '@/components/owner/live/liveUtils'
+import { EMPTY, GOLD, SUB, TEXT, buildDateMarks, defaultSchedule, filterByDate, pickHero, splitBroadcasts, toDateStr, type BroadcastActions, type BroadcastRow } from '@/components/owner/live/liveUtils'
 import LiveHeroCard, { StreamKeyCard } from '@/components/owner/live/LiveHeroCard'
 import LiveMiniCalendar from '@/components/owner/live/LiveMiniCalendar'
 import LiveBroadcastList from '@/components/owner/live/LiveBroadcastList'
 import LiveCreateSheet from '@/components/owner/live/LiveCreateSheet'
-
-const EMPTY = { title: '', description: '' }
-
-function defaultSchedule() {
-  const d = new Date()
-  d.setHours(d.getHours() + 1, 0, 0, 0)
-  return { date: toDateStr(d), hour: String(d.getHours()).padStart(2, '0'), minute: '00' }
-}
+import { useLiveEdit } from '@/components/owner/live/useLiveEdit'
 
 function currentMonth() {
   const d = new Date()
@@ -183,6 +176,12 @@ export default function OwnerLiveSection() {
     navigator.clipboard.writeText(text).then(() => showToast('복사됐어요')).catch(() => showToast('복사 실패'))
   }
 
+  const edit = useLiveEdit({
+    draft, schedule, setDraft, setSchedule, setShowForm, setSaving, showToast,
+    reload: loadBroadcasts, onUnauthorized: () => router.replace('/login?role=owner'),
+  })
+  const closeForm = () => { setShowForm(false); if (edit.editingId !== null) edit.closeEdit() }
+
   const today = toDateStr(new Date())
   const { upcoming, past } = splitBroadcasts(broadcasts)
   const hero = pickHero(upcoming)
@@ -194,7 +193,7 @@ export default function OwnerLiveSection() {
     deleteConfirm,
     deleting,
     onStreamKey: (id) => { void fetchStreamKey(id) },
-    onEdit: () => showToast('준비 중이에요'),
+    onEdit: edit.openEdit,
     onAskDelete: setDeleteConfirm,
     onDelete: (id) => { void deleteBroadcast(id) },
   }
@@ -242,7 +241,7 @@ export default function OwnerLiveSection() {
         <div style={{ fontSize: 16, color: TEXT }}>내 라이브 방송</div>
         <button
           type="button"
-          onClick={() => (showForm ? setShowForm(false) : openForm())}
+          onClick={() => (showForm ? closeForm() : openForm())}
           style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 14px', borderRadius: 20, border: `1px solid ${GOLD}`, background: showForm ? '#fff' : GOLD, color: showForm ? GOLD : '#fff', cursor: 'pointer' }}
         >
           {showForm ? '취소' : '+ 방송 만들기'}
@@ -252,9 +251,10 @@ export default function OwnerLiveSection() {
       <LiveCreateSheet
         isPC={isPC}
         showForm={showForm}
-        onClose={() => setShowForm(false)}
+        onClose={closeForm} mode={edit.editingId !== null ? 'edit' : 'create'}
         draft={draft} setDraft={setDraft} schedule={schedule} setSchedule={setSchedule}
-        thumbPreview={thumbPreview} pickThumb={pickThumb} saving={saving} submit={submit}
+        thumbPreview={thumbPreview} pickThumb={pickThumb} saving={saving}
+        submit={edit.editingId !== null ? edit.submitEdit : submit}
       />
 
       <div style={{ padding: '0 16px', maxWidth: 600, margin: '0 auto' }}>

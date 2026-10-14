@@ -28,7 +28,7 @@ export async function GET() {
     .select(COLUMNS)
     .eq('owner_id', me.id)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(50)
   if (error) {
     console.error('[live/my-broadcasts] query error', error)
     return fail('internal_error', 500)

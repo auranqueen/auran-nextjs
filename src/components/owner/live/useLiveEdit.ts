@@ -1,0 +1,86 @@
+'use client'
+import { useState, type Dispatch, type SetStateAction } from 'react'
+import { EMPTY, defaultSchedule, scheduleFromIso, type BroadcastRow } from './liveUtils'
+
+type Draft = { title: string; description: string }
+type Schedule = { date: string; hour: string; minute: string }
+
+const EDIT_ERRORS: Record<string, string> = {
+  not_editable: '예정 방송만 수정할 수 있어요',
+  not_found: '방송을 찾을 수 없어요',
+  title_required: '제목을 입력해주세요',
+  past_time: '지난 시간은 선택할 수 없어요',
+}
+
+interface Options {
+  draft: Draft
+  schedule: Schedule
+  setDraft: Dispatch<SetStateAction<Draft>>
+  setSchedule: Dispatch<SetStateAction<Schedule>>
+  setShowForm: (open: boolean) => void
+  setSaving: (saving: boolean) => void
+  showToast: (text: string) => void
+  reload: () => Promise<void>
+  onUnauthorized: () => void
+}
+
+export function useLiveEdit(o: Options) {
+  const [editingId, setEditingId] = useState<number | null>(null)
+
+  const openEdit = (b: BroadcastRow) => {
+    o.setDraft({ title: b.title, description: b.description ?? '' })
+    o.setSchedule(b.scheduled_at ? scheduleFromIso(b.scheduled_at) : defaultSchedule())
+    setEditingId(b.id)
+    o.setShowForm(true)
+  }
+
+  const closeEdit = () => {
+    setEditingId(null)
+    o.setDraft(EMPTY)
+    o.setSchedule(defaultSchedule())
+  }
+
+  const submitEdit = async () => {
+    if (editingId === null) return
+    if (!o.draft.title.trim()) { o.showToast('방송 제목을 입력해주세요'); return }
+    const scheduledAt = new Date(`${o.schedule.date}T${o.schedule.hour}:${o.schedule.minute}:00`)
+    if (Number.isNaN(scheduledAt.getTime())) { o.showToast('방송 날짜를 선택해주세요'); return }
+    if (scheduledAt.getTime() < Date.now()) { o.showToast('지난 시간은 선택할 수 없어요'); return }
+    o.setSaving(true)
+    try {
+      const res = await fetch('/api/live/update-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          id: editingId,
+          title: o.draft.title.trim(),
+          description: o.draft.description.trim() || null,
+          scheduled_at: scheduledAt.toISOString(),
+        }),
+      })
+      if (res.status === 401) { o.onUnauthorized(); return }
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok) {
+        o.showToast(EDIT_ERRORS[json?.error] ?? '수정에 실패했어요')
+        if (json?.error === 'not_editable' || json?.error === 'not_found') {
+          o.setShowForm(false)
+          closeEdit()
+          await o.reload()
+        }
+        return
+      }
+      o.showToast('방송을 수정했어요')
+      o.setShowForm(false)
+      closeEdit()
+      await o.reload()
+    } catch (e) {
+      console.error('[OwnerLiveSection] 방송 수정 오류', e)
+      o.showToast('수정에 실패했어요')
+    } finally {
+      o.setSaving(false)
+    }
+  }
+
+  return { editingId, openEdit, closeEdit, submitEdit }
+}

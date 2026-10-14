@@ -8,6 +8,7 @@ type Draft = { title: string; description: string }
 type Schedule = { date: string; hour: string; minute: string }
 
 interface Props {
+  mode: 'create' | 'edit'
   isPC: boolean
   showForm: boolean
   onClose: () => void
@@ -21,7 +22,7 @@ interface Props {
   submit: () => Promise<void>
 }
 
-export default function LiveCreateSheet({ isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit }: Props) {
+export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit }: Props) {
   return (
     <>
       {isPC && showForm && (
@@ -48,9 +49,10 @@ export default function LiveCreateSheet({ isPC, showForm, onClose, draft, setDra
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'calc(14px + env(safe-area-inset-top, 0px)) 16px 14px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
           <button type="button" aria-label="뒤로가기" onClick={() => onClose()}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
-          <div style={{ fontSize: 16, color: TEXT }}>방송 만들기</div>
+          <div style={{ fontSize: 16, color: TEXT }}>{mode === 'edit' ? '방송 수정' : '방송 만들기'}</div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
+          {mode === 'create' && (<>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
           <label style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
             <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
@@ -63,6 +65,7 @@ export default function LiveCreateSheet({ isPC, showForm, onClose, draft, setDra
               </div>
             )}
           </label>
+          </>)}
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 제목 *</div>
           <input
             value={draft.title}
@@ -102,7 +105,7 @@ export default function LiveCreateSheet({ isPC, showForm, onClose, draft, setDra
             onClick={() => void submit()}
             style={{ width: '100%', padding: 12, borderRadius: 9, border: 'none', background: saving ? '#ccc' : '#C9A96E', color: '#fff', fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer' }}
           >
-            {saving ? '만드는 중…' : '방송 만들기'}
+            {saving ? (mode === 'edit' ? '저장 중…' : '만드는 중…') : mode === 'edit' ? '수정 저장' : '방송 만들기'}
           </button>
         </div>
       </div>

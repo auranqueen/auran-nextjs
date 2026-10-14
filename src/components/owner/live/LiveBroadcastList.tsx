@@ -1,12 +1,13 @@
 'use client'
-import { BORDER, GOLD, PURPLE, STATUS_MAP, SUB, TEXT, ddayLabel, formatSchedule, type BroadcastActions, type BroadcastRow } from './liveUtils'
+import { BORDER, GOLD, STATUS_MAP, SUB, TEXT, ddayLabel, formatSchedule, type BroadcastActions, type BroadcastRow } from './liveUtils'
 
-const SMALL_BTN = { fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: PURPLE, cursor: 'pointer' } as const
+const SMALL_BTN = { fontSize: 10, padding: '4px 8px', borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', color: GOLD, cursor: 'pointer' } as const
 const DANGER_BTN = { ...SMALL_BTN, border: '1px solid #fca5a5', color: '#ef4444' } as const
 
 export function BroadcastActionButtons({ b, actions }: { b: BroadcastRow; actions: BroadcastActions }) {
   const { keyLoading, deleteConfirm, deleting, onStreamKey, onEdit, onAskDelete, onDelete } = actions
   const isKeyLoading = keyLoading === b.id
+  const editable = b.status === 'upcoming'
   if (deleteConfirm === b.id) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -21,8 +22,8 @@ export function BroadcastActionButtons({ b, actions }: { b: BroadcastRow; action
       <button type="button" disabled={isKeyLoading} onClick={() => onStreamKey(b.id)} style={{ ...SMALL_BTN, cursor: isKeyLoading ? 'wait' : 'pointer' }}>
         {isKeyLoading ? '조회 중…' : '📡 송출키'}
       </button>
-      <button type="button" onClick={onEdit} style={SMALL_BTN}>✏️ 수정</button>
-      <button type="button" onClick={() => onAskDelete(b.id)} style={DANGER_BTN}>🗑️ 삭제</button>
+      {editable && <button type="button" onClick={() => onEdit(b)} style={SMALL_BTN}>✏️ 수정</button>}
+      {editable && <button type="button" onClick={() => onAskDelete(b.id)} style={DANGER_BTN}>🗑️ 삭제</button>}
     </div>
   )
 }
