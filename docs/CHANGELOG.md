@@ -3,6 +3,9 @@
 
 ---
 
+## 2026-10-14
+- refactor(live): 원장 라이브 화면을 히어로 카드 + 송출키 카드 + 미니 캘린더 + 예정/지난방송 탭으로 개편, `src/components/owner/live/` 5개 파일로 분리 — `liveUtils.ts`(`BroadcastRow`·`STATUS_MAP`·`toDateStr` 이동, 예정 배지만 골드, `splitBroadcasts`/`pickHero`/`buildDateMarks`/`filterByDate`/`ddayLabel`/`formatSchedule`), `LiveHeroCard.tsx`(방송중 → 지금 이후 가장 가까운 예정 순, LIVE/D-DAY/D-N 배지, 없으면 "+ 첫 방송 만들기" 안내, 송출키 카드 `StreamKeyCard` 포함), `LiveMiniCalendar.tsx`(7열 월 그리드, ‹ ›·오늘 복귀, 지난 방송 보라 점·예정 골드 테두리), `LiveBroadcastList.tsx`(예정 가로 카드·가까운 순·히어로 제외 / 지난방송 2열 9:16 그리드·최신순, 공용 `BroadcastActionButtons`), `LiveCreateSheet.tsx`(기존 폼 228–309줄을 그대로 옮김, `setShowForm(false)` → `onClose()`만 변경). `OwnerLiveSection.tsx` 394 → 285줄, `loadBroadcasts`·`submit`(업로드 포함)·`deleteBroadcast`·`fetchStreamKey`·`copy`는 원본과 동일. 새 상태 `tab`·`selectedDate`·`calMonth`. 달력에서 방송 있는 날은 필터(다시 누르면 해제, 해당 탭으로 자동 전환), 빈 날은 그 날짜로 폼 열기(`openForm(date)`, 시간은 다음 정각 기준), 지난 빈 날은 비활성, 오늘+기본 시간이 이미 지났으면 "지금 시간 이후로 선택해주세요" 토스트. 헤더 버튼·토스트 골드, `fontWeight` 0개. 쓰지 않던 `MINUTES`·`FIELD` 상수 삭제. 새 API·fetch 없음
+
 ## 2026-10-12
 - feat(live): 원장 라이브 카드 "확인삭제"를 `DELETE /api/live/delete-broadcast`에 연결 — `OwnerLiveSection`에 `deleting` 상태와 일반 함수 `deleteBroadcast` 추가(중복 클릭 차단, 401이면 로그인 이동). 성공 시 "방송을 삭제했어요" 후 목록 새로고침, `not_deletable`/`has_related_data`/`not_found`(목록 새로고침 포함)/그 외 오류별 토스트. 확인 줄은 요청이 끝날 때 `finally`에서 닫혀 그동안 버튼이 `disabled` + "삭제 중…"으로 보임
 - feat(live): `DELETE /api/live/delete-broadcast?broadcast_id=` 신규 — `stream-key`와 같은 인증 흐름(로그인 401 `not_logged_in`, `profiles.role='owner'` 아니면 403 `owner_only`, id 누락·형식 400). `tryCreateAdminClient()`로 본인(`owner_id = profiles.id`) 방송 조회, 없으면 404 `not_found`, `status !== 'upcoming'`이면 409 `not_deletable`. 삭제는 `id`+`owner_id`+`status='upcoming'` 조건(조회 후 웹훅이 live로 바꾼 경우 방지), FK 위반 `23503`은 409 `has_related_data`, 삭제 0행은 409 `not_deletable`. DB 삭제 성공 후에만 `mux.video.liveStreams.delete()`(실패는 "수동 삭제 필요" 로그만, 응답은 성공). 응답 `{ ok: true }` + `no-store`. 화면 연결·`live-thumbnails` 파일 정리는 아직 없음
