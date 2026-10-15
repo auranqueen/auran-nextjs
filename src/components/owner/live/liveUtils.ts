@@ -52,7 +52,7 @@ export function defaultSchedule() {
 export function scheduleFromIso(iso: string) {
   const d = new Date(iso)
   const p = (n: number) => String(n).padStart(2, '0')
-  return { date: toDateStr(d), hour: p(d.getHours()), minute: p(Math.floor(d.getMinutes() / 10) * 10) }
+  return { date: toDateStr(d), hour: p(d.getHours()), minute: p(d.getMinutes()) }
 }
 
 function timeOf(b: BroadcastRow, fallback: number) {

@@ -96,7 +96,7 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
             </select>
             <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))}
               style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
-              {['00', '10', '20', '30', '40', '50'].map((m) => <option key={m} value={m}>{m}분</option>)}
+              {(mode === 'edit' && !['00', '10', '20', '30', '40', '50'].includes(schedule.minute) ? [schedule.minute, '00', '10', '20', '30', '40', '50'] : ['00', '10', '20', '30', '40', '50']).map((m) => <option key={m} value={m}>{m}분</option>)}
             </select>
           </div>
           <button
