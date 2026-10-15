@@ -1,5 +1,11 @@
 ﻿# YOOMTANG 작업 로그 (쉬운 말)
 
+## 2026-10-15 라이브 개편 세션
+- 최신 커밋: 94a5ed57 feat: 라이브 방송 제품 연결 API
+- 컴포넌트 분리: OwnerLiveSection(394→285줄), LiveHeroCard, LiveMiniCalendar, LiveBroadcastList, LiveCreateSheet, liveUtils, useLiveEdit
+- 마이그레이션 220 DB 실행 완료
+- 커밋 트레일러 문제: Cursor가 자동으로 Co-authored-by 붙임 → 커밋은 터미널에서 직접
+
 ## 2026-10-14
 ### 원장 라이브 화면 개편
 - 요약: 원장님 라이브 화면을 "다음 방송 카드 + 달력 + 예정/지난방송 탭"으로 새로 짰고, 달력 빈 날에서 바로 방송을 잡을 수 있게 했다. 예정 방송은 고치고 지울 수 있고, 방송 중·끝난 방송은 못 건드린다. 달력에는 최근 50개 방송까지 보인다. 아래 줄은 자세한 내용.
