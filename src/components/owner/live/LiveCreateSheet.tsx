@@ -69,14 +69,14 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
-          <label style={{ display: 'block', position: 'relative', width: '100%', maxWidth: 180, marginLeft: 'auto', marginRight: 'auto', aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
+          <label style={{ display: 'block', position: 'relative', width: '100%', maxWidth: 180, marginLeft: 'auto', marginRight: 'auto', aspectRatio: '1/1', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
             <input type="file" accept="image/*" onChange={mode === 'edit' ? pickEditThumb : pickThumb} style={{ display: 'none' }} />
             {preview ? (
               <img src={preview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <span style={{ fontSize: 20 }}>📷</span>
-                <span style={{ fontSize: 10, color: '#bbb' }}>9:16 세로 비율 권장</span>
+                <span style={{ fontSize: 10, color: '#bbb' }}>1:1 정사각형 권장</span>
               </div>
             )}
           </label>

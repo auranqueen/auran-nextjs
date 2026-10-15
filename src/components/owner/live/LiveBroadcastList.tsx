@@ -37,7 +37,7 @@ function UpcomingCard({ b, actions }: { b: BroadcastRow; actions: BroadcastActio
   const dday = ddayLabel(b)
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 10, border: `1px solid ${BORDER}`, borderRadius: 13, marginBottom: 10, background: '#fff' }}>
-      <div style={{ width: 60, flexShrink: 0, aspectRatio: '9/16', borderRadius: 8, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
+      <div style={{ width: 60, flexShrink: 0, aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
         {b.thumbnail_url && (
           <img src={b.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
@@ -60,7 +60,7 @@ function UpcomingCard({ b, actions }: { b: BroadcastRow; actions: BroadcastActio
 
 function PastTile({ b }: { b: BroadcastRow }) {
   return (
-    <div style={{ position: 'relative', aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
+    <div style={{ position: 'relative', aspectRatio: '1/1', borderRadius: 10, overflow: 'hidden', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
       {b.thumbnail_url && (
         <img src={b.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       )}

@@ -55,7 +55,7 @@ export default function LiveHeroCard({ broadcast: b, actions, onCreate }: Props)
 
   return (
     <div style={{ display: 'flex', gap: 12, border: `1px solid ${GOLD}`, borderRadius: 14, background: '#fffaf2', padding: 12, marginBottom: 16 }}>
-      <div style={{ width: 84, flexShrink: 0, aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
+      <div style={{ width: 84, flexShrink: 0, aspectRatio: '1/1', borderRadius: 10, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #a78bfa, #f9a8d4)' }}>
         {b.thumbnail_url && (
           <img src={b.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
