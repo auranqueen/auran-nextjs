@@ -172,11 +172,9 @@ export default function LiveListPage() {
     .filter((b) => b.status === 'ended')
     .sort((a, b) => timeOf(b.started_at || b.scheduled_at, 0) - timeOf(a.started_at || a.scheduled_at, 0))
     .slice(0, 6)
-  const ranking = [...liveBroadcasts, ...upcomingBroadcasts]
-    .sort((a, b) =>
-      (b.viewer_count ?? 0) - (a.viewer_count ?? 0)
-      || timeOf(a.scheduled_at, Number.MAX_SAFE_INTEGER) - timeOf(b.scheduled_at, Number.MAX_SAFE_INTEGER),
-    )
+  const ranking = liveBroadcasts
+    .filter((b) => (b.viewer_count ?? 0) >= 1)
+    .sort((a, b) => (b.viewer_count ?? 0) - (a.viewer_count ?? 0))
     .slice(0, 5)
   const featured = liveBroadcasts[0]
 
@@ -279,6 +277,7 @@ export default function LiveListPage() {
                 <div className="flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
                   {upcomingBroadcasts.map((b) => (
                     <button key={b.id} type="button" onClick={() => openSheet(b)} className="w-36 shrink-0 rounded-xl border border-gray-100 bg-white p-3 text-left">
+                      {b.thumbnail_url && <img src={b.thumbnail_url} alt="" className="mb-2 aspect-[9/16] w-full rounded-lg object-cover" />}
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-purple-600">{dDay(b.scheduled_at)}</span>
                         <span className={notified[b.id] ? 'text-purple-600' : 'text-gray-400'}><BellIcon size={16} /></span>
@@ -292,6 +291,7 @@ export default function LiveListPage() {
               )}
             </section>
 
+            {ranking.length > 0 && (
             <section>
               <SectionTitle title="인기 방송 랭킹" sub="시청자 순" />
               {ranking.length === 0 ? <Empty /> : (
@@ -315,6 +315,7 @@ export default function LiveListPage() {
                 </div>
               )}
             </section>
+            )}
 
             <section>
               <SectionTitle title="다시보기" />
@@ -350,7 +351,7 @@ export default function LiveListPage() {
               <span className="truncate text-[13px] text-gray-900">{sheetB.status === 'live' ? '라이브 방송' : '예정 방송'}</span>
             </div>
             <div className="relative">
-              <Thumb b={sheetB} className="aspect-video w-full">
+              <Thumb b={sheetB} className="mx-auto aspect-[9/16] w-full max-w-[240px]">
                 {sheetB.status === 'live' ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 pl-1 text-[20px] text-purple-600">▶</span>
