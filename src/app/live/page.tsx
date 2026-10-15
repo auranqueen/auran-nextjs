@@ -257,7 +257,7 @@ export default function LiveListPage() {
                 <div className="grid grid-cols-2 gap-3 px-4">
                   {liveBroadcasts.map((b) => (
                     <button key={b.id} type="button" onClick={() => openSheet(b)} className="text-left">
-                      <Thumb b={b} className="aspect-[3/4] rounded-xl">
+                      <Thumb b={b} className="aspect-square rounded-xl">
                         <div className="absolute left-2 top-2 flex items-center gap-1">
                           <LiveBadge />
                           <span className="rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white">👀 {formatCount(b.viewer_count ?? 0)}</span>
@@ -323,7 +323,7 @@ export default function LiveListPage() {
                 <div className="grid grid-cols-2 gap-3 px-4">
                   {endedBroadcasts.map((b) => (
                     <div key={b.id}>
-                      <Thumb b={b} className="aspect-[3/4] rounded-xl">
+                      <Thumb b={b} className="aspect-square rounded-xl">
                         <div className="absolute left-2 top-2 flex items-center gap-1">
                           <span className="rounded bg-gray-700 px-1.5 py-0.5 text-[10px] text-white">종료</span>
                           <span className="rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white">👀 총 {formatCount(b.viewer_count ?? 0)}</span>
