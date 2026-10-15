@@ -1,8 +1,9 @@
 'use client'
 import { useState, type Dispatch, type SetStateAction } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { EMPTY, defaultSchedule, scheduleFromIso, type BroadcastRow } from './liveUtils'
 
-type Draft = { title: string; description: string }
+type Draft = { title: string; description: string; thumbnail_url?: string | null; thumb_file?: File | null }
 type Schedule = { date: string; hour: string; minute: string }
 
 const EDIT_ERRORS: Record<string, string> = {
@@ -28,7 +29,7 @@ export function useLiveEdit(o: Options) {
   const [editingId, setEditingId] = useState<number | null>(null)
 
   const openEdit = (b: BroadcastRow) => {
-    o.setDraft({ title: b.title, description: b.description ?? '' })
+    o.setDraft({ title: b.title, description: b.description ?? '', thumbnail_url: b.thumbnail_url, thumb_file: null })
     o.setSchedule(b.scheduled_at ? scheduleFromIso(b.scheduled_at) : defaultSchedule())
     setEditingId(b.id)
     o.setShowForm(true)
@@ -48,6 +49,29 @@ export function useLiveEdit(o: Options) {
     if (scheduledAt.getTime() < Date.now()) { o.showToast('지난 시간은 선택할 수 없어요'); return }
     o.setSaving(true)
     try {
+      let newThumbnailUrl: string | undefined
+      let thumbFailed = false
+      const file = o.draft.thumb_file
+      if (file) {
+        try {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user?.id) {
+            const ext = file.name.split('.').pop() || 'jpg'
+            const path = `${user.id}/live/${Date.now()}.${ext}`
+            const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, file, { upsert: true })
+            if (uploadError) {
+              console.error('[OwnerLiveSection] 썸네일 업로드 실패', uploadError)
+              thumbFailed = true
+            } else {
+              newThumbnailUrl = supabase.storage.from('live-thumbnails').getPublicUrl(path).data?.publicUrl || undefined
+            }
+          } else thumbFailed = true
+        } catch (e) {
+          console.error('[OwnerLiveSection] 썸네일 업로드 실패', e)
+          thumbFailed = true
+        }
+      }
       const res = await fetch('/api/live/update-broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,6 +81,7 @@ export function useLiveEdit(o: Options) {
           title: o.draft.title.trim(),
           description: o.draft.description.trim() || null,
           scheduled_at: scheduledAt.toISOString(),
+          thumbnail_url: newThumbnailUrl,
         }),
       })
       if (res.status === 401) { o.onUnauthorized(); return }
@@ -70,7 +95,7 @@ export function useLiveEdit(o: Options) {
         }
         return
       }
-      o.showToast('방송을 수정했어요')
+      o.showToast(thumbFailed ? '수정했어요 (썸네일은 기존 이미지 유지)' : '방송을 수정했어요')
       o.setShowForm(false)
       closeEdit()
       await o.reload()

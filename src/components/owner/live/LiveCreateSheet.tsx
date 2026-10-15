@@ -1,10 +1,11 @@
 'use client'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
+import { useEffect, useState } from 'react'
 import { BORDER, SUB, TEXT, toDateStr } from './liveUtils'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))
 
-type Draft = { title: string; description: string }
+type Draft = { title: string; description: string; thumbnail_url?: string | null; thumb_file?: File | null }
 type Schedule = { date: string; hour: string; minute: string }
 
 interface Props {
@@ -23,6 +24,21 @@ interface Props {
 }
 
 export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit }: Props) {
+  const editFile = mode === 'edit' ? draft.thumb_file ?? null : null
+  const [editPreview, setEditPreview] = useState<string | null>(null)
+  useEffect(() => {
+    if (!editFile) { setEditPreview(null); return }
+    const url = URL.createObjectURL(editFile)
+    setEditPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [editFile])
+  const preview = mode === 'edit' ? editPreview ?? draft.thumbnail_url ?? null : thumbPreview
+  const pickEditThumb = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) setDraft((p) => ({ ...p, thumb_file: file }))
+  }
+
   return (
     <>
       {isPC && showForm && (
@@ -52,12 +68,11 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
           <div style={{ fontSize: 16, color: TEXT }}>{mode === 'edit' ? '방송 수정' : '방송 만들기'}</div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
-          {mode === 'create' && (<>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
           <label style={{ display: 'block', position: 'relative', width: '100%', maxWidth: 180, marginLeft: 'auto', marginRight: 'auto', aspectRatio: '9/16', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
-            <input type="file" accept="image/*" onChange={pickThumb} style={{ display: 'none' }} />
-            {thumbPreview ? (
-              <img src={thumbPreview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <input type="file" accept="image/*" onChange={mode === 'edit' ? pickEditThumb : pickThumb} style={{ display: 'none' }} />
+            {preview ? (
+              <img src={preview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <span style={{ fontSize: 20 }}>📷</span>
@@ -65,7 +80,6 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
               </div>
             )}
           </label>
-          </>)}
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>방송 제목 *</div>
           <input
             value={draft.title}

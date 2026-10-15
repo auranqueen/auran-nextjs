@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const { data: me } = await supabase.from('profiles').select('id, role').eq('auth_id', user.id).maybeSingle()
   if (!me?.id || me.role !== 'owner') return fail('owner_only', 403)
 
-  const { id, title, description, scheduled_at } = await req.json().catch(() => ({}))
+  const { id, title, description, scheduled_at, thumbnail_url } = await req.json().catch(() => ({}))
   const broadcastId = typeof id === 'number' ? id : typeof id === 'string' && /^[1-9]\d*$/.test(id) ? Number(id) : NaN
   if (!Number.isSafeInteger(broadcastId) || broadcastId <= 0) return fail('invalid_broadcast_id', 400)
 
@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
     if (Number.isNaN(t)) return fail('invalid_scheduled_at', 400)
     if (t < Date.now()) return fail('past_time', 400)
     patch.scheduled_at = new Date(t).toISOString()
+  }
+  if (typeof thumbnail_url === 'string' && thumbnail_url.startsWith('https://')) {
+    patch.thumbnail_url = thumbnail_url
   }
 
   // status 조건을 다시 거는 이유: 조회 직후 웹훅이 live로 바꿨으면 수정하지 않기 위해
