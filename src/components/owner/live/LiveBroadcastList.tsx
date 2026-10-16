@@ -108,7 +108,7 @@ export default function LiveBroadcastList({ tab, onTab, upcoming, past, selected
 
       {selectedDate && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: SUB, marginBottom: 10 }}>
-          <span>📅 {Number(selectedDate.slice(5, 7))}월 {Number(selectedDate.slice(8, 10))}일 방송만 보는 중</span>
+          <span>{Number(selectedDate.slice(5, 7))}월 {Number(selectedDate.slice(8, 10))}일 방송만 보는 중</span>
           <button type="button" onClick={onClearDate} style={{ fontSize: 11, color: GOLD, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>전체 보기</button>
         </div>
       )}

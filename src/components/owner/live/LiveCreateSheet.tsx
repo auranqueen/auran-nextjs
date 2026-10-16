@@ -111,8 +111,12 @@ export default function LiveCreateSheet({
             {preview ? (
               <img src={preview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <span style={{ fontSize: 20 }}>📷</span>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3" y="6" width="18" height="14" rx="2" stroke="#C9A96E" strokeWidth="1.5" />
+                  <path d="M8 6l1.5-2h5L16 6" stroke="#C9A96E" strokeWidth="1.5" strokeLinejoin="round" />
+                  <circle cx="12" cy="13" r="3.5" stroke="#C9A96E" strokeWidth="1.5" />
+                </svg>
                 <span style={{ fontSize: 10, color: '#bbb' }}>1:1 정사각형 권장</span>
               </div>
             )}
@@ -133,22 +137,24 @@ export default function LiveCreateSheet({
             style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, marginBottom: 10, boxSizing: 'border-box', background: '#fff', resize: 'none' }}
           />
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>예정 일시</div>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+          <div style={{ marginBottom: 14 }}>
             <input
               type="date"
               value={schedule.date}
               min={toDateStr(new Date())}
               onChange={(e) => setSchedule((p) => ({ ...p, date: e.target.value }))}
-              style={{ flex: 2, minWidth: 0, padding: '10px 10px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT }}
+              style={{ width: '100%', minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, marginBottom: 6 }}
             />
-            <select value={schedule.hour} onChange={(e) => setSchedule((p) => ({ ...p, hour: e.target.value }))}
-              style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
-              {HOURS.map((h) => <option key={h} value={h}>{h}시</option>)}
-            </select>
-            <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))}
-              style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
-              {(mode === 'edit' && !['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].includes(schedule.minute) ? [schedule.minute, '00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'] : ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']).map((m) => <option key={m} value={m}>{m}분</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select value={schedule.hour} onChange={(e) => setSchedule((p) => ({ ...p, hour: e.target.value }))}
+                style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
+                {HOURS.map((h) => <option key={h} value={h}>{h}시</option>)}
+              </select>
+              <select value={schedule.minute} onChange={(e) => setSchedule((p) => ({ ...p, minute: e.target.value }))}
+                style={{ flex: 1, minWidth: 0, padding: '10px 8px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: TEXT, appearance: 'none', WebkitAppearance: 'none' }}>
+                {(mode === 'edit' && !['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].includes(schedule.minute) ? [schedule.minute, '00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'] : ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']).map((m) => <option key={m} value={m}>{m}분</option>)}
+              </select>
+            </div>
           </div>
           {mode === 'edit' && broadcastId != null ? (
             <LiveProductPicker mode="remote" broadcastId={broadcastId} showToast={showToast} />

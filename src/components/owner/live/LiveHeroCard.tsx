@@ -19,7 +19,7 @@ export function StreamKeyCard({ streamKey, onCopy, onClose }: { streamKey: { rtm
         <span style={KEY_TEXT}>{streamKey.rtmp_key}</span>
         <button type="button" onClick={() => onCopy(streamKey.rtmp_key)} style={COPY_BTN}>복사</button>
       </div>
-      <div style={{ fontSize: 10, color: '#c08040', marginTop: 8 }}>⚠️ 스트림 키는 타인에게 공유하지 마세요</div>
+      <div style={{ fontSize: 10, color: '#c08040', marginTop: 8 }}>스트림 키는 타인에게 공유하지 마세요</div>
       <div style={{ fontSize: 11, color: GOLD, marginTop: 8, lineHeight: 1.45 }}>세로(9:16) 방송으로 송출해 주세요. 가로로 보내면 고객 화면 위아래에 검은 띠가 생겨요.</div>
       <div style={{ fontSize: 11, color: GOLD, marginTop: 4, lineHeight: 1.45 }}>권장 해상도 720×1280. Prism/OBS는 영상 설정에서 캔버스·출력 해상도를 세로로 맞춰 주세요.</div>
       <button type="button" onClick={onClose} style={{ marginTop: 8, fontSize: 11, color: SUB, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>닫기</button>
@@ -37,7 +37,6 @@ export default function LiveHeroCard({ broadcast: b, actions, onCreate }: Props)
   if (!b) {
     return (
       <div style={{ border: `1.5px dashed ${GOLD}`, borderRadius: 14, background: '#fbf8f2', padding: '22px 16px', textAlign: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 28, marginBottom: 6 }}>📺</div>
         <div style={{ fontSize: 13, color: TEXT, marginBottom: 4 }}>예정된 방송이 없어요</div>
         <div style={{ fontSize: 11, color: SUB, marginBottom: 12 }}>달력에서 날짜를 눌러도 방송을 잡을 수 있어요</div>
         <button
@@ -73,7 +72,7 @@ export default function LiveHeroCard({ broadcast: b, actions, onCreate }: Props)
           <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 5, background: st.bg, color: st.color }}>{st.label}</span>
         </div>
         <div style={{ fontSize: 15, color: TEXT, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{b.title}</div>
-        {b.scheduled_at && <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>🗓 {formatSchedule(b.scheduled_at)}</div>}
+        {b.scheduled_at && <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>{formatSchedule(b.scheduled_at)}</div>}
         {b.description && (
           <div style={{ fontSize: 11, color: SUB, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</div>
         )}
