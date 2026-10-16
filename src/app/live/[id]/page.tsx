@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import LiveWatchPlayer from '@/components/live/LiveWatchPlayer'
 import LiveWatchOverlay from '@/components/live/LiveWatchOverlay'
+import LiveWatchProductBar, { type LiveWatchProduct } from '@/components/live/LiveWatchProductBar'
+import LiveWatchProductSheet from '@/components/live/LiveWatchProductSheet'
 
 const SUB = '#888888'
 const BORDER = '#ede9f7'
@@ -31,6 +33,10 @@ export default function LiveWatchPage() {
   const [notFound, setNotFound] = useState(false)
   const [isPC, setIsPC] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [products, setProducts] = useState<LiveWatchProduct[]>([])
+  const [salonId, setSalonId] = useState<string | null>(null)
+  const [productsLocked, setProductsLocked] = useState(false)
+  const [productSheetOpen, setProductSheetOpen] = useState(false)
 
   useEffect(() => {
     const onResize = () => setIsPC(window.innerWidth >= 768)
@@ -57,6 +63,40 @@ export default function LiveWatchPage() {
     }
     if (id) void fetch()
   }, [id])
+
+  useEffect(() => {
+    if (!broadcast || broadcast.status !== 'live') {
+      setProducts([])
+      setSalonId(null)
+      setProductsLocked(false)
+      setProductSheetOpen(false)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/live/broadcast-products?broadcast_id=' + broadcast.id, { credentials: 'same-origin' })
+        const json = await res.json().catch(() => ({}))
+        if (cancelled) return
+        if (!json?.ok) {
+          setProducts([])
+          setSalonId(null)
+          setProductsLocked(false)
+          return
+        }
+        setSalonId(typeof json.salon_id === 'string' ? json.salon_id : null)
+        setProductsLocked(json.locked === true)
+        setProducts(json.locked === true ? [] : (Array.isArray(json.products) ? json.products as LiveWatchProduct[] : []))
+      } catch {
+        if (!cancelled) {
+          setProducts([])
+          setSalonId(null)
+          setProductsLocked(false)
+        }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [broadcast?.id, broadcast?.status])
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#000', color: SUB, fontSize: 13 }}>불러오는 중...</div>
@@ -126,6 +166,18 @@ export default function LiveWatchPage() {
           onClose={() => router.push('/live')}
           showMute={isLivePlaying}
         />
+
+        {broadcast.status === 'live' && !productsLocked && products.length > 0 ? (
+          <>
+            <LiveWatchProductBar products={products} onOpen={() => setProductSheetOpen(true)} />
+            <LiveWatchProductSheet
+              products={products}
+              salonId={salonId}
+              open={productSheetOpen}
+              onClose={() => setProductSheetOpen(false)}
+            />
+          </>
+        ) : null}
       </div>
     </div>
   )

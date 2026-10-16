@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import {
+  SHOWCASE_PLAN_SLUGS,
+  getOwnerLayerPeriod,
+  pickLayerActiveSub,
+  resolveTrialStart,
+} from '@/lib/subscription/storeTrial'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,6 +78,74 @@ export async function GET(req: NextRequest) {
   const svc = tryCreateAdminClient()
   if (!svc) return fail('service_unavailable', 500)
 
+  const empty = (salonId: string | null, locked = false) =>
+    NextResponse.json({ ok: true, salon_id: salonId, locked, products: [] as const }, { headers: NO_STORE })
+
+  const { data: broadcast, error: broadcastError } = await svc
+    .from('oren_live_broadcasts')
+    .select('owner_id')
+    .eq('id', broadcastId)
+    .maybeSingle()
+  if (broadcastError) {
+    console.error('[live/broadcast-products] get broadcast query error', broadcastError)
+    return fail('internal_error', 500)
+  }
+  if (!broadcast?.owner_id) return empty(null)
+
+  const { data: profile, error: profileError } = await svc
+    .from('profiles')
+    .select('auth_id')
+    .eq('id', broadcast.owner_id)
+    .maybeSingle()
+  if (profileError) {
+    console.error('[live/broadcast-products] get profile query error', profileError)
+    return fail('internal_error', 500)
+  }
+  if (!profile?.auth_id) return empty(null)
+
+  const { data: userRow, error: userError } = await svc
+    .from('users')
+    .select('id, created_at, store_trial_started_at')
+    .eq('auth_id', profile.auth_id)
+    .maybeSingle()
+  if (userError) {
+    console.error('[live/broadcast-products] get user query error', userError)
+    return fail('internal_error', 500)
+  }
+  if (!userRow?.id) return empty(null)
+
+  const { data: salon, error: salonError } = await svc
+    .from('salons')
+    .select('id')
+    .eq('owner_id', userRow.id)
+    .eq('status', 'active')
+    .maybeSingle()
+  if (salonError) {
+    console.error('[live/broadcast-products] get salon query error', salonError)
+    return fail('internal_error', 500)
+  }
+  if (!salon?.id) return empty(null)
+
+  const salonId = String(salon.id)
+  const ownerUserId = String(userRow.id)
+  const trialStart = resolveTrialStart(
+    (userRow as { store_trial_started_at?: string | null }).store_trial_started_at,
+    (userRow as { created_at?: string | null }).created_at,
+  )
+  const { data: subRows } = await svc
+    .from('owner_subscriptions')
+    .select('plan, started_at, expires_at, status')
+    .eq('owner_id', ownerUserId)
+    .eq('status', 'active')
+    .in('plan', [...SHOWCASE_PLAN_SLUGS])
+    .order('created_at', { ascending: false })
+
+  const showcasePeriod = getOwnerLayerPeriod({
+    trialStart,
+    activeSubForLayer: pickLayerActiveSub((subRows as any[]) || [], 'showcase'),
+  })
+  if (showcasePeriod.phase === 'expired') return empty(salonId, true)
+
   const { data, error } = await svc
     .from('oren_live_broadcast_products')
     .select('sort_order, brand_products(id, name, thumb_img, consumer_price, status)')
@@ -96,7 +170,7 @@ export async function GET(req: NextRequest) {
     }]
   })
 
-  return NextResponse.json({ ok: true, products }, { headers: NO_STORE })
+  return NextResponse.json({ ok: true, salon_id: salonId, locked: false, products }, { headers: NO_STORE })
 }
 
 // [ANCHOR: live-broadcast-products-post]
