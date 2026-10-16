@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BORDER, GOLD, SUB } from './liveUtils'
 
-type Item = { id: string; name: string; thumb_img: string | null; price: number | null }
+export type LivePickerProduct = { id: string; name: string; thumb_img: string | null; consumer_price: number | null }
+type Item = LivePickerProduct
 type PanelState = 'closed' | 'entering' | 'open' | 'leaving'
 
 const INK = '#1a1a1a'
@@ -19,12 +20,12 @@ const ERRORS: Record<string, string> = {
 }
 
 const toItem = (p: { id: unknown; name?: unknown; thumb_img?: unknown; price?: unknown; consumer_price?: unknown }): Item => {
-  const raw = p.price ?? p.consumer_price
+  const raw = p.consumer_price ?? p.price
   return {
     id: String(p.id),
     name: String(p.name ?? ''),
     thumb_img: typeof p.thumb_img === 'string' && p.thumb_img ? p.thumb_img : null,
-    price: raw != null && Number.isFinite(Number(raw)) ? Number(raw) : null,
+    consumer_price: raw != null && Number.isFinite(Number(raw)) ? Number(raw) : null,
   }
 }
 const won = (n: number | null) => (n == null ? '' : `${n.toLocaleString('ko-KR')}원`)
@@ -38,16 +39,25 @@ function Row({ item, children }: { item: Item; children: React.ReactNode }) {
       {item.thumb_img ? <img src={item.thumb_img} alt={item.name} style={THUMB} /> : <div style={THUMB} />}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-        <div style={{ fontSize: 10, color: SUB }}>{won(item.price)}</div>
+        <div style={{ fontSize: 10, color: SUB }}>{won(item.consumer_price)}</div>
       </div>
       {children}
     </div>
   )
 }
 
-export default function LiveProductPicker({ broadcastId, showToast }: { broadcastId: number; showToast?: (text: string) => void }) {
-  const [linked, setLinked] = useState<Item[]>([])
-  const [loading, setLoading] = useState(true)
+type Props = {
+  mode?: 'remote' | 'local'
+  broadcastId?: number
+  value?: LivePickerProduct[]
+  onChange?: (items: LivePickerProduct[]) => void
+  showToast?: (text: string) => void
+}
+
+export default function LiveProductPicker({ mode = 'remote', broadcastId, value, onChange, showToast }: Props) {
+  const isLocal = mode === 'local'
+  const [linkedRemote, setLinkedRemote] = useState<Item[]>([])
+  const [loading, setLoading] = useState(!isLocal)
   const [busy, setBusy] = useState<string[]>([])
   const [panel, setPanel] = useState<PanelState>('closed')
   const [q, setQ] = useState('')
@@ -55,19 +65,21 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
   const [searching, setSearching] = useState(false)
   const [msg, setMsg] = useState('')
 
+  const linked = isLocal ? (value ?? []) : linkedRemote
   const toast = (text: string) => (showToast ? showToast(text) : setMsg(text))
 
   const load = useCallback(async () => {
+    if (isLocal || broadcastId == null) return
     try {
       const res = await fetch(`/api/live/broadcast-products?broadcast_id=${broadcastId}`, { credentials: 'same-origin' })
       const json = await res.json().catch(() => ({}))
-      if (json?.ok && Array.isArray(json.products)) setLinked(json.products.map(toItem))
+      if (json?.ok && Array.isArray(json.products)) setLinkedRemote(json.products.map(toItem))
     } finally {
       setLoading(false)
     }
-  }, [broadcastId])
+  }, [isLocal, broadcastId])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { if (!isLocal) void load() }, [isLocal, load])
 
   useEffect(() => {
     if (!msg) return
@@ -107,6 +119,7 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
   }, [searchActive, q])
 
   const send = async (method: 'POST' | 'DELETE', productId: string) => {
+    if (broadcastId == null) return false
     try {
       const res = await fetch('/api/live/broadcast-products', {
         method,
@@ -129,25 +142,39 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
 
   const closePanel = () => {
     setPanel('leaving')
-    void load()
+    if (!isLocal) void load()
+  }
+
+  const setLinked = (next: Item[] | ((prev: Item[]) => Item[])) => {
+    const resolved = typeof next === 'function' ? next(linked) : next
+    if (isLocal) onChange?.(resolved)
+    else setLinkedRemote(resolved)
   }
 
   const add = async (item: Item) => {
     if (busy.includes(item.id) || linked.some((x) => x.id === item.id)) return
+    if (isLocal) {
+      setLinked([...linked, item])
+      return
+    }
     setBusy((b) => [...b, item.id])
-    setLinked((l) => [...l, item])
-    if (!(await send('POST', item.id))) setLinked((l) => l.filter((x) => x.id !== item.id))
+    setLinkedRemote((l) => [...l, item])
+    if (!(await send('POST', item.id))) setLinkedRemote((l) => l.filter((x) => x.id !== item.id))
     setBusy((b) => b.filter((x) => x !== item.id))
   }
 
   const remove = async (item: Item) => {
     if (busy.includes(item.id)) return
+    if (isLocal) {
+      setLinked(linked.filter((x) => x.id !== item.id))
+      return
+    }
     const index = linked.findIndex((x) => x.id === item.id)
     if (index < 0) return
     setBusy((b) => [...b, item.id])
-    setLinked((l) => l.filter((x) => x.id !== item.id))
+    setLinkedRemote((l) => l.filter((x) => x.id !== item.id))
     if (!(await send('DELETE', item.id))) {
-      setLinked((l) => (l.some((x) => x.id === item.id) ? l : [...l.slice(0, index), item, ...l.slice(index)]))
+      setLinkedRemote((l) => (l.some((x) => x.id === item.id) ? l : [...l.slice(0, index), item, ...l.slice(index)]))
     }
     setBusy((b) => b.filter((x) => x !== item.id))
   }
@@ -166,7 +193,7 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
         {loading ? (
           <div style={{ fontSize: 10, color: SUB, padding: '6px 0' }}>불러오는 중…</div>
         ) : linked.length === 0 ? (
-          <div style={{ fontSize: 10, color: SUB, padding: '6px 0' }}>연결된 제품이 없어요</div>
+          <div style={{ fontSize: 10, color: SUB, padding: '6px 0' }}>{isLocal ? '선택된 제품이 없어요' : '연결된 제품이 없어요'}</div>
         ) : (
           linked.map((item) => (
             <Row key={item.id} item={item}>
@@ -194,7 +221,11 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
           <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="제품명 검색"
               style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box', background: '#fff', color: INK }} />
-            <div style={{ fontSize: 10, color: SUB, margin: '6px 0 4px' }}>검색어가 없으면 최신 제품 30개가 보여요. 누르면 바로 연결돼요.</div>
+            <div style={{ fontSize: 10, color: SUB, margin: '6px 0 4px' }}>
+              {isLocal
+                ? '검색어가 없으면 최신 제품 30개가 보여요. 누르면 선택돼요.'
+                : '검색어가 없으면 최신 제품 30개가 보여요. 누르면 바로 연결돼요.'}
+            </div>
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 16px' }}>
             {searching && <div style={{ fontSize: 10, color: SUB, padding: '8px 0' }}>검색 중…</div>}
@@ -206,7 +237,7 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
                 <Row key={item.id} item={item}>
                   <button type="button" disabled={isBusy} onClick={() => void (on ? remove(item) : add(item))}
                     style={{ ...SMALL_BTN, border: `1px solid ${GOLD}`, background: on ? GOLD : '#fff', color: on ? '#fff' : GOLD, opacity: isBusy ? 0.6 : 1 }}>
-                    {on ? '연결됨' : '추가'}
+                    {on ? (isLocal ? '선택됨' : '연결됨') : '추가'}
                   </button>
                 </Row>
               )

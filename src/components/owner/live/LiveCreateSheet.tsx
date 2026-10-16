@@ -1,10 +1,13 @@
 'use client'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
+import { compressImage } from '@/lib/imageUpload'
 import { BORDER, SUB, TEXT, toDateStr } from './liveUtils'
-import LiveProductPicker from './LiveProductPicker'
+import LiveProductPicker, { type LivePickerProduct } from './LiveProductPicker'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))
+const MAX_THUMB_BYTES = 20 * 1024 * 1024
+const FOOTER_PAD = 72
 
 type Draft = { title: string; description: string; thumbnail_url?: string | null; thumb_file?: File | null }
 type Schedule = { date: string; hour: string; minute: string }
@@ -23,9 +26,27 @@ interface Props {
   saving: boolean
   submit: () => Promise<void>
   broadcastId?: number | null
+  showToast?: (text: string) => void
+  createProducts?: LivePickerProduct[]
+  onCreateProductsChange?: (items: LivePickerProduct[]) => void
 }
 
-export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit, broadcastId }: Props) {
+async function prepareLiveThumb(file: File): Promise<File> {
+  if (file.size > MAX_THUMB_BYTES) throw new Error('too_large')
+  const out = await compressImage(file, 'live_thumb')
+  const mime = (out.type || '').toLowerCase()
+  const name = (out.name || '').toLowerCase()
+  if (mime.includes('heic') || mime.includes('heif') || name.endsWith('.heic') || name.endsWith('.heif')) {
+    throw new Error('unsupported')
+  }
+  return out
+}
+
+export default function LiveCreateSheet({
+  mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule,
+  thumbPreview, pickThumb, saving, submit, broadcastId, showToast,
+  createProducts, onCreateProductsChange,
+}: Props) {
   const editFile = mode === 'edit' ? draft.thumb_file ?? null : null
   const [editPreview, setEditPreview] = useState<string | null>(null)
   useEffect(() => {
@@ -35,10 +56,28 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
     return () => URL.revokeObjectURL(url)
   }, [editFile])
   const preview = mode === 'edit' ? editPreview ?? draft.thumbnail_url ?? null : thumbPreview
-  const pickEditThumb = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) setDraft((p) => ({ ...p, thumb_file: file }))
+
+  const pickEditThumb = async (e: ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    try {
+      const compressed = await prepareLiveThumb(file)
+      setDraft((p) => ({ ...p, thumb_file: compressed }))
+    } catch (err) {
+      setDraft((p) => ({ ...p, thumb_file: null }))
+      const msg = err instanceof Error && err.message === 'too_large'
+        ? '사진은 20MB 이하로 선택해 주세요'
+        : '이 사진은 사용할 수 없어요. 다른 사진을 선택해 주세요'
+      showToast?.(msg)
+    }
+  }
+
+  const panelBase = {
+    position: 'fixed' as const, zIndex: 50, background: '#fff', color: '#1a1a1a',
+    display: 'flex' as const, flexDirection: 'column' as const,
+    visibility: showForm ? 'visible' as const : 'hidden' as const,
   }
 
   return (
@@ -49,19 +88,15 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
       <div
         aria-hidden={!showForm}
         style={isPC ? {
-          position: 'fixed', top: '50%', left: '50%', width: '480px', maxHeight: '90vh', zIndex: 50,
-          background: '#fff', color: '#1a1a1a', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden',
-          display: 'flex', flexDirection: 'column',
+          ...panelBase, top: '50%', left: '50%', width: '480px', maxHeight: '90vh',
+          borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflow: 'hidden',
           transform: showForm ? 'translate(-50%, -50%)' : 'translate(-40%, -50%)',
           opacity: showForm ? 1 : 0,
           transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s, visibility 0.28s',
-          visibility: showForm ? 'visible' : 'hidden',
         } : {
-          position: 'fixed', inset: 0, zIndex: 50, background: '#fff', color: '#1a1a1a',
-          display: 'flex', flexDirection: 'column',
+          ...panelBase, inset: 0, height: '100dvh', maxHeight: '100dvh',
           transform: showForm ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), visibility 0.28s',
-          visibility: showForm ? 'visible' : 'hidden',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'calc(14px + env(safe-area-inset-top, 0px)) 16px 14px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
@@ -69,10 +104,10 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
           <div style={{ fontSize: 16, color: TEXT }}>{mode === 'edit' ? '방송 수정' : '방송 만들기'}</div>
         </div>
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16, paddingBottom: FOOTER_PAD }}>
           <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>썸네일 (선택)</div>
           <label style={{ display: 'block', position: 'relative', width: '100%', maxWidth: 180, marginLeft: 'auto', marginRight: 'auto', aspectRatio: '1/1', borderRadius: 10, overflow: 'hidden', border: '1.5px dashed #C9A96E', cursor: 'pointer', background: '#fbf8f2', marginBottom: 10 }}>
-            <input type="file" accept="image/*" onChange={mode === 'edit' ? pickEditThumb : pickThumb} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" onChange={(e) => { if (mode === 'edit') void pickEditThumb(e); else pickThumb(e) }} style={{ display: 'none' }} />
             {preview ? (
               <img src={preview} alt="방송 썸네일 미리보기" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
@@ -116,12 +151,15 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
             </select>
           </div>
           {mode === 'edit' && broadcastId != null ? (
-            <LiveProductPicker broadcastId={broadcastId} />
+            <LiveProductPicker mode="remote" broadcastId={broadcastId} showToast={showToast} />
           ) : mode === 'create' ? (
-            <div style={{ fontSize: 10, color: SUB, background: '#fdf9f1', border: '1px dashed #C9A96E', borderRadius: 9, padding: '10px 12px', marginBottom: 14 }}>
-              방송을 만든 뒤 수정에서 판매 제품을 연결할 수 있어요.
-            </div>
+            <LiveProductPicker mode="local" value={createProducts ?? []} onChange={onCreateProductsChange} showToast={showToast} />
           ) : null}
+        </div>
+        <div style={{
+          flexShrink: 0, background: '#fff', borderTop: `1px solid ${BORDER}`,
+          padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        }}>
           <button
             type="button"
             disabled={saving}

@@ -9,6 +9,7 @@ export const IMAGE_RULES = {
   diary: { maxWidth: 1080, maxHeight: 1920, maxSizeMB: 0.4, label: '다이어리', hint: '1080×1920px, 400KB 이하 권장' },
   avatar: { maxWidth: 400, maxHeight: 400, maxSizeMB: 0.1, label: '프로필 사진', hint: '400×400px, 100KB 이하 권장' },
   owner_store: { maxWidth: 800, maxHeight: 800, maxSizeMB: 0.2, label: '샵 이미지', hint: '800×800px, 200KB 이하 권장' },
+  live_thumb: { maxWidth: 800, maxHeight: 800, maxSizeMB: 0.3, label: '라이브 썸네일', hint: '800×800px, 300KB 이하 권장' },
 } as const
 
 export type ImageRuleKey = keyof typeof IMAGE_RULES

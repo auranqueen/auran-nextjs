@@ -57,7 +57,7 @@ export function useLiveEdit(o: Options) {
           const supabase = createClient()
           const { data: { user } } = await supabase.auth.getUser()
           if (user?.id) {
-            const ext = file.name.split('.').pop() || 'jpg'
+            const ext = file.type === 'image/png' ? 'png' : (file.name.split('.').pop() || 'jpg')
             const path = `${user.id}/live/${Date.now()}.${ext}`
             const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, file, { upsert: true })
             if (uploadError) {
@@ -95,7 +95,7 @@ export function useLiveEdit(o: Options) {
         }
         return
       }
-      o.showToast(thumbFailed ? '수정했어요 (썸네일은 기존 이미지 유지)' : '방송을 수정했어요')
+      o.showToast(thumbFailed ? '썸네일 업로드에 실패했어요. 수정에서 다시 올려 주세요' : '방송을 수정했어요')
       o.setShowForm(false)
       closeEdit()
       await o.reload()

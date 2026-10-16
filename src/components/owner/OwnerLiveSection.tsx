@@ -9,6 +9,8 @@ import LiveMiniCalendar from '@/components/owner/live/LiveMiniCalendar'
 import LiveBroadcastList from '@/components/owner/live/LiveBroadcastList'
 import LiveCreateSheet from '@/components/owner/live/LiveCreateSheet'
 import { useLiveEdit } from '@/components/owner/live/useLiveEdit'
+import { compressImage } from '@/lib/imageUpload'
+import type { LivePickerProduct } from '@/components/owner/live/LiveProductPicker'
 
 function currentMonth() {
   const d = new Date()
@@ -34,6 +36,7 @@ export default function OwnerLiveSection() {
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [calMonth, setCalMonth] = useState(currentMonth)
+  const [createProducts, setCreateProducts] = useState<LivePickerProduct[]>([])
 
   useEffect(() => {
     const onResize = () => setIsPC(window.innerWidth >= 768)
@@ -69,12 +72,28 @@ export default function OwnerLiveSection() {
 
   useEffect(() => () => { if (thumbPreview) URL.revokeObjectURL(thumbPreview) }, [thumbPreview])
 
-  const pickThumb = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) {
-      setThumbFile(file)
-      setThumbPreview(URL.createObjectURL(file))
+  const pickThumb = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    if (file.size > 20 * 1024 * 1024) {
+      showToast('사진은 20MB 이하로 선택해 주세요')
+      return
+    }
+    try {
+      const compressed = await compressImage(file, 'live_thumb')
+      const mime = (compressed.type || '').toLowerCase()
+      const name = (compressed.name || '').toLowerCase()
+      if (mime.includes('heic') || mime.includes('heif') || name.endsWith('.heic') || name.endsWith('.heif')) {
+        throw new Error('unsupported')
+      }
+      setThumbFile(compressed)
+      setThumbPreview(URL.createObjectURL(compressed))
+    } catch {
+      setThumbFile(null)
+      setThumbPreview(null)
+      showToast('이 사진은 사용할 수 없어요. 다른 사진을 선택해 주세요')
     }
   }
 
@@ -86,23 +105,26 @@ export default function OwnerLiveSection() {
     setSaving(true)
     try {
       let thumbnailUrl = ''
+      let thumbFailed = false
       if (thumbFile) {
         try {
           const { data: { user } } = await supabase.auth.getUser()
           const userId = user?.id
           if (userId) {
-            const ext = thumbFile.name.split('.').pop() || 'jpg'
+            const ext = thumbFile.type === 'image/png' ? 'png' : (thumbFile.name.split('.').pop() || 'jpg')
             const path = `${userId}/live/${Date.now()}.${ext}`
             const { error: uploadError } = await supabase.storage.from('live-thumbnails').upload(path, thumbFile, { upsert: true })
             if (uploadError) {
               console.error('[OwnerLiveSection] 썸네일 업로드 실패', uploadError)
+              thumbFailed = true
             } else {
               const { data: pub } = supabase.storage.from('live-thumbnails').getPublicUrl(path)
               thumbnailUrl = pub?.publicUrl || ''
             }
-          }
+          } else thumbFailed = true
         } catch (e) {
           console.error('[OwnerLiveSection] 썸네일 업로드 실패', e)
+          thumbFailed = true
           thumbnailUrl = ''
         }
       }
@@ -119,12 +141,33 @@ export default function OwnerLiveSection() {
       })
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) { showToast(json?.error === 'title_required' ? '제목을 입력해주세요' : '방송 생성 실패'); return }
-      showToast('방송이 만들어졌어요!')
+      const newId = json.broadcast?.id as number | undefined
+      let productFail = 0
+      if (newId != null && createProducts.length > 0) {
+        for (const p of createProducts) {
+          try {
+            const pr = await fetch('/api/live/broadcast-products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ broadcast_id: newId, brand_product_id: p.id }),
+            })
+            const pj = await pr.json().catch(() => ({}))
+            if (!(pj?.ok || pj?.error === 'already_exists')) productFail += 1
+          } catch {
+            productFail += 1
+          }
+        }
+      }
+      if (productFail > 0) showToast(`방송은 만들어졌어요. ${productFail}개 제품 연결에 실패했어요. 수정에서 다시 연결해 주세요`)
+      else if (thumbFailed) showToast('썸네일 업로드에 실패했어요. 수정에서 다시 올려 주세요')
+      else showToast('방송이 만들어졌어요!')
       setShowForm(false)
       setDraft(EMPTY)
       setSchedule(defaultSchedule())
       setThumbPreview(null)
       setThumbFile(null)
+      setCreateProducts([])
       await loadBroadcasts()
     } finally {
       setSaving(false)
@@ -180,7 +223,7 @@ export default function OwnerLiveSection() {
     draft, schedule, setDraft, setSchedule, setShowForm, setSaving, showToast,
     reload: loadBroadcasts, onUnauthorized: () => router.replace('/login?role=owner'),
   })
-  const closeForm = () => { setShowForm(false); if (edit.editingId !== null) edit.closeEdit() }
+  const closeForm = () => { setShowForm(false); setCreateProducts([]); setThumbPreview(null); setThumbFile(null); setDraft(EMPTY); if (edit.editingId !== null) edit.closeEdit() }
 
   const today = toDateStr(new Date())
   const { upcoming, past } = splitBroadcasts(broadcasts)
@@ -253,9 +296,12 @@ export default function OwnerLiveSection() {
         showForm={showForm}
         onClose={closeForm} mode={edit.editingId !== null ? 'edit' : 'create'}
         draft={draft} setDraft={setDraft} schedule={schedule} setSchedule={setSchedule}
-        thumbPreview={thumbPreview} pickThumb={pickThumb} saving={saving}
+        thumbPreview={thumbPreview} pickThumb={(e) => { void pickThumb(e) }} saving={saving}
         submit={edit.editingId !== null ? edit.submitEdit : submit}
         broadcastId={edit.editingId}
+        showToast={showToast}
+        createProducts={createProducts}
+        onCreateProductsChange={setCreateProducts}
       />
 
       <div style={{ padding: '0 16px', maxWidth: 600, margin: '0 auto' }}>
