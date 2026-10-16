@@ -116,12 +116,20 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
       })
       const json = await res.json().catch(() => ({}))
       if (json?.ok) return true
+      if (method === 'POST' && json?.error === 'already_exists') {
+        await load()
+        return true
+      }
       toast(ERRORS[json?.error] ?? (method === 'POST' ? '제품 연결에 실패했어요' : '제품 해제에 실패했어요'))
-      if (json?.error === 'already_exists') void load()
     } catch {
       toast(method === 'POST' ? '제품 연결에 실패했어요' : '제품 해제에 실패했어요')
     }
     return false
+  }
+
+  const closePanel = () => {
+    setPanel('leaving')
+    void load()
   }
 
   const add = async (item: Item) => {
@@ -179,7 +187,7 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
           transition: `transform ${PANEL_MS}ms ${EASE}, opacity ${PANEL_MS}ms`, pointerEvents: panel === 'leaving' ? 'none' : 'auto', ...panelStyle,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 'calc(14px + env(safe-area-inset-top, 0px)) 16px 14px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-            <button type="button" aria-label="뒤로가기" onClick={() => setPanel('leaving')}
+            <button type="button" aria-label="뒤로가기" onClick={closePanel}
               style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: INK, padding: 0 }}>←</button>
             <div style={{ fontSize: 16, color: INK }}>제품 선택</div>
           </div>
@@ -205,7 +213,7 @@ export default function LiveProductPicker({ broadcastId, showToast }: { broadcas
             })}
           </div>
           <div style={{ padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
-            <button type="button" onClick={() => setPanel('leaving')}
+            <button type="button" onClick={closePanel}
               style={{ width: '100%', padding: 12, borderRadius: 9, border: 'none', background: GOLD, color: '#fff', fontSize: 13, cursor: 'pointer' }}>완료</button>
           </div>
         </div>

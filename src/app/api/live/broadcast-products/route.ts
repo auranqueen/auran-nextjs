@@ -92,6 +92,19 @@ export async function GET(req: NextRequest) {
   }
   if (!broadcast?.owner_id) return empty(null)
 
+  // 서버에서 방송 소유자 여부 판정 (클라이언트 플래그 신뢰 금지)
+  let isOwner = false
+  {
+    const authClient = createClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+    if (user) {
+      const { data: me } = await authClient.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+      isOwner = !!me?.id && String(me.id) === String(broadcast.owner_id)
+    }
+  }
+
   const { data: profile, error: profileError } = await svc
     .from('profiles')
     .select('auth_id')
@@ -101,50 +114,59 @@ export async function GET(req: NextRequest) {
     console.error('[live/broadcast-products] get profile query error', profileError)
     return fail('internal_error', 500)
   }
-  if (!profile?.auth_id) return empty(null)
+  if (!profile?.auth_id && !isOwner) return empty(null)
 
-  const { data: userRow, error: userError } = await svc
-    .from('users')
-    .select('id, created_at, store_trial_started_at')
-    .eq('auth_id', profile.auth_id)
-    .maybeSingle()
-  if (userError) {
-    console.error('[live/broadcast-products] get user query error', userError)
-    return fail('internal_error', 500)
+  let salonId: string | null = null
+  let locked = false
+
+  if (profile?.auth_id) {
+    const { data: userRow, error: userError } = await svc
+      .from('users')
+      .select('id, created_at, store_trial_started_at')
+      .eq('auth_id', profile.auth_id)
+      .maybeSingle()
+    if (userError) {
+      console.error('[live/broadcast-products] get user query error', userError)
+      return fail('internal_error', 500)
+    }
+    if (userRow?.id) {
+      const { data: salon, error: salonError } = await svc
+        .from('salons')
+        .select('id')
+        .eq('owner_id', userRow.id)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (salonError) {
+        console.error('[live/broadcast-products] get salon query error', salonError)
+        return fail('internal_error', 500)
+      }
+      if (salon?.id) salonId = String(salon.id)
+
+      const trialStart = resolveTrialStart(
+        (userRow as { store_trial_started_at?: string | null }).store_trial_started_at,
+        (userRow as { created_at?: string | null }).created_at,
+      )
+      const { data: subRows } = await svc
+        .from('owner_subscriptions')
+        .select('plan, started_at, expires_at, status')
+        .eq('owner_id', userRow.id)
+        .eq('status', 'active')
+        .in('plan', [...SHOWCASE_PLAN_SLUGS])
+        .order('created_at', { ascending: false })
+
+      const showcasePeriod = getOwnerLayerPeriod({
+        trialStart,
+        activeSubForLayer: pickLayerActiveSub((subRows as any[]) || [], 'showcase'),
+      })
+      locked = showcasePeriod.phase === 'expired'
+    }
   }
-  if (!userRow?.id) return empty(null)
 
-  const { data: salon, error: salonError } = await svc
-    .from('salons')
-    .select('id')
-    .eq('owner_id', userRow.id)
-    .eq('status', 'active')
-    .maybeSingle()
-  if (salonError) {
-    console.error('[live/broadcast-products] get salon query error', salonError)
-    return fail('internal_error', 500)
+  // 시청자·비로그인: 살롱 없거나 쇼케이스 잠금이면 빈 목록
+  if (!isOwner) {
+    if (!salonId) return empty(null)
+    if (locked) return empty(salonId, true)
   }
-  if (!salon?.id) return empty(null)
-
-  const salonId = String(salon.id)
-  const ownerUserId = String(userRow.id)
-  const trialStart = resolveTrialStart(
-    (userRow as { store_trial_started_at?: string | null }).store_trial_started_at,
-    (userRow as { created_at?: string | null }).created_at,
-  )
-  const { data: subRows } = await svc
-    .from('owner_subscriptions')
-    .select('plan, started_at, expires_at, status')
-    .eq('owner_id', ownerUserId)
-    .eq('status', 'active')
-    .in('plan', [...SHOWCASE_PLAN_SLUGS])
-    .order('created_at', { ascending: false })
-
-  const showcasePeriod = getOwnerLayerPeriod({
-    trialStart,
-    activeSubForLayer: pickLayerActiveSub((subRows as any[]) || [], 'showcase'),
-  })
-  if (showcasePeriod.phase === 'expired') return empty(salonId, true)
 
   const { data, error } = await svc
     .from('oren_live_broadcast_products')
@@ -170,7 +192,11 @@ export async function GET(req: NextRequest) {
     }]
   })
 
-  return NextResponse.json({ ok: true, salon_id: salonId, locked: false, products }, { headers: NO_STORE })
+  // 소유자: 잠금이어도 products 채움. 시청자: 여기까지 오면 잠금 아님 → locked false
+  return NextResponse.json(
+    { ok: true, salon_id: salonId, locked: isOwner ? locked : false, products },
+    { headers: NO_STORE },
+  )
 }
 
 // [ANCHOR: live-broadcast-products-post]
