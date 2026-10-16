@@ -280,15 +280,8 @@ export default function OwnerLiveSection() {
       )}
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <button type="button" onClick={() => router.back()}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
-        <div style={{ fontSize: 16, color: TEXT }}>내 라이브 방송</div>
-        <button
-          type="button"
-          onClick={() => (showForm ? closeForm() : openForm())}
-          style={{ marginLeft: 'auto', fontSize: 12, padding: '6px 14px', borderRadius: 20, border: `1px solid ${GOLD}`, background: showForm ? '#fff' : GOLD, color: showForm ? GOLD : '#fff', cursor: 'pointer' }}
-        >
-          {showForm ? '취소' : '+ 방송 만들기'}
-        </button>
+          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0, flexShrink: 0 }}>←</button>
+        <div style={{ fontSize: 13, color: TEXT, whiteSpace: 'nowrap' }}>내 라이브 방송</div>
       </div>
 
       <LiveCreateSheet
@@ -322,6 +315,19 @@ export default function OwnerLiveSection() {
               tab={tab} onTab={setTab} upcoming={upcomingShown} past={pastShown}
               selectedDate={selectedDate} onClearDate={() => setSelectedDate(null)} actions={actions}
             />
+            {hero != null && (
+              <button
+                type="button"
+                onClick={() => openForm()}
+                style={{
+                  width: '100%', marginTop: 12, padding: '10px 0', borderRadius: 9,
+                  border: `1px solid ${GOLD}`, background: '#fbf8f2', color: GOLD,
+                  fontSize: 11, cursor: 'pointer',
+                }}
+              >
+                + 방송 추가
+              </button>
+            )}
           </>
         )}
       </div>
