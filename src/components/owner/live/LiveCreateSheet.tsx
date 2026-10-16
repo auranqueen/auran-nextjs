@@ -2,6 +2,7 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 import { BORDER, SUB, TEXT, toDateStr } from './liveUtils'
+import LiveProductPicker from './LiveProductPicker'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'))
 
@@ -21,9 +22,10 @@ interface Props {
   pickThumb: (e: ChangeEvent<HTMLInputElement>) => void
   saving: boolean
   submit: () => Promise<void>
+  broadcastId?: number | null
 }
 
-export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit }: Props) {
+export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, setDraft, schedule, setSchedule, thumbPreview, pickThumb, saving, submit, broadcastId }: Props) {
   const editFile = mode === 'edit' ? draft.thumb_file ?? null : null
   const [editPreview, setEditPreview] = useState<string | null>(null)
   useEffect(() => {
@@ -113,6 +115,13 @@ export default function LiveCreateSheet({ mode, isPC, showForm, onClose, draft, 
               {(mode === 'edit' && !['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].includes(schedule.minute) ? [schedule.minute, '00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'] : ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']).map((m) => <option key={m} value={m}>{m}분</option>)}
             </select>
           </div>
+          {mode === 'edit' && broadcastId != null ? (
+            <LiveProductPicker broadcastId={broadcastId} />
+          ) : mode === 'create' ? (
+            <div style={{ fontSize: 10, color: SUB, background: '#fdf9f1', border: '1px dashed #C9A96E', borderRadius: 9, padding: '10px 12px', marginBottom: 14 }}>
+              방송을 만든 뒤 수정에서 판매 제품을 연결할 수 있어요.
+            </div>
+          ) : null}
           <button
             type="button"
             disabled={saving}

@@ -255,6 +255,7 @@ export default function OwnerLiveSection() {
         draft={draft} setDraft={setDraft} schedule={schedule} setSchedule={setSchedule}
         thumbPreview={thumbPreview} pickThumb={pickThumb} saving={saving}
         submit={edit.editingId !== null ? edit.submitEdit : submit}
+        broadcastId={edit.editingId}
       />
 
       <div style={{ padding: '0 16px', maxWidth: 600, margin: '0 auto' }}>
