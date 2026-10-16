@@ -46,7 +46,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/owner/') ||
     pathname.startsWith('/brand') ||
     pathname.startsWith('/logi') ||
-    pathname.startsWith('/products/')
+    pathname.startsWith('/products/') ||
+    /^\/live\/[^/]+/.test(pathname)
   const hideVoiceBox =
     hideCustomerNav ||
     pathname.startsWith('/signup') ||

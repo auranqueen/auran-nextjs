@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type Hls from 'hls.js'
+import LiveWatchPlayer from '@/components/live/LiveWatchPlayer'
+import LiveWatchOverlay from '@/components/live/LiveWatchOverlay'
 
-const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const BORDER = '#ede9f7'
 
@@ -18,41 +18,7 @@ interface BroadcastDetail {
   hls_url: string | null
   scheduled_at: string | null
   started_at: string | null
-}
-
-function VideoPlayer({ hlsUrl }: { hlsUrl: string }) {
-  useEffect(() => {
-    let hls: Hls | null = null
-    const video = document.getElementById('live-video') as HTMLVideoElement | null
-    if (!video) return
-    const setup = async () => {
-      if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = hlsUrl
-        video.play().catch(() => {})
-        return
-      }
-      try {
-        const { default: HlsLib } = await import('hls.js')
-        if (HlsLib.isSupported()) {
-          const instance = new HlsLib({ lowLatencyMode: true })
-          hls = instance
-          instance.loadSource(hlsUrl)
-          instance.attachMedia(video)
-          instance.on(HlsLib.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}) })
-        }
-      } catch {
-        video.src = hlsUrl
-      }
-    }
-    void setup()
-    return () => { hls?.destroy() }
-  }, [hlsUrl])
-
-  return (
-    <div style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}>
-      <video id="live-video" style={{ width: '100%', height: '100%' }} controls playsInline />
-    </div>
-  )
+  viewer_count: number | null
 }
 
 export default function LiveWatchPage() {
@@ -63,12 +29,21 @@ export default function LiveWatchPage() {
   const [ownerName, setOwnerName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [isPC, setIsPC] = useState(false)
+  const [muted, setMuted] = useState(false)
+
+  useEffect(() => {
+    const onResize = () => setIsPC(window.innerWidth >= 768)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
         .from('oren_live_broadcasts_public')
-        .select('id, owner_id, title, description, status, hls_url, scheduled_at, started_at')
+        .select('id, owner_id, title, description, status, hls_url, scheduled_at, started_at, viewer_count')
         .eq('id', id)
         .maybeSingle()
       if (!data) { setNotFound(true); setLoading(false); return }
@@ -84,13 +59,12 @@ export default function LiveWatchPage() {
   }, [id])
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: SUB, fontSize: 14 }}>불러오는 중...</div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#000', color: SUB, fontSize: 13 }}>불러오는 중...</div>
   )
 
   if (notFound || !broadcast) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 12 }}>
-      <div style={{ fontSize: 36 }}>📭</div>
-      <div style={{ fontSize: 14, color: SUB }}>방송을 찾을 수 없어요</div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', gap: 12, background: '#000' }}>
+      <div style={{ fontSize: 13, color: SUB }}>방송을 찾을 수 없어요</div>
       <button type="button" onClick={() => router.push('/live')}
         style={{ marginTop: 8, fontSize: 13, padding: '8px 20px', borderRadius: 20, border: `1px solid ${BORDER}`, background: '#f8f7fc', color: '#7B5EA7', cursor: 'pointer' }}>
         목록으로
@@ -98,50 +72,60 @@ export default function LiveWatchPage() {
     </div>
   )
 
-  const salonName = ownerName || '원장님'
+  const ownerLabel = ownerName || '원장님'
   const hlsUrl = broadcast.hls_url
+  const isLivePlaying = broadcast.status === 'live' && !!hlsUrl
+
+  const frameStyle: CSSProperties = isPC
+    ? {
+        position: 'relative',
+        height: '100dvh',
+        width: 'min(480px, calc(100dvh * 9 / 16))',
+        maxWidth: 480,
+        margin: '0 auto',
+        background: '#000',
+        overflow: 'hidden',
+      }
+    : {
+        position: 'relative',
+        width: '100%',
+        height: '100dvh',
+        background: '#000',
+        overflow: 'hidden',
+      }
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh' }}>
-      <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
-        <button type="button" onClick={() => router.push('/live')}
-          style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: 20, padding: '6px 12px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
-          ← 목록
-        </button>
-      </div>
+    <div style={{ background: '#000', minHeight: '100dvh' }}>
+      <div style={frameStyle}>
+        {isLivePlaying ? (
+          <LiveWatchPlayer hlsUrl={hlsUrl!} muted={muted} onMutedChange={setMuted} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#111' }}>
+            {broadcast.status === 'upcoming' ? (
+              <>
+                <div style={{ fontSize: 13, color: '#fff' }}>곧 시작돼요</div>
+                {broadcast.scheduled_at && (
+                  <div style={{ fontSize: 11, color: '#aaa' }}>
+                    {new Date(broadcast.scheduled_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: '#aaa' }}>방송이 종료됐어요</div>
+            )}
+          </div>
+        )}
 
-      {broadcast.status === 'live' && hlsUrl ? (
-        <VideoPlayer hlsUrl={hlsUrl} />
-      ) : (
-        <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          {broadcast.status === 'upcoming' ? (
-            <>
-              <div style={{ fontSize: 32 }}>⏰</div>
-              <div style={{ fontSize: 14, color: '#fff' }}>곧 시작돼요</div>
-              {broadcast.scheduled_at && (
-                <div style={{ fontSize: 12, color: '#aaa' }}>
-                  {new Date(broadcast.scheduled_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 32 }}>📭</div>
-              <div style={{ fontSize: 14, color: '#aaa' }}>방송이 종료됐어요</div>
-            </>
-          )}
-        </div>
-      )}
-
-      <div style={{ background: '#fff', padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          {broadcast.status === 'live' && (
-            <span style={{ fontSize: 10, padding: '2px 9px', borderRadius: 6, background: '#FCEBEB', color: '#A32D2D', fontWeight: 700 }}>🔴 LIVE</span>
-          )}
-          <span style={{ fontSize: 12, color: '#7B5EA7', fontWeight: 600 }}>{salonName}</span>
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{broadcast.title}</div>
-        {broadcast.description && <div style={{ fontSize: 13, color: SUB, lineHeight: 1.5 }}>{broadcast.description}</div>}
+        <LiveWatchOverlay
+          status={broadcast.status}
+          title={broadcast.title}
+          ownerLabel={ownerLabel}
+          viewerCount={broadcast.viewer_count}
+          muted={muted}
+          onToggleMute={() => setMuted((m) => !m)}
+          onClose={() => router.push('/live')}
+          showMute={isLivePlaying}
+        />
       </div>
     </div>
   )
