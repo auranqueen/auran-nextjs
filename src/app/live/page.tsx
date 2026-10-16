@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import LiveSheetProducts from '@/components/live/LiveSheetProducts'
 
 interface BroadcastRow {
   id: number
@@ -111,20 +112,6 @@ function Empty() {
   return <div className="mx-4 rounded-xl bg-gray-50 py-8 text-center text-[11px] text-gray-400">방송이 없습니다</div>
 }
 
-function ProductsPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="mt-5">
-      <div className="mb-2 text-[13px] text-gray-900">{label}</div>
-      <div className="flex gap-2 overflow-x-auto [scrollbar-width:none]">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-[11px] text-gray-400">
-            연결 예정
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function LiveListPage() {
   const router = useRouter()
@@ -381,7 +368,7 @@ export default function LiveListPage() {
                     <span>👀 시청 {formatCount(sheetB.viewer_count ?? 0)}</span>
                     <span>💬 채팅 -</span>
                   </div>
-                  <ProductsPlaceholder label="방송 제품" />
+                  <LiveSheetProducts broadcastId={sheetB.id} status={sheetB.status} />
                   <button type="button" onClick={() => router.push(`/live/${sheetB.id}`)}
                     className="mt-6 w-full rounded-xl bg-red-500 py-3.5 text-[13px] text-white">
                     지금 시청하기
@@ -389,7 +376,7 @@ export default function LiveListPage() {
                 </>
               ) : (
                 <>
-                  <ProductsPlaceholder label="예정 제품" />
+                  <LiveSheetProducts broadcastId={sheetB.id} status={sheetB.status} />
                   <div className="mt-6 flex gap-2">
                     <button type="button" onClick={() => toggleNotify(sheetB.id)}
                       className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-3.5 text-[13px] ${notified[sheetB.id] ? 'border border-purple-600 bg-white text-purple-600' : 'bg-purple-600 text-white'}`}>

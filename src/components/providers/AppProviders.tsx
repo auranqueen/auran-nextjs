@@ -50,6 +50,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     /^\/live\/[^/]+/.test(pathname)
   const hideVoiceBox =
     hideCustomerNav ||
+    pathname === '/live' ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth') ||
