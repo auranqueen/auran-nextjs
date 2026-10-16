@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { assertShowcaseLiveAccess } from '@/lib/live/assertShowcaseLiveAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
 
   const svc = tryCreateAdminClient()
   if (!svc) return fail('service_unavailable', 500)
+
+  const access = await assertShowcaseLiveAccess(svc, { authId: user.id })
+  if (access.locked) return fail('showcase_expired', 403)
 
   const { data: row, error: findError } = await svc
     .from('oren_live_broadcasts')

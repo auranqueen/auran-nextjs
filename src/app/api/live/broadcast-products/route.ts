@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
-import {
-  SHOWCASE_PLAN_SLUGS,
-  getOwnerLayerPeriod,
-  pickLayerActiveSub,
-  resolveTrialStart,
-} from '@/lib/subscription/storeTrial'
+import { assertShowcaseLiveAccess } from '@/lib/live/assertShowcaseLiveAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,7 +78,7 @@ export async function GET(req: NextRequest) {
 
   const { data: broadcast, error: broadcastError } = await svc
     .from('oren_live_broadcasts')
-    .select('owner_id')
+    .select('owner_id, status')
     .eq('id', broadcastId)
     .maybeSingle()
   if (broadcastError) {
@@ -105,67 +100,31 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const { data: profile, error: profileError } = await svc
-    .from('profiles')
-    .select('auth_id')
-    .eq('id', broadcast.owner_id)
-    .maybeSingle()
-  if (profileError) {
-    console.error('[live/broadcast-products] get profile query error', profileError)
-    return fail('internal_error', 500)
-  }
-  if (!profile?.auth_id && !isOwner) return empty(null)
+  const access = await assertShowcaseLiveAccess(svc, { profileOwnerId: String(broadcast.owner_id) })
+  if (!access.userId && !isOwner) return empty(null)
 
   let salonId: string | null = null
-  let locked = false
+  const locked = access.locked
+  const isEnded = String((broadcast as { status?: string }).status || '') === 'ended'
 
-  if (profile?.auth_id) {
-    const { data: userRow, error: userError } = await svc
-      .from('users')
-      .select('id, created_at, store_trial_started_at')
-      .eq('auth_id', profile.auth_id)
+  if (access.userId) {
+    const { data: salon, error: salonError } = await svc
+      .from('salons')
+      .select('id')
+      .eq('owner_id', access.userId)
+      .eq('status', 'active')
       .maybeSingle()
-    if (userError) {
-      console.error('[live/broadcast-products] get user query error', userError)
+    if (salonError) {
+      console.error('[live/broadcast-products] get salon query error', salonError)
       return fail('internal_error', 500)
     }
-    if (userRow?.id) {
-      const { data: salon, error: salonError } = await svc
-        .from('salons')
-        .select('id')
-        .eq('owner_id', userRow.id)
-        .eq('status', 'active')
-        .maybeSingle()
-      if (salonError) {
-        console.error('[live/broadcast-products] get salon query error', salonError)
-        return fail('internal_error', 500)
-      }
-      if (salon?.id) salonId = String(salon.id)
-
-      const trialStart = resolveTrialStart(
-        (userRow as { store_trial_started_at?: string | null }).store_trial_started_at,
-        (userRow as { created_at?: string | null }).created_at,
-      )
-      const { data: subRows } = await svc
-        .from('owner_subscriptions')
-        .select('plan, started_at, expires_at, status')
-        .eq('owner_id', userRow.id)
-        .eq('status', 'active')
-        .in('plan', [...SHOWCASE_PLAN_SLUGS])
-        .order('created_at', { ascending: false })
-
-      const showcasePeriod = getOwnerLayerPeriod({
-        trialStart,
-        activeSubForLayer: pickLayerActiveSub((subRows as any[]) || [], 'showcase'),
-      })
-      locked = showcasePeriod.phase === 'expired'
-    }
+    if (salon?.id) salonId = String(salon.id)
   }
 
-  // 시청자·비로그인: 살롱 없거나 쇼케이스 잠금이면 빈 목록
+  // 시청자·비로그인: 살롱 없으면 빈 목록. 쇼케이스 잠금은 ended 가 아닐 때만 제품 숨김
   if (!isOwner) {
     if (!salonId) return empty(null)
-    if (locked) return empty(salonId, true)
+    if (locked && !isEnded) return empty(salonId, true)
   }
 
   const { data, error } = await svc
@@ -209,12 +168,10 @@ export async function POST(req: NextRequest) {
   if (ctx instanceof NextResponse) return ctx
   const { svc, authId, broadcastId, brandProductId } = ctx
 
-  const { data: userRow, error: userError } = await svc.from('users').select('id').eq('auth_id', authId).maybeSingle()
-  if (userError) {
-    console.error('[live/broadcast-products] post user query error', userError)
-    return fail('internal_error', 500)
-  }
-  if (!userRow?.id) return fail('product_not_allowed', 403)
+  const access = await assertShowcaseLiveAccess(svc, { authId })
+  if (access.locked) return fail('showcase_expired', 403)
+  if (!access.userId) return fail('product_not_allowed', 403)
+  const userRow = { id: access.userId }
 
   const { data: product, error: productError } = await svc
     .from('brand_products')
@@ -260,7 +217,10 @@ export async function DELETE(req: NextRequest) {
 
   const ctx = await resolveOwnerBroadcast(body || {}, 'delete')
   if (ctx instanceof NextResponse) return ctx
-  const { svc, broadcastId, brandProductId } = ctx
+  const { svc, authId, broadcastId, brandProductId } = ctx
+
+  const access = await assertShowcaseLiveAccess(svc, { authId })
+  if (access.locked) return fail('showcase_expired', 403)
 
   const { error } = await svc
     .from('oren_live_broadcast_products')

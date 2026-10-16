@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Mux from '@mux/mux-node'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { assertShowcaseLiveAccess } from '@/lib/live/assertShowcaseLiveAccess'
 
 const mux = new Mux({
   tokenId: process.env.MUX_TOKEN_ID!,
@@ -24,6 +25,12 @@ export async function POST(req: NextRequest) {
   try {
     const svc = tryCreateAdminClient()
     const db = svc ?? supabase
+    if (svc) {
+      const access = await assertShowcaseLiveAccess(svc, { authId: user.id })
+      if (access.locked) {
+        return NextResponse.json({ ok: false, error: 'showcase_expired' }, { status: 403 })
+      }
+    }
 
     const { title, description, scheduled_at, thumbnail_url } = await req.json().catch(() => ({}))
     if (!title || typeof title !== 'string' || title.trim() === '') {

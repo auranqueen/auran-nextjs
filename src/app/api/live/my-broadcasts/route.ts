@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { assertShowcaseLiveAccess } from '@/lib/live/assertShowcaseLiveAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,19 +24,31 @@ export async function GET() {
   const svc = tryCreateAdminClient()
   if (!svc) return fail('service_unavailable', 500)
 
-  const { data, error } = await svc
-    .from('oren_live_broadcasts')
-    .select(COLUMNS)
-    .eq('owner_id', me.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [listResult, access] = await Promise.all([
+    svc
+      .from('oren_live_broadcasts')
+      .select(COLUMNS)
+      .eq('owner_id', me.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    assertShowcaseLiveAccess(svc, { authId: user.id }),
+  ])
+  const { data, error } = listResult
   if (error) {
     console.error('[live/my-broadcasts] query error', error)
     return fail('internal_error', 500)
   }
 
   return NextResponse.json(
-    { ok: true, broadcasts: data ?? [] },
+    {
+      ok: true,
+      broadcasts: data ?? [],
+      showcase: {
+        phase: access.phase,
+        daysLeft: access.daysLeft,
+        locked: access.locked,
+      },
+    },
     { headers: { 'Cache-Control': 'no-store' } },
   )
 }

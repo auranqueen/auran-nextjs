@@ -4,6 +4,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -529,6 +530,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -604,6 +606,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -647,6 +650,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -669,6 +673,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -699,6 +704,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -711,6 +717,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -831,6 +838,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2163,6 +2171,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2196,6 +2205,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2723,6 +2733,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2908,6 +2919,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2948,6 +2960,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
@@ -2968,6 +2981,7 @@
 ---
 
 ## 2026-10-16
+- feat(live): 쇼케이스 만료 시 create/update/제품연결 서버 가드(showcase_expired), my-broadcasts에 showcase 메타, ended는 시청자 제품 공개
 - fix(live): 고객 /live 상세 시트 연결 제품을 API로 표시, /live 목록에서 상담톡·의견보내기 플로팅 숨김
 - fix(live): 원장 방송 만들기/수정 시트 날짜·시·분 입력 2줄 배치(날짜 전체폭), 모바일에서 일(day) 잘림 완화
 - fix(live): 원장 라이브 UI 이모지 제거(썸네일 카메라 SVG 대체, 빈 상태 TV·송출키 경고·일정·목록 날짜 필터)
