@@ -20,6 +20,8 @@ export function StreamKeyCard({ streamKey, onCopy, onClose }: { streamKey: { rtm
         <button type="button" onClick={() => onCopy(streamKey.rtmp_key)} style={COPY_BTN}>복사</button>
       </div>
       <div style={{ fontSize: 10, color: '#c08040', marginTop: 8 }}>⚠️ 스트림 키는 타인에게 공유하지 마세요</div>
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 8, lineHeight: 1.45 }}>세로(9:16) 방송으로 송출해 주세요. 가로로 보내면 고객 화면 위아래에 검은 띠가 생겨요.</div>
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 4, lineHeight: 1.45 }}>권장 해상도 720×1280. Prism/OBS는 영상 설정에서 캔버스·출력 해상도를 세로로 맞춰 주세요.</div>
       <button type="button" onClick={onClose} style={{ marginTop: 8, fontSize: 11, color: SUB, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>닫기</button>
     </div>
   )
